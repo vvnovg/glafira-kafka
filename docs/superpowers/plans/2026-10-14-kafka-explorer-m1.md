@@ -6521,7 +6521,7 @@ export function MessageTable({ messages, selectedKey, onSelect, utc }: Props) {
               key={key}
               className={`row clickable msg-row${key === selectedKey ? " selected" : ""}`}
               style={{ top: item.start, height: ROW_HEIGHT }}
-              aria-selected={key === selectedKey}
+              aria-pressed={key === selectedKey}
               {...activateProps(() => onSelect(m))}
             >
               <span>{m.partition}</span>

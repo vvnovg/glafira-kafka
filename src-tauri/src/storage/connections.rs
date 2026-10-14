@@ -107,6 +107,11 @@ pub fn parse_bootstrap(s: &str) -> AppResult<Vec<(String, u16)>> {
     Ok(out)
 }
 
+fn is_secret_property(key: &str) -> bool {
+    let k = key.to_ascii_lowercase();
+    k.contains("password") || k.contains("secret") || k.contains("sasl.jaas.config")
+}
+
 pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
     if p.id.trim().is_empty() {
         return Err(AppError::invalid("У подключения нет идентификатора"));
@@ -120,6 +125,12 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
         && sasl.username.trim().is_empty()
     {
         return Err(AppError::invalid("Укажите имя пользователя SASL"));
+    }
+    // Секреты хранятся только в keychain: connections.json не должен их содержать.
+    if let Some(key) = p.extra_properties.keys().find(|k| is_secret_property(k)) {
+        return Err(AppError::invalid(format!(
+            "Секреты нельзя хранить в доп. свойствах: {key}"
+        )));
     }
     if p.request_timeout_ms < 1_000 {
         return Err(AppError::invalid(
@@ -296,6 +307,26 @@ mod tests {
         store.delete("a").unwrap();
         assert_eq!(store.get("a").unwrap_err().code, ErrorCode::NotFound);
         assert_eq!(store.delete("a").unwrap_err().code, ErrorCode::NotFound);
+    }
+
+    #[test]
+    fn validation_rejects_secrets_in_extra_properties() {
+        for key in [
+            "sasl.password",
+            "SSL.Key.Password",
+            "my.secret",
+            "SASL.JAAS.CONFIG",
+        ] {
+            let mut p = sample_profile("a");
+            p.extra_properties.insert(key.into(), "x".into());
+            let e = validate_profile(&p).unwrap_err();
+            assert_eq!(e.code, ErrorCode::InvalidInput, "{key}");
+            assert!(e.message.contains(key), "{}", e.message);
+        }
+        let mut p = sample_profile("a");
+        p.extra_properties
+            .insert("fetch.max.bytes".into(), "1".into());
+        assert!(validate_profile(&p).is_ok());
     }
 
     #[test]

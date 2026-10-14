@@ -86,6 +86,8 @@ describe("валидация и превью", () => {
   it("count/offset/minutes валидируются", () => {
     expect(() => b({ startType: "latest", count: 0 })).toThrow(/Количество/);
     expect(() => b({ startType: "latest", count: 1.5 })).toThrow();
+    expect(() => b({ startType: "latest", count: 100_001 })).toThrow(/Количество/);
+    expect(b({ startType: "latest", count: 100_000 }).start).toEqual({ type: "latest", count: 100_000 });
     expect(() => b({ startType: "offset", offset: -1 })).toThrow(/Offset/);
     expect(b({ startType: "offset", offset: 0 }).start).toEqual({ type: "offset", offset: 0 });
     expect(() => b({ startType: "lastMinutes", minutes: 0 })).toThrow(/Минуты/);

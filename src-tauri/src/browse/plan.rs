@@ -60,8 +60,9 @@ pub fn plan_earliest(bounds: &[PartitionBounds]) -> Vec<PartitionPlan> {
 
 pub fn plan_latest(bounds: &[PartitionBounds], count: i64) -> Vec<PartitionPlan> {
     let n = bounds.len().max(1) as i64;
-    let per = (count + n - 1) / n;
-    plan_with(bounds, |b| b.high - per)
+    // Вызывающий ограничивает count, но арифметика не должна переполняться ни при каком вводе.
+    let per = count.max(0).saturating_add(n - 1) / n;
+    plan_with(bounds, |b| b.high.saturating_sub(per))
 }
 
 pub fn plan_offset(bounds: &[PartitionBounds], offset: i64) -> Vec<PartitionPlan> {
@@ -148,6 +149,15 @@ mod tests {
             vec![10, 7, 0]
         );
         assert_eq!(starts(&plan_latest(&bounds, 7)), vec![7, 5, 0]); // ceil(7/3) = 3
+    }
+
+    #[test]
+    fn latest_huge_count_does_not_overflow() {
+        let bounds = [b(0, 0, 10), b(1, i64::MIN + 5, i64::MIN + 7)];
+        assert_eq!(
+            starts(&plan_latest(&bounds, i64::MAX)),
+            vec![0, i64::MIN + 5]
+        );
     }
 
     #[test]

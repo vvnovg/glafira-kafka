@@ -77,7 +77,9 @@ export function buildBrowseParams(f: BrowseFormState, connectionId: string, topi
       start = { type: "earliest" };
       break;
     case "latest":
-      if (!Number.isInteger(f.count) || f.count < 1) throw new Error("Количество сообщений должно быть целым числом от 1");
+      if (!Number.isInteger(f.count) || f.count < 1 || f.count > MAX_LIMIT) {
+        throw new Error(`Количество сообщений должно быть целым числом от 1 до ${MAX_LIMIT}`);
+      }
       start = { type: "latest", count: f.count };
       break;
     case "offset":

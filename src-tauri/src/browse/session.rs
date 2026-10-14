@@ -147,9 +147,11 @@ pub fn validate(params: &BrowseParams) -> AppResult<()> {
         )));
     }
     match params.start {
-        StartPosition::Latest { count } if count <= 0 => Err(AppError::invalid(
-            "Количество последних сообщений должно быть больше 0",
-        )),
+        StartPosition::Latest { count } if count <= 0 || count > MAX_LIMIT as i64 => {
+            Err(AppError::invalid(format!(
+                "Количество последних сообщений должно быть от 1 до {MAX_LIMIT}"
+            )))
+        }
         StartPosition::LastMinutes { minutes } if !(1..=MAX_LAST_MINUTES).contains(&minutes) => {
             Err(AppError::invalid(format!(
                 "Количество минут должно быть от 1 до {MAX_LAST_MINUTES}"
@@ -591,6 +593,15 @@ mod tests {
                 .code,
             ErrorCode::InvalidInput
         );
+        assert!(validate(&params(StartPosition::Latest { count: 100_000 }, 10)).is_ok());
+        for count in [100_001, i64::MAX] {
+            assert_eq!(
+                validate(&params(StartPosition::Latest { count }, 10))
+                    .unwrap_err()
+                    .code,
+                ErrorCode::InvalidInput
+            );
+        }
         assert_eq!(
             validate(&params(StartPosition::LastMinutes { minutes: -1 }, 10))
                 .unwrap_err()

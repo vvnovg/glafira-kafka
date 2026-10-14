@@ -8,6 +8,7 @@ use serde::Serialize;
 
 use crate::error::{AppError, AppResult};
 use crate::kafka::context::CapturingContext;
+use crate::kafka::errors::fetch_metadata_fast_fail;
 use crate::kafka::metadata::{TopicMeta, convert};
 use crate::kafka::pool::KafkaHandles;
 
@@ -71,11 +72,7 @@ pub fn summarize_topics(topics: Vec<TopicMeta>) -> Vec<TopicSummary> {
 }
 
 pub fn list_topics(h: &KafkaHandles) -> AppResult<Vec<TopicSummary>> {
-    let started = Instant::now();
-    let md = h
-        .consumer
-        .fetch_metadata(None, h.timeout)
-        .map_err(|e| h.kafka_err(started, e))?;
+    let md = fetch_metadata_fast_fail(&h.consumer, None, h.timeout)?;
     Ok(summarize_topics(convert(&md).1))
 }
 
@@ -146,11 +143,7 @@ fn list_offsets(
 }
 
 pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicStats>> {
-    let started = Instant::now();
-    let md = h
-        .consumer
-        .fetch_metadata(None, h.timeout)
-        .map_err(|e| h.kafka_err(started, e))?;
+    let md = fetch_metadata_fast_fail(&h.consumer, None, h.timeout)?;
     let (_, topics) = convert(&md);
     let wanted: HashSet<&str> = names.iter().map(String::as_str).collect();
     let parts: Vec<(String, i32)> = topics
@@ -183,11 +176,7 @@ pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicSta
 }
 
 pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
-    let started = Instant::now();
-    let md = h
-        .consumer
-        .fetch_metadata(Some(name), h.timeout)
-        .map_err(|e| h.kafka_err(started, e))?;
+    let md = fetch_metadata_fast_fail(&h.consumer, Some(name), h.timeout)?;
     let (_, topics) = convert(&md);
     let t = topics
         .into_iter()

@@ -20,7 +20,7 @@ use crate::browse::types::{BrowseEvent, BrowsedMessage, FinishReason, HeaderView
 use crate::error::{AppError, AppResult, ErrorCode, from_kafka};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
-use crate::kafka::errors::op_error;
+use crate::kafka::errors::{fetch_metadata_fast_fail, op_error};
 use crate::kafka::metadata::convert;
 use crate::kafka::topics::fetch_bounds;
 use crate::secrets::SecretStore;
@@ -301,9 +301,7 @@ fn load_bounds(
     timeout: Duration,
     kerr: &impl Fn(KafkaError) -> AppError,
 ) -> AppResult<Vec<PartitionBounds>> {
-    let md = consumer
-        .fetch_metadata(Some(&params.topic), timeout)
-        .map_err(kerr)?;
+    let md = fetch_metadata_fast_fail(consumer, Some(&params.topic), timeout)?;
     let (_, topics) = convert(&md);
     let topic = topics
         .into_iter()

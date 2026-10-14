@@ -1,10 +1,10 @@
 use std::ffi::{CStr, c_void};
-use std::time::Instant;
 
 use rdkafka::consumer::Consumer;
 use serde::Serialize;
 
 use crate::error::AppResult;
+use crate::kafka::errors::fetch_metadata_fast_fail;
 use crate::kafka::metadata::{BrokerInfo, TopicMeta, convert};
 use crate::kafka::pool::KafkaHandles;
 
@@ -42,11 +42,7 @@ pub fn summarize_cluster(
 }
 
 pub fn cluster_overview(h: &KafkaHandles) -> AppResult<ClusterOverview> {
-    let started = Instant::now();
-    let md = h
-        .consumer
-        .fetch_metadata(None, h.timeout)
-        .map_err(|e| h.kafka_err(started, e))?;
+    let md = fetch_metadata_fast_fail(&h.consumer, None, h.timeout)?;
     let (brokers, topics) = convert(&md);
     let (cluster_id, controller_id) = native_cluster_info(h);
     Ok(summarize_cluster(

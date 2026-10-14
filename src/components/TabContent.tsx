@@ -2,6 +2,7 @@ import type { Tab } from "../state/workspace";
 import { ConnectionFormTab } from "./connections/ConnectionFormTab";
 import { ClusterOverview } from "./cluster/ClusterOverview";
 import { TopicList } from "./topics/TopicList";
+import { TopicDetails } from "./topics/TopicDetails";
 
 export function TabContent({ tab }: { tab: Tab }) {
   switch (tab.kind) {
@@ -12,6 +13,6 @@ export function TabContent({ tab }: { tab: Tab }) {
     case "topics":
       return <TopicList connectionId={tab.connectionId} />;
     case "topic":
-      return <p>Топик {tab.topic}</p>;
+      return <TopicDetails connectionId={tab.connectionId} topic={tab.topic} />;
   }
 }

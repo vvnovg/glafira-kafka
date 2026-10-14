@@ -69,28 +69,44 @@ export function BrowseForm({ form, onChange }: Props) {
       </fieldset>
       <fieldset>
         <legend>Фильтры</legend>
-        <input aria-label="ключ содержит" placeholder="ключ содержит" value={form.keyPattern} onChange={(e) => set("keyPattern", e.target.value)} />
-        <input aria-label="значение содержит" placeholder="значение содержит" value={form.valuePattern} onChange={(e) => set("valuePattern", e.target.value)} />
+        <label className="field">
+          <span>Ключ содержит</span>
+          <input placeholder="k7" value={form.keyPattern} onChange={(e) => set("keyPattern", e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Значение содержит</span>
+          <input placeholder="FAILED" value={form.valuePattern} onChange={(e) => set("valuePattern", e.target.value)} />
+        </label>
         <label>
           <input type="checkbox" checked={form.regex} onChange={(e) => set("regex", e.target.checked)} /> regex
         </label>
         <label>
           <input type="checkbox" checked={form.caseSensitive} onChange={(e) => set("caseSensitive", e.target.checked)} /> Aa
         </label>
-        <input aria-label="заголовок" placeholder="заголовок" value={form.headerName} onChange={(e) => set("headerName", e.target.value)} style={{ width: 110 }} />
-        <input aria-label="= значение" placeholder="= значение" value={form.headerValue} onChange={(e) => set("headerValue", e.target.value)} style={{ width: 110 }} />
-        <input
-          aria-label={'JSONPath: $.order.status == "FAILED"'}
-          placeholder={'JSONPath: $.order.status == "FAILED"'}
-          value={form.jsonPath}
-          onChange={(e) => set("jsonPath", e.target.value)}
-          style={{ width: 260 }}
-        />
-        <label>
-          с <input type="datetime-local" step={1} value={form.fromTime} onChange={(e) => set("fromTime", e.target.value)} />
+        <label className="field">
+          <span>Заголовок</span>
+          <input placeholder="trace-id" value={form.headerName} onChange={(e) => set("headerName", e.target.value)} style={{ width: 110 }} />
         </label>
-        <label>
-          по <input type="datetime-local" step={1} value={form.toTime} onChange={(e) => set("toTime", e.target.value)} />
+        <label className="field">
+          <span>Значение заголовка</span>
+          <input placeholder="abc-123" value={form.headerValue} onChange={(e) => set("headerValue", e.target.value)} style={{ width: 130 }} />
+        </label>
+        <label className="field">
+          <span>JSONPath</span>
+          <input
+            placeholder={'$.order.status == "FAILED"'}
+            value={form.jsonPath}
+            onChange={(e) => set("jsonPath", e.target.value)}
+            style={{ width: 260 }}
+          />
+        </label>
+        <label className="field">
+          <span>Время с</span>
+          <input type="datetime-local" step={1} value={form.fromTime} onChange={(e) => set("fromTime", e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Время по</span>
+          <input type="datetime-local" step={1} value={form.toTime} onChange={(e) => set("toTime", e.target.value)} />
         </label>
       </fieldset>
     </div>

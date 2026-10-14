@@ -1872,7 +1872,7 @@ git commit -m "feat(kafka): пошаговая проверка подключе
   - `fn fetch_bounds(c: &BaseConsumer<CapturingContext>, parts: &[(String, i32)], timeout: Duration) -> KafkaResult<PartitionBoundsMap>` — (low, high) по каждой партиции двумя пакетными ListOffsets; ошибка партиции (лидер недоступен, нет прав, нет ответа) возвращается как `Err(текст)` и **никогда не превращается в 0**
   - `struct TopicStats { name, message_count: Option<i64> }` (`None` — для части партиций оффсеты недоступны), `fn topic_stats(h, names: &[String]) -> AppResult<Vec<TopicStats>>`
   - `struct PartitionDetails { id, leader, replicas, isr, low: Option<i64>, high: Option<i64>, message_count: Option<i64>, offsets_error: Option<String>, under_replicated }`
-  - `struct TopicDetails { name, internal, replication_factor, message_count: i64 /* сумма по партициям с известными оффсетами */, partitions: Vec<PartitionDetails> }`, `fn topic_details(h, name: &str) -> AppResult<TopicDetails>`
+  - `struct TopicDetails { name, internal, replication_factor, message_count: Option<i64> /* None, если у какой-либо партиции оффсеты недоступны */, partitions: Vec<PartitionDetails> }`, `fn topic_details(h, name: &str) -> AppResult<TopicDetails>`
 
 - [ ] **Step 1: Unit-тесты** (в конец `topics.rs`)
 
@@ -1986,8 +1986,8 @@ pub struct TopicDetails {
     pub name: String,
     pub internal: bool,
     pub replication_factor: usize,
-    /// Сумма по партициям с известными оффсетами.
-    pub message_count: i64,
+    /// None, если у какой-либо партиции оффсеты недоступны.
+    pub message_count: Option<i64>,
     pub partitions: Vec<PartitionDetails>,
 }
 
@@ -2131,7 +2131,7 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
     Ok(TopicDetails {
         internal: t.internal(),
         replication_factor: t.replication_factor(),
-        message_count: partitions.iter().filter_map(|p| p.message_count).sum(),
+        message_count: partitions.iter().map(|p| p.message_count).sum::<Option<i64>>(),
         name: t.name,
         partitions,
     })
@@ -2187,7 +2187,7 @@ async fn list_stats_details_configs() {
     assert_eq!(details.partitions.len(), 3);
     assert_eq!(details.partitions[0].high, Some(2)); // сообщения 0 и 3
     assert!(details.partitions.iter().all(|p| p.offsets_error.is_none()));
-    assert_eq!(details.message_count, 5);
+    assert_eq!(details.message_count, Some(5));
     assert_eq!(missing.code, ErrorCode::NotFound);
 
     let configs = describe_configs(&h, ResourceSpecifier::Topic(&topic)).await.unwrap();
@@ -4166,7 +4166,8 @@ export interface TopicDetails {
   name: string;
   internal: boolean;
   replicationFactor: number;
-  messageCount: number;
+  /** null — у какой-либо партиции оффсеты недоступны */
+  messageCount: number | null;
   partitions: PartitionDetails[];
 }
 

@@ -88,21 +88,27 @@ struct RecoveryMonitor {
 }
 
 impl RecoveryMonitor {
-    fn on_transient(&mut self, now: Instant, err: KafkaError) {
+    /// true — сессия только что перешла в деградацию (первая временная ошибка).
+    fn on_transient(&mut self, now: Instant, err: KafkaError) -> bool {
         match &mut self.state {
-            Some(d) => d.error = err,
+            Some(d) => {
+                d.error = err;
+                false
+            }
             None => {
                 self.state = Some(Degraded {
                     since: now,
                     last_probe: now,
                     error: err,
-                })
+                });
+                true
             }
         }
     }
 
-    fn on_progress(&mut self) {
-        self.state = None;
+    /// true — деградация снята (восстановление).
+    fn on_progress(&mut self) -> bool {
+        self.state.take().is_some()
     }
 
     fn should_probe(&self, now: Instant) -> bool {
@@ -111,12 +117,15 @@ impl RecoveryMonitor {
             .is_some_and(|d| now.saturating_duration_since(d.last_probe) >= PROBE_INTERVAL)
     }
 
-    fn on_probe(&mut self, now: Instant, ok: bool) {
+    /// true — успешная проба сняла деградацию.
+    fn on_probe(&mut self, now: Instant, ok: bool) -> bool {
         if ok {
-            self.state = None;
-        } else if let Some(d) = &mut self.state {
+            return self.state.take().is_some();
+        }
+        if let Some(d) = &mut self.state {
             d.last_probe = now;
         }
+        false
     }
 
     /// Окно восстановления истекло: (начало деградации, последняя ошибка).
@@ -210,25 +219,35 @@ fn run_inner(
             let ok = consumer
                 .fetch_metadata(Some(&params.topic), PROBE_TIMEOUT)
                 .is_ok();
-            recovery.on_probe(Instant::now(), ok);
+            if recovery.on_probe(Instant::now(), ok) {
+                out.emit(BrowseEvent::Recovered);
+            }
         }
         let polled_at = Instant::now();
         match consumer.poll(POLL_TIMEOUT) {
             None => {}
             Some(Err(KafkaError::PartitionEOF(p))) => {
-                recovery.on_progress();
+                if recovery.on_progress() {
+                    out.emit(BrowseEvent::Recovered);
+                }
                 tracker.mark_done(p);
             }
             Some(Err(e)) if is_transient(&e) => {
                 tracing::warn!("временная ошибка консьюмера, librdkafka переподключается: {e}");
-                recovery.on_transient(Instant::now(), e);
+                let message = from_kafka(&e, ctx.last_error_since(polled_at).as_deref()).message;
+                if recovery.on_transient(Instant::now(), e) {
+                    out.flush();
+                    out.emit(BrowseEvent::Reconnecting { message });
+                }
             }
             Some(Err(e)) => {
                 out.flush();
                 return Err(kerr(polled_at)(e));
             }
             Some(Ok(msg)) => {
-                recovery.on_progress();
+                if recovery.on_progress() {
+                    out.emit(BrowseEvent::Recovered);
+                }
                 let in_snapshot = tracker.observe(msg.partition(), msg.offset());
                 if in_snapshot || params.live {
                     out.scanned += 1;
@@ -675,6 +694,26 @@ mod tests {
             matches!(e, KafkaError::MessageConsumption(RDKafkaErrorCode::Resolve)),
             "хранится последняя ошибка"
         );
+    }
+
+    #[test]
+    fn monitor_reports_degraded_and_recovered_transitions() {
+        let t = Instant::now();
+        let mut m = RecoveryMonitor::default();
+        assert!(!m.on_progress(), "без деградации восстанавливаться нечему");
+        assert!(
+            m.on_transient(t, transient()),
+            "первая ошибка — вход в деградацию"
+        );
+        assert!(!m.on_transient(t + secs(1), transient()), "повторная — нет");
+        assert!(!m.on_probe(t + secs(5), false));
+        assert!(
+            m.on_probe(t + secs(10), true),
+            "успешная проба — восстановление"
+        );
+        assert!(!m.on_probe(t + secs(15), true));
+        assert!(m.on_transient(t + secs(20), transient()));
+        assert!(m.on_progress(), "прогресс — восстановление");
     }
 
     #[test]

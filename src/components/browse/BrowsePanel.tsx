@@ -44,7 +44,12 @@ export function BrowsePanel({ connectionId, topic }: { connectionId: string; top
         </label>
         <span className="muted">
           просмотрено {formatCount(state.scanned)} · найдено {formatCount(state.matched)} · в таблице {state.messages.length}
-          {running && (state.reachedEnd ? " · ждём новые сообщения…" : " · читаем…")}
+          {running &&
+            (state.reconnecting
+              ? ` · переподключение: ${state.reconnecting}…`
+              : state.reachedEnd
+                ? " · ждём новые сообщения…"
+                : " · читаем…")}
           {state.status === "finished" && state.finishReason && ` · ${FINISH_TEXT[state.finishReason]}`}
         </span>
       </div>

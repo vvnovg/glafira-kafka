@@ -46,6 +46,12 @@ pub enum BrowseEvent {
     },
     /// Только в live-режиме: все партиции дочитаны до конца, дальше идут новые сообщения.
     ReachedEnd,
+    /// Временная потеря связи с брокером: librdkafka переподключается (спец. §8).
+    Reconnecting {
+        message: String,
+    },
+    /// Связь восстановлена после Reconnecting.
+    Recovered,
     Finished {
         scanned: u64,
         matched: u64,
@@ -75,6 +81,17 @@ mod tests {
         assert_eq!(
             serde_json::to_value(BrowseEvent::ReachedEnd).unwrap(),
             serde_json::json!({"type": "reachedEnd"})
+        );
+        assert_eq!(
+            serde_json::to_value(BrowseEvent::Reconnecting {
+                message: "нет связи".into()
+            })
+            .unwrap(),
+            serde_json::json!({"type": "reconnecting", "message": "нет связи"})
+        );
+        assert_eq!(
+            serde_json::to_value(BrowseEvent::Recovered).unwrap(),
+            serde_json::json!({"type": "recovered"})
         );
     }
 }

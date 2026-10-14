@@ -10,6 +10,8 @@ export interface BrowseState {
   finishReason: FinishReason | null;
   error: AppError | null;
   limit: number;
+  /** Связь с брокером временно потеряна (идёт переподключение): причина, иначе null. */
+  reconnecting: string | null;
 }
 
 export const initialBrowseState: BrowseState = {
@@ -22,6 +24,7 @@ export const initialBrowseState: BrowseState = {
   finishReason: null,
   error: null,
   limit: 500,
+  reconnecting: null,
 };
 
 export type BrowseAction =
@@ -38,10 +41,10 @@ export function browseReducer(s: BrowseState, a: BrowseAction): BrowseState {
     case "started":
       return { ...s, sessionId: a.sessionId };
     case "failed":
-      return { ...s, status: "error", error: a.error };
+      return { ...s, status: "error", error: a.error, reconnecting: null };
     case "stopped":
       // Пользователь остановил сессию: backend-событие finished{cancelled} отфильтровано токеном.
-      return s.status === "running" ? { ...s, status: "finished", finishReason: "cancelled" } : s;
+      return s.status === "running" ? { ...s, status: "finished", finishReason: "cancelled", reconnecting: null } : s;
     case "event": {
       const e = a.event;
       switch (e.type) {
@@ -54,10 +57,21 @@ export function browseReducer(s: BrowseState, a: BrowseAction): BrowseState {
           return { ...s, scanned: e.scanned, matched: e.matched };
         case "reachedEnd":
           return { ...s, reachedEnd: true };
+        case "reconnecting":
+          return { ...s, reconnecting: e.message };
+        case "recovered":
+          return { ...s, reconnecting: null };
         case "finished":
-          return { ...s, status: "finished", scanned: e.scanned, matched: e.matched, finishReason: e.reason };
+          return {
+            ...s,
+            status: "finished",
+            scanned: e.scanned,
+            matched: e.matched,
+            finishReason: e.reason,
+            reconnecting: null,
+          };
         case "error":
-          return { ...s, status: "error", error: e.error };
+          return { ...s, status: "error", error: e.error, reconnecting: null };
       }
     }
   }

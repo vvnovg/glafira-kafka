@@ -186,5 +186,7 @@ export type BrowseEvent =
   | { type: "messages"; messages: BrowsedMessage[] }
   | { type: "progress"; scanned: number; matched: number }
   | { type: "reachedEnd" }
+  | { type: "reconnecting"; message: string }
+  | { type: "recovered" }
   | { type: "finished"; scanned: number; matched: number; reason: FinishReason }
   | { type: "error"; error: AppError };

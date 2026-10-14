@@ -47,4 +47,31 @@ describe("browseReducer", () => {
     expect(e.status).toBe("error");
     expect(browseReducer(initialBrowseState, { type: "stopped" })).toBe(initialBrowseState);
   });
+
+  it("reconnecting/recovered и сброс статуса переподключения", () => {
+    const reconnect = { type: "event" as const, event: { type: "reconnecting" as const, message: "нет связи" } };
+    let s = browseReducer(initialBrowseState, { type: "start", limit: 10 });
+    expect(s.reconnecting).toBeNull();
+    s = browseReducer(s, reconnect);
+    expect(s.reconnecting).toBe("нет связи");
+    expect(s.status).toBe("running");
+    s = browseReducer(s, { type: "event", event: { type: "recovered" } });
+    expect(s.reconnecting).toBeNull();
+
+    s = browseReducer(browseReducer(s, reconnect), { type: "start", limit: 10 });
+    expect(s.reconnecting).toBeNull();
+    s = browseReducer(browseReducer(s, reconnect), {
+      type: "event",
+      event: { type: "finished", scanned: 0, matched: 0, reason: "limit" },
+    });
+    expect(s.reconnecting).toBeNull();
+    const err = { code: "TIMEOUT" as const, message: "t", retryable: true };
+    s = browseReducer(browseReducer(browseReducer(s, { type: "start", limit: 1 }), reconnect), {
+      type: "event",
+      event: { type: "error", error: err },
+    });
+    expect(s.reconnecting).toBeNull();
+    s = browseReducer(browseReducer(browseReducer(s, { type: "start", limit: 1 }), reconnect), { type: "stopped" });
+    expect(s.reconnecting).toBeNull();
+  });
 });

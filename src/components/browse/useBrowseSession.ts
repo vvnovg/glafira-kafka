@@ -10,6 +10,8 @@ export function useBrowseSession() {
   const tokenRef = useRef(0);
 
   const stop = useCallback(async () => {
+    // Инвалидируем ещё не завершённый startBrowse: поздняя сессия будет остановлена в start().
+    tokenRef.current++;
     const id = sessionRef.current;
     sessionRef.current = null;
     if (id) await api.stopSession(id).catch(() => false);

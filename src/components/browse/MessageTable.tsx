@@ -50,7 +50,7 @@ export function MessageTable({ messages, selectedKey, onSelect, utc }: Props) {
               <span>{m.partition}</span>
               <span>{m.offset}</span>
               <span>{formatTimestamp(m.timestamp, utc)}</span>
-              <span title={m.key?.text}>{previewText(m.key, 60)}</span>
+              <span title={m.key?.text.slice(0, 500)}>{previewText(m.key, 60)}</span>
               <span>{previewText(m.value)}</span>
               <span>{m.headers.length || ""}</span>
               <span>{formatBytes(m.size)}</span>

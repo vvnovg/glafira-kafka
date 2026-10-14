@@ -45,6 +45,7 @@ export const defaultBrowseForm: BrowseFormState = {
 };
 
 const MAX_LIMIT = 100_000;
+const MAX_MINUTES = 5_256_000;
 
 function parseLocalTime(value: string, what: string): number {
   const ms = new Date(value).getTime();
@@ -55,11 +56,15 @@ function parseLocalTime(value: string, what: string): number {
 function parsePartitions(text: string): number[] | null {
   const t = text.trim();
   if (!t) return null;
-  return t.split(",").map((part) => {
-    const n = Number(part.trim());
-    if (!Number.isInteger(n) || n < 0) throw new Error(`Партиции: «${part.trim()}» — не номер партиции`);
-    return n;
-  });
+  const out: number[] = [];
+  for (const raw of t.split(",")) {
+    const part = raw.trim();
+    if (!/^\d+$/.test(part)) throw new Error(`Партиции: «${part}» — не номер партиции`);
+    const n = Number(part);
+    if (!Number.isSafeInteger(n)) throw new Error(`Партиции: «${part}» — не номер партиции`);
+    if (!out.includes(n)) out.push(n);
+  }
+  return out;
 }
 
 export function buildBrowseParams(f: BrowseFormState, connectionId: string, topic: string): BrowseParams {
@@ -72,15 +77,20 @@ export function buildBrowseParams(f: BrowseFormState, connectionId: string, topi
       start = { type: "earliest" };
       break;
     case "latest":
+      if (!Number.isInteger(f.count) || f.count < 1) throw new Error("Количество сообщений должно быть целым числом от 1");
       start = { type: "latest", count: f.count };
       break;
     case "offset":
+      if (!Number.isInteger(f.offset) || f.offset < 0) throw new Error("Offset должен быть целым числом от 0");
       start = { type: "offset", offset: f.offset };
       break;
     case "timestamp":
       start = { type: "timestamp", timestampMs: parseLocalTime(f.timestamp, "время начала") };
       break;
     case "lastMinutes":
+      if (!Number.isInteger(f.minutes) || f.minutes < 1 || f.minutes > MAX_MINUTES) {
+        throw new Error(`Минуты должны быть целым числом от 1 до ${MAX_MINUTES}`);
+      }
       start = { type: "lastMinutes", minutes: f.minutes };
       break;
     default:
@@ -101,6 +111,9 @@ export function buildBrowseParams(f: BrowseFormState, connectionId: string, topi
   if (f.jsonPath.trim()) filter.jsonPath = f.jsonPath.trim();
   if (f.fromTime) filter.fromTimestamp = parseLocalTime(f.fromTime, "фильтр «с»");
   if (f.toTime) filter.toTimestamp = parseLocalTime(f.toTime, "фильтр «по»");
+  if (filter.fromTimestamp !== undefined && filter.toTimestamp !== undefined && filter.fromTimestamp > filter.toTimestamp) {
+    throw new Error("Фильтр времени: «с» не может быть позже «по»");
+  }
 
   return {
     connectionId,
@@ -129,6 +142,7 @@ export function prettyText(d: DecodedData | null): string {
 
 export function previewText(d: DecodedData | null, max = 200): string {
   if (!d) return "null";
-  const flat = d.text.replace(/\s+/g, " ");
-  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
+  const head = d.text.slice(0, max * 4);
+  const flat = head.replace(/\s+/g, " ");
+  return flat.length > max || d.text.length > head.length ? `${flat.slice(0, max)}…` : flat;
 }

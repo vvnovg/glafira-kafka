@@ -2,13 +2,26 @@ import type { BrowsedMessage, DecodedData } from "../../api/types";
 import { formatBytes, formatTimestamp } from "../../lib/format";
 import { prettyText } from "./params";
 
+function copy(text: string) {
+  try {
+    void navigator.clipboard.writeText(text).catch(() => {});
+  } catch {
+    /* буфер обмена недоступен */
+  }
+}
+
 function DataBlock({ title, data }: { title: string; data: DecodedData | null }) {
   return (
     <section>
       <h4>
         {title} {data && <span className="muted">({data.format}, {formatBytes(data.size)})</span>}
         {data && (
-          <button type="button" className="link" onClick={() => void navigator.clipboard.writeText(data.text)}>
+          <button
+            type="button"
+            className="link"
+            aria-label={`Копировать ${title === "Ключ" ? "ключ" : "значение"}`}
+            onClick={() => copy(data.text)}
+          >
             копировать
           </button>
         )}
@@ -29,7 +42,8 @@ export function MessageDetails({ message, utc }: { message: BrowsedMessage | nul
         <button
           type="button"
           className="link"
-          onClick={() => void navigator.clipboard.writeText(JSON.stringify(message, null, 2))}
+          aria-label="Копировать сообщение как JSON"
+          onClick={() => copy(JSON.stringify(message, null, 2))}
         >
           {" "}
           копировать всё как JSON

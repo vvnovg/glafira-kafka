@@ -69,17 +69,18 @@ export function BrowseForm({ form, onChange }: Props) {
       </fieldset>
       <fieldset>
         <legend>Фильтры</legend>
-        <input placeholder="ключ содержит" value={form.keyPattern} onChange={(e) => set("keyPattern", e.target.value)} />
-        <input placeholder="значение содержит" value={form.valuePattern} onChange={(e) => set("valuePattern", e.target.value)} />
+        <input aria-label="ключ содержит" placeholder="ключ содержит" value={form.keyPattern} onChange={(e) => set("keyPattern", e.target.value)} />
+        <input aria-label="значение содержит" placeholder="значение содержит" value={form.valuePattern} onChange={(e) => set("valuePattern", e.target.value)} />
         <label>
           <input type="checkbox" checked={form.regex} onChange={(e) => set("regex", e.target.checked)} /> regex
         </label>
         <label>
           <input type="checkbox" checked={form.caseSensitive} onChange={(e) => set("caseSensitive", e.target.checked)} /> Aa
         </label>
-        <input placeholder="заголовок" value={form.headerName} onChange={(e) => set("headerName", e.target.value)} style={{ width: 110 }} />
-        <input placeholder="= значение" value={form.headerValue} onChange={(e) => set("headerValue", e.target.value)} style={{ width: 110 }} />
+        <input aria-label="заголовок" placeholder="заголовок" value={form.headerName} onChange={(e) => set("headerName", e.target.value)} style={{ width: 110 }} />
+        <input aria-label="= значение" placeholder="= значение" value={form.headerValue} onChange={(e) => set("headerValue", e.target.value)} style={{ width: 110 }} />
         <input
+          aria-label={'JSONPath: $.order.status == "FAILED"'}
           placeholder={'JSONPath: $.order.status == "FAILED"'}
           value={form.jsonPath}
           onChange={(e) => set("jsonPath", e.target.value)}

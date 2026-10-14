@@ -146,3 +146,68 @@ fn scram_wrong_password_is_auth_failed() {
         );
     }
 }
+
+fn wrong_password_profile(
+    bs: &str,
+) -> (
+    kafka_explorer_lib::storage::connections::ConnectionProfile,
+    MemoryStore,
+) {
+    let mut p = sasl_profile(bs);
+    p.request_timeout_ms = 3_000;
+    let secrets = MemoryStore::default();
+    secrets
+        .set(&secret_key(&p.id, SASL_PASSWORD), "wrong")
+        .unwrap();
+    (p, secrets)
+}
+
+/// librdkafka подавляет повтор той же ошибки брокера 30 с: повторные операции
+/// на тех же handles не получают свежего колбэка, но причина не должна теряться.
+#[tokio::test(flavor = "multi_thread")]
+async fn pooled_handles_repeated_wrong_password_stays_auth_failed() {
+    let Some(bs) = common::sasl_bootstrap() else {
+        return;
+    };
+    let (p, secrets) = wrong_password_profile(&bs);
+    let h = std::sync::Arc::new(
+        kafka_explorer_lib::kafka::pool::KafkaHandles::create(&p, &secrets).unwrap(),
+    );
+    let h1 = h.clone();
+    // Несколько подряд: первые вызовы могут «съесть» ещё не доставленные события из очереди,
+    // дальше свежих колбэков нет (подавление) — причина всё равно должна сохраняться.
+    let codes = tokio::task::spawn_blocking(move || {
+        (0..4)
+            .map(|_| {
+                kafka_explorer_lib::kafka::cluster::cluster_overview(&h1)
+                    .unwrap_err()
+                    .code
+            })
+            .collect::<Vec<_>>()
+    })
+    .await
+    .unwrap();
+    assert_eq!(codes, vec![ErrorCode::AuthFailed; 4]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn pooled_describe_configs_wrong_password_is_auth_failed() {
+    let Some(bs) = common::sasl_bootstrap() else {
+        return;
+    };
+    let (p, secrets) = wrong_password_profile(&bs);
+    let h = std::sync::Arc::new(
+        kafka_explorer_lib::kafka::pool::KafkaHandles::create(&p, &secrets).unwrap(),
+    );
+    let mut codes = Vec::new();
+    for _ in 0..3 {
+        let err = kafka_explorer_lib::kafka::configs::describe_configs(
+            &h,
+            rdkafka::admin::ResourceSpecifier::Broker(1),
+        )
+        .await
+        .unwrap_err();
+        codes.push(err.code);
+    }
+    assert_eq!(codes, vec![ErrorCode::AuthFailed; 3]);
+}

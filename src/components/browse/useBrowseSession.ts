@@ -19,7 +19,11 @@ export function useBrowseSession() {
 
   const start = useCallback(
     async (params: BrowseParams) => {
-      await stop();
+      const stopping = stop();
+      const gen = tokenRef.current;
+      await stopping;
+      // За время остановки был stop/unmount/новый start — этот запуск устарел.
+      if (tokenRef.current !== gen) return;
       const token = ++tokenRef.current;
       dispatch({ type: "start", limit: params.limit });
       try {

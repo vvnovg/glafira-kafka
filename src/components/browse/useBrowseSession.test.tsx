@@ -123,4 +123,58 @@ describe("useBrowseSession", () => {
     });
     expect(api.stopSession).toHaveBeenCalledWith("s1");
   });
+
+  describe("стоп во время перезапуска", () => {
+    const setup = async (): Promise<{
+      hook: ReturnType<typeof renderHook<ReturnType<typeof useBrowseSession>, unknown>>;
+      p2: Promise<void>;
+      resolveStop: () => void;
+    }> => {
+      let resolveStop!: () => void;
+      const hook = renderHook(() => useBrowseSession());
+      let p1!: Promise<void>;
+      await act(async () => {
+        p1 = hook.result.current.start(params);
+      });
+      await act(async () => {
+        pending[0].resolve("s0");
+        await p1;
+      });
+      vi.mocked(api.stopSession).mockImplementationOnce(
+        () =>
+          new Promise<boolean>((resolve) => {
+            resolveStop = () => resolve(true);
+          }),
+      );
+      let p2!: Promise<void>;
+      await act(async () => {
+        p2 = hook.result.current.start(params);
+      });
+      return { hook, p2, resolveStop: () => resolveStop() };
+    };
+
+    it("размонтирование во время остановки не запускает новую сессию", async () => {
+      const { hook, p2, resolveStop } = await setup();
+      hook.unmount();
+      await act(async () => {
+        resolveStop();
+        await p2;
+      });
+      expect(api.startBrowse).toHaveBeenCalledTimes(1);
+    });
+
+    it("stop() во время остановки не запускает новую сессию", async () => {
+      const { hook, p2, resolveStop } = await setup();
+      let ps!: Promise<void>;
+      await act(async () => {
+        ps = hook.result.current.stop();
+      });
+      await act(async () => {
+        resolveStop();
+        await p2;
+        await ps;
+      });
+      expect(api.startBrowse).toHaveBeenCalledTimes(1);
+    });
+  });
 });

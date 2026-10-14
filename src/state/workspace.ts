@@ -24,6 +24,8 @@ interface WorkspaceState {
   activeId: string | null;
   open: (spec: TabSpec) => void;
   close: (id: string) => void;
+  /** Закрывает все вкладки подключения (например, после его удаления). */
+  closeForConnection: (connectionId: string) => void;
   activate: (id: string) => void;
 }
 
@@ -42,6 +44,16 @@ export const useWorkspace = create<WorkspaceState>((set) => ({
       if (idx < 0) return s;
       const tabs = s.tabs.filter((t) => t.id !== id);
       const activeId = s.activeId !== id ? s.activeId : (tabs[idx] ?? tabs[idx - 1])?.id ?? null;
+      return { tabs, activeId };
+    }),
+  closeForConnection: (connectionId) =>
+    set((s) => {
+      const firstIdx = s.tabs.findIndex((t) => t.connectionId === connectionId);
+      if (firstIdx < 0) return s;
+      const tabs = s.tabs.filter((t) => t.connectionId !== connectionId);
+      const activeId = tabs.some((t) => t.id === s.activeId)
+        ? s.activeId
+        : (tabs[firstIdx] ?? tabs[tabs.length - 1])?.id ?? null;
       return { tabs, activeId };
     }),
   activate: (id) => set({ activeId: id }),

@@ -53,6 +53,8 @@ pub async fn delete_connection(state: State<'_, AppState>, id: String) -> AppRes
         st.connections.delete(&id)?;
         st.secrets.delete(&secret_key(&id, SASL_PASSWORD))?;
         st.pool.evict(&id);
+        // Живые browse-сессии удалённого подключения больше не нужны.
+        st.sessions.cancel_for(&id);
         Ok(())
     })
     .await

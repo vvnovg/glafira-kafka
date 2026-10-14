@@ -35,7 +35,7 @@ pub fn start_browse(
 ) -> AppResult<String> {
     let profile = state.profile(&params.connection_id)?;
     let secrets = state.secrets.clone();
-    let (id, cancel) = state.sessions.register();
+    let (id, cancel) = state.sessions.register(&params.connection_id);
     // Guard создаётся до spawn: при ошибке запуска замыкание дропается вместе с ним.
     let guard = RemoveOnDrop {
         sessions: state.sessions.clone(),

@@ -34,4 +34,24 @@ describe("workspace", () => {
     expect(tabId({ kind: "connection-form", connectionId: null })).toBe("connection-form:new");
     expect(tabId({ kind: "topic", connectionId: "c", topic: "x" })).toBe("topic:c:x");
   });
+
+  it("closeForConnection закрывает все вкладки подключения", () => {
+    const { open, activate, closeForConnection } = useWorkspace.getState();
+    open({ kind: "cluster", connectionId: "a" });
+    open({ kind: "topics", connectionId: "b" });
+    open({ kind: "topic", connectionId: "b", topic: "t" });
+    open({ kind: "connection-form", connectionId: "b" });
+    open({ kind: "cluster", connectionId: "c" });
+    activate("topic:b:t");
+    closeForConnection("b");
+    let s = useWorkspace.getState();
+    expect(s.tabs.map((t) => t.id)).toEqual(["cluster:a", "cluster:c"]);
+    expect(s.activeId).toBe("cluster:c");
+    activate("cluster:a");
+    closeForConnection("c");
+    s = useWorkspace.getState();
+    expect(s.activeId).toBe("cluster:a");
+    closeForConnection("a");
+    expect(useWorkspace.getState()).toMatchObject({ tabs: [], activeId: null });
+  });
 });

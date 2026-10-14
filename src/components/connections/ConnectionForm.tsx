@@ -21,6 +21,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const queryClient = useQueryClient();
   const open = useWorkspace((s) => s.open);
   const close = useWorkspace((s) => s.close);
+  const closeForConnection = useWorkspace((s) => s.closeForConnection);
   const isNew = initial.id === "";
   const sec = profile.security;
 
@@ -59,6 +60,9 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
       if (!window.confirm(`Удалить подключение «${profile.name}»?`)) return;
       await api.deleteConnection(profile.id);
       await queryClient.invalidateQueries({ queryKey: ["connections"] });
+      // Вкладки и кэш удалённого подключения больше не нужны (сессии чтения отменяет backend).
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[1] === profile.id });
+      closeForConnection(profile.id);
       close(tabId);
     });
 

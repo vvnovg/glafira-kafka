@@ -4,5 +4,5 @@ import type { ReactElement } from "react";
 
 export function renderWithClient(ui: ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return { ...render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>), client };
 }

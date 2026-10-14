@@ -12,6 +12,7 @@ Desktop-приложение (Tauri 2 + Rust + React) для интеракти�
 ```bash
 pnpm install
 docker compose -f dev/docker-compose.yml up -d   # локальная Kafka, см. «Локальный стенд»
+docker wait ke-kafka-init   # дождаться создания SCRAM-пользователя (печатает 0); нужно SCRAM-тестам
 pnpm tauri dev
 ```
 

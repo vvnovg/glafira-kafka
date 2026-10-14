@@ -50,11 +50,11 @@ pub async fn save_connection(
 pub async fn delete_connection(state: State<'_, AppState>, id: String) -> AppResult<()> {
     let st = state.inner().clone();
     blocking(move || {
+        // Живые browse-сессии удаляемого подключения больше не нужны — даже если удаление ниже упадёт.
+        st.sessions.cancel_for(&id);
         st.connections.delete(&id)?;
         st.secrets.delete(&secret_key(&id, SASL_PASSWORD))?;
         st.pool.evict(&id);
-        // Живые browse-сессии удалённого подключения больше не нужны.
-        st.sessions.cancel_for(&id);
         Ok(())
     })
     .await

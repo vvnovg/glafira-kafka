@@ -6,6 +6,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::{KafkaError, KafkaResult};
 use rdkafka::message::{BorrowedMessage, Headers, Message};
+use rdkafka::types::RDKafkaErrorCode;
 use rdkafka::{Offset, TopicPartitionList};
 use serde::Deserialize;
 
@@ -49,6 +50,22 @@ const BATCH_SIZE: usize = 200;
 const BATCH_INTERVAL: Duration = Duration::from_millis(100);
 const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
 const POLL_TIMEOUT: Duration = Duration::from_millis(100);
+/// Сколько librdkafka даём на самостоятельное восстановление соединения, прежде чем сессия считается failed.
+const RECOVERY_WINDOW: Duration = Duration::from_secs(60);
+const MAX_LAST_MINUTES: i64 = 5_256_000; // 10 лет
+
+/// Информационные ошибки клиента, из которых librdkafka восстанавливается сама (реконнект).
+fn is_transient(err: &KafkaError) -> bool {
+    matches!(
+        err,
+        KafkaError::MessageConsumption(
+            RDKafkaErrorCode::BrokerTransportFailure
+                | RDKafkaErrorCode::AllBrokersDown
+                | RDKafkaErrorCode::Resolve
+                | RDKafkaErrorCode::OperationTimedOut
+        )
+    )
+}
 
 pub fn validate(params: &BrowseParams) -> AppResult<()> {
     if params.topic.trim().is_empty() {
@@ -61,8 +78,11 @@ pub fn validate(params: &BrowseParams) -> AppResult<()> {
         StartPosition::Latest { count } if count <= 0 => {
             Err(AppError::invalid("Количество последних сообщений должно быть больше 0"))
         }
-        StartPosition::LastMinutes { minutes } if minutes <= 0 => {
-            Err(AppError::invalid("Количество минут должно быть больше 0"))
+        StartPosition::LastMinutes { minutes } if !(1..=MAX_LAST_MINUTES).contains(&minutes) => {
+            Err(AppError::invalid(format!("Количество минут должно быть от 1 до {MAX_LAST_MINUTES}")))
+        }
+        StartPosition::Timestamp { timestamp_ms } if timestamp_ms < 0 => {
+            Err(AppError::invalid("Метка времени не может быть отрицательной"))
         }
         _ => Ok(()),
     }
@@ -95,11 +115,12 @@ fn run_inner(
     let timeout = Duration::from_millis(profile.request_timeout_ms);
 
     let bounds = load_bounds(&consumer, params, timeout, &kerr)?;
-    let plans = resolve_plans(&consumer, params, &bounds, timeout).map_err(&kerr)?;
+    let plans = resolve_plans(&consumer, params, &bounds, timeout, &kerr)?;
     assign(&consumer, &params.topic, &plans, params.live).map_err(&kerr)?;
 
     let mut tracker = EndTracker::new(&plans);
     let mut out = Output::new(sink);
+    let mut degraded: Option<(Instant, KafkaError)> = None;
     let reason = loop {
         if cancel.load(Ordering::Relaxed) || out.closed {
             break FinishReason::Cancelled;
@@ -112,9 +133,25 @@ fn run_inner(
         }
         match consumer.poll(POLL_TIMEOUT) {
             None => {}
-            Some(Err(KafkaError::PartitionEOF(p))) => tracker.mark_done(p),
-            Some(Err(e)) => return Err(kerr(e)),
+            Some(Err(KafkaError::PartitionEOF(p))) => {
+                degraded = None;
+                tracker.mark_done(p);
+            }
+            Some(Err(e)) if is_transient(&e) => {
+                tracing::warn!("временная ошибка консьюмера, librdkafka переподключается: {e}");
+                let (since, _) = degraded.get_or_insert_with(|| (Instant::now(), e.clone()));
+                if since.elapsed() >= RECOVERY_WINDOW {
+                    let (_, first) = degraded.take().expect("degraded задан выше");
+                    out.flush();
+                    return Err(kerr(first));
+                }
+            }
+            Some(Err(e)) => {
+                out.flush();
+                return Err(kerr(e));
+            }
             Some(Ok(msg)) => {
+                degraded = None;
                 let in_snapshot = tracker.observe(msg.partition(), msg.offset());
                 if in_snapshot || params.live {
                     out.scanned += 1;
@@ -198,17 +235,18 @@ fn resolve_plans(
     params: &BrowseParams,
     bounds: &[PartitionBounds],
     timeout: Duration,
-) -> KafkaResult<Vec<PartitionPlan>> {
+    kerr: &impl Fn(KafkaError) -> AppError,
+) -> AppResult<Vec<PartitionPlan>> {
     Ok(match &params.start {
         StartPosition::Earliest => plan_earliest(bounds),
         StartPosition::Latest { count } => plan_latest(bounds, *count),
         StartPosition::Offset { offset } => plan_offset(bounds, *offset),
         StartPosition::Timestamp { timestamp_ms } => {
-            plan_from_offsets(bounds, &offsets_for_timestamp(consumer, &params.topic, bounds, *timestamp_ms, timeout)?)
+            plan_from_offsets(bounds, &offsets_for_timestamp(consumer, &params.topic, bounds, *timestamp_ms, timeout, kerr)?)
         }
         StartPosition::LastMinutes { minutes } => {
-            let ts = now_ms() - minutes * 60_000;
-            plan_from_offsets(bounds, &offsets_for_timestamp(consumer, &params.topic, bounds, ts, timeout)?)
+            let ts = now_ms() - *minutes * 60_000;
+            plan_from_offsets(bounds, &offsets_for_timestamp(consumer, &params.topic, bounds, ts, timeout, kerr)?)
         }
     })
 }
@@ -219,20 +257,29 @@ fn offsets_for_timestamp(
     bounds: &[PartitionBounds],
     ts: i64,
     timeout: Duration,
-) -> KafkaResult<HashMap<i32, i64>> {
+    kerr: &impl Fn(KafkaError) -> AppError,
+) -> AppResult<HashMap<i32, i64>> {
     let mut tpl = TopicPartitionList::new();
     for b in bounds {
-        tpl.add_partition_offset(topic, b.partition, Offset::Offset(ts))?;
+        tpl.add_partition_offset(topic, b.partition, Offset::Offset(ts)).map_err(kerr)?;
     }
-    let res = consumer.offsets_for_times(tpl, timeout)?;
-    Ok(res
-        .elements()
-        .iter()
-        .filter_map(|e| match e.offset() {
-            Offset::Offset(o) if o >= 0 => Some((e.partition(), o)),
-            _ => None,
-        })
-        .collect())
+    let res = consumer.offsets_for_times(tpl, timeout).map_err(kerr)?;
+    let mut found = HashMap::new();
+    for e in res.elements() {
+        let p = e.partition();
+        // Ошибка по партиции — не «нет сообщений новее метки»: молча читать с конца нельзя.
+        if let Err(err) = e.error() {
+            return Err(AppError::internal(format!("Не удалось найти оффсет по времени для партиции {p}"))
+                .with_details(err.to_string()));
+        }
+        // Успех с End/-1: сообщений новее метки нет → «с конца» (partition отсутствует в карте).
+        if let Offset::Offset(o) = e.offset() {
+            if o >= 0 {
+                found.insert(p, o);
+            }
+        }
+    }
+    Ok(found)
 }
 
 fn assign(consumer: &BaseConsumer<CapturingContext>, topic: &str, plans: &[PartitionPlan], live: bool) -> KafkaResult<()> {
@@ -354,9 +401,35 @@ mod tests {
         assert_eq!(validate(&params(StartPosition::Earliest, MAX_LIMIT + 1)).unwrap_err().code, ErrorCode::InvalidInput);
         assert_eq!(validate(&params(StartPosition::Latest { count: 0 }, 10)).unwrap_err().code, ErrorCode::InvalidInput);
         assert_eq!(validate(&params(StartPosition::LastMinutes { minutes: -1 }, 10)).unwrap_err().code, ErrorCode::InvalidInput);
+        assert_eq!(validate(&params(StartPosition::LastMinutes { minutes: 0 }, 10)).unwrap_err().code, ErrorCode::InvalidInput);
+        assert!(validate(&params(StartPosition::LastMinutes { minutes: 5_256_000 }, 10)).is_ok());
+        assert_eq!(
+            validate(&params(StartPosition::LastMinutes { minutes: 5_256_001 }, 10)).unwrap_err().code,
+            ErrorCode::InvalidInput
+        );
+        assert_eq!(
+            validate(&params(StartPosition::LastMinutes { minutes: i64::MAX }, 10)).unwrap_err().code,
+            ErrorCode::InvalidInput
+        );
+        assert!(validate(&params(StartPosition::Timestamp { timestamp_ms: 0 }, 10)).is_ok());
+        assert_eq!(
+            validate(&params(StartPosition::Timestamp { timestamp_ms: -1 }, 10)).unwrap_err().code,
+            ErrorCode::InvalidInput
+        );
         let mut p = params(StartPosition::Earliest, 10);
         p.topic = " ".into();
         assert_eq!(validate(&p).unwrap_err().code, ErrorCode::InvalidInput);
+    }
+
+    #[test]
+    fn transient_errors_are_classified() {
+        use rdkafka::types::RDKafkaErrorCode as C;
+        for c in [C::BrokerTransportFailure, C::AllBrokersDown, C::Resolve, C::OperationTimedOut] {
+            assert!(is_transient(&KafkaError::MessageConsumption(c)), "{c:?}");
+        }
+        assert!(!is_transient(&KafkaError::MessageConsumption(C::TopicAuthorizationFailed)));
+        assert!(!is_transient(&KafkaError::MessageConsumptionFatal(C::BrokerTransportFailure)));
+        assert!(!is_transient(&KafkaError::PartitionEOF(0)));
     }
 
     #[test]

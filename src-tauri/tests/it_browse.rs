@@ -13,6 +13,15 @@ use kafka_explorer_lib::browse::types::{BrowseEvent, BrowsedMessage, FinishReaso
 use kafka_explorer_lib::error::ErrorCode;
 use kafka_explorer_lib::secrets::MemoryStore;
 
+/// Снимает зависание тест-бинарника: при панике в ассертах выставляет cancel.
+struct CancelOnDrop(Arc<AtomicBool>);
+
+impl Drop for CancelOnDrop {
+    fn drop(&mut self) {
+        self.0.store(true, Ordering::Relaxed);
+    }
+}
+
 #[derive(Clone, Default)]
 struct VecSink(Arc<Mutex<Vec<BrowseEvent>>>);
 
@@ -138,7 +147,7 @@ async fn filters_by_json_and_header() {
 #[tokio::test(flavor = "multi_thread")]
 async fn missing_topic_reports_not_found() {
     let Some(bs) = common::bootstrap() else { return };
-    let sink = browse(&bs, params("does-not-exist-xyz", StartPosition::Earliest, 10, FilterSpec::default())).await;
+    let sink = browse(&bs, params(&common::unique_topic("it-missing"), StartPosition::Earliest, 10, FilterSpec::default())).await;
     match sink.last() {
         BrowseEvent::Error { error } => assert_eq!(error.code, ErrorCode::NotFound),
         other => panic!("ожидали Error, получили {other:?}"),
@@ -154,6 +163,7 @@ async fn live_tail_receives_new_messages_until_cancelled() {
 
     let sink = VecSink::default();
     let cancel = Arc::new(AtomicBool::new(false));
+    let _guard = CancelOnDrop(cancel.clone());
     let mut p = params(&topic, StartPosition::Latest { count: 1 }, 1000, FilterSpec::default());
     p.live = true;
     let (s, c, profile) = (sink.clone(), cancel.clone(), common::plaintext_profile(&bs));

@@ -16,7 +16,7 @@ use crate::browse::plan::{
     plan_earliest, plan_from_offsets, plan_latest, plan_offset, EndTracker, PartitionBounds, PartitionPlan, StartPosition,
 };
 use crate::browse::types::{BrowseEvent, BrowsedMessage, FinishReason, HeaderView};
-use crate::error::{from_kafka, AppError, AppResult};
+use crate::error::{from_kafka, AppError, AppResult, ErrorCode};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::metadata::convert;
@@ -52,6 +52,9 @@ const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
 const POLL_TIMEOUT: Duration = Duration::from_millis(100);
 /// Сколько librdkafka даём на самостоятельное восстановление соединения, прежде чем сессия считается failed.
 const RECOVERY_WINDOW: Duration = Duration::from_secs(60);
+/// Как часто во время «деградации» проверять брокер пробой метаданных.
+const PROBE_INTERVAL: Duration = Duration::from_secs(5);
+const PROBE_TIMEOUT: Duration = Duration::from_secs(2);
 const MAX_LAST_MINUTES: i64 = 5_256_000; // 10 лет
 
 /// Информационные ошибки клиента, из которых librdkafka восстанавливается сама (реконнект).
@@ -65,6 +68,51 @@ fn is_transient(err: &KafkaError) -> bool {
                 | RDKafkaErrorCode::OperationTimedOut
         )
     )
+}
+
+/// Состояние после временной ошибки: восстановление подтверждается успешной пробой метаданных
+/// или прогрессом чтения; без восстановления дольше RECOVERY_WINDOW — сессия завершается ошибкой.
+struct Degraded {
+    since: Instant,
+    last_probe: Instant,
+    error: KafkaError,
+}
+
+#[derive(Default)]
+struct RecoveryMonitor {
+    state: Option<Degraded>,
+}
+
+impl RecoveryMonitor {
+    fn on_transient(&mut self, now: Instant, err: KafkaError) {
+        match &mut self.state {
+            Some(d) => d.error = err,
+            None => self.state = Some(Degraded { since: now, last_probe: now, error: err }),
+        }
+    }
+
+    fn on_progress(&mut self) {
+        self.state = None;
+    }
+
+    fn should_probe(&self, now: Instant) -> bool {
+        self.state.as_ref().is_some_and(|d| now.saturating_duration_since(d.last_probe) >= PROBE_INTERVAL)
+    }
+
+    fn on_probe(&mut self, now: Instant, ok: bool) {
+        if ok {
+            self.state = None;
+        } else if let Some(d) = &mut self.state {
+            d.last_probe = now;
+        }
+    }
+
+    fn expired(&self, now: Instant) -> Option<&KafkaError> {
+        self.state
+            .as_ref()
+            .filter(|d| now.saturating_duration_since(d.since) >= RECOVERY_WINDOW)
+            .map(|d| &d.error)
+    }
 }
 
 pub fn validate(params: &BrowseParams) -> AppResult<()> {
@@ -120,7 +168,7 @@ fn run_inner(
 
     let mut tracker = EndTracker::new(&plans);
     let mut out = Output::new(sink);
-    let mut degraded: Option<(Instant, KafkaError)> = None;
+    let mut recovery = RecoveryMonitor::default();
     let reason = loop {
         if cancel.load(Ordering::Relaxed) || out.closed {
             break FinishReason::Cancelled;
@@ -131,27 +179,32 @@ fn run_inner(
         if !params.live && tracker.all_done() {
             break FinishReason::EndOfTopic;
         }
+        let now = Instant::now();
+        if let Some(e) = recovery.expired(now) {
+            let e = e.clone();
+            out.flush();
+            return Err(kerr(e));
+        }
+        if recovery.should_probe(now) {
+            let ok = consumer.fetch_metadata(Some(&params.topic), PROBE_TIMEOUT).is_ok();
+            recovery.on_probe(Instant::now(), ok);
+        }
         match consumer.poll(POLL_TIMEOUT) {
             None => {}
             Some(Err(KafkaError::PartitionEOF(p))) => {
-                degraded = None;
+                recovery.on_progress();
                 tracker.mark_done(p);
             }
             Some(Err(e)) if is_transient(&e) => {
                 tracing::warn!("временная ошибка консьюмера, librdkafka переподключается: {e}");
-                let (since, _) = degraded.get_or_insert_with(|| (Instant::now(), e.clone()));
-                if since.elapsed() >= RECOVERY_WINDOW {
-                    let (_, first) = degraded.take().expect("degraded задан выше");
-                    out.flush();
-                    return Err(kerr(first));
-                }
+                recovery.on_transient(Instant::now(), e);
             }
             Some(Err(e)) => {
                 out.flush();
                 return Err(kerr(e));
             }
             Some(Ok(msg)) => {
-                degraded = None;
+                recovery.on_progress();
                 let in_snapshot = tracker.observe(msg.partition(), msg.offset());
                 if in_snapshot || params.live {
                     out.scanned += 1;
@@ -222,7 +275,8 @@ fn load_bounds(
                     Some(Err(e)) => e.clone(),
                     _ => "нет ответа брокера".to_string(),
                 };
-                return Err(AppError::internal(format!("Не удалось получить оффсеты партиции {p}")).with_details(reason));
+                let code = crate::error::classify_message(&reason).unwrap_or(ErrorCode::Internal);
+                return Err(AppError::new(code, format!("Не удалось получить оффсеты партиции {p}")).with_details(reason));
             }
         }
     }
@@ -269,8 +323,9 @@ fn offsets_for_timestamp(
         let p = e.partition();
         // Ошибка по партиции — не «нет сообщений новее метки»: молча читать с конца нельзя.
         if let Err(err) = e.error() {
-            return Err(AppError::internal(format!("Не удалось найти оффсет по времени для партиции {p}"))
-                .with_details(err.to_string()));
+            let text = err.to_string();
+            let code = crate::error::classify_message(&text).unwrap_or(ErrorCode::Internal);
+            return Err(AppError::new(code, format!("Не удалось найти оффсет по времени для партиции {p}")).with_details(text));
         }
         // Успех с End/-1: сообщений новее метки нет → «с конца» (partition отсутствует в карте).
         if let Offset::Offset(o) = e.offset() {
@@ -378,7 +433,6 @@ impl<'a> Output<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::ErrorCode;
 
     fn params(start: StartPosition, limit: usize) -> BrowseParams {
         BrowseParams {
@@ -430,6 +484,82 @@ mod tests {
         assert!(!is_transient(&KafkaError::MessageConsumption(C::TopicAuthorizationFailed)));
         assert!(!is_transient(&KafkaError::MessageConsumptionFatal(C::BrokerTransportFailure)));
         assert!(!is_transient(&KafkaError::PartitionEOF(0)));
+    }
+
+    fn transient() -> KafkaError {
+        KafkaError::MessageConsumption(RDKafkaErrorCode::AllBrokersDown)
+    }
+
+    fn secs(n: u64) -> Duration {
+        Duration::from_secs(n)
+    }
+
+    #[test]
+    fn monitor_idle_when_not_degraded() {
+        let m = RecoveryMonitor::default();
+        let t = Instant::now();
+        assert!(!m.should_probe(t + secs(1000)));
+        assert!(m.expired(t + secs(1000)).is_none());
+    }
+
+    #[test]
+    fn monitor_keeps_original_since_on_repeated_transient() {
+        let t = Instant::now();
+        let mut m = RecoveryMonitor::default();
+        m.on_transient(t, transient());
+        m.on_transient(t + secs(30), KafkaError::MessageConsumption(RDKafkaErrorCode::Resolve));
+        assert!(m.expired(t + secs(59)).is_none());
+        let e = m.expired(t + secs(60)).expect("окно истекло от первой ошибки");
+        assert!(matches!(e, KafkaError::MessageConsumption(RDKafkaErrorCode::Resolve)), "хранится последняя ошибка");
+    }
+
+    #[test]
+    fn monitor_progress_clears() {
+        let t = Instant::now();
+        let mut m = RecoveryMonitor::default();
+        m.on_transient(t, transient());
+        m.on_progress();
+        assert!(m.expired(t + secs(100)).is_none());
+        assert!(!m.should_probe(t + secs(100)));
+    }
+
+    #[test]
+    fn monitor_successful_probe_clears_and_next_blip_starts_fresh_window() {
+        let t = Instant::now();
+        let mut m = RecoveryMonitor::default();
+        m.on_transient(t, transient());
+        m.on_probe(t + secs(5), true);
+        // тихий живой топик: сообщений нет, но восстановление подтверждено пробой
+        let later = t + secs(300);
+        m.on_transient(later, transient());
+        assert!(m.expired(later).is_none(), "новая ошибка не должна истекать сразу");
+        assert!(m.expired(later + secs(59)).is_none());
+        assert!(m.expired(later + secs(60)).is_some());
+    }
+
+    #[test]
+    fn monitor_failed_probes_until_window_expires() {
+        let t = Instant::now();
+        let mut m = RecoveryMonitor::default();
+        m.on_transient(t, transient());
+        for i in 1..12 {
+            let now = t + secs(5 * i);
+            assert!(m.expired(now).is_none());
+            m.on_probe(now, false);
+        }
+        assert!(m.expired(t + secs(60)).is_some());
+    }
+
+    #[test]
+    fn monitor_probe_respects_interval() {
+        let t = Instant::now();
+        let mut m = RecoveryMonitor::default();
+        m.on_transient(t, transient());
+        assert!(!m.should_probe(t + secs(4)));
+        assert!(m.should_probe(t + secs(5)));
+        m.on_probe(t + secs(5), false);
+        assert!(!m.should_probe(t + secs(9)));
+        assert!(m.should_probe(t + secs(10)));
     }
 
     #[test]

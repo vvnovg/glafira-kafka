@@ -1,3 +1,4 @@
+pub mod kafka;
 pub mod error;
 pub mod secrets;
 pub mod storage;

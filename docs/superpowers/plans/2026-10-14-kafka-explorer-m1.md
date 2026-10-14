@@ -1868,10 +1868,11 @@ git commit -m "feat(kafka): пошаговая проверка подключе
   - `fn summarize_topics(topics: Vec<TopicMeta>) -> Vec<TopicSummary>` (сортировка по имени)
   - `fn list_topics(h: &KafkaHandles) -> AppResult<Vec<TopicSummary>>`
   - `fn message_count(low: i64, high: i64) -> i64`
-  - `fn fetch_bounds(c: &BaseConsumer<CapturingContext>, parts: &[(String, i32)], timeout: Duration) -> KafkaResult<HashMap<(String, i32), (i64, i64)>>` — (low, high) по каждой партиции одним пакетом ListOffsets
-  - `struct TopicStats { name, message_count: i64 }`, `fn topic_stats(h, names: &[String]) -> AppResult<Vec<TopicStats>>`
-  - `struct PartitionDetails { id, leader, replicas, isr, low, high, message_count, under_replicated }`
-  - `struct TopicDetails { name, internal, replication_factor, message_count, partitions: Vec<PartitionDetails> }`, `fn topic_details(h, name: &str) -> AppResult<TopicDetails>`
+  - `type PartitionBoundsMap = HashMap<(String, i32), Result<(i64, i64), String>>`
+  - `fn fetch_bounds(c: &BaseConsumer<CapturingContext>, parts: &[(String, i32)], timeout: Duration) -> KafkaResult<PartitionBoundsMap>` — (low, high) по каждой партиции двумя пакетными ListOffsets; ошибка партиции (лидер недоступен, нет прав, нет ответа) возвращается как `Err(текст)` и **никогда не превращается в 0**
+  - `struct TopicStats { name, message_count: Option<i64> }` (`None` — для части партиций оффсеты недоступны), `fn topic_stats(h, names: &[String]) -> AppResult<Vec<TopicStats>>`
+  - `struct PartitionDetails { id, leader, replicas, isr, low: Option<i64>, high: Option<i64>, message_count: Option<i64>, offsets_error: Option<String>, under_replicated }`
+  - `struct TopicDetails { name, internal, replication_factor, message_count: i64 /* сумма по партициям с известными оффсетами */, partitions: Vec<PartitionDetails> }`, `fn topic_details(h, name: &str) -> AppResult<TopicDetails>`
 
 - [ ] **Step 1: Unit-тесты** (в конец `topics.rs`)
 
@@ -1912,6 +1913,16 @@ mod tests {
         assert_eq!(message_count(5, 5), 0);
         assert_eq!(message_count(9, 3), 0);
     }
+
+    #[test]
+    fn combine_never_turns_errors_into_zero() {
+        let ok = |v: i64| Ok::<i64, String>(v);
+        let err = |m: &str| Err::<i64, String>(m.to_string());
+        assert_eq!(combine(Some(&ok(3)), Some(&ok(9))), Ok((3, 9)));
+        assert_eq!(combine(Some(&ok(3)), Some(&err("leader not available"))), Err("leader not available".to_string()));
+        assert_eq!(combine(Some(&err("denied")), Some(&ok(9))), Err("denied".to_string()));
+        assert_eq!(combine(Some(&ok(3)), None), Err(NO_OFFSET.to_string()));
+    }
 }
 ```
 
@@ -1950,7 +1961,8 @@ pub struct TopicSummary {
 #[serde(rename_all = "camelCase")]
 pub struct TopicStats {
     pub name: String,
-    pub message_count: i64,
+    /// None — для части партиций оффсеты получить не удалось.
+    pub message_count: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -1960,9 +1972,11 @@ pub struct PartitionDetails {
     pub leader: i32,
     pub replicas: Vec<i32>,
     pub isr: Vec<i32>,
-    pub low: i64,
-    pub high: i64,
-    pub message_count: i64,
+    pub low: Option<i64>,
+    pub high: Option<i64>,
+    pub message_count: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offsets_error: Option<String>,
     pub under_replicated: bool,
 }
 
@@ -1972,6 +1986,7 @@ pub struct TopicDetails {
     pub name: String,
     pub internal: bool,
     pub replication_factor: usize,
+    /// Сумма по партициям с известными оффсетами.
     pub message_count: i64,
     pub partitions: Vec<PartitionDetails>,
 }
@@ -2002,26 +2017,33 @@ pub fn message_count(low: i64, high: i64) -> i64 {
     (high - low).max(0)
 }
 
+/// Результат ListOffsets по партиции: (low, high) или текст ошибки брокера.
+pub type PartitionBoundsMap = HashMap<(String, i32), Result<(i64, i64), String>>;
+
+const NO_OFFSET: &str = "Брокер не вернул оффсет партиции";
+
 /// (low, high) watermark по каждой партиции двумя пакетными ListOffsets-запросами
 /// (offsets_for_times со спецзначениями -2 = earliest, -1 = latest).
+/// Ошибка отдельной партиции возвращается как Err и никогда не превращается в «0 сообщений».
 pub fn fetch_bounds(
     c: &BaseConsumer<CapturingContext>,
     parts: &[(String, i32)],
     timeout: Duration,
-) -> KafkaResult<HashMap<(String, i32), (i64, i64)>> {
+) -> KafkaResult<PartitionBoundsMap> {
     if parts.is_empty() {
         return Ok(HashMap::new());
     }
     let low = list_offsets(c, parts, Offset::Beginning, timeout)?;
     let high = list_offsets(c, parts, Offset::End, timeout)?;
-    Ok(parts
-        .iter()
-        .map(|k| {
-            let l = low.get(k).copied().unwrap_or(0);
-            let h = high.get(k).copied().unwrap_or(l);
-            (k.clone(), (l, h))
-        })
-        .collect())
+    Ok(parts.iter().map(|k| (k.clone(), combine(low.get(k), high.get(k)))).collect())
+}
+
+fn combine(low: Option<&Result<i64, String>>, high: Option<&Result<i64, String>>) -> Result<(i64, i64), String> {
+    match (low, high) {
+        (Some(Ok(l)), Some(Ok(h))) => Ok((*l, *h)),
+        (Some(Err(e)), _) | (_, Some(Err(e))) => Err(e.clone()),
+        _ => Err(NO_OFFSET.to_string()),
+    }
 }
 
 fn list_offsets(
@@ -2029,7 +2051,7 @@ fn list_offsets(
     parts: &[(String, i32)],
     which: Offset,
     timeout: Duration,
-) -> KafkaResult<HashMap<(String, i32), i64>> {
+) -> KafkaResult<HashMap<(String, i32), Result<i64, String>>> {
     let mut tpl = TopicPartitionList::with_capacity(parts.len());
     for (t, p) in parts {
         tpl.add_partition_offset(t, *p, which)?;
@@ -2038,9 +2060,13 @@ fn list_offsets(
     Ok(res
         .elements()
         .iter()
-        .filter_map(|e| match e.offset() {
-            Offset::Offset(o) => Some(((e.topic().to_string(), e.partition()), o)),
-            _ => None,
+        .map(|e| {
+            let value = match (e.error(), e.offset()) {
+                (Err(err), _) => Err(err.to_string()),
+                (Ok(()), Offset::Offset(o)) => Ok(o),
+                (Ok(()), other) => Err(format!("Неожиданный оффсет {other:?}")),
+            };
+            ((e.topic().to_string(), e.partition()), value)
         })
         .collect())
 }
@@ -2055,9 +2081,14 @@ pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicSta
         .flat_map(|t| t.partitions.iter().map(move |p| (t.name.clone(), p.id)))
         .collect();
     let bounds = fetch_bounds(&h.consumer, &parts, h.timeout).map_err(|e| h.kafka_err(e))?;
-    let mut counts: HashMap<&str, i64> = HashMap::new();
-    for ((t, _), (l, hi)) in &bounds {
-        *counts.entry(t.as_str()).or_default() += message_count(*l, *hi);
+    // None, если хотя бы у одной партиции топика оффсеты недоступны.
+    let mut counts: HashMap<&str, Option<i64>> = HashMap::new();
+    for ((t, _), b) in &bounds {
+        let entry = counts.entry(t.as_str()).or_insert(Some(0));
+        *entry = match (*entry, b) {
+            (Some(sum), Ok((l, hi))) => Some(sum + message_count(*l, *hi)),
+            _ => None,
+        };
     }
     Ok(names
         .iter()
@@ -2078,7 +2109,11 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
         .partitions
         .iter()
         .map(|p| {
-            let (low, high) = bounds.get(&(t.name.clone(), p.id)).copied().unwrap_or((0, 0));
+            let b = bounds.get(&(t.name.clone(), p.id)).cloned().unwrap_or_else(|| Err(NO_OFFSET.to_string()));
+            let (low, high, offsets_error) = match b {
+                Ok((l, hi)) => (Some(l), Some(hi), None),
+                Err(e) => (None, None, Some(e)),
+            };
             PartitionDetails {
                 id: p.id,
                 leader: p.leader,
@@ -2086,7 +2121,8 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
                 isr: p.isr.clone(),
                 low,
                 high,
-                message_count: message_count(low, high),
+                message_count: low.zip(high).map(|(l, hi)| message_count(l, hi)),
+                offsets_error,
                 under_replicated: p.under_replicated(),
             }
         })
@@ -2095,7 +2131,7 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
     Ok(TopicDetails {
         internal: t.internal(),
         replication_factor: t.replication_factor(),
-        message_count: partitions.iter().map(|p| p.message_count).sum(),
+        message_count: partitions.iter().filter_map(|p| p.message_count).sum(),
         name: t.name,
         partitions,
     })
@@ -2147,9 +2183,10 @@ async fn list_stats_details_configs() {
     let summary = list.iter().find(|t| t.name == topic).expect("топик в списке");
     assert_eq!(summary.partition_count, 3);
     assert_eq!(stats.len(), 1);
-    assert_eq!(stats[0].message_count, 5);
+    assert_eq!(stats[0].message_count, Some(5));
     assert_eq!(details.partitions.len(), 3);
-    assert_eq!(details.partitions[0].high, 2); // сообщения 0 и 3
+    assert_eq!(details.partitions[0].high, Some(2)); // сообщения 0 и 3
+    assert!(details.partitions.iter().all(|p| p.offsets_error.is_none()));
     assert_eq!(details.message_count, 5);
     assert_eq!(missing.code, ErrorCode::NotFound);
 
@@ -2163,7 +2200,7 @@ async fn list_stats_details_configs() {
 
 Run: `KE_IT_BOOTSTRAP=localhost:9092 cargo test --manifest-path src-tauri/Cargo.toml --test it_topics`
 Expected: PASS.
-Если `stats[0].message_count` равен 0, значит, пакетный `offsets_for_times` со спецзначениями -1/-2 в вашей версии librdkafka не работает. Тогда перепишите `list_offsets` на поштучный `c.fetch_watermarks(topic, partition, timeout)`: он возвращает `(low, high)` для одной партиции. `fetch_bounds` при этом должен заполнять map из этих пар.
+Если `stats[0].message_count` равен `Some(0)` или `None`, значит, пакетный `offsets_for_times` со спецзначениями -1/-2 в вашей версии librdkafka не работает. Тогда перепишите `list_offsets` на поштучный `c.fetch_watermarks(topic, partition, timeout)`: он возвращает `(low, high)` для одной партиции. `fetch_bounds` при этом должен заполнять map из этих пар (ошибки — как `Err(текст)`).
 
 - [ ] **Step 7: Commit**
 
@@ -3280,13 +3317,19 @@ fn load_bounds(
     };
     let keys: Vec<(String, i32)> = selected.iter().map(|p| (params.topic.clone(), *p)).collect();
     let bounds = fetch_bounds(consumer, &keys, timeout).map_err(kerr)?;
-    let mut out: Vec<PartitionBounds> = selected
-        .iter()
-        .map(|p| {
-            let (low, high) = bounds.get(&(params.topic.clone(), *p)).copied().unwrap_or((0, 0));
-            PartitionBounds { partition: *p, low, high }
-        })
-        .collect();
+    let mut out = Vec::with_capacity(selected.len());
+    for p in &selected {
+        match bounds.get(&(params.topic.clone(), *p)) {
+            Some(Ok((low, high))) => out.push(PartitionBounds { partition: *p, low: *low, high: *high }),
+            other => {
+                let reason = match other {
+                    Some(Err(e)) => e.clone(),
+                    _ => "нет ответа брокера".to_string(),
+                };
+                return Err(AppError::internal(format!("Не удалось получить оффсеты партиции {p}")).with_details(reason));
+            }
+        }
+    }
     out.sort_by_key(|b| b.partition);
     Ok(out)
 }
@@ -4103,7 +4146,8 @@ export interface TopicSummary {
 
 export interface TopicStats {
   name: string;
-  messageCount: number;
+  /** null — для части партиций оффсеты недоступны */
+  messageCount: number | null;
 }
 
 export interface PartitionDetails {
@@ -4111,9 +4155,10 @@ export interface PartitionDetails {
   leader: number;
   replicas: number[];
   isr: number[];
-  low: number;
-  high: number;
-  messageCount: number;
+  low: number | null;
+  high: number | null;
+  messageCount: number | null;
+  offsetsError?: string;
   underReplicated: boolean;
 }
 
@@ -4352,7 +4397,7 @@ git commit -m "feat(ui): TS-типы и API-клиент поверх Tauri invo
   - `type TabSpec = { kind: "cluster"; connectionId } | { kind: "topics"; connectionId } | { kind: "topic"; connectionId; topic } | { kind: "connection-form"; connectionId: string | null }`, `type Tab = TabSpec & { id: string }`
   - `tabId(spec): string`, `useWorkspace` (Zustand) с `tabs`, `activeId`, `open(spec)`, `close(id)`, `activate(id)`
   - `ENV_COLORS: Record<Environment, string>`, `ENV_LABELS: Record<Environment, string>`
-  - `formatTimestamp(ms: number | null, utc?: boolean): string`, `formatBytes(n: number): string`, `formatCount(n?: number): string`
+  - `formatTimestamp(ms: number | null, utc?: boolean): string`, `formatBytes(n: number): string`, `formatCount(n?: number | null): string` (undefined → «…», null → «—»)
   - `<ErrorBanner error={unknown} onRetry?={() => void} />`
   - `<TabContent tab={Tab} />` — роутер по `tab.kind`; в этом таске заглушки, в Tasks 16–20 их заменяют реальные компоненты
 
@@ -4400,7 +4445,7 @@ describe("workspace", () => {
 `src/lib/format.test.ts`:
 ```ts
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatTimestamp } from "./format";
+import { formatBytes, formatCount, formatTimestamp } from "./format";
 
 describe("format", () => {
   it("timestamp в UTC с миллисекундами", () => {
@@ -4412,6 +4457,11 @@ describe("format", () => {
     expect(formatBytes(512)).toBe("512 B");
     expect(formatBytes(2048)).toBe("2.0 KB");
     expect(formatBytes(3 * 1024 * 1024)).toBe("3.0 MB");
+  });
+
+  it("count: загрузка и недоступно", () => {
+    expect(formatCount(undefined)).toBe("…");
+    expect(formatCount(null)).toBe("—");
   });
 });
 ```
@@ -4516,15 +4566,18 @@ export function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function formatCount(n?: number): string {
-  return n === undefined ? "…" : n.toLocaleString("ru-RU");
+/** undefined — ещё загружается, null — недоступно. */
+export function formatCount(n?: number | null): string {
+  if (n === undefined) return "…";
+  if (n === null) return "—";
+  return n.toLocaleString("ru-RU");
 }
 ```
 
 - [ ] **Step 4: Тесты проходят**
 
 Run: `pnpm vitest run src/state src/lib`
-Expected: PASS, 5 тестов.
+Expected: PASS, 6 тестов.
 
 - [ ] **Step 5: Компоненты раскладки**
 
@@ -5667,7 +5720,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
       };
     }),
   });
-  const counts = new Map<string, number>();
+  const counts = new Map<string, number | null>();
   for (const r of statsResults) for (const s of r.data ?? []) counts.set(s.name, s.messageCount);
 
   if (q.isPending) return <p className="empty">Загрузка списка топиков…</p>;
@@ -5882,9 +5935,11 @@ function PartitionsTable({ topic }: { topic: TopicDetailsDto }) {
             <td className={p.leader < 0 ? "warn" : ""}>{p.leader < 0 ? "нет" : p.leader}</td>
             <td>{p.replicas.join(", ")}</td>
             <td className={p.underReplicated ? "warn" : ""}>{p.isr.join(", ")}</td>
-            <td>{p.low}</td>
-            <td>{p.high}</td>
-            <td>{formatCount(p.messageCount)}</td>
+            <td>{p.low ?? "—"}</td>
+            <td>{p.high ?? "—"}</td>
+            <td className={p.offsetsError ? "warn" : ""} title={p.offsetsError}>
+              {formatCount(p.messageCount)}
+            </td>
           </tr>
         ))}
       </tbody>

@@ -20,6 +20,7 @@ use crate::browse::types::{BrowseEvent, BrowsedMessage, FinishReason, HeaderView
 use crate::error::{AppError, AppResult, ErrorCode, from_kafka};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
+use crate::kafka::errors::op_error;
 use crate::kafka::metadata::convert;
 use crate::kafka::topics::fetch_bounds;
 use crate::secrets::SecretStore;
@@ -116,11 +117,12 @@ impl RecoveryMonitor {
         }
     }
 
-    fn expired(&self, now: Instant) -> Option<&KafkaError> {
+    /// Окно восстановления истекло: (начало деградации, последняя ошибка).
+    fn expired(&self, now: Instant) -> Option<(Instant, &KafkaError)> {
         self.state
             .as_ref()
             .filter(|d| now.saturating_duration_since(d.since) >= RECOVERY_WINDOW)
-            .map(|d| &d.error)
+            .map(|d| (d.since, &d.error))
     }
 }
 
@@ -172,12 +174,16 @@ fn run_inner(
     let filter = CompiledFilter::compile(&params.filter)?;
     let ctx = CapturingContext::default();
     let consumer = create_consumer(profile, secrets, &ctx)?;
-    let kerr = |e: KafkaError| from_kafka(&e, ctx.last_error().as_deref());
+    // Ошибка операции, начатой в `started`: консьюмер опрашивается, чтобы получить причину (TLS/SASL).
+    let kerr = |started: Instant| {
+        let consumer = &consumer;
+        move |e: KafkaError| op_error(consumer, started, e)
+    };
     let timeout = Duration::from_millis(profile.request_timeout_ms);
 
-    let bounds = load_bounds(&consumer, params, timeout, &kerr)?;
-    let plans = resolve_plans(&consumer, params, &bounds, timeout, &kerr)?;
-    assign(&consumer, &params.topic, &plans, params.live).map_err(kerr)?;
+    let bounds = load_bounds(&consumer, params, timeout, &kerr(Instant::now()))?;
+    let plans = resolve_plans(&consumer, params, &bounds, timeout, &kerr(Instant::now()))?;
+    assign(&consumer, &params.topic, &plans, params.live).map_err(kerr(Instant::now()))?;
 
     let mut tracker = EndTracker::new(&plans);
     let mut out = Output::new(sink);
@@ -193,10 +199,10 @@ fn run_inner(
             break FinishReason::EndOfTopic;
         }
         let now = Instant::now();
-        if let Some(e) = recovery.expired(now) {
+        if let Some((since, e)) = recovery.expired(now) {
             let e = e.clone();
             out.flush();
-            return Err(kerr(e));
+            return Err(kerr(since)(e));
         }
         if recovery.should_probe(now) {
             let ok = consumer
@@ -204,6 +210,7 @@ fn run_inner(
                 .is_ok();
             recovery.on_probe(Instant::now(), ok);
         }
+        let polled_at = Instant::now();
         match consumer.poll(POLL_TIMEOUT) {
             None => {}
             Some(Err(KafkaError::PartitionEOF(p))) => {
@@ -216,7 +223,7 @@ fn run_inner(
             }
             Some(Err(e)) => {
                 out.flush();
-                return Err(kerr(e));
+                return Err(kerr(polled_at)(e));
             }
             Some(Ok(msg)) => {
                 recovery.on_progress();
@@ -640,9 +647,10 @@ mod tests {
             KafkaError::MessageConsumption(RDKafkaErrorCode::Resolve),
         );
         assert!(m.expired(t + secs(59)).is_none());
-        let e = m
+        let (since, e) = m
             .expired(t + secs(60))
             .expect("окно истекло от первой ошибки");
+        assert_eq!(since, t);
         assert!(
             matches!(e, KafkaError::MessageConsumption(RDKafkaErrorCode::Resolve)),
             "хранится последняя ошибка"

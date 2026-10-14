@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaResult;
@@ -71,10 +71,11 @@ pub fn summarize_topics(topics: Vec<TopicMeta>) -> Vec<TopicSummary> {
 }
 
 pub fn list_topics(h: &KafkaHandles) -> AppResult<Vec<TopicSummary>> {
+    let started = Instant::now();
     let md = h
         .consumer
         .fetch_metadata(None, h.timeout)
-        .map_err(|e| h.kafka_err(e))?;
+        .map_err(|e| h.kafka_err(started, e))?;
     Ok(summarize_topics(convert(&md).1))
 }
 
@@ -145,10 +146,11 @@ fn list_offsets(
 }
 
 pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicStats>> {
+    let started = Instant::now();
     let md = h
         .consumer
         .fetch_metadata(None, h.timeout)
-        .map_err(|e| h.kafka_err(e))?;
+        .map_err(|e| h.kafka_err(started, e))?;
     let (_, topics) = convert(&md);
     let wanted: HashSet<&str> = names.iter().map(String::as_str).collect();
     let parts: Vec<(String, i32)> = topics
@@ -156,7 +158,10 @@ pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicSta
         .filter(|t| wanted.contains(t.name.as_str()))
         .flat_map(|t| t.partitions.iter().map(move |p| (t.name.clone(), p.id)))
         .collect();
-    let bounds = fetch_bounds(&h.consumer, &parts, h.timeout).map_err(|e| h.kafka_err(e))?;
+    let bounds = {
+        let started = Instant::now();
+        fetch_bounds(&h.consumer, &parts, h.timeout).map_err(|e| h.kafka_err(started, e))?
+    };
     // None, если хотя бы у одной партиции топика оффсеты недоступны.
     let mut counts: HashMap<&str, Option<i64>> = HashMap::new();
     for ((t, _), b) in &bounds {
@@ -178,10 +183,11 @@ pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicSta
 }
 
 pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
+    let started = Instant::now();
     let md = h
         .consumer
         .fetch_metadata(Some(name), h.timeout)
-        .map_err(|e| h.kafka_err(e))?;
+        .map_err(|e| h.kafka_err(started, e))?;
     let (_, topics) = convert(&md);
     let t = topics
         .into_iter()
@@ -192,7 +198,10 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
         .iter()
         .map(|p| (t.name.clone(), p.id))
         .collect();
-    let bounds = fetch_bounds(&h.consumer, &keys, h.timeout).map_err(|e| h.kafka_err(e))?;
+    let bounds = {
+        let started = Instant::now();
+        fetch_bounds(&h.consumer, &keys, h.timeout).map_err(|e| h.kafka_err(started, e))?
+    };
     let mut partitions: Vec<PartitionDetails> = t
         .partitions
         .iter()

@@ -64,3 +64,28 @@ fn sasl_plain_wrong_password_is_auth_failed() {
         "{step:?}"
     );
 }
+
+/// Пулы и операции вне Test connection тоже должны показывать причину (SASL), а не «таймаут».
+#[tokio::test(flavor = "multi_thread")]
+async fn pooled_handles_wrong_password_is_auth_failed() {
+    let Some(bs) = common::sasl_bootstrap() else {
+        return;
+    };
+    let mut p = sasl_profile(&bs);
+    p.request_timeout_ms = 3_000;
+    let secrets = MemoryStore::default();
+    secrets
+        .set(&secret_key(&p.id, SASL_PASSWORD), "wrong")
+        .unwrap();
+    let h = std::sync::Arc::new(
+        kafka_explorer_lib::kafka::pool::KafkaHandles::create(&p, &secrets).unwrap(),
+    );
+    let h1 = h.clone();
+    let err = tokio::task::spawn_blocking(move || {
+        kafka_explorer_lib::kafka::cluster::cluster_overview(&h1)
+    })
+    .await
+    .unwrap()
+    .unwrap_err();
+    assert_eq!(err.code, ErrorCode::AuthFailed, "{err:?}");
+}

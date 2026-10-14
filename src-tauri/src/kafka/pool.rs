@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use rdkafka::admin::AdminClient;
 use rdkafka::consumer::BaseConsumer;
@@ -9,6 +9,7 @@ use rdkafka::error::KafkaError;
 use crate::error::{AppError, AppResult, from_kafka};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
+use crate::kafka::errors::op_error;
 use crate::secrets::SecretStore;
 use crate::storage::connections::ConnectionProfile;
 
@@ -44,8 +45,10 @@ impl KafkaHandles {
         })
     }
 
-    pub fn kafka_err(&self, e: KafkaError) -> AppError {
-        from_kafka(&e, self.ctx.last_error().as_deref())
+    /// Ошибка операции, начатой в `started`: опрашивает pooled-консьюмер, чтобы получить
+    /// причину (TLS/SASL). Блокирует до ~1.5 с — вызывать только из blocking-контекста.
+    pub fn kafka_err(&self, started: Instant, e: KafkaError) -> AppError {
+        op_error(&self.consumer, started, e)
     }
 }
 

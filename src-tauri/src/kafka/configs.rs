@@ -2,8 +2,21 @@ use rdkafka::admin::{AdminOptions, ResourceSpecifier};
 use rdkafka::error::KafkaError;
 use serde::Serialize;
 
+use std::sync::Arc;
+use std::time::Instant;
+
 use crate::error::{AppError, AppResult};
 use crate::kafka::pool::KafkaHandles;
+
+/// Колбэки ошибок admin-клиента в rust-rdkafka не доставляются, поэтому причину (TLS/SASL)
+/// берём у pooled-консьюмера того же подключения; его опрос блокирующий — уводим с async-потока.
+async fn admin_error(h: &Arc<KafkaHandles>, started: Instant, e: KafkaError) -> AppError {
+    let h = h.clone();
+    let fallback = e.clone();
+    tauri::async_runtime::spawn_blocking(move || h.kafka_err(started, e))
+        .await
+        .unwrap_or_else(|_| crate::error::from_kafka(&fallback, None))
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,19 +31,22 @@ pub struct ConfigEntryDto {
 }
 
 pub async fn describe_configs(
-    h: &KafkaHandles,
+    h: &Arc<KafkaHandles>,
     spec: ResourceSpecifier<'_>,
 ) -> AppResult<Vec<ConfigEntryDto>> {
+    let started = Instant::now();
     let opts = AdminOptions::new().request_timeout(Some(h.timeout));
-    let mut results = h
-        .admin
-        .describe_configs(&[spec], &opts)
-        .await
-        .map_err(|e| h.kafka_err(e))?;
-    let resource = results
-        .pop()
-        .ok_or_else(|| AppError::internal("Пустой ответ DescribeConfigs"))?
-        .map_err(|code| h.kafka_err(KafkaError::AdminOp(code)))?;
+    let resource = match h.admin.describe_configs(&[spec], &opts).await {
+        Ok(mut results) => results
+            .pop()
+            .ok_or_else(|| AppError::internal("Пустой ответ DescribeConfigs"))?
+            .map_err(KafkaError::AdminOp),
+        Err(e) => Err(e),
+    };
+    let resource = match resource {
+        Ok(r) => r,
+        Err(e) => return Err(admin_error(h, started, e).await),
+    };
     let mut entries: Vec<ConfigEntryDto> = resource
         .entries
         .into_iter()

@@ -1,5 +1,5 @@
 use std::net::{TcpStream, ToSocketAddrs};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use rdkafka::consumer::Consumer;
 use serde::Serialize;
@@ -52,6 +52,7 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
         Ok(h) => h,
         Err(e) => return failed(steps, "kafka", e),
     };
+    let started = Instant::now();
     match handles.consumer.fetch_metadata(None, KAFKA_TIMEOUT) {
         Ok(md) => steps.push(passed(
             "kafka",
@@ -61,11 +62,7 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
                 md.topics().len()
             ),
         )),
-        Err(e) => {
-            // Колбэк ошибок клиента вызывается только из poll: даём librdkafka доставить причину (SASL/TLS).
-            let _ = handles.consumer.poll(Duration::from_millis(1500));
-            return failed(steps, "kafka", handles.kafka_err(e));
-        }
+        Err(e) => return failed(steps, "kafka", handles.kafka_err(started, e)),
     }
 
     TestReport { ok: true, steps }

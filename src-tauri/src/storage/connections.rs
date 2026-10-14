@@ -115,11 +115,10 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
         return Err(AppError::invalid("Имя подключения не может быть пустым"));
     }
     parse_bootstrap(&p.bootstrap_servers)?;
-    if let SecurityConfig::SaslPlaintext { sasl } | SecurityConfig::SaslSsl { sasl, .. } = &p.security {
-        if sasl.username.trim().is_empty() {
+    if let SecurityConfig::SaslPlaintext { sasl } | SecurityConfig::SaslSsl { sasl, .. } = &p.security
+        && sasl.username.trim().is_empty() {
             return Err(AppError::invalid("Укажите имя пользователя SASL"));
         }
-    }
     if p.request_timeout_ms < 1_000 {
         return Err(AppError::invalid("Таймаут запроса должен быть не меньше 1000 мс"));
     }

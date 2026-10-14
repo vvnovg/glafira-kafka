@@ -164,7 +164,7 @@ fn run_inner(
 
     let bounds = load_bounds(&consumer, params, timeout, &kerr)?;
     let plans = resolve_plans(&consumer, params, &bounds, timeout, &kerr)?;
-    assign(&consumer, &params.topic, &plans, params.live).map_err(&kerr)?;
+    assign(&consumer, &params.topic, &plans, params.live).map_err(kerr)?;
 
     let mut tracker = EndTracker::new(&plans);
     let mut out = Output::new(sink);
@@ -328,11 +328,10 @@ fn offsets_for_timestamp(
             return Err(AppError::new(code, format!("Не удалось найти оффсет по времени для партиции {p}")).with_details(text));
         }
         // Успех с End/-1: сообщений новее метки нет → «с конца» (partition отсутствует в карте).
-        if let Offset::Offset(o) = e.offset() {
-            if o >= 0 {
+        if let Offset::Offset(o) = e.offset()
+            && o >= 0 {
                 found.insert(p, o);
             }
-        }
     }
     Ok(found)
 }

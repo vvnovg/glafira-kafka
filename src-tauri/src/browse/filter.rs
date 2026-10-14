@@ -105,11 +105,10 @@ impl JsonCondition {
     fn parse(s: &str) -> AppResult<Self> {
         let s = s.trim();
         for (op_str, op) in [("!=", CmpOp::Ne), ("==", CmpOp::Eq)] {
-            if let Some((left, right)) = s.rsplit_once(op_str) {
-                if let Ok(path) = JsonPath::parse(left.trim()) {
+            if let Some((left, right)) = s.rsplit_once(op_str)
+                && let Ok(path) = JsonPath::parse(left.trim()) {
                     return Ok(Self { path, cmp: Some((op, parse_literal(right))) });
                 }
-            }
         }
         let path = JsonPath::parse(s).map_err(|e| AppError::invalid(format!("Некорректный JSONPath «{s}»: {e}")))?;
         Ok(Self { path, cmp: None })
@@ -119,7 +118,7 @@ impl JsonCondition {
         let nodes = self.path.query(doc).all();
         match &self.cmp {
             None => !nodes.is_empty(),
-            Some((CmpOp::Eq, lit)) => nodes.iter().any(|n| *n == lit),
+            Some((CmpOp::Eq, lit)) => nodes.contains(&lit),
             Some((CmpOp::Ne, lit)) => !nodes.is_empty() && nodes.iter().all(|n| *n != lit),
         }
     }
@@ -173,16 +172,14 @@ impl CompiledFilter {
                 return false;
             }
         }
-        if let Some(k) = &self.key {
-            if !m.key.is_some_and(|t| k.is_match(t)) {
+        if let Some(k) = &self.key
+            && !m.key.is_some_and(|t| k.is_match(t)) {
                 return false;
             }
-        }
-        if let Some(v) = &self.value {
-            if !m.value.is_some_and(|t| v.is_match(t)) {
+        if let Some(v) = &self.value
+            && !m.value.is_some_and(|t| v.is_match(t)) {
                 return false;
             }
-        }
         if let Some((name, vm)) = &self.header {
             let found = m.headers.iter().any(|h| {
                 h.name == *name

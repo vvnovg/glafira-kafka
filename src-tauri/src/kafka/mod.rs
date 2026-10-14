@@ -5,3 +5,4 @@ pub mod connectivity;
 pub mod context;
 pub mod metadata;
 pub mod pool;
+pub mod topics;

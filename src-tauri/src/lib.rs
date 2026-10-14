@@ -1,3 +1,4 @@
+pub mod browse;
 pub mod kafka;
 pub mod error;
 pub mod secrets;

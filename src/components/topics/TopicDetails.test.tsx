@@ -59,3 +59,15 @@ describe("TopicDetails: недоступные оффсеты", () => {
     expect(cell).toHaveTextContent("—");
   });
 });
+
+describe("TopicDetails: вкладка сообщений", () => {
+  it("сохраняет состояние формы при переключении вкладок", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<TopicDetails connectionId="c3" topic="orders" />);
+    const input = await screen.findByPlaceholderText("значение содержит");
+    await user.type(input, "FAILED");
+    await user.click(screen.getByRole("button", { name: "Партиции" }));
+    await user.click(screen.getByRole("button", { name: "Сообщения" }));
+    expect(screen.getByPlaceholderText("значение содержит")).toHaveValue("FAILED");
+  });
+});

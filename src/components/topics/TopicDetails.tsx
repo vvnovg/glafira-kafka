@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
 import { formatCount } from "../../lib/format";
+import { BrowsePanel } from "../browse/BrowsePanel";
 import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
 
@@ -18,11 +19,12 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
   const q = useQuery({ queryKey: ["topic", connectionId, topic], queryFn: () => api.getTopic(connectionId, topic) });
 
   if (q.isPending) return <p className="empty">Загрузка…</p>;
-  if (q.error) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
+  if (q.error && !q.data) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
   const t = q.data;
 
   return (
     <div className="page">
+      {q.error && <ErrorBanner error={q.error} onRetry={() => q.refetch()} />}
       <div className="toolbar">
         <h2>{t.name}</h2>
         <span className="muted">
@@ -34,14 +36,14 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
       </div>
       <div className="subtabs">
         {SUBTABS.map((s) => (
-          <button key={s.id} type="button" className={sub === s.id ? "active" : ""} onClick={() => setSub(s.id)}>
+          <button key={s.id} type="button" className={sub === s.id ? "active" : ""} aria-pressed={sub === s.id} onClick={() => setSub(s.id)}>
             {s.label}
           </button>
         ))}
       </div>
       {/* Сообщения не размонтируем при переключении, чтобы не терять результаты browse. */}
-      <div hidden={sub !== "messages"} style={{ flex: 1, display: sub === "messages" ? "flex" : "none", flexDirection: "column" }}>
-        <p className="empty">Просмотр сообщений</p>
+      <div style={{ flex: 1, display: sub === "messages" ? "flex" : "none", flexDirection: "column" }}>
+        <BrowsePanel connectionId={connectionId} topic={topic} />
       </div>
       {sub === "partitions" && <PartitionsTable topic={t} />}
       {sub === "configs" && <TopicConfigs connectionId={connectionId} topic={topic} />}

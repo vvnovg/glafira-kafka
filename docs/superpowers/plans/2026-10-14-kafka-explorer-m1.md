@@ -5673,6 +5673,7 @@ import { useMemo, useRef, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { api } from "../../api/client";
+import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -5765,7 +5766,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 key={t.name}
                 className="row clickable topic-row"
                 style={{ top: item.start, height: ROW_HEIGHT }}
-                onClick={() => open({ kind: "topic", connectionId, topic: t.name })}
+                {...activateProps(() => open({ kind: "topic", connectionId, topic: t.name }))}
               >
                 <span title={t.name}>
                   {t.name}
@@ -6477,6 +6478,7 @@ export function BrowseForm({ form, onChange }: Props) {
 import { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { BrowsedMessage } from "../../api/types";
+import { activateProps } from "../../lib/activate";
 import { formatBytes, formatTimestamp } from "../../lib/format";
 import { previewText } from "./params";
 
@@ -6519,7 +6521,8 @@ export function MessageTable({ messages, selectedKey, onSelect, utc }: Props) {
               key={key}
               className={`row clickable msg-row${key === selectedKey ? " selected" : ""}`}
               style={{ top: item.start, height: ROW_HEIGHT }}
-              onClick={() => onSelect(m)}
+              aria-selected={key === selectedKey}
+              {...activateProps(() => onSelect(m))}
             >
               <span>{m.partition}</span>
               <span>{m.offset}</span>

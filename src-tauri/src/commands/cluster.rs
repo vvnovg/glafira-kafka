@@ -1,10 +1,10 @@
 use rdkafka::admin::ResourceSpecifier;
 use tauri::State;
 
-use super::blocking;
+use super::{blocking, pooled_configs};
 use crate::error::AppResult;
 use crate::kafka::cluster::{self, ClusterOverview};
-use crate::kafka::configs::{ConfigEntryDto, describe_configs};
+use crate::kafka::configs::ConfigEntryDto;
 use crate::state::AppState;
 
 #[tauri::command]
@@ -13,11 +13,7 @@ pub async fn get_cluster_overview(
     connection_id: String,
 ) -> AppResult<ClusterOverview> {
     let st = state.inner().clone();
-    blocking(move || {
-        let h = st.handles(&connection_id)?;
-        cluster::cluster_overview(&h)
-    })
-    .await
+    blocking(move || st.with_handles(&connection_id, cluster::cluster_overview)).await
 }
 
 #[tauri::command]
@@ -26,7 +22,10 @@ pub async fn get_broker_config(
     connection_id: String,
     broker_id: i32,
 ) -> AppResult<Vec<ConfigEntryDto>> {
-    let st = state.inner().clone();
-    let h = blocking(move || st.handles(&connection_id)).await?;
-    describe_configs(&h, ResourceSpecifier::Broker(broker_id)).await
+    pooled_configs(
+        state.inner(),
+        connection_id,
+        ResourceSpecifier::Broker(broker_id),
+    )
+    .await
 }

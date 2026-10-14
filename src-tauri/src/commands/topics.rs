@@ -1,9 +1,9 @@
 use rdkafka::admin::ResourceSpecifier;
 use tauri::State;
 
-use super::blocking;
+use super::{blocking, pooled_configs};
 use crate::error::AppResult;
-use crate::kafka::configs::{ConfigEntryDto, describe_configs};
+use crate::kafka::configs::ConfigEntryDto;
 use crate::kafka::topics::{self, TopicDetails, TopicStats, TopicSummary};
 use crate::state::AppState;
 
@@ -13,11 +13,7 @@ pub async fn list_topics(
     connection_id: String,
 ) -> AppResult<Vec<TopicSummary>> {
     let st = state.inner().clone();
-    blocking(move || {
-        let h = st.handles(&connection_id)?;
-        topics::list_topics(&h)
-    })
-    .await
+    blocking(move || st.with_handles(&connection_id, topics::list_topics)).await
 }
 
 #[tauri::command]
@@ -27,11 +23,7 @@ pub async fn get_topic_stats(
     topics: Vec<String>,
 ) -> AppResult<Vec<TopicStats>> {
     let st = state.inner().clone();
-    blocking(move || {
-        let h = st.handles(&connection_id)?;
-        topics::topic_stats(&h, &topics)
-    })
-    .await
+    blocking(move || st.with_handles(&connection_id, |h| topics::topic_stats(h, &topics))).await
 }
 
 #[tauri::command]
@@ -41,11 +33,7 @@ pub async fn get_topic(
     topic: String,
 ) -> AppResult<TopicDetails> {
     let st = state.inner().clone();
-    blocking(move || {
-        let h = st.handles(&connection_id)?;
-        topics::topic_details(&h, &topic)
-    })
-    .await
+    blocking(move || st.with_handles(&connection_id, |h| topics::topic_details(h, &topic))).await
 }
 
 #[tauri::command]
@@ -54,7 +42,10 @@ pub async fn get_topic_configs(
     connection_id: String,
     topic: String,
 ) -> AppResult<Vec<ConfigEntryDto>> {
-    let st = state.inner().clone();
-    let h = blocking(move || st.handles(&connection_id)).await?;
-    describe_configs(&h, ResourceSpecifier::Topic(&topic)).await
+    pooled_configs(
+        state.inner(),
+        connection_id,
+        ResourceSpecifier::Topic(&topic),
+    )
+    .await
 }

@@ -211,3 +211,30 @@ async fn pooled_describe_configs_wrong_password_is_auth_failed() {
     }
     assert_eq!(codes, vec![ErrorCode::AuthFailed; 3]);
 }
+/// Через AppState: ошибка аутентификации вытесняет handles из пула, следующий вызов
+/// получает свежий клиент и снова AUTH_FAILED.
+#[test]
+fn app_state_evicts_handles_on_auth_failure() {
+    let Some(bs) = common::sasl_bootstrap() else {
+        return;
+    };
+    let (p, secrets) = wrong_password_profile(&bs);
+    let dir = tempfile::tempdir().unwrap();
+    let state =
+        kafka_explorer_lib::state::AppState::new(dir.path(), std::sync::Arc::new(secrets)).unwrap();
+    state.connections.upsert(p.clone()).unwrap();
+    let first_handles = state.handles(&p.id).unwrap();
+    let first = state
+        .with_handles(&p.id, kafka_explorer_lib::kafka::cluster::cluster_overview)
+        .unwrap_err();
+    assert_eq!(first.code, ErrorCode::AuthFailed, "{first:?}");
+    let fresh = state.handles(&p.id).unwrap();
+    assert!(
+        !std::sync::Arc::ptr_eq(&first_handles, &fresh),
+        "handles вытеснены из пула"
+    );
+    let second = state
+        .with_handles(&p.id, kafka_explorer_lib::kafka::cluster::cluster_overview)
+        .unwrap_err();
+    assert_eq!(second.code, ErrorCode::AuthFailed, "{second:?}");
+}

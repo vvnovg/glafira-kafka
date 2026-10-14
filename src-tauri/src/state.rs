@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::browse::registry::SessionRegistry;
-use crate::error::AppResult;
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::pool::{ClientPool, KafkaHandles};
 use crate::secrets::SecretStore;
 use crate::storage::connections::{ConnectionProfile, ConnectionStore};
@@ -33,12 +33,40 @@ impl AppState {
         let profile = self.connections.get(id)?;
         self.pool.get(&profile, self.secrets.as_ref())
     }
+
+    /// Выполняет операцию на pooled-handles подключения. При AUTH_FAILED/TLS_ERROR handles
+    /// вытесняются из пула: librdkafka подавляет повтор одинаковой ошибки 30 с, а свежий клиент
+    /// снова сообщит причину (и подхватит исправленные учётные данные).
+    /// Блокирующий вызов — только из blocking-контекста.
+    pub fn with_handles<T>(
+        &self,
+        id: &str,
+        op: impl FnOnce(&KafkaHandles) -> AppResult<T>,
+    ) -> AppResult<T> {
+        let h = self.handles(id)?;
+        let r = op(&h);
+        if let Err(e) = &r {
+            self.evict_if_client_broken(id, e);
+        }
+        // Последняя ссылка на вытесненные handles освобождается здесь, вне мьютекса пула.
+        drop(h);
+        r
+    }
+
+    /// Вытесняет handles подключения, если ошибка означает, что клиент с текущими
+    /// учётными данными/TLS работать не будет. Возвращает true, если вытеснил.
+    pub fn evict_if_client_broken(&self, id: &str, e: &AppError) -> bool {
+        let broken = matches!(e.code, ErrorCode::AuthFailed | ErrorCode::TlsError);
+        if broken {
+            self.pool.evict(id);
+        }
+        broken
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::ErrorCode;
     use crate::secrets::MemoryStore;
     use crate::storage::connections::sample_profile;
 
@@ -52,5 +80,31 @@ mod tests {
         );
         state.connections.upsert(sample_profile("a")).unwrap();
         assert!(state.handles("a").is_ok());
+    }
+
+    #[test]
+    fn auth_and_tls_errors_evict_pooled_handles() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        state.connections.upsert(sample_profile("a")).unwrap();
+        let h1 = state.handles("a").unwrap();
+
+        let r: AppResult<()> =
+            state.with_handles("a", |_| Err(AppError::new(ErrorCode::Timeout, "t")));
+        assert!(r.is_err());
+        assert!(
+            Arc::ptr_eq(&h1, &state.handles("a").unwrap()),
+            "таймаут не вытесняет"
+        );
+
+        for code in [ErrorCode::AuthFailed, ErrorCode::TlsError] {
+            let before = state.handles("a").unwrap();
+            let r: AppResult<()> = state.with_handles("a", |_| Err(AppError::new(code, "x")));
+            assert_eq!(r.unwrap_err().code, code);
+            assert!(
+                !Arc::ptr_eq(&before, &state.handles("a").unwrap()),
+                "{code:?} вытесняет"
+            );
+        }
     }
 }

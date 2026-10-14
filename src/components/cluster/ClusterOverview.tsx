@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
+import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -67,7 +68,12 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
         </thead>
         <tbody>
           {o.brokers.map((b) => (
-            <tr key={b.id} className="clickable" onClick={() => setBrokerId(b.id)}>
+            <tr
+              key={b.id}
+              className={b.id === brokerId ? "clickable selected" : "clickable"}
+              aria-pressed={b.id === brokerId}
+              {...activateProps(() => setBrokerId(b.id))}
+            >
               <td>{b.id}</td>
               <td>
                 {b.host}:{b.port}
@@ -92,8 +98,7 @@ function BrokerConfig({ connectionId, brokerId }: { connectionId: string; broker
     <div>
       <h3>Конфигурация брокера {brokerId}</h3>
       {q.isPending && <p className="empty">Загрузка…</p>}
-      {q.error && <ErrorBanner error={q.error} onRetry={() => q.refetch()} />}
-      {q.data && <ConfigTable entries={q.data} />}
+      {q.error ? <ErrorBanner error={q.error} onRetry={() => q.refetch()} /> : q.data && <ConfigTable entries={q.data} />}
     </div>
   );
 }

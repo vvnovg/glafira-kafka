@@ -13,7 +13,7 @@ export function ConfigTable({ entries }: { entries: ConfigEntry[] }) {
   return (
     <div>
       <div className="toolbar">
-        <input placeholder="Поиск параметра" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input aria-label="Поиск параметра" placeholder="Поиск параметра" value={query} onChange={(e) => setQuery(e.target.value)} />
         <label>
           <input type="checkbox" checked={onlyChanged} onChange={(e) => setOnlyChanged(e.target.checked)} /> Только изменённые
         </label>
@@ -34,7 +34,7 @@ export function ConfigTable({ entries }: { entries: ConfigEntry[] }) {
             <tr key={e.name}>
               <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>
                 {e.name}
-                {e.isReadOnly && <span className="muted" title="Только чтение"> 🔒</span>}
+                {e.isReadOnly && <span className="muted" role="img" aria-label="Только чтение" title="Только чтение"> 🔒</span>}
               </td>
               <td>
                 <code>{e.isSensitive ? "••••••" : (e.value ?? "—")}</code>

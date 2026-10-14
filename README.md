@@ -11,9 +11,15 @@ Desktop-приложение (Tauri 2 + Rust + React) для интеракти�
 ## Запуск
 ```bash
 pnpm install
-docker compose -f dev/docker-compose.yml up -d   # Kafka: PLAINTEXT localhost:9092, SASL PLAIN localhost:9094 (tester / tester-secret)
+docker compose -f dev/docker-compose.yml up -d   # локальная Kafka, см. «Локальный стенд»
 pnpm tauri dev
 ```
+
+## Локальный стенд (`dev/docker-compose.yml`)
+- PLAINTEXT: `localhost:9092`.
+- SASL_PLAINTEXT: `localhost:9094`, механизмы PLAIN, SCRAM-SHA-256 и SCRAM-SHA-512.
+  - PLAIN: `tester` / `tester-secret`, `admin` / `admin-secret`.
+  - SCRAM-SHA-256 и SCRAM-SHA-512: `scram-user` / `scram-secret` (создаётся одноразовым сервисом `kafka-init` после старта брокера).
 
 ## Тесты
 ```bash

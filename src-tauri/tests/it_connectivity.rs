@@ -2,7 +2,7 @@ mod common;
 
 use kafka_explorer_lib::error::ErrorCode;
 use kafka_explorer_lib::kafka::config::SASL_PASSWORD;
-use kafka_explorer_lib::kafka::connectivity::test_connection;
+use kafka_explorer_lib::kafka::connectivity::{TestReport, test_connection};
 use kafka_explorer_lib::secrets::{MemoryStore, SecretStore, secret_key};
 use kafka_explorer_lib::storage::connections::{SaslConfig, SaslMechanism, SecurityConfig};
 
@@ -88,4 +88,61 @@ async fn pooled_handles_wrong_password_is_auth_failed() {
     .unwrap()
     .unwrap_err();
     assert_eq!(err.code, ErrorCode::AuthFailed, "{err:?}");
+}
+
+fn scram_profile(
+    bs: &str,
+    mechanism: SaslMechanism,
+) -> kafka_explorer_lib::storage::connections::ConnectionProfile {
+    let mut p = common::plaintext_profile(bs);
+    p.security = SecurityConfig::SaslPlaintext {
+        sasl: SaslConfig {
+            mechanism,
+            username: "scram-user".into(),
+        },
+    };
+    p
+}
+
+fn scram_report(mechanism: SaslMechanism, password: &str) -> Option<TestReport> {
+    let bs = common::sasl_bootstrap()?;
+    let p = scram_profile(&bs, mechanism);
+    let secrets = MemoryStore::default();
+    secrets
+        .set(&secret_key(&p.id, SASL_PASSWORD), password)
+        .unwrap();
+    Some(test_connection(&p, &secrets))
+}
+
+#[test]
+fn scram_sha_256_succeeds_with_right_password() {
+    let Some(r) = scram_report(SaslMechanism::ScramSha256, "scram-secret") else {
+        return;
+    };
+    assert!(r.ok, "{r:?}");
+}
+
+#[test]
+fn scram_sha_512_succeeds_with_right_password() {
+    let Some(r) = scram_report(SaslMechanism::ScramSha512, "scram-secret") else {
+        return;
+    };
+    assert!(r.ok, "{r:?}");
+}
+
+#[test]
+fn scram_wrong_password_is_auth_failed() {
+    for mechanism in [SaslMechanism::ScramSha256, SaslMechanism::ScramSha512] {
+        let Some(r) = scram_report(mechanism, "wrong") else {
+            return;
+        };
+        assert!(!r.ok);
+        let step = r.steps.last().unwrap();
+        assert_eq!(step.name, "kafka");
+        assert_eq!(
+            step.error.as_ref().unwrap().code,
+            ErrorCode::AuthFailed,
+            "{mechanism:?}: {step:?}"
+        );
+    }
 }

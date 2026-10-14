@@ -16,12 +16,18 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
       KAFKA_OPTS: "-Dke.dev=true"
       KAFKA_LISTENER_NAME_SASL__EXT_PLAIN_SASL_JAAS_CONFIG: >-
         org.apache.kafka.common.security.plain.PlainLoginModule required
         username="admin" password="admin-secret"
         user_admin="admin-secret" user_tester="tester-secret";
+      # SCRAM: учётные данные хранятся в метаданных кластера (см. сервис kafka-init).
+      # «___» в имени переменной превращается в «-»: listener.name.sasl_ext.scram-sha-256.sasl.jaas.config
+      KAFKA_LISTENER_NAME_SASL__EXT_SCRAM___SHA___256_SASL_JAAS_CONFIG: >-
+        org.apache.kafka.common.security.scram.ScramLoginModule required;
+      KAFKA_LISTENER_NAME_SASL__EXT_SCRAM___SHA___512_SASL_JAAS_CONFIG: >-
+        org.apache.kafka.common.security.scram.ScramLoginModule required;
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -33,3 +39,22 @@ services:
       timeout: 10s
       retries: 20
       start_period: 10s
+
+  # Одноразовая инициализация: SCRAM-пользователь scram-user / scram-secret (SHA-256 и SHA-512).
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: ke-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    # По одному механизму за вызов: Kafka 3.6 отклоняет два изменения одного пользователя
+    # в одном запросе («A user credential cannot be altered twice in the same request»).
+    command:
+      - >-
+        for m in SCRAM-SHA-256 SCRAM-SHA-512; do
+        kafka-configs --bootstrap-server kafka:19092 --alter
+        --add-config "$$m=[password=scram-secret]"
+        --entity-type users --entity-name scram-user || exit 1;
+        done

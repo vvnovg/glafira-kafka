@@ -9,7 +9,7 @@ export function useBrowseSession() {
   // Токен запуска: события от предыдущей (остановленной) сессии игнорируются.
   const tokenRef = useRef(0);
 
-  const stop = useCallback(async () => {
+  const stopInternal = useCallback(async () => {
     // Инвалидируем ещё не завершённый startBrowse: поздняя сессия будет остановлена в start().
     tokenRef.current++;
     const id = sessionRef.current;
@@ -17,9 +17,15 @@ export function useBrowseSession() {
     if (id) await api.stopSession(id).catch(() => false);
   }, []);
 
+  // Пользовательская остановка: состояние переходит в finished/cancelled.
+  const stop = useCallback(async () => {
+    dispatch({ type: "stopped" });
+    await stopInternal();
+  }, [stopInternal]);
+
   const start = useCallback(
     async (params: BrowseParams) => {
-      const stopping = stop();
+      const stopping = stopInternal();
       const gen = tokenRef.current;
       await stopping;
       // За время остановки был stop/unmount/новый start — этот запуск устарел.
@@ -40,10 +46,10 @@ export function useBrowseSession() {
         if (tokenRef.current === token) dispatch({ type: "failed", error: toAppError(e) });
       }
     },
-    [stop],
+    [stopInternal],
   );
 
-  useEffect(() => () => void stop(), [stop]);
+  useEffect(() => () => void stopInternal(), [stopInternal]);
 
   return { state, start, stop };
 }

@@ -28,7 +28,8 @@ export type BrowseAction =
   | { type: "start"; limit: number }
   | { type: "started"; sessionId: string }
   | { type: "event"; event: BrowseEvent }
-  | { type: "failed"; error: AppError };
+  | { type: "failed"; error: AppError }
+  | { type: "stopped" };
 
 export function browseReducer(s: BrowseState, a: BrowseAction): BrowseState {
   switch (a.type) {
@@ -38,6 +39,9 @@ export function browseReducer(s: BrowseState, a: BrowseAction): BrowseState {
       return { ...s, sessionId: a.sessionId };
     case "failed":
       return { ...s, status: "error", error: a.error };
+    case "stopped":
+      // Пользователь остановил сессию: backend-событие finished{cancelled} отфильтровано токеном.
+      return s.status === "running" ? { ...s, status: "finished", finishReason: "cancelled" } : s;
     case "event": {
       const e = a.event;
       switch (e.type) {

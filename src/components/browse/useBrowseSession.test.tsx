@@ -122,6 +122,25 @@ describe("useBrowseSession", () => {
       await result.current.stop();
     });
     expect(api.stopSession).toHaveBeenCalledWith("s1");
+    expect(result.current.state.status).toBe("finished");
+    expect(result.current.state.finishReason).toBe("cancelled");
+  });
+
+  it("перезапуск не переводит состояние в finished", async () => {
+    const { result } = renderHook(() => useBrowseSession());
+    let p1!: Promise<void>;
+    await act(async () => {
+      p1 = result.current.start(params);
+    });
+    await act(async () => {
+      pending[0].resolve("s1");
+      await p1;
+    });
+    await act(async () => {
+      void result.current.start(params);
+      await Promise.resolve();
+    });
+    expect(result.current.state.status).toBe("running");
   });
 
   describe("стоп во время перезапуска", () => {

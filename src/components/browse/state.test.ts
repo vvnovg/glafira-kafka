@@ -35,4 +35,16 @@ describe("browseReducer", () => {
     expect(s.messages).toEqual([]);
     expect(s.scanned).toBe(0);
   });
+
+  it("stopped: running -> finished/cancelled, иначе no-op", () => {
+    let s = browseReducer(initialBrowseState, { type: "start", limit: 10 });
+    s = browseReducer(s, { type: "stopped" });
+    expect(s.status).toBe("finished");
+    expect(s.finishReason).toBe("cancelled");
+    const err = { code: "NOT_FOUND" as const, message: "нет", retryable: false };
+    let e = browseReducer(initialBrowseState, { type: "failed", error: err });
+    e = browseReducer(e, { type: "stopped" });
+    expect(e.status).toBe("error");
+    expect(browseReducer(initialBrowseState, { type: "stopped" })).toBe(initialBrowseState);
+  });
 });

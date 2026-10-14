@@ -54,6 +54,7 @@ tr.clickable:hover, .row.clickable:hover { background: var(--bg-alt); }
 .env-stripe { height: 3px; flex-shrink: 0; }
 .tabbar { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
 .tab { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-right: 1px solid var(--border); cursor: pointer; white-space: nowrap; }
+.tab > button[role="tab"] { border: none; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; }
 .tab.active { background: var(--bg-alt); font-weight: 600; }
 .tab-content { flex: 1; overflow: auto; min-height: 0; }
 .tab-content[hidden] { display: none; }

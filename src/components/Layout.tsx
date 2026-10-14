@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import type { ConnectionProfile } from "../api/types";
 import { ENV_COLORS } from "../lib/env";
 import { type Tab, useWorkspace } from "../state/workspace";
+import { EnvBadge } from "./common/EnvBadge";
 import { Sidebar } from "./Sidebar";
 import { TabContent } from "./TabContent";
 
@@ -32,23 +33,30 @@ export function Layout() {
       <Sidebar />
       <main className="workspace">
         <div className="env-stripe" style={{ background: activeConn ? ENV_COLORS[activeConn.environment] : "transparent" }} />
-        <nav className="tabbar">
-          {tabs.map((t) => (
-            <div key={t.id} className={t.id === activeId ? "tab active" : "tab"} onClick={() => activate(t.id)}>
-              <span>{tabTitle(t, byId)}</span>
-              <button
-                type="button"
-                className="icon"
-                aria-label="Закрыть вкладку"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  close(t.id);
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+        <nav className="tabbar" role="tablist">
+          {tabs.map((t) => {
+            const conn = t.connectionId ? byId.get(t.connectionId) : undefined;
+            const isActive = t.id === activeId;
+            return (
+              <div key={t.id} className={isActive ? "tab active" : "tab"}>
+                {conn && <EnvBadge environment={conn.environment} readOnly={conn.readOnly} />}
+                <button type="button" role="tab" aria-selected={isActive} onClick={() => activate(t.id)}>
+                  {tabTitle(t, byId)}
+                </button>
+                <button
+                  type="button"
+                  className="icon"
+                  aria-label="Закрыть вкладку"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    close(t.id);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
         </nav>
         {tabs.length === 0 && <p className="empty">Выберите подключение слева или добавьте новое.</p>}
         {/* Неактивные вкладки скрыты, но не размонтированы — browse-сессии и состояние форм сохраняются. */}

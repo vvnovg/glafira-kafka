@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { ENV_COLORS, ENV_LABELS } from "../lib/env";
 import { useWorkspace } from "../state/workspace";
 import { ErrorBanner } from "./common/ErrorBanner";
+import { EnvBadge } from "./common/EnvBadge";
 
 export function Sidebar() {
-  const { data: connections = [], error } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
+  const { data: connections = [], error, isSuccess } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const open = useWorkspace((s) => s.open);
 
   return (
@@ -17,7 +17,7 @@ export function Sidebar() {
         </button>
       </div>
       {error && <ErrorBanner error={error} />}
-      {connections.length === 0 && !error && (
+      {isSuccess && connections.length === 0 && (
         <p className="empty">
           Добавьте первое подключение. Для локальной Kafka: <code>docker compose -f dev/docker-compose.yml up -d</code> и
           bootstrap <code>localhost:9092</code>.
@@ -29,10 +29,7 @@ export function Sidebar() {
             <div className="tree-conn">
               <span className="dot" style={{ background: c.color }} />
               <span className="tree-name">{c.name}</span>
-              <span className="env-badge" style={{ background: ENV_COLORS[c.environment] }}>
-                {ENV_LABELS[c.environment]}
-              </span>
-              {c.readOnly && <span title="Только чтение">🔒</span>}
+              <EnvBadge environment={c.environment} readOnly={c.readOnly} />
               <button type="button" className="icon" title="Изменить подключение" onClick={() => open({ kind: "connection-form", connectionId: c.id })}>
                 ✎
               </button>

@@ -4,6 +4,7 @@ use std::time::Instant;
 use rdkafka::client::ClientContext;
 use rdkafka::consumer::ConsumerContext;
 use rdkafka::error::KafkaError;
+use rdkafka::types::RDKafkaErrorCode;
 
 /// Запоминает последнюю ошибку клиента (TLS, SASL, транспорт) вместе со временем её получения,
 /// чтобы показать пользователю реальную причину, а не просто «таймаут».
@@ -42,6 +43,11 @@ impl CapturingContext {
 
 impl ClientContext for CapturingContext {
     fn error(&self, error: KafkaError, reason: &str) {
+        // Конец партиции при enable.partition.eof — штатное событие, а не ошибка клиента.
+        if error.rdkafka_error_code() == Some(RDKafkaErrorCode::PartitionEOF) {
+            tracing::debug!(reason, "partition EOF");
+            return;
+        }
         tracing::warn!(%error, reason, "kafka client error");
         self.record(Instant::now(), format!("{error}: {reason}"));
     }
@@ -84,5 +90,19 @@ mod tests {
         );
         let e = ctx.last_error_since(before).unwrap();
         assert!(e.contains("SASL authentication error"), "{e}");
+    }
+
+    #[test]
+    fn partition_eof_is_not_an_error() {
+        let ctx = CapturingContext::default();
+        ctx.error(
+            KafkaError::Global(rdkafka::types::RDKafkaErrorCode::PartitionEOF),
+            "Fetch from broker 1 reached end of partition at offset 20",
+        );
+        assert_eq!(
+            ctx.last_error(),
+            None,
+            "конец партиции — штатное событие, не причина ошибок"
+        );
     }
 }

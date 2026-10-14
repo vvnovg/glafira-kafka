@@ -1,12 +1,19 @@
 import { useMemo, useRef, useState } from "react";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { api } from "../../api/client";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
-import { filterTopics, STATS_CHUNK, visibleChunks } from "./topicFilter";
+import { useDebouncedValue } from "../../lib/useDebouncedValue";
+import {
+  buildCounts,
+  filterTopics,
+  isInvalidRegexQuery,
+  STATS_CHUNK,
+  visibleChunks,
+} from "./topicFilter";
 
 const ROW_HEIGHT = 30;
 const REFRESH_OPTIONS = [
@@ -19,6 +26,8 @@ export function TopicList({ connectionId }: { connectionId: string }) {
   const [query, setQuery] = useState("");
   const [showInternal, setShowInternal] = useState(false);
   const [refreshMs, setRefreshMs] = useState(0);
+  const debouncedQuery = useDebouncedValue(query, 250);
+  const queryClient = useQueryClient();
   const open = useWorkspace((s) => s.open);
 
   const q = useQuery({
@@ -26,7 +35,10 @@ export function TopicList({ connectionId }: { connectionId: string }) {
     queryFn: () => api.listTopics(connectionId),
     refetchInterval: refreshMs || false,
   });
-  const rows = useMemo(() => filterTopics(q.data ?? [], query, showInternal), [q.data, query, showInternal]);
+  const rows = useMemo(
+    () => filterTopics(q.data ?? [], debouncedQuery, showInternal),
+    [q.data, debouncedQuery, showInternal],
+  );
   const names = useMemo(() => rows.map((r) => r.name), [rows]);
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -37,7 +49,10 @@ export function TopicList({ connectionId }: { connectionId: string }) {
     overscan: 20,
   });
   const items = virtualizer.getVirtualItems();
-  const chunks = visibleChunks(items[0]?.index ?? 0, items[items.length - 1]?.index ?? -1);
+  const chunks = visibleChunks(
+    items[0]?.index ?? 0,
+    items[items.length - 1]?.index ?? -1,
+  );
 
   // Счётчики сообщений грузим лениво: только для чанков по 200 топиков, попавших в видимую область.
   const statsResults = useQueries({
@@ -51,28 +66,58 @@ export function TopicList({ connectionId }: { connectionId: string }) {
       };
     }),
   });
-  const counts = new Map<string, number | null>();
-  for (const r of statsResults) for (const s of r.data ?? []) counts.set(s.name, s.messageCount);
+  const counts = buildCounts(
+    chunks.map((c, i) => ({
+      names: names.slice(c * STATS_CHUNK, (c + 1) * STATS_CHUNK),
+      data: statsResults[i]?.data,
+      isError: statsResults[i]?.isError ?? false,
+    })),
+  );
 
   if (q.isPending) return <p className="empty">Загрузка списка топиков…</p>;
-  if (q.error) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
+  if (q.error)
+    return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
 
   return (
     <div className="page">
       <div className="toolbar">
         <h2>Топики</h2>
-        <input placeholder="Поиск (или /regex/)" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input
+          placeholder="Поиск (или /regex/)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {isInvalidRegexQuery(debouncedQuery) && (
+          <span className="warn">Некорректное регулярное выражение</span>
+        )}
         <label>
-          <input type="checkbox" checked={showInternal} onChange={(e) => setShowInternal(e.target.checked)} /> Внутренние
+          <input
+            type="checkbox"
+            checked={showInternal}
+            onChange={(e) => setShowInternal(e.target.checked)}
+          />{" "}
+          Внутренние
         </label>
-        <select value={refreshMs} onChange={(e) => setRefreshMs(Number(e.target.value))}>
+        <select
+          value={refreshMs}
+          onChange={(e) => setRefreshMs(Number(e.target.value))}
+        >
           {REFRESH_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
         </select>
-        <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
+        <button
+          type="button"
+          disabled={q.isFetching}
+          onClick={() => {
+            void q.refetch();
+            void queryClient.invalidateQueries({
+              queryKey: ["topicStats", connectionId],
+            });
+          }}
+        >
           Обновить
         </button>
         <span className="muted">
@@ -87,7 +132,9 @@ export function TopicList({ connectionId }: { connectionId: string }) {
           <span>Сообщений (≈)</span>
           <span>Under-repl.</span>
         </div>
-        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+        <div
+          style={{ height: virtualizer.getTotalSize(), position: "relative" }}
+        >
           {items.map((item) => {
             const t = rows[item.index];
             return (
@@ -95,7 +142,9 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 key={t.name}
                 className="row clickable topic-row"
                 style={{ top: item.start, height: ROW_HEIGHT }}
-                {...activateProps(() => open({ kind: "topic", connectionId, topic: t.name }))}
+                {...activateProps(() =>
+                  open({ kind: "topic", connectionId, topic: t.name }),
+                )}
               >
                 <span title={t.name}>
                   {t.name}
@@ -104,7 +153,9 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 <span>{t.partitionCount}</span>
                 <span>{t.replicationFactor}</span>
                 <span>{formatCount(counts.get(t.name))}</span>
-                <span className={t.underReplicated > 0 ? "warn" : ""}>{t.underReplicated}</span>
+                <span className={t.underReplicated > 0 ? "warn" : ""}>
+                  {t.underReplicated}
+                </span>
               </div>
             );
           })}

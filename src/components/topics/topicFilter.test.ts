@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TopicSummary } from "../../api/types";
-import { filterTopics, visibleChunks } from "./topicFilter";
+import { buildCounts, filterTopics, isInvalidRegexQuery, visibleChunks } from "./topicFilter";
 
 const t = (name: string, internal = false): TopicSummary => ({
   name,
@@ -29,5 +29,31 @@ describe("visibleChunks", () => {
     expect(visibleChunks(0, 10)).toEqual([0]);
     expect(visibleChunks(190, 410)).toEqual([0, 1, 2]);
     expect(visibleChunks(0, -1)).toEqual([]);
+  });
+});
+
+describe("buildCounts", () => {
+  it("maps successful data", () => {
+    const m = buildCounts([{ names: ["a", "b"], data: [{ name: "a", messageCount: 5 }, { name: "b", messageCount: null }], isError: false }]);
+    expect(m.get("a")).toBe(5);
+    expect(m.get("b")).toBeNull();
+  });
+  it("errored chunk maps every name to null", () => {
+    const m = buildCounts([{ names: ["a", "b"], isError: true }]);
+    expect(m.get("a")).toBeNull();
+    expect(m.get("b")).toBeNull();
+  });
+  it("topic missing from successful data stays unset", () => {
+    const m = buildCounts([{ names: ["a", "b"], data: [{ name: "a", messageCount: 1 }], isError: false }]);
+    expect(m.has("b")).toBe(false);
+  });
+});
+
+describe("isInvalidRegexQuery", () => {
+  it("detects invalid regex only", () => {
+    expect(isInvalidRegexQuery("/(/")).toBe(true);
+    expect(isInvalidRegexQuery("/a+/")).toBe(false);
+    expect(isInvalidRegexQuery("//")).toBe(false);
+    expect(isInvalidRegexQuery("abc")).toBe(false);
   });
 });

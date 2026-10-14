@@ -12,7 +12,10 @@ impl SessionRegistry {
     pub fn register(&self) -> (String, Arc<AtomicBool>) {
         let id = uuid::Uuid::new_v4().to_string();
         let flag = Arc::new(AtomicBool::new(false));
-        self.sessions.lock().unwrap().insert(id.clone(), flag.clone());
+        self.sessions
+            .lock()
+            .unwrap()
+            .insert(id.clone(), flag.clone());
         (id, flag)
     }
 

@@ -30,7 +30,12 @@ pub type AppResult<T> = Result<T, AppError>;
 impl AppError {
     pub fn new(code: ErrorCode, message: impl Into<String>) -> Self {
         let retryable = matches!(code, ErrorCode::ConnectionFailed | ErrorCode::Timeout);
-        Self { code, message: message.into(), details: None, retryable }
+        Self {
+            code,
+            message: message.into(),
+            details: None,
+            retryable,
+        }
     }
 
     pub fn with_details(mut self, details: impl Into<String>) -> Self {
@@ -81,7 +86,11 @@ pub fn classify_message(text: &str) -> Option<ErrorCode> {
         Some(ErrorCode::AuthFailed)
     } else if t.contains("timed out") || t.contains("timeout") {
         Some(ErrorCode::Timeout)
-    } else if t.contains("transport") || t.contains("all brokers down") || t.contains("resolve") || t.contains("connect") {
+    } else if t.contains("transport")
+        || t.contains("all brokers down")
+        || t.contains("resolve")
+        || t.contains("connect")
+    {
         Some(ErrorCode::ConnectionFailed)
     } else {
         None
@@ -118,13 +127,18 @@ mod tests {
 
     #[test]
     fn authorization_wins_over_authentication() {
-        assert_eq!(classify_message("Broker: Topic authorization failed"), Some(ErrorCode::NotAuthorized));
+        assert_eq!(
+            classify_message("Broker: Topic authorization failed"),
+            Some(ErrorCode::NotAuthorized)
+        );
     }
 
     #[test]
     fn ssl_errors_are_tls() {
         assert_eq!(
-            classify_message("sasl_ssl://localhost:9094/bootstrap: SSL handshake failed: certificate verify failed"),
+            classify_message(
+                "sasl_ssl://localhost:9094/bootstrap: SSL handshake failed: certificate verify failed"
+            ),
             Some(ErrorCode::TlsError)
         );
     }
@@ -132,15 +146,23 @@ mod tests {
     #[test]
     fn sasl_errors_are_auth_even_with_sasl_ssl_url() {
         assert_eq!(
-            classify_message("sasl_ssl://localhost:9094/bootstrap: SASL authentication error: Authentication failed"),
+            classify_message(
+                "sasl_ssl://localhost:9094/bootstrap: SASL authentication error: Authentication failed"
+            ),
             Some(ErrorCode::AuthFailed)
         );
     }
 
     #[test]
     fn timeouts_and_transport() {
-        assert_eq!(classify_message("Local: Timed out"), Some(ErrorCode::Timeout));
-        assert_eq!(classify_message("Local: Broker transport failure"), Some(ErrorCode::ConnectionFailed));
+        assert_eq!(
+            classify_message("Local: Timed out"),
+            Some(ErrorCode::Timeout)
+        );
+        assert_eq!(
+            classify_message("Local: Broker transport failure"),
+            Some(ErrorCode::ConnectionFailed)
+        );
         assert_eq!(classify_message("something else"), None);
     }
 
@@ -155,6 +177,9 @@ mod tests {
     #[test]
     fn serializes_for_frontend() {
         let json = serde_json::to_value(AppError::invalid("плохо")).unwrap();
-        assert_eq!(json, serde_json::json!({"code": "INVALID_INPUT", "message": "плохо", "retryable": false}));
+        assert_eq!(
+            json,
+            serde_json::json!({"code": "INVALID_INPUT", "message": "плохо", "retryable": false})
+        );
     }
 }

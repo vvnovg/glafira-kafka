@@ -6,7 +6,7 @@ use rdkafka::admin::AdminClient;
 use rdkafka::consumer::BaseConsumer;
 use rdkafka::error::KafkaError;
 
-use crate::error::{from_kafka, AppError, AppResult};
+use crate::error::{AppError, AppResult, from_kafka};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
 use crate::secrets::SecretStore;
@@ -25,16 +25,23 @@ impl KafkaHandles {
     pub fn create(p: &ConnectionProfile, secrets: &dyn SecretStore) -> AppResult<Self> {
         let base = build_client_config(p, secrets)?;
         let ctx = CapturingContext::default();
-        let admin: AdminClient<CapturingContext> =
-            base.create_with_context(ctx.clone()).map_err(|e| from_kafka(&e, None))?;
+        let admin: AdminClient<CapturingContext> = base
+            .create_with_context(ctx.clone())
+            .map_err(|e| from_kafka(&e, None))?;
         let mut consumer_cfg = base.clone();
         consumer_cfg
             .set("group.id", "kafka-explorer-metadata")
             .set("enable.auto.commit", "false")
             .set("enable.auto.offset.store", "false");
-        let consumer: BaseConsumer<CapturingContext> =
-            consumer_cfg.create_with_context(ctx.clone()).map_err(|e| from_kafka(&e, None))?;
-        Ok(Self { admin, consumer, ctx, timeout: Duration::from_millis(p.request_timeout_ms) })
+        let consumer: BaseConsumer<CapturingContext> = consumer_cfg
+            .create_with_context(ctx.clone())
+            .map_err(|e| from_kafka(&e, None))?;
+        Ok(Self {
+            admin,
+            consumer,
+            ctx,
+            timeout: Duration::from_millis(p.request_timeout_ms),
+        })
     }
 
     pub fn kafka_err(&self, e: KafkaError) -> AppError {
@@ -48,7 +55,11 @@ pub struct ClientPool {
 }
 
 impl ClientPool {
-    pub fn get(&self, p: &ConnectionProfile, secrets: &dyn SecretStore) -> AppResult<Arc<KafkaHandles>> {
+    pub fn get(
+        &self,
+        p: &ConnectionProfile,
+        secrets: &dyn SecretStore,
+    ) -> AppResult<Arc<KafkaHandles>> {
         let mut map = self.inner.lock().unwrap();
         if let Some(h) = map.get(&p.id) {
             return Ok(h.clone());

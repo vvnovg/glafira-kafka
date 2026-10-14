@@ -89,9 +89,9 @@ pub struct ConnectionProfile {
 pub fn parse_bootstrap(s: &str) -> AppResult<Vec<(String, u16)>> {
     let mut out = Vec::new();
     for raw in s.split(',').map(str::trim).filter(|x| !x.is_empty()) {
-        let (host, port) = raw
-            .rsplit_once(':')
-            .ok_or_else(|| AppError::invalid(format!("Адрес «{raw}» должен быть в формате host:port")))?;
+        let (host, port) = raw.rsplit_once(':').ok_or_else(|| {
+            AppError::invalid(format!("Адрес «{raw}» должен быть в формате host:port"))
+        })?;
         let port: u16 = port
             .parse()
             .map_err(|_| AppError::invalid(format!("Некорректный порт в адресе «{raw}»")))?;
@@ -115,12 +115,16 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
         return Err(AppError::invalid("Имя подключения не может быть пустым"));
     }
     parse_bootstrap(&p.bootstrap_servers)?;
-    if let SecurityConfig::SaslPlaintext { sasl } | SecurityConfig::SaslSsl { sasl, .. } = &p.security
-        && sasl.username.trim().is_empty() {
-            return Err(AppError::invalid("Укажите имя пользователя SASL"));
-        }
+    if let SecurityConfig::SaslPlaintext { sasl } | SecurityConfig::SaslSsl { sasl, .. } =
+        &p.security
+        && sasl.username.trim().is_empty()
+    {
+        return Err(AppError::invalid("Укажите имя пользователя SASL"));
+    }
     if p.request_timeout_ms < 1_000 {
-        return Err(AppError::invalid("Таймаут запроса должен быть не меньше 1000 мс"));
+        return Err(AppError::invalid(
+            "Таймаут запроса должен быть не меньше 1000 мс",
+        ));
     }
     Ok(())
 }
@@ -155,7 +159,10 @@ impl ConnectionStore {
         } else {
             Vec::new()
         };
-        Ok(Self { path, cache: RwLock::new(connections) })
+        Ok(Self {
+            path,
+            cache: RwLock::new(connections),
+        })
     }
 
     pub fn list(&self) -> Vec<ConnectionProfile> {
@@ -198,7 +205,10 @@ impl ConnectionStore {
 
     /// Запись через временный файл + rename, чтобы не оставить битый JSON.
     fn persist(&self, list: &[ConnectionProfile]) -> AppResult<()> {
-        let file = ConnectionsFile { schema_version: CURRENT_SCHEMA_VERSION, connections: list.to_vec() };
+        let file = ConnectionsFile {
+            schema_version: CURRENT_SCHEMA_VERSION,
+            connections: list.to_vec(),
+        };
         let tmp = self.path.with_extension("json.tmp");
         fs::write(&tmp, serde_json::to_vec_pretty(&file)?)?;
         fs::rename(&tmp, &self.path)?;
@@ -232,10 +242,22 @@ mod tests {
             parse_bootstrap(" a:9092, b:9093 ,").unwrap(),
             vec![("a".to_string(), 9092), ("b".to_string(), 9093)]
         );
-        assert_eq!(parse_bootstrap("[::1]:9092").unwrap(), vec![("::1".to_string(), 9092)]);
-        assert_eq!(parse_bootstrap("host").unwrap_err().code, ErrorCode::InvalidInput);
-        assert_eq!(parse_bootstrap("host:abc").unwrap_err().code, ErrorCode::InvalidInput);
-        assert_eq!(parse_bootstrap(" , ").unwrap_err().code, ErrorCode::InvalidInput);
+        assert_eq!(
+            parse_bootstrap("[::1]:9092").unwrap(),
+            vec![("::1".to_string(), 9092)]
+        );
+        assert_eq!(
+            parse_bootstrap("host").unwrap_err().code,
+            ErrorCode::InvalidInput
+        );
+        assert_eq!(
+            parse_bootstrap("host:abc").unwrap_err().code,
+            ErrorCode::InvalidInput
+        );
+        assert_eq!(
+            parse_bootstrap(" , ").unwrap_err().code,
+            ErrorCode::InvalidInput
+        );
     }
 
     #[test]
@@ -245,8 +267,14 @@ mod tests {
         store.upsert(sample_profile("a")).unwrap();
         let mut b = sample_profile("b");
         b.security = SecurityConfig::SaslSsl {
-            tls: TlsConfig { ca_location: Some("/ca.pem".into()), verify_hostname: false },
-            sasl: SaslConfig { mechanism: SaslMechanism::ScramSha512, username: "alice".into() },
+            tls: TlsConfig {
+                ca_location: Some("/ca.pem".into()),
+                verify_hostname: false,
+            },
+            sasl: SaslConfig {
+                mechanism: SaslMechanism::ScramSha512,
+                username: "alice".into(),
+            },
         };
         store.upsert(b.clone()).unwrap();
 
@@ -287,7 +315,10 @@ mod tests {
     fn json_shape_matches_frontend_contract() {
         let mut p = sample_profile("x");
         p.security = SecurityConfig::SaslPlaintext {
-            sasl: SaslConfig { mechanism: SaslMechanism::ScramSha256, username: "u".into() },
+            sasl: SaslConfig {
+                mechanism: SaslMechanism::ScramSha256,
+                username: "u".into(),
+            },
         };
         let v = serde_json::to_value(&p).unwrap();
         assert_eq!(v["bootstrapServers"], "localhost:9092");

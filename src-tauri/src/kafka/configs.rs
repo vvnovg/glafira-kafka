@@ -17,9 +17,16 @@ pub struct ConfigEntryDto {
     pub is_sensitive: bool,
 }
 
-pub async fn describe_configs(h: &KafkaHandles, spec: ResourceSpecifier<'_>) -> AppResult<Vec<ConfigEntryDto>> {
+pub async fn describe_configs(
+    h: &KafkaHandles,
+    spec: ResourceSpecifier<'_>,
+) -> AppResult<Vec<ConfigEntryDto>> {
     let opts = AdminOptions::new().request_timeout(Some(h.timeout));
-    let mut results = h.admin.describe_configs(&[spec], &opts).await.map_err(|e| h.kafka_err(e))?;
+    let mut results = h
+        .admin
+        .describe_configs(&[spec], &opts)
+        .await
+        .map_err(|e| h.kafka_err(e))?;
     let resource = results
         .pop()
         .ok_or_else(|| AppError::internal("Пустой ответ DescribeConfigs"))?

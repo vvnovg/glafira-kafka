@@ -4,11 +4,11 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 
 use kafka_explorer_lib::storage::connections::{ConnectionProfile, Environment, SecurityConfig};
+use rdkafka::ClientConfig;
 use rdkafka::admin::{AdminClient, AdminOptions, NewTopic, TopicReplication};
 use rdkafka::client::DefaultClientContext;
 use rdkafka::message::{Header, OwnedHeaders};
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use rdkafka::ClientConfig;
 
 /// Интеграционные тесты выполняются, только если задан KE_IT_BOOTSTRAP (см. dev/docker-compose.yml).
 pub fn bootstrap() -> Option<String> {
@@ -46,11 +46,16 @@ pub fn unique_topic(prefix: &str) -> String {
 }
 
 pub async fn create_topic(bs: &str, name: &str, partitions: i32) {
-    let admin: AdminClient<DefaultClientContext> =
-        ClientConfig::new().set("bootstrap.servers", bs).create().unwrap();
+    let admin: AdminClient<DefaultClientContext> = ClientConfig::new()
+        .set("bootstrap.servers", bs)
+        .create()
+        .unwrap();
     let opts = AdminOptions::new().operation_timeout(Some(Duration::from_secs(10)));
     let results = admin
-        .create_topics(&[NewTopic::new(name, partitions, TopicReplication::Fixed(1))], &opts)
+        .create_topics(
+            &[NewTopic::new(name, partitions, TopicReplication::Fixed(1))],
+            &opts,
+        )
         .await
         .unwrap();
     for r in results {
@@ -68,14 +73,22 @@ pub struct TestMsg<'a> {
 }
 
 pub async fn produce(bs: &str, topic: &str, msgs: &[TestMsg<'_>]) {
-    let producer: FutureProducer = ClientConfig::new().set("bootstrap.servers", bs).create().unwrap();
+    let producer: FutureProducer = ClientConfig::new()
+        .set("bootstrap.servers", bs)
+        .create()
+        .unwrap();
     for m in msgs {
         let mut headers = OwnedHeaders::new();
         for (k, v) in m.headers {
-            headers = headers.insert(Header { key: *k, value: Some(*v) });
+            headers = headers.insert(Header {
+                key: k,
+                value: Some(*v),
+            });
         }
-        let mut record: FutureRecord<str, str> =
-            FutureRecord::to(topic).partition(m.partition).payload(m.value).headers(headers);
+        let mut record: FutureRecord<str, str> = FutureRecord::to(topic)
+            .partition(m.partition)
+            .payload(m.value)
+            .headers(headers);
         if let Some(k) = m.key {
             record = record.key(k);
         }

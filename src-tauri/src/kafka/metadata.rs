@@ -39,7 +39,11 @@ impl TopicMeta {
     }
 
     pub fn replication_factor(&self) -> usize {
-        self.partitions.iter().map(|p| p.replicas.len()).max().unwrap_or(0)
+        self.partitions
+            .iter()
+            .map(|p| p.replicas.len())
+            .max()
+            .unwrap_or(0)
     }
 }
 
@@ -51,7 +55,11 @@ pub fn convert(md: &Metadata) -> (Vec<BrokerInfo>, Vec<TopicMeta>) {
     let brokers = md
         .brokers()
         .iter()
-        .map(|b| BrokerInfo { id: b.id(), host: b.host().to_string(), port: b.port() })
+        .map(|b| BrokerInfo {
+            id: b.id(),
+            host: b.host().to_string(),
+            port: b.port(),
+        })
         .collect();
     let topics = md
         .topics()

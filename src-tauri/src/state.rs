@@ -7,19 +7,20 @@ use crate::kafka::pool::{ClientPool, KafkaHandles};
 use crate::secrets::SecretStore;
 use crate::storage::connections::{ConnectionProfile, ConnectionStore};
 
+#[derive(Clone)]
 pub struct AppState {
-    pub connections: ConnectionStore,
+    pub connections: Arc<ConnectionStore>,
     pub secrets: Arc<dyn SecretStore>,
-    pub pool: ClientPool,
+    pub pool: Arc<ClientPool>,
     pub sessions: Arc<SessionRegistry>,
 }
 
 impl AppState {
     pub fn new(data_dir: &Path, secrets: Arc<dyn SecretStore>) -> AppResult<Self> {
         Ok(Self {
-            connections: ConnectionStore::open(data_dir)?,
+            connections: Arc::new(ConnectionStore::open(data_dir)?),
             secrets,
-            pool: ClientPool::default(),
+            pool: Arc::new(ClientPool::default()),
             sessions: Arc::new(SessionRegistry::default()),
         })
     }
@@ -45,7 +46,10 @@ mod tests {
     fn handles_for_unknown_connection_is_not_found() {
         let dir = tempfile::tempdir().unwrap();
         let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
-        assert_eq!(state.handles("nope").err().unwrap().code, ErrorCode::NotFound);
+        assert_eq!(
+            state.handles("nope").err().unwrap().code,
+            ErrorCode::NotFound
+        );
         state.connections.upsert(sample_profile("a")).unwrap();
         assert!(state.handles("a").is_ok());
     }

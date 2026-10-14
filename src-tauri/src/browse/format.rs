@@ -27,7 +27,11 @@ pub struct DecodedData {
 pub const MAX_TEXT_BYTES: usize = 1_048_576;
 
 pub fn decode(bytes: &[u8], format: DataFormat) -> DecodedData {
-    let resolved = if format == DataFormat::Auto { detect(bytes) } else { format };
+    let resolved = if format == DataFormat::Auto {
+        detect(bytes)
+    } else {
+        format
+    };
     let (text, error) = match resolved {
         DataFormat::String => (String::from_utf8_lossy(bytes).into_owned(), None),
         DataFormat::Json => {
@@ -38,20 +42,35 @@ pub fn decode(bytes: &[u8], format: DataFormat) -> DecodedData {
             }
         }
         DataFormat::Hex => (hex::encode(bytes), None),
-        DataFormat::Base64 => (base64::engine::general_purpose::STANDARD.encode(bytes), None),
+        DataFormat::Base64 => (
+            base64::engine::general_purpose::STANDARD.encode(bytes),
+            None,
+        ),
         DataFormat::Auto => unreachable!("detect никогда не возвращает Auto"),
     };
     let (text, truncated) = truncate(text, MAX_TEXT_BYTES);
-    DecodedData { format: resolved, text, size: bytes.len(), truncated, error }
+    DecodedData {
+        format: resolved,
+        text,
+        size: bytes.len(),
+        truncated,
+        error,
+    }
 }
 
 fn detect(bytes: &[u8]) -> DataFormat {
-    let Ok(s) = std::str::from_utf8(bytes) else { return DataFormat::Hex };
+    let Ok(s) = std::str::from_utf8(bytes) else {
+        return DataFormat::Hex;
+    };
     let trimmed = s.trim_start();
-    if (trimmed.starts_with('{') || trimmed.starts_with('[')) && serde_json::from_str::<serde_json::Value>(s).is_ok() {
+    if (trimmed.starts_with('{') || trimmed.starts_with('['))
+        && serde_json::from_str::<serde_json::Value>(s).is_ok()
+    {
         return DataFormat::Json;
     }
-    if s.chars().any(|c| c.is_control() && !matches!(c, '\n' | '\r' | '\t')) {
+    if s.chars()
+        .any(|c| c.is_control() && !matches!(c, '\n' | '\r' | '\t'))
+    {
         return DataFormat::Hex;
     }
     DataFormat::String
@@ -82,14 +101,26 @@ mod tests {
 
     #[test]
     fn auto_detects_json_string_and_binary() {
-        assert_eq!(decode(br#" {"a":1}"#, DataFormat::Auto).format, DataFormat::Json);
+        assert_eq!(
+            decode(br#" {"a":1}"#, DataFormat::Auto).format,
+            DataFormat::Json
+        );
         assert_eq!(decode(b"[1,2]", DataFormat::Auto).format, DataFormat::Json);
-        assert_eq!(decode(b"{not json", DataFormat::Auto).format, DataFormat::String);
-        assert_eq!(decode("привет\n".as_bytes(), DataFormat::Auto).format, DataFormat::String);
+        assert_eq!(
+            decode(b"{not json", DataFormat::Auto).format,
+            DataFormat::String
+        );
+        assert_eq!(
+            decode("привет\n".as_bytes(), DataFormat::Auto).format,
+            DataFormat::String
+        );
         let bin = decode(&[0x00, 0x01, 0xff], DataFormat::Auto);
         assert_eq!(bin.format, DataFormat::Hex);
         assert_eq!(bin.text, "0001ff");
-        assert_eq!(decode(&[0x01, b'a'], DataFormat::Auto).format, DataFormat::Hex); // управляющий символ
+        assert_eq!(
+            decode(&[0x01, b'a'], DataFormat::Auto).format,
+            DataFormat::Hex
+        ); // управляющий символ
     }
 
     #[test]

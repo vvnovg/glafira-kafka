@@ -4,13 +4,20 @@ use tauri::State;
 use super::blocking;
 use crate::error::AppResult;
 use crate::kafka::cluster::{self, ClusterOverview};
-use crate::kafka::configs::{describe_configs, ConfigEntryDto};
+use crate::kafka::configs::{ConfigEntryDto, describe_configs};
 use crate::state::AppState;
 
 #[tauri::command]
-pub async fn get_cluster_overview(state: State<'_, AppState>, connection_id: String) -> AppResult<ClusterOverview> {
-    let h = state.handles(&connection_id)?;
-    blocking(move || cluster::cluster_overview(&h)).await
+pub async fn get_cluster_overview(
+    state: State<'_, AppState>,
+    connection_id: String,
+) -> AppResult<ClusterOverview> {
+    let st = state.inner().clone();
+    blocking(move || {
+        let h = st.handles(&connection_id)?;
+        cluster::cluster_overview(&h)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -19,6 +26,7 @@ pub async fn get_broker_config(
     connection_id: String,
     broker_id: i32,
 ) -> AppResult<Vec<ConfigEntryDto>> {
-    let h = state.handles(&connection_id)?;
+    let st = state.inner().clone();
+    let h = blocking(move || st.handles(&connection_id)).await?;
     describe_configs(&h, ResourceSpecifier::Broker(broker_id)).await
 }

@@ -58,7 +58,10 @@ impl SecretStore for MemoryStore {
     }
 
     fn set(&self, key: &str, value: &str) -> AppResult<()> {
-        self.values.lock().unwrap().insert(key.to_string(), value.to_string());
+        self.values
+            .lock()
+            .unwrap()
+            .insert(key.to_string(), value.to_string());
         Ok(())
     }
 

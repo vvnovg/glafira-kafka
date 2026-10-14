@@ -1,10 +1,10 @@
-use std::ffi::{c_void, CStr};
+use std::ffi::{CStr, c_void};
 
 use rdkafka::consumer::Consumer;
 use serde::Serialize;
 
 use crate::error::AppResult;
-use crate::kafka::metadata::{convert, BrokerInfo, TopicMeta};
+use crate::kafka::metadata::{BrokerInfo, TopicMeta, convert};
 use crate::kafka::pool::KafkaHandles;
 
 #[derive(Debug, Clone, Serialize)]
@@ -41,10 +41,18 @@ pub fn summarize_cluster(
 }
 
 pub fn cluster_overview(h: &KafkaHandles) -> AppResult<ClusterOverview> {
-    let md = h.consumer.fetch_metadata(None, h.timeout).map_err(|e| h.kafka_err(e))?;
+    let md = h
+        .consumer
+        .fetch_metadata(None, h.timeout)
+        .map_err(|e| h.kafka_err(e))?;
     let (brokers, topics) = convert(&md);
     let (cluster_id, controller_id) = native_cluster_info(h);
-    Ok(summarize_cluster(brokers, &topics, cluster_id, controller_id))
+    Ok(summarize_cluster(
+        brokers,
+        &topics,
+        cluster_id,
+        controller_id,
+    ))
 }
 
 /// rust-rdkafka не оборачивает rd_kafka_clusterid/rd_kafka_controllerid — вызываем C API.
@@ -74,16 +82,31 @@ mod tests {
     use crate::kafka::metadata::{PartitionMeta, TopicMeta};
 
     fn part(id: i32, leader: i32, replicas: &[i32], isr: &[i32]) -> PartitionMeta {
-        PartitionMeta { id, leader, replicas: replicas.to_vec(), isr: isr.to_vec() }
+        PartitionMeta {
+            id,
+            leader,
+            replicas: replicas.to_vec(),
+            isr: isr.to_vec(),
+        }
     }
 
     #[test]
     fn summarizes_partitions_and_internal_topics() {
         let topics = vec![
-            TopicMeta { name: "orders".into(), partitions: vec![part(0, 1, &[1, 2], &[1, 2]), part(1, 2, &[1, 2], &[2])] },
-            TopicMeta { name: "__consumer_offsets".into(), partitions: vec![part(0, -1, &[1], &[])] },
+            TopicMeta {
+                name: "orders".into(),
+                partitions: vec![part(0, 1, &[1, 2], &[1, 2]), part(1, 2, &[1, 2], &[2])],
+            },
+            TopicMeta {
+                name: "__consumer_offsets".into(),
+                partitions: vec![part(0, -1, &[1], &[])],
+            },
         ];
-        let brokers = vec![BrokerInfo { id: 1, host: "a".into(), port: 9092 }];
+        let brokers = vec![BrokerInfo {
+            id: 1,
+            host: "a".into(),
+            port: 9092,
+        }];
         let o = summarize_cluster(brokers, &topics, Some("cid".into()), Some(1));
         assert_eq!(o.topic_count, 2);
         assert_eq!(o.internal_topic_count, 1);
@@ -95,7 +118,10 @@ mod tests {
 
     #[test]
     fn replication_factor_and_internal_detection() {
-        let t = TopicMeta { name: "_schemas".into(), partitions: vec![part(0, 1, &[1, 2, 3], &[1, 2, 3])] };
+        let t = TopicMeta {
+            name: "_schemas".into(),
+            partitions: vec![part(0, 1, &[1, 2, 3], &[1, 2, 3])],
+        };
         assert!(t.internal());
         assert_eq!(t.replication_factor(), 3);
         assert!(!crate::kafka::metadata::is_internal("orders"));

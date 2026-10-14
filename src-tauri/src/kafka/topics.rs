@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::error::{AppError, AppResult};
 use crate::kafka::context::CapturingContext;
-use crate::kafka::metadata::{convert, TopicMeta};
+use crate::kafka::metadata::{TopicMeta, convert};
 use crate::kafka::pool::KafkaHandles;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -71,7 +71,10 @@ pub fn summarize_topics(topics: Vec<TopicMeta>) -> Vec<TopicSummary> {
 }
 
 pub fn list_topics(h: &KafkaHandles) -> AppResult<Vec<TopicSummary>> {
-    let md = h.consumer.fetch_metadata(None, h.timeout).map_err(|e| h.kafka_err(e))?;
+    let md = h
+        .consumer
+        .fetch_metadata(None, h.timeout)
+        .map_err(|e| h.kafka_err(e))?;
     Ok(summarize_topics(convert(&md).1))
 }
 
@@ -99,10 +102,16 @@ pub fn fetch_bounds(
     }
     let low = list_offsets(c, parts, Offset::Beginning, timeout)?;
     let high = list_offsets(c, parts, Offset::End, timeout)?;
-    Ok(parts.iter().map(|k| (k.clone(), combine(low.get(k), high.get(k)))).collect())
+    Ok(parts
+        .iter()
+        .map(|k| (k.clone(), combine(low.get(k), high.get(k))))
+        .collect())
 }
 
-fn combine(low: Option<&Result<i64, String>>, high: Option<&Result<i64, String>>) -> Result<(i64, i64), String> {
+fn combine(
+    low: Option<&Result<i64, String>>,
+    high: Option<&Result<i64, String>>,
+) -> Result<(i64, i64), String> {
     match (low, high) {
         (Some(Ok(l)), Some(Ok(h))) => Ok((*l, *h)),
         (Some(Err(e)), _) | (_, Some(Err(e))) => Err(e.clone()),
@@ -136,7 +145,10 @@ fn list_offsets(
 }
 
 pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicStats>> {
-    let md = h.consumer.fetch_metadata(None, h.timeout).map_err(|e| h.kafka_err(e))?;
+    let md = h
+        .consumer
+        .fetch_metadata(None, h.timeout)
+        .map_err(|e| h.kafka_err(e))?;
     let (_, topics) = convert(&md);
     let wanted: HashSet<&str> = names.iter().map(String::as_str).collect();
     let parts: Vec<(String, i32)> = topics
@@ -156,24 +168,39 @@ pub fn topic_stats(h: &KafkaHandles, names: &[String]) -> AppResult<Vec<TopicSta
     }
     Ok(names
         .iter()
-        .filter_map(|n| counts.get(n.as_str()).map(|c| TopicStats { name: n.clone(), message_count: *c }))
+        .filter_map(|n| {
+            counts.get(n.as_str()).map(|c| TopicStats {
+                name: n.clone(),
+                message_count: *c,
+            })
+        })
         .collect())
 }
 
 pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
-    let md = h.consumer.fetch_metadata(Some(name), h.timeout).map_err(|e| h.kafka_err(e))?;
+    let md = h
+        .consumer
+        .fetch_metadata(Some(name), h.timeout)
+        .map_err(|e| h.kafka_err(e))?;
     let (_, topics) = convert(&md);
     let t = topics
         .into_iter()
         .find(|t| t.name == name && !t.partitions.is_empty())
         .ok_or_else(|| AppError::not_found(format!("Топик «{name}» не найден")))?;
-    let keys: Vec<(String, i32)> = t.partitions.iter().map(|p| (t.name.clone(), p.id)).collect();
+    let keys: Vec<(String, i32)> = t
+        .partitions
+        .iter()
+        .map(|p| (t.name.clone(), p.id))
+        .collect();
     let bounds = fetch_bounds(&h.consumer, &keys, h.timeout).map_err(|e| h.kafka_err(e))?;
     let mut partitions: Vec<PartitionDetails> = t
         .partitions
         .iter()
         .map(|p| {
-            let b = bounds.get(&(t.name.clone(), p.id)).cloned().unwrap_or_else(|| Err(NO_OFFSET.to_string()));
+            let b = bounds
+                .get(&(t.name.clone(), p.id))
+                .cloned()
+                .unwrap_or_else(|| Err(NO_OFFSET.to_string()));
             let (low, high, offsets_error) = match b {
                 Ok((l, hi)) => (Some(l), Some(hi), None),
                 Err(e) => (None, None, Some(e)),
@@ -195,7 +222,10 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
     Ok(TopicDetails {
         internal: t.internal(),
         replication_factor: t.replication_factor(),
-        message_count: partitions.iter().map(|p| p.message_count).sum::<Option<i64>>(),
+        message_count: partitions
+            .iter()
+            .map(|p| p.message_count)
+            .sum::<Option<i64>>(),
         name: t.name,
         partitions,
     })
@@ -215,7 +245,11 @@ mod tests {
                     id,
                     leader: 1,
                     replicas: replicas.clone(),
-                    isr: if isr_short && id == 0 { vec![1] } else { replicas.clone() },
+                    isr: if isr_short && id == 0 {
+                        vec![1]
+                    } else {
+                        replicas.clone()
+                    },
                 })
                 .collect(),
         }
@@ -223,8 +257,15 @@ mod tests {
 
     #[test]
     fn summaries_sorted_with_counts() {
-        let s = summarize_topics(vec![topic("b", 3, 2, true), topic("a", 1, 4, false), topic("__x", 1, 1, false)]);
-        assert_eq!(s.iter().map(|t| t.name.as_str()).collect::<Vec<_>>(), ["__x", "a", "b"]);
+        let s = summarize_topics(vec![
+            topic("b", 3, 2, true),
+            topic("a", 1, 4, false),
+            topic("__x", 1, 1, false),
+        ]);
+        assert_eq!(
+            s.iter().map(|t| t.name.as_str()).collect::<Vec<_>>(),
+            ["__x", "a", "b"]
+        );
         assert!(s[0].internal);
         assert_eq!(s[1].partition_count, 4);
         assert_eq!(s[2].replication_factor, 3);
@@ -243,8 +284,14 @@ mod tests {
         let ok = |v: i64| Ok::<i64, String>(v);
         let err = |m: &str| Err::<i64, String>(m.to_string());
         assert_eq!(combine(Some(&ok(3)), Some(&ok(9))), Ok((3, 9)));
-        assert_eq!(combine(Some(&ok(3)), Some(&err("leader not available"))), Err("leader not available".to_string()));
-        assert_eq!(combine(Some(&err("denied")), Some(&ok(9))), Err("denied".to_string()));
+        assert_eq!(
+            combine(Some(&ok(3)), Some(&err("leader not available"))),
+            Err("leader not available".to_string())
+        );
+        assert_eq!(
+            combine(Some(&err("denied")), Some(&ok(9))),
+            Err("denied".to_string())
+        );
         assert_eq!(combine(Some(&ok(3)), None), Err(NO_OFFSET.to_string()));
     }
 

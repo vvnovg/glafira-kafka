@@ -7,7 +7,7 @@ use serde::Serialize;
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::pool::KafkaHandles;
 use crate::secrets::SecretStore;
-use crate::storage::connections::{parse_bootstrap, ConnectionProfile};
+use crate::storage::connections::{ConnectionProfile, parse_bootstrap};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,7 +41,10 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
     steps.push(passed("config", "Конфигурация корректна"));
 
     match tcp_probe(&servers) {
-        Ok(addr) => steps.push(passed("tcp", format!("TCP-соединение с {addr} установлено"))),
+        Ok(addr) => steps.push(passed(
+            "tcp",
+            format!("TCP-соединение с {addr} установлено"),
+        )),
         Err(e) => return failed(steps, "tcp", e),
     }
 
@@ -52,7 +55,11 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
     match handles.consumer.fetch_metadata(None, KAFKA_TIMEOUT) {
         Ok(md) => steps.push(passed(
             "kafka",
-            format!("Брокеров: {}, топиков: {}", md.brokers().len(), md.topics().len()),
+            format!(
+                "Брокеров: {}, топиков: {}",
+                md.brokers().len(),
+                md.topics().len()
+            ),
         )),
         Err(e) => {
             // Колбэк ошибок клиента вызывается только из poll: даём librdkafka доставить причину (SASL/TLS).
@@ -65,11 +72,21 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
 }
 
 fn passed(name: &str, message: impl Into<String>) -> TestStep {
-    TestStep { name: name.into(), ok: true, message: message.into(), error: None }
+    TestStep {
+        name: name.into(),
+        ok: true,
+        message: message.into(),
+        error: None,
+    }
 }
 
 fn failed(mut steps: Vec<TestStep>, name: &str, error: AppError) -> TestReport {
-    steps.push(TestStep { name: name.into(), ok: false, message: error.message.clone(), error: Some(error) });
+    steps.push(TestStep {
+        name: name.into(),
+        ok: false,
+        message: error.message.clone(),
+        error: Some(error),
+    });
     TestReport { ok: false, steps }
 }
 
@@ -90,7 +107,11 @@ fn tcp_probe(servers: &[(String, u16)]) -> AppResult<String> {
             }
         }
     }
-    Err(AppError::new(ErrorCode::ConnectionFailed, "Ни один bootstrap-сервер не доступен по TCP").with_details(last))
+    Err(AppError::new(
+        ErrorCode::ConnectionFailed,
+        "Ни один bootstrap-сервер не доступен по TCP",
+    )
+    .with_details(last))
 }
 
 #[cfg(test)]
@@ -108,7 +129,10 @@ mod tests {
         assert!(!r.ok);
         assert_eq!(r.steps.len(), 1);
         assert_eq!(r.steps[0].name, "config");
-        assert_eq!(r.steps[0].error.as_ref().unwrap().code, ErrorCode::InvalidInput);
+        assert_eq!(
+            r.steps[0].error.as_ref().unwrap().code,
+            ErrorCode::InvalidInput
+        );
     }
 
     #[test]
@@ -119,6 +143,9 @@ mod tests {
         assert!(!r.ok);
         let last = r.steps.last().unwrap();
         assert_eq!(last.name, "tcp");
-        assert_eq!(last.error.as_ref().unwrap().code, ErrorCode::ConnectionFailed);
+        assert_eq!(
+            last.error.as_ref().unwrap().code,
+            ErrorCode::ConnectionFailed
+        );
     }
 }

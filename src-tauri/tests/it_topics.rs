@@ -12,13 +12,24 @@ use rdkafka::admin::ResourceSpecifier;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn list_stats_details_configs() {
-    let Some(bs) = common::bootstrap() else { return };
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
     let topic = common::unique_topic("it-topics");
     common::create_topic(&bs, &topic, 3).await;
-    let msgs: Vec<TestMsg> = (0..5).map(|i| TestMsg { partition: i % 3, key: None, value: "v", headers: &[] }).collect();
+    let msgs: Vec<TestMsg> = (0..5)
+        .map(|i| TestMsg {
+            partition: i % 3,
+            key: None,
+            value: "v",
+            headers: &[],
+        })
+        .collect();
     common::produce(&bs, &topic, &msgs).await;
 
-    let h = Arc::new(KafkaHandles::create(&common::plaintext_profile(&bs), &MemoryStore::default()).unwrap());
+    let h = Arc::new(
+        KafkaHandles::create(&common::plaintext_profile(&bs), &MemoryStore::default()).unwrap(),
+    );
     let (h1, t1) = (h.clone(), topic.clone());
     let (list, stats, details, missing) = tokio::task::spawn_blocking(move || {
         (
@@ -31,7 +42,10 @@ async fn list_stats_details_configs() {
     .await
     .unwrap();
 
-    let summary = list.iter().find(|t| t.name == topic).expect("топик в списке");
+    let summary = list
+        .iter()
+        .find(|t| t.name == topic)
+        .expect("топик в списке");
     assert_eq!(summary.partition_count, 3);
     assert_eq!(stats.len(), 1);
     assert_eq!(stats[0].message_count, Some(5));
@@ -41,7 +55,9 @@ async fn list_stats_details_configs() {
     assert_eq!(details.message_count, Some(5));
     assert_eq!(missing.code, ErrorCode::NotFound);
 
-    let configs = describe_configs(&h, ResourceSpecifier::Topic(&topic)).await.unwrap();
+    let configs = describe_configs(&h, ResourceSpecifier::Topic(&topic))
+        .await
+        .unwrap();
     let cleanup = configs.iter().find(|c| c.name == "cleanup.policy").unwrap();
     assert_eq!(cleanup.value.as_deref(), Some("delete"));
 }

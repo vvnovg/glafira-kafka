@@ -49,6 +49,8 @@ pub struct BrowseParams {
 
 pub const MAX_LIMIT: usize = 100_000;
 const BATCH_SIZE: usize = 200;
+/// Верхняя граница объёма одного события Messages (сообщения до 1 МиБ текста каждое).
+const MAX_BATCH_BYTES: usize = 4 * 1024 * 1024;
 const BATCH_INTERVAL: Duration = Duration::from_millis(100);
 const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
 const POLL_TIMEOUT: Duration = Duration::from_millis(100);
@@ -443,10 +445,24 @@ fn to_browsed(
     }
 }
 
-/// Буферизация: до BATCH_SIZE сообщений или раз в BATCH_INTERVAL; Progress — не реже раза в секунду.
+/// Оценка объёма сообщения в событии: текст ключа и значения плюс заголовки.
+fn estimated_bytes(m: &BrowsedMessage) -> usize {
+    let text =
+        |d: &Option<crate::browse::format::DecodedData>| d.as_ref().map_or(0, |d| d.text.len());
+    text(&m.key)
+        + text(&m.value)
+        + m.headers
+            .iter()
+            .map(|h| h.name.len() + h.value.as_ref().map_or(0, String::len))
+            .sum::<usize>()
+}
+
+/// Буферизация: до BATCH_SIZE сообщений / MAX_BATCH_BYTES или раз в BATCH_INTERVAL;
+/// Progress — не реже раза в секунду.
 struct Output<'a> {
     sink: &'a dyn EventSink,
     batch: Vec<BrowsedMessage>,
+    batch_bytes: usize,
     scanned: u64,
     matched: u64,
     last_flush: Instant,
@@ -460,6 +476,7 @@ impl<'a> Output<'a> {
         Self {
             sink,
             batch: Vec::with_capacity(BATCH_SIZE),
+            batch_bytes: 0,
             scanned: 0,
             matched: 0,
             last_flush: Instant::now(),
@@ -471,11 +488,13 @@ impl<'a> Output<'a> {
 
     fn push(&mut self, m: BrowsedMessage) {
         self.matched += 1;
+        self.batch_bytes += estimated_bytes(&m);
         self.batch.push(m);
     }
 
     fn maybe_flush(&mut self) {
         if self.batch.len() >= BATCH_SIZE
+            || self.batch_bytes > MAX_BATCH_BYTES
             || (!self.batch.is_empty() && self.last_flush.elapsed() >= BATCH_INTERVAL)
         {
             self.flush();
@@ -487,6 +506,7 @@ impl<'a> Output<'a> {
     fn flush(&mut self) {
         if !self.batch.is_empty() {
             let messages = std::mem::take(&mut self.batch);
+            self.batch_bytes = 0;
             self.emit(BrowseEvent::Messages { messages });
         }
         self.last_flush = Instant::now();
@@ -707,6 +727,62 @@ mod tests {
         m.on_probe(t + secs(5), false);
         assert!(!m.should_probe(t + secs(9)));
         assert!(m.should_probe(t + secs(10)));
+    }
+
+    struct VecSink(std::sync::Mutex<Vec<BrowseEvent>>);
+
+    impl EventSink for std::sync::Arc<VecSink> {
+        fn send(&self, event: BrowseEvent) -> bool {
+            self.0.lock().unwrap().push(event);
+            true
+        }
+    }
+
+    fn big_message(offset: i64, value_bytes: usize) -> BrowsedMessage {
+        BrowsedMessage {
+            partition: 0,
+            offset,
+            timestamp: None,
+            key: None,
+            value: Some(crate::browse::format::DecodedData {
+                format: DataFormat::String,
+                text: "x".repeat(value_bytes),
+                size: value_bytes,
+                truncated: false,
+                error: None,
+            }),
+            headers: vec![HeaderView {
+                name: "h".into(),
+                value: Some("v".into()),
+            }],
+            size: value_bytes,
+        }
+    }
+
+    #[test]
+    fn estimated_bytes_counts_key_value_and_headers() {
+        let m = big_message(0, 100);
+        assert_eq!(estimated_bytes(&m), 100 + 2);
+    }
+
+    #[test]
+    fn batch_is_flushed_when_byte_budget_exceeded() {
+        let sink = std::sync::Arc::new(VecSink(Default::default()));
+        let mut out = Output::new(&sink);
+        // По ~1 МиБ: меньше BATCH_SIZE, интервал не истёк; 4-е сообщение превышает 4 МиБ.
+        for i in 0..5 {
+            out.push(big_message(i, 1024 * 1024));
+            out.maybe_flush();
+        }
+        let events = sink.0.lock().unwrap();
+        let batches: Vec<usize> = events
+            .iter()
+            .filter_map(|e| match e {
+                BrowseEvent::Messages { messages } => Some(messages.len()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(batches, vec![4], "сброс по объёму после превышения 4 МиБ");
     }
 
     #[test]

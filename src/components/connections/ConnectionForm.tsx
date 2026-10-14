@@ -18,6 +18,8 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const [report, setReport] = useState<TestReport | null>(null);
   const [error, setError] = useState<AppError | null>(null);
   const [busy, setBusy] = useState(false);
+  // Подтверждение удаления внутри формы: нативный window.confirm в Tauri 2 не показывается и возвращает false.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const queryClient = useQueryClient();
   const open = useWorkspace((s) => s.open);
   const close = useWorkspace((s) => s.close);
@@ -57,7 +59,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
 
   const onDelete = () =>
     run(async () => {
-      if (!window.confirm(`Удалить подключение «${profile.name}»?`)) return;
+      setConfirmingDelete(false);
       await api.deleteConnection(profile.id);
       await queryClient.invalidateQueries({ queryKey: ["connections"] });
       // Вкладки и кэш удалённого подключения больше не нужны (сессии чтения отменяет backend).
@@ -187,9 +189,21 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           Сохранить
         </button>
         {!isNew && (
-          <button type="button" className="danger" disabled={busy} onClick={onDelete}>
-            Удалить
-          </button>
+          confirmingDelete ? (
+            <span role="group" aria-label="Подтверждение удаления">
+              <strong>Удалить подключение «{profile.name}»?</strong>{" "}
+              <button type="button" className="danger" disabled={busy} onClick={onDelete}>
+                Да, удалить
+              </button>{" "}
+              <button type="button" disabled={busy} onClick={() => setConfirmingDelete(false)}>
+                Отмена
+              </button>
+            </span>
+          ) : (
+            <button type="button" className="danger" disabled={busy} onClick={() => setConfirmingDelete(true)}>
+              Удалить
+            </button>
+          )
         )}
         {busy && <span className="muted">Выполняется…</span>}
       </div>

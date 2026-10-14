@@ -50,8 +50,8 @@ pub struct TopicDetails {
     pub name: String,
     pub internal: bool,
     pub replication_factor: usize,
-    /// Сумма по партициям с известными оффсетами.
-    pub message_count: i64,
+    /// None, если у какой-либо партиции оффсеты недоступны.
+    pub message_count: Option<i64>,
     pub partitions: Vec<PartitionDetails>,
 }
 
@@ -195,7 +195,7 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
     Ok(TopicDetails {
         internal: t.internal(),
         replication_factor: t.replication_factor(),
-        message_count: partitions.iter().filter_map(|p| p.message_count).sum(),
+        message_count: partitions.iter().map(|p| p.message_count).sum::<Option<i64>>(),
         name: t.name,
         partitions,
     })
@@ -246,5 +246,12 @@ mod tests {
         assert_eq!(combine(Some(&ok(3)), Some(&err("leader not available"))), Err("leader not available".to_string()));
         assert_eq!(combine(Some(&err("denied")), Some(&ok(9))), Err("denied".to_string()));
         assert_eq!(combine(Some(&ok(3)), None), Err(NO_OFFSET.to_string()));
+    }
+
+    #[test]
+    fn total_is_unknown_if_any_partition_unknown() {
+        let total = |v: &[Option<i64>]| v.iter().copied().sum::<Option<i64>>();
+        assert_eq!(total(&[Some(2), Some(3)]), Some(5));
+        assert_eq!(total(&[Some(2), None]), None);
     }
 }

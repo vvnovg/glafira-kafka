@@ -38,7 +38,7 @@ async fn list_stats_details_configs() {
     assert_eq!(details.partitions.len(), 3);
     assert_eq!(details.partitions[0].high, Some(2)); // сообщения 0 и 3
     assert!(details.partitions.iter().all(|p| p.offsets_error.is_none()));
-    assert_eq!(details.message_count, 5);
+    assert_eq!(details.message_count, Some(5));
     assert_eq!(missing.code, ErrorCode::NotFound);
 
     let configs = describe_configs(&h, ResourceSpecifier::Topic(&topic)).await.unwrap();

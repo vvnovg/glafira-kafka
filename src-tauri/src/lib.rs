@@ -18,6 +18,10 @@ use tracing_subscriber::EnvFilter;
 use crate::secrets::KeyringStore;
 use crate::state::AppState;
 
+/// Сколько ждать завершения сессий при выходе из приложения (в сумме, не на сессию).
+/// Пакет при отмене ждёт подтверждений до 2 с, выход consumer из группы — доли секунды.
+const EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tracing_subscriber::fmt()
@@ -78,7 +82,11 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
-                app.state::<AppState>().sessions.cancel_all();
+                // Процесс завершится сразу после колбэка: даём сессиям выйти из группы
+                // (иначе участник висит до session.timeout.ms) и завершить пакеты.
+                if !app.state::<AppState>().sessions.shutdown(EXIT_GRACE) {
+                    tracing::warn!("сессии не завершились за {EXIT_GRACE:?}: выходим без ожидания");
+                }
             }
         });
 }

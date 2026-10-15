@@ -304,3 +304,52 @@ async fn pause_resume_and_unassigned_partition_error() {
     .await
     .unwrap();
 }
+
+/// Выход из приложения (`SessionRegistry::shutdown`): сессия успевает выйти из группы,
+/// участник не висит до session.timeout.ms.
+#[tokio::test(flavor = "multi_thread")]
+async fn app_shutdown_waits_for_session_to_leave_group() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let topic = common::TempTopic::create(&bs, "it-consume-exit", 1).await;
+    let group = common::TempGroup::new(&bs, "it-consume-exit");
+    let (t, g) = (topic.to_string(), group.to_string());
+    tokio::task::spawn_blocking(move || {
+        let dir = tempfile::tempdir().unwrap();
+        let st =
+            kafka_explorer_lib::state::AppState::new(dir.path(), Arc::new(MemoryStore::default()))
+                .unwrap();
+        st.connections
+            .upsert(common::plaintext_profile(&bs))
+            .unwrap();
+        let params = ConsumerParams {
+            connection_id: "it".into(),
+            group_id: g.clone(),
+            topics: vec![t],
+            topic_pattern: None,
+            auto_offset_reset: OffsetReset::Earliest,
+            enable_auto_commit: false,
+            isolation_level: IsolationLevel::ReadCommitted,
+            key_format: DataFormat::Auto,
+            value_format: DataFormat::Auto,
+            filter: FilterSpec::default(),
+        };
+        let sink = VecSink::default();
+        kafka_explorer_lib::commands::consume::start_consumer_impl(&st, params, sink.clone(), None)
+            .unwrap();
+        wait_until("сессия получила партицию", || {
+            sink.last_assigned() == Some(1)
+        });
+        let started = Instant::now();
+        assert!(st.sessions.shutdown(Duration::from_secs(5)));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        assert!(sink.finished());
+        let h =
+            KafkaHandles::create(&common::plaintext_profile(&bs), &MemoryStore::default()).unwrap();
+        let d = kafka_explorer_lib::kafka::group_ops::describe_group(&h, &g).unwrap();
+        assert!(d.members.is_empty(), "участник вышел из группы: {d:?}");
+    })
+    .await
+    .unwrap();
+}

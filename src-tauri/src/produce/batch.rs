@@ -1,3 +1,4 @@
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -258,9 +259,16 @@ pub fn run_batch(
     cancel: Arc<AtomicBool>,
     sink: &dyn BatchSink,
 ) {
-    if let Err(error) = run_inner(profile, secrets, params, &cancel, sink) {
-        sink.send(BatchEvent::Error { error });
-    }
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        run_inner(profile, secrets, params, &cancel, sink)
+    }));
+    let error = match result {
+        Ok(Ok(())) => return,
+        Ok(Err(error)) => error,
+        // Паника не должна оставлять UI в «идёт отправка» без терминального события.
+        Err(_) => AppError::internal("Внутренняя ошибка пакетной отправки"),
+    };
+    sink.send(BatchEvent::Error { error });
 }
 
 fn run_inner(
@@ -606,5 +614,40 @@ mod tests {
             .map(|i| i.message.unwrap().value.unwrap())
             .collect();
         assert_eq!(values, [b"0".to_vec(), b"1".to_vec(), b"2".to_vec()]);
+    }
+
+    /// Паникует на первом событии, остальные запоминает.
+    struct PanicOnce(AtomicBool, Mutex<Vec<BatchEvent>>);
+
+    impl BatchSink for PanicOnce {
+        fn send(&self, e: BatchEvent) -> bool {
+            if !self.0.swap(true, Ordering::SeqCst) {
+                panic!("boom");
+            }
+            self.1.lock_safe().push(e);
+            true
+        }
+    }
+
+    #[test]
+    fn panic_yields_terminal_error_event() {
+        let mut profile = crate::storage::connections::sample_profile("c");
+        profile.bootstrap_servers = "127.0.0.1:1".into();
+        let sink = PanicOnce(AtomicBool::new(false), Mutex::default());
+        // Отменено сразу: первое же событие (Finished) паникует в sink.
+        run_batch(
+            &profile,
+            &crate::secrets::MemoryStore::default(),
+            copies(1),
+            Arc::new(AtomicBool::new(true)),
+            &sink,
+        );
+        let events = sink.1.lock_safe();
+        match events.last() {
+            Some(BatchEvent::Error { error }) => {
+                assert_eq!(error.message, "Внутренняя ошибка пакетной отправки")
+            }
+            other => panic!("ожидали Error, получили {other:?}"),
+        }
     }
 }

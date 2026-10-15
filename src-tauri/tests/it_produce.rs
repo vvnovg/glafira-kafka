@@ -29,8 +29,8 @@ async fn sends_and_reports_partition_offset() {
     .unwrap();
     let r1 = send(&h, &message(&topic, Some(1))).await.unwrap();
     let r2 = send(&h, &message(&topic, Some(1))).await.unwrap();
-    assert_eq!((r1.partition, r1.offset), (1, 0));
-    assert_eq!((r2.partition, r2.offset), (1, 1));
+    assert_eq!((r1.partition, r1.offset), (1, Some(0)));
+    assert_eq!((r2.partition, r2.offset), (1, Some(1)));
     assert!(r1.timestamp > 0);
 }
 

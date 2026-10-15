@@ -202,8 +202,10 @@ impl ProducerPool {
 #[serde(rename_all = "camelCase")]
 pub struct ProduceResult {
     pub partition: i32,
-    pub offset: i64,
-    /// CreateTime, проставленный при отправке (мс).
+    /// None, если librdkafka не сообщил offset (отрицательное значение, например acks=0).
+    pub offset: Option<i64>,
+    /// CreateTime (мс): время, которое клиент проставил в сообщение при отправке, а не
+    /// время записи брокером (LogAppendTime топика может отличаться).
     pub timestamp: i64,
 }
 
@@ -287,7 +289,7 @@ pub async fn send(h: &ProducerHandle, m: &EncodedMessage) -> AppResult<ProduceRe
     match h.producer.send(record, Timeout::After(h.timeout)).await {
         Ok((partition, offset)) => Ok(ProduceResult {
             partition,
-            offset,
+            offset: (offset >= 0).then_some(offset),
             timestamp,
         }),
         Err((e, _)) => {

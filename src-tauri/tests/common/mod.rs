@@ -246,3 +246,21 @@ pub async fn produce(bs: &str, topic: &str, msgs: &[TestMsg<'_>]) {
         producer.send(record, Duration::from_secs(5)).await.unwrap();
     }
 }
+
+/// Участник группы: подписан на топик и получил назначение.
+pub fn join_group(bs: &str, group: &str, topic: &str) -> BaseConsumer {
+    let c: BaseConsumer = ClientConfig::new()
+        .set("bootstrap.servers", bs)
+        .set("group.id", group)
+        .set("client.id", "it-member")
+        .set("enable.auto.commit", "false")
+        .create()
+        .unwrap();
+    c.subscribe(&[topic]).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while c.assignment().unwrap().count() == 0 {
+        assert!(Instant::now() < deadline, "участник не получил назначение");
+        let _ = c.poll(Duration::from_millis(100));
+    }
+    c
+}

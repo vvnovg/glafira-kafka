@@ -1,7 +1,6 @@
 mod common;
 
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 
 use kafka_explorer_lib::kafka::admin_ext::{
     alter_consumer_group_offsets, describe_consumer_groups, incremental_alter_topic_configs,
@@ -10,9 +9,8 @@ use kafka_explorer_lib::kafka::admin_ext::{
 use kafka_explorer_lib::kafka::configs::describe_configs;
 use kafka_explorer_lib::kafka::pool::KafkaHandles;
 use kafka_explorer_lib::secrets::MemoryStore;
-use rdkafka::ClientConfig;
 use rdkafka::admin::ResourceSpecifier;
-use rdkafka::consumer::{BaseConsumer, Consumer};
+use rdkafka::consumer::Consumer;
 use rdkafka::types::RDKafkaErrorCode;
 
 fn handles(bs: &str) -> Arc<KafkaHandles> {
@@ -111,24 +109,6 @@ async fn incremental_alter_reports_item_errors() {
     assert_eq!(missing, Err(RDKafkaErrorCode::UnknownTopicOrPartition));
 }
 
-/// Участник группы: подписан на топик и получил назначение.
-fn join_group(bs: &str, group: &str, topic: &str) -> BaseConsumer {
-    let c: BaseConsumer = ClientConfig::new()
-        .set("bootstrap.servers", bs)
-        .set("group.id", group)
-        .set("client.id", "it-member")
-        .set("enable.auto.commit", "false")
-        .create()
-        .unwrap();
-    c.subscribe(&[topic]).unwrap();
-    let deadline = Instant::now() + Duration::from_secs(30);
-    while c.assignment().unwrap().count() == 0 {
-        assert!(Instant::now() < deadline, "участник не получил назначение");
-        let _ = c.poll(Duration::from_millis(100));
-    }
-    c
-}
-
 #[tokio::test(flavor = "multi_thread")]
 async fn groups_list_describe_offsets_alter() {
     let Some(bs) = common::bootstrap() else {
@@ -179,7 +159,7 @@ async fn groups_list_describe_offsets_alter() {
         assert_eq!(after.iter().map(|p| p.offset).collect::<Vec<_>>(), [1, 0]);
 
         // Активная группа: участник и его назначение видны.
-        let member = join_group(&bs2, &g, &t);
+        let member = common::join_group(&bs2, &g, &t);
         let d = describe_consumer_groups(&h.admin, h.timeout, std::slice::from_ref(&g)).unwrap();
         assert_eq!(d[0].state, "Stable");
         assert_eq!(d[0].members.len(), 1);

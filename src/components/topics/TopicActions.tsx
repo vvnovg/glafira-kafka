@@ -25,23 +25,44 @@ function useInvalidateTopic(connectionId: string, topic: string) {
   };
 }
 
+/** Брокер принимает DeleteRecords, только если в cleanup.policy есть delete. */
+export function purgeBlockReason(cleanup: string | null): string | null {
+  if (cleanup === null) return null;
+  const parts = cleanup.split(",").map((x) => x.trim());
+  if (parts.includes("delete")) return null;
+  return `Очистка невозможна: у топика cleanup.policy=${cleanup} (нужно compact,delete или delete)`;
+}
+
 export function TopicActions({ connection, topic, onDeleted }: Props) {
   const [action, setAction] = useState<Action>(null);
+  const policy = useQuery({
+    queryKey: ["topicPolicies", connection.id, [topic.name]],
+    queryFn: () => api.getTopicPolicies(connection.id, [topic.name]),
+  });
+  const cleanup = policy.data?.[0]?.cleanupPolicy ?? null;
+  const purgeBlock = purgeBlockReason(cleanup);
   return (
     <>
       <div className="toolbar">
         <button type="button" onClick={() => setAction("partitions")}>
           Добавить партиции
         </button>
-        <button type="button" className="danger" onClick={() => setAction("purge")}>
+        <button
+          type="button"
+          className="danger"
+          disabled={purgeBlock !== null}
+          title={purgeBlock ?? undefined}
+          onClick={() => setAction("purge")}
+        >
           Очистить
         </button>
         <button type="button" className="danger" onClick={() => setAction("delete")}>
           Удалить топик
         </button>
       </div>
+      {purgeBlock && <p className="warn">{purgeBlock}</p>}
       {action === "partitions" && <AddPartitions connection={connection} topic={topic} onClose={() => setAction(null)} />}
-      {action === "purge" && <Purge connection={connection} topic={topic} onClose={() => setAction(null)} />}
+      {action === "purge" && <Purge connection={connection} topic={topic} cleanup={cleanup} policyError={policy.error} onClose={() => setAction(null)} />}
       {action === "delete" && (
         <DeleteTopicsPanel
           connection={connection}
@@ -117,16 +138,23 @@ function AddPartitions({ connection, topic, onClose }: { connection: ConnectionP
   );
 }
 
-function Purge({ connection, topic, onClose }: { connection: ConnectionProfile; topic: TopicDetails; onClose: () => void }) {
+function Purge({
+  connection,
+  topic,
+  cleanup,
+  policyError,
+  onClose,
+}: {
+  connection: ConnectionProfile;
+  topic: TopicDetails;
+  cleanup: string | null;
+  policyError: unknown;
+  onClose: () => void;
+}) {
   const invalidate = useInvalidateTopic(connection.id, topic.name);
   // Список партиций фиксируется при открытии: обновление топика не меняет цель под подтверждением.
   const [ids] = useState(() => topic.partitions.map((p) => p.id));
   const [selected, setSelected] = useState<Set<number>>(new Set(ids));
-  const policy = useQuery({
-    queryKey: ["topicPolicies", connection.id, [topic.name]],
-    queryFn: () => api.getTopicPolicies(connection.id, [topic.name]),
-  });
-  const cleanup = policy.data?.[0]?.cleanupPolicy ?? null;
   const compact = cleanup?.includes("compact") ?? false;
   const run = useMutation({
     mutationFn: (v: { parts: number[]; c: Parameters<typeof api.purgeTopic>[3] }) =>
@@ -167,8 +195,8 @@ function Purge({ connection, topic, onClose }: { connection: ConnectionProfile; 
       {compact && (
         <p className="warn">cleanup.policy = {cleanup}: purge удалит и последние значения ключей (compact).</p>
       )}
-      {policy.error && (
-        <p className="warn" title={String((policy.error as { message?: string }).message ?? policy.error)}>
+      {policyError != null && (
+        <p className="warn" title={String((policyError as { message?: string }).message ?? policyError)}>
           Не удалось определить cleanup.policy — для compact-топика purge удалит и последние значения ключей.
         </p>
       )}

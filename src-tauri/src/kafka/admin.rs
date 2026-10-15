@@ -3,6 +3,8 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use rdkafka::admin::{AdminOptions, NewPartitions, NewTopic, TopicReplication, TopicResult};
+use rdkafka::error::KafkaError;
+use rdkafka::types::RDKafkaErrorCode;
 use rdkafka::{Offset, TopicPartitionList};
 use serde::{Deserialize, Serialize};
 
@@ -157,6 +159,16 @@ pub struct PurgedPartition {
     pub error: Option<String>,
 }
 
+/// Текст ошибки очистки партиции; PolicyViolation брокер возвращает для топиков без `delete`.
+fn purge_error_message(err: &KafkaError) -> String {
+    match err.rdkafka_error_code() {
+        Some(RDKafkaErrorCode::PolicyViolation) => {
+            "Брокер запретил удаление записей: у топика cleanup.policy без delete".to_string()
+        }
+        _ => err.to_string(),
+    }
+}
+
 /// DeleteRecords до high watermark (Offset::End) по выбранным партициям.
 pub async fn purge_topic(
     h: &Arc<KafkaHandles>,
@@ -190,7 +202,7 @@ pub async fn purge_topic(
             (Err(err), _) => PurgedPartition {
                 partition: e.partition(),
                 low_watermark: None,
-                error: Some(err.to_string()),
+                error: Some(purge_error_message(&err)),
             },
         })
         .collect();
@@ -301,6 +313,18 @@ pub fn alter_topic_configs(
 mod tests {
     use super::*;
     use crate::error::ErrorCode;
+
+    #[test]
+    fn purge_policy_violation_has_clear_message() {
+        assert_eq!(
+            purge_error_message(&KafkaError::OffsetFetch(RDKafkaErrorCode::PolicyViolation)),
+            "Брокер запретил удаление записей: у топика cleanup.policy без delete"
+        );
+        let other = purge_error_message(&KafkaError::OffsetFetch(
+            RDKafkaErrorCode::TopicAuthorizationFailed,
+        ));
+        assert!(other.contains("authorization"), "{other}");
+    }
 
     #[test]
     fn topic_names_follow_kafka_rules() {

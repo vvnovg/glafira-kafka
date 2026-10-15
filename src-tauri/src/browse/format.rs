@@ -32,23 +32,33 @@ pub fn decode(bytes: &[u8], format: DataFormat) -> DecodedData {
     } else {
         format
     };
-    let (text, error) = match resolved {
-        DataFormat::String => (String::from_utf8_lossy(bytes).into_owned(), None),
-        DataFormat::Json => {
-            let text = String::from_utf8_lossy(bytes).into_owned();
-            match serde_json::from_slice::<serde_json::Value>(bytes) {
-                Ok(_) => (text, None),
-                Err(e) => (text, Some(format!("Невалидный JSON: {e}"))),
-            }
+    let (text, truncated, error) = match resolved {
+        DataFormat::String => {
+            let (t, cut) = text_prefix(bytes, MAX_TEXT_BYTES);
+            (t, cut, None)
         }
-        DataFormat::Hex => (hex::encode(bytes), None),
-        DataFormat::Base64 => (
-            base64::engine::general_purpose::STANDARD.encode(bytes),
-            None,
-        ),
+        DataFormat::Json => {
+            // Валидность — по всему входу (без копирования), в text — только видимая часть.
+            let error = serde_json::from_slice::<serde::de::IgnoredAny>(bytes)
+                .err()
+                .map(|e| format!("Невалидный JSON: {e}"));
+            let (t, cut) = text_prefix(bytes, MAX_TEXT_BYTES);
+            (t, cut, error)
+        }
+        DataFormat::Hex => {
+            let take = bytes.len().min(MAX_TEXT_BYTES / 2);
+            (hex::encode(&bytes[..take]), take < bytes.len(), None)
+        }
+        DataFormat::Base64 => {
+            let take = bytes.len().min(MAX_TEXT_BYTES / 4 * 3);
+            (
+                base64::engine::general_purpose::STANDARD.encode(&bytes[..take]),
+                take < bytes.len(),
+                None,
+            )
+        }
         DataFormat::Auto => unreachable!("detect никогда не возвращает Auto"),
     };
-    let (text, truncated) = truncate(text, MAX_TEXT_BYTES);
     DecodedData {
         format: resolved,
         text,
@@ -56,6 +66,19 @@ pub fn decode(bytes: &[u8], format: DataFormat) -> DecodedData {
         truncated,
         error,
     }
+}
+
+/// Текст из первых `max` байтов: граница не режет UTF-8-символ, невалидные байты — `�`.
+fn text_prefix(bytes: &[u8], max: usize) -> (String, bool) {
+    if bytes.len() <= max {
+        return (String::from_utf8_lossy(bytes).into_owned(), false);
+    }
+    let mut cut = max;
+    // Не начинать хвост с продолжающего байта UTF-8 (10xxxxxx): откатываемся к началу символа.
+    while cut > 0 && (bytes[cut] & 0b1100_0000) == 0b1000_0000 {
+        cut -= 1;
+    }
+    (String::from_utf8_lossy(&bytes[..cut]).into_owned(), true)
 }
 
 fn detect(bytes: &[u8]) -> DataFormat {
@@ -74,18 +97,6 @@ fn detect(bytes: &[u8]) -> DataFormat {
         return DataFormat::Hex;
     }
     DataFormat::String
-}
-
-fn truncate(mut s: String, max: usize) -> (String, bool) {
-    if s.len() <= max {
-        return (s, false);
-    }
-    let mut cut = max;
-    while !s.is_char_boundary(cut) {
-        cut -= 1;
-    }
-    s.truncate(cut);
-    (s, true)
 }
 
 pub fn header_text(bytes: &[u8]) -> String {
@@ -145,6 +156,45 @@ mod tests {
         assert!(d.truncated);
         assert!(d.text.len() <= MAX_TEXT_BYTES);
         assert_eq!(d.size, MAX_TEXT_BYTES * 2);
+    }
+
+    #[test]
+    fn hex_and_base64_encode_only_the_visible_prefix() {
+        let big = vec![0xabu8; MAX_TEXT_BYTES * 3];
+        let h = decode(&big, DataFormat::Hex);
+        assert!(h.truncated);
+        assert!(h.text.len() <= MAX_TEXT_BYTES);
+        assert_eq!(h.text.len() % 2, 0, "hex не режется посреди байта");
+        assert_eq!(h.size, big.len());
+        let b = decode(&big, DataFormat::Base64);
+        assert!(b.truncated);
+        assert!(b.text.len() <= MAX_TEXT_BYTES);
+        assert_eq!(b.text.len() % 4, 0, "base64 — целыми группами");
+    }
+
+    #[test]
+    fn json_validity_is_checked_on_whole_input() {
+        let mut v = b"{\"a\":\"".to_vec();
+        v.extend(std::iter::repeat_n(b'x', MAX_TEXT_BYTES * 2));
+        v.extend(b"\"}");
+        let d = decode(&v, DataFormat::Json);
+        assert!(d.truncated);
+        assert!(d.error.is_none(), "весь вход — валидный JSON");
+        assert!(d.text.len() <= MAX_TEXT_BYTES);
+    }
+
+    #[test]
+    fn invalid_utf8_tail_is_cut_cleanly() {
+        let mut v = vec![b'a'; MAX_TEXT_BYTES - 1];
+        v.extend("я".as_bytes()); // 2-байтовый символ пересекает границу
+        v.extend(vec![b'b'; 10]);
+        let d = decode(&v, DataFormat::String);
+        assert!(d.truncated);
+        assert_eq!(d.text.len(), MAX_TEXT_BYTES - 1);
+        assert!(
+            !d.text.contains('\u{FFFD}'),
+            "символ на границе не превращается в �"
+        );
     }
 
     #[test]

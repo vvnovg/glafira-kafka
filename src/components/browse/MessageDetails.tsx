@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { BrowsedMessage, DecodedData } from "../../api/types";
@@ -6,6 +6,7 @@ import { formatBytes, formatTimestamp } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { useConnection } from "../../lib/useConnection";
 import { useWorkspace } from "../../state/workspace";
+import { browsedToMessage } from "../producer/fromMessage";
 import { prettyText } from "./params";
 
 function copy(text: string) {
@@ -43,11 +44,20 @@ interface Props {
   message: BrowsedMessage | null;
   utc: boolean;
   connectionId: string;
-  topic: string;
 }
 
-export function MessageDetails({ message, utc, connectionId, topic }: Props) {
+export function MessageDetails({ message, utc, connectionId }: Props) {
   const connection = useConnection(connectionId);
+  const open = useWorkspace((s) => s.open);
+  // Причина, по которой повторная отправка невозможна (например, усечённое значение), показывается в интерфейсе.
+  const resend = useMemo(() => {
+    if (!message) return null;
+    try {
+      return { prefill: browsedToMessage(message), error: null };
+    } catch (e) {
+      return { prefill: null, error: (e as Error).message };
+    }
+  }, [message]);
   if (!message) return <div className="details-pane muted">Выберите сообщение</div>;
   return (
     <div className="details-pane">
@@ -63,7 +73,21 @@ export function MessageDetails({ message, utc, connectionId, topic }: Props) {
           копировать всё как JSON
         </button>
       </p>
-      {connection && !connection.readOnly && <ResetGroupHere connectionId={connectionId} topic={topic} message={message} />}
+      {connection && !connection.readOnly && (
+        <button
+          type="button"
+          className="link"
+          disabled={!resend?.prefill}
+          title={resend?.error ?? undefined}
+          onClick={() => {
+            if (resend?.prefill) open({ kind: "producer", connectionId, prefill: { message: resend.prefill, nonce: Date.now() } });
+          }}
+        >
+          Отправить повторно
+        </button>
+      )}
+      {resend?.error && <p className="warn">{resend.error}</p>}
+      {connection && !connection.readOnly && <ResetGroupHere connectionId={connectionId} topic={message.topic} message={message} />}
       <DataBlock title="Значение" data={message.value} />
       <DataBlock title="Ключ" data={message.key} />
       <section>

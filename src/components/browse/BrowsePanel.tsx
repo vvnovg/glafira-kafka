@@ -62,7 +62,7 @@ export function BrowsePanel({ connectionId, topic }: { connectionId: string; top
           onSelect={setSelected}
           utc={utc}
         />
-        <MessageDetails message={selected} utc={utc} connectionId={connectionId} topic={topic} />
+        <MessageDetails message={selected} utc={utc} connectionId={connectionId} />
       </div>
     </div>
   );

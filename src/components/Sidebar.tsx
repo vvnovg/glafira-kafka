@@ -45,6 +45,11 @@ export function Sidebar() {
                   Топики
                 </button>
               </li>
+              <li>
+                <button type="button" className="link" onClick={() => open({ kind: "groups", connectionId: c.id })}>
+                  Consumer groups
+                </button>
+              </li>
             </ul>
           </li>
         ))}

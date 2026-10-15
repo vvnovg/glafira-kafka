@@ -18,6 +18,10 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
       return `${conn} · Топики`;
     case "topic":
       return `${conn} · ${tab.topic}`;
+    case "groups":
+      return `${conn} · Группы`;
+    case "group":
+      return `${conn} · ${tab.groupId}`;
   }
 }
 

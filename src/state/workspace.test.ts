@@ -54,4 +54,17 @@ describe("workspace", () => {
     closeForConnection("a");
     expect(useWorkspace.getState()).toMatchObject({ tabs: [], activeId: null });
   });
+
+  it("повторное open обновляет spec открытой вкладки", () => {
+    const { open } = useWorkspace.getState();
+    open({ kind: "group", connectionId: "c", groupId: "g" });
+    open({ kind: "topics", connectionId: "c" });
+    const prefill = { topic: "t", partition: 1, offset: 42, nonce: 1 };
+    open({ kind: "group", connectionId: "c", groupId: "g", resetPrefill: prefill });
+    const s = useWorkspace.getState();
+    expect(s.tabs).toHaveLength(2);
+    expect(s.activeId).toBe("group:c:g");
+    expect(s.tabs[0]).toMatchObject({ resetPrefill: prefill });
+    expect(tabId({ kind: "groups", connectionId: "c" })).toBe("groups:c");
+  });
 });

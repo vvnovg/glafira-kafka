@@ -1,9 +1,13 @@
 import { create } from "zustand";
 
+export type ResetPrefill = { topic: string; partition: number; offset: number; nonce: number };
+
 export type TabSpec =
   | { kind: "cluster"; connectionId: string }
   | { kind: "topics"; connectionId: string }
   | { kind: "topic"; connectionId: string; topic: string }
+  | { kind: "groups"; connectionId: string }
+  | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill }
   | { kind: "connection-form"; connectionId: string | null };
 
 export type Tab = TabSpec & { id: string };
@@ -12,6 +16,8 @@ export function tabId(spec: TabSpec): string {
   switch (spec.kind) {
     case "topic":
       return `topic:${spec.connectionId}:${spec.topic}`;
+    case "group":
+      return `group:${spec.connectionId}:${spec.groupId}`;
     case "connection-form":
       return `connection-form:${spec.connectionId ?? "new"}`;
     default:
@@ -35,8 +41,10 @@ export const useWorkspace = create<WorkspaceState>((set) => ({
   open: (spec) =>
     set((s) => {
       const id = tabId(spec);
-      if (s.tabs.some((t) => t.id === id)) return { activeId: id };
-      return { tabs: [...s.tabs, { ...spec, id } as Tab], activeId: id };
+      const tab = { ...spec, id } as Tab;
+      // Уже открытая вкладка получает новый spec (например, предзаполненный сброс оффсетов).
+      if (s.tabs.some((t) => t.id === id)) return { tabs: s.tabs.map((t) => (t.id === id ? tab : t)), activeId: id };
+      return { tabs: [...s.tabs, tab], activeId: id };
     }),
   close: (id) =>
     set((s) => {

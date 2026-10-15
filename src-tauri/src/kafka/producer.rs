@@ -100,6 +100,8 @@ impl ProducerSettings {
     }
 }
 
+/// Producer одного подключения. Освобождение (drop) сбрасывает очередь и ждёт потоки
+/// librdkafka (до ~500 мс): создавать и отпускать — только из blocking-контекста.
 pub struct ProducerHandle {
     pub producer: FutureProducer<CapturingContext>,
     pub ctx: CapturingContext,
@@ -148,7 +150,7 @@ impl ProducerPool {
             .unwrap_or(0)
     }
 
-    /// Блокирующий: читает keychain и создаёт клиент. Не более MAX_PRODUCERS_PER_CONNECTION
+    /// Блокирующий (в т. ч. вытеснение лишних producer'ов): читает keychain и создаёт клиент. Не более MAX_PRODUCERS_PER_CONNECTION
     /// на подключение.
     pub fn get(
         &self,

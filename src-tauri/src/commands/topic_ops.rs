@@ -5,6 +5,7 @@ use crate::error::{AppError, AppResult};
 use crate::guard::ensure_name_confirmed;
 use crate::kafka::admin::{self, ConfigChange, NewTopicSpec, PurgedPartition, TopicDeleteResult};
 use crate::kafka::configs::{TopicPolicy, describe_topic_policies};
+use crate::kafka::metadata::is_internal;
 use crate::state::AppState;
 
 // Каждая мутирующая команда первым делом вызывает `AppState::guarded` (read-only / prod),
@@ -119,6 +120,11 @@ pub async fn purge_topic_impl(
     typed_name: Option<String>,
 ) -> AppResult<Vec<PurgedPartition>> {
     st.guarded(&connection_id, confirm.as_deref())?;
+    if is_internal(&topic) {
+        return Err(AppError::invalid(format!(
+            "Внутренний топик «{topic}» нельзя очищать"
+        )));
+    }
     ensure_name_confirmed(&topic, typed_name.as_deref())?;
     let all = partition_ids(st, &connection_id, &topic).await?;
     let selected = admin::resolve_partitions(&all, partitions.as_deref())?;
@@ -162,6 +168,11 @@ pub async fn delete_topics_impl(
         .collect();
     if topics.is_empty() {
         return Err(AppError::invalid("Не выбраны топики"));
+    }
+    if let Some(t) = topics.iter().find(|t| is_internal(t)) {
+        return Err(AppError::invalid(format!(
+            "Внутренний топик «{t}» нельзя удалять"
+        )));
     }
     // Один топик подтверждается его именем, несколько — их числом.
     let expected = match topics.as_slice() {
@@ -308,6 +319,46 @@ mod tests {
         )
         .await;
         assert_eq!(dup.unwrap_err().code, ErrorCode::ConfirmationRequired);
+    }
+
+    #[tokio::test]
+    async fn internal_topics_are_rejected_after_guard() {
+        let (_d, st) = state();
+        let s = |s: &str| Some(s.to_string());
+        let e = purge_topic_impl(
+            &st,
+            "dev".into(),
+            "__consumer_offsets".into(),
+            None,
+            None,
+            s("__consumer_offsets"),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert!(e.message.contains("__consumer_offsets"), "{}", e.message);
+        let e = delete_topics_impl(
+            &st,
+            "dev".into(),
+            vec!["a".into(), "_schemas".into()],
+            None,
+            s("2"),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert!(e.message.contains("_schemas"), "{}", e.message);
+        // Guard остаётся первым: read-only отвечает READ_ONLY даже для внутреннего топика.
+        let e = delete_topics_impl(
+            &st,
+            "ro".into(),
+            vec!["__consumer_offsets".into()],
+            s("conn-ro"),
+            s("__consumer_offsets"),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(e.code, ErrorCode::ReadOnly);
     }
 
     #[tokio::test]

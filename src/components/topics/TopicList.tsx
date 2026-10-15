@@ -58,6 +58,11 @@ export function TopicList({ connectionId }: { connectionId: string }) {
     [q.data, debouncedQuery, showInternal],
   );
   const names = useMemo(() => rows.map((r) => r.name), [rows]);
+  // Внутренние топики не выбираются для удаления (backend их тоже отклоняет).
+  const internalNames = useMemo(
+    () => new Set((q.data ?? []).filter((t) => t.internal).map((t) => t.name)),
+    [q.data],
+  );
 
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -178,7 +183,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
             </button>
             {selecting && (
               <button type="button" className="danger" disabled={selected.size === 0 || deleting || creating}
-                onClick={() => setDeleteTargets([...selected].sort())}>
+                onClick={() => setDeleteTargets([...selected].filter((n) => !internalNames.has(n)).sort())}>
                 Удалить ({selected.size})
               </button>
             )}
@@ -231,11 +236,11 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 className="row clickable topic-row"
                 style={{ top: item.start, height: ROW_HEIGHT }}
                 {...activateProps(() =>
-                  selecting ? toggle(t.name) : open({ kind: "topic", connectionId, topic: t.name }),
+                  selecting ? !t.internal && toggle(t.name) : open({ kind: "topic", connectionId, topic: t.name }),
                 )}
               >
                 <span>
-                  {selecting && (
+                  {selecting && !t.internal && (
                     <input
                       type="checkbox"
                       aria-label={`Выбрать ${t.name}`}

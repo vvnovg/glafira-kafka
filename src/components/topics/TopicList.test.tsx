@@ -36,6 +36,22 @@ beforeEach(() => {
 });
 
 describe("TopicList", () => {
+  it("внутренние топики нельзя выбрать для удаления", async () => {
+    vi.mocked(api.listTopics).mockResolvedValue([
+      topic("a"),
+      { ...topic("__consumer_offsets"), internal: true },
+    ] as never);
+    const user = userEvent.setup();
+    renderWithClient(<TopicList connectionId="c" />);
+    await user.click(await screen.findByLabelText("Внутренние"));
+    await user.click(screen.getByRole("button", { name: "Выбрать" }));
+    expect(screen.getByLabelText("Выбрать a")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Выбрать __consumer_offsets")).not.toBeInTheDocument();
+    // Клик по строке внутреннего топика в режиме выбора не добавляет его в выбор.
+    await user.click(screen.getByText("__consumer_offsets"));
+    expect(screen.getByRole("button", { name: "Удалить (0)" })).toBeDisabled();
+  });
+
   it("цель удаления фиксируется при открытии панели", async () => {
     const user = userEvent.setup();
     renderWithClient(<TopicList connectionId="c" />);

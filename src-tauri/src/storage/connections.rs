@@ -71,6 +71,15 @@ pub enum SecurityConfig {
     SaslSsl { tls: TlsConfig, sasl: SaslConfig },
 }
 
+impl SecurityConfig {
+    pub fn uses_sasl(&self) -> bool {
+        matches!(
+            self,
+            SecurityConfig::SaslPlaintext { .. } | SecurityConfig::SaslSsl { .. }
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionProfile {

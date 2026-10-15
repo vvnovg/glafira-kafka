@@ -24,11 +24,13 @@ interface Props {
   connection: ConnectionProfile;
   groupId: string;
   prefill?: ResetPrefill;
+  /** Почему применение сейчас невозможно (например, группа не пуста); null — можно. */
+  blockedReason?: string | null;
   onApplied: () => void;
   onClose: () => void;
 }
 
-export function ResetOffsetsPanel({ connection, groupId, prefill, onApplied, onClose }: Props) {
+export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason = null, onApplied, onClose }: Props) {
   const [form, setForm] = useState<ResetForm>(() => defaultResetForm(prefill));
   const [formError, setFormError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -175,14 +177,18 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, onApplied, onC
               onCancel={() => setConfirming(false)}
             />
           ) : (
-            <button
-              type="button"
-              className="primary"
-              disabled={targets.length === 0 || apply.isPending || apply.isSuccess}
-              onClick={() => (needsConfirmation(connection) ? setConfirming(true) : apply.mutate({ targets, confirm: null }))}
-            >
-              Применить ({targets.length})
-            </button>
+            <>
+              {blockedReason && <p className="warn">{blockedReason}</p>}
+              <button
+                type="button"
+                className="primary"
+                disabled={targets.length === 0 || apply.isPending || apply.isSuccess || blockedReason !== null}
+                title={blockedReason ?? undefined}
+                onClick={() => (needsConfirmation(connection) ? setConfirming(true) : apply.mutate({ targets, confirm: null }))}
+              >
+                Применить ({targets.length})
+              </button>
+            </>
           )}
         </>
       )}

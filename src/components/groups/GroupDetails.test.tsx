@@ -27,6 +27,7 @@ vi.mock("../../api/client", async (importOriginal) => {
       listConnections: vi.fn(),
       describeGroups: vi.fn(),
       getGroupOffsets: vi.fn(),
+      previewOffsetReset: vi.fn(),
       deleteGroup: vi.fn().mockResolvedValue(undefined),
     },
   };
@@ -113,6 +114,37 @@ describe("GroupDetails", () => {
     await user.click(screen.getByRole("button", { name: "Отмена" }));
     await user.click(screen.getByRole("button", { name: "Удалить группу" }));
     expect(screen.queryByText("member m9")).toBeNull();
+  });
+
+  it("сброс оффсетов доступен только для Empty/Dead", async () => {
+    vi.mocked(api.describeGroups).mockResolvedValue([stable]);
+    const { unmount } = renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
+    await screen.findByText("нет коммита");
+    const btn = screen.getByRole("button", { name: "Сбросить оффсеты" });
+    expect(btn).toBeDisabled();
+    await vi.waitFor(() =>
+      expect(btn).toHaveAttribute("title", "Сброс возможен только для группы без участников (сейчас: Stable)"),
+    );
+    unmount();
+    vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Dead", members: [] }]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
+    await vi.waitFor(() => expect(screen.getByRole("button", { name: "Сбросить оффсеты" })).toBeEnabled());
+  });
+
+  it("открытая панель сброса остаётся, но «Применить» блокируется, когда группа перестала быть пустой", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Empty", members: [] }]);
+    vi.mocked(api.previewOffsetReset).mockResolvedValue([{ topic: "orders", partition: 0, current: 2, target: 0, low: 0, high: 5 }]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
+    await user.click(await screen.findByRole("button", { name: "Сбросить оффсеты" }));
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    expect(await screen.findByRole("button", { name: "Применить (1)" })).toBeEnabled();
+    vi.mocked(api.describeGroups).mockResolvedValue([stable]);
+    await user.click(screen.getByRole("button", { name: "Обновить" }));
+    const apply = await screen.findByRole("button", { name: "Применить (1)" });
+    await vi.waitFor(() => expect(apply).toBeDisabled());
+    expect(apply).toHaveAttribute("title", "Сброс возможен только для группы без участников (сейчас: Stable)");
+    expect(screen.getByText("Сброс возможен только для группы без участников (сейчас: Stable)")).toBeInTheDocument();
   });
 
   it("read-only: панель сброса не открывается даже с prefill", async () => {

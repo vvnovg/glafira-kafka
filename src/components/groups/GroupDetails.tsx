@@ -67,6 +67,11 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
     void offsets.refetch();
   };
   const d = desc.data;
+  // Сброс применим только к группе без участников; окончательная проверка — в бэкенде.
+  const resetBlock =
+    d?.state === "Empty" || d?.state === "Dead"
+      ? null
+      : `Сброс возможен только для группы без участников (сейчас: ${d?.state ?? "неизвестно"})`;
   const rows = offsets.data ?? [];
 
   return (
@@ -91,7 +96,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
       </div>
       {canMutate && (
         <div className="toolbar">
-          <button type="button" onClick={() => setPanel("reset")}>
+          <button type="button" disabled={resetBlock !== null} title={resetBlock ?? undefined} onClick={() => setPanel("reset")}>
             Сбросить оффсеты
           </button>
           <button
@@ -137,6 +142,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           connection={connection}
           groupId={groupId}
           prefill={resetPrefill}
+          blockedReason={resetBlock}
           onApplied={refresh}
           onClose={() => setPanel(null)}
         />

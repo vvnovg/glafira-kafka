@@ -40,6 +40,17 @@ describe("ResetOffsetsPanel", () => {
     await vi.waitFor(() => expect(onApplied).toHaveBeenCalled());
   });
 
+  it("blockedReason блокирует «Применить» и показывает подсказку", async () => {
+    const user = userEvent.setup();
+    const dev = { ...prod, environment: "dev" as const };
+    renderWithClient(<ResetOffsetsPanel connection={dev} groupId="g" blockedReason="нельзя" onApplied={() => {}} onClose={() => {}} />);
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    const apply = await screen.findByRole("button", { name: "Применить (1)" });
+    expect(apply).toBeDisabled();
+    expect(apply).toHaveAttribute("title", "нельзя");
+    expect(screen.getByText("нельзя")).toBeInTheDocument();
+  });
+
   it("изменение формы сбрасывает предпросмотр", async () => {
     const user = userEvent.setup();
     renderWithClient(<ResetOffsetsPanel connection={prod} groupId="g" onApplied={() => {}} onClose={() => {}} />);

@@ -26,6 +26,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
 
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
+  const readOnly = connection?.readOnly === true;
   const queryClient = useQueryClient();
   const closeTab = useWorkspace((s) => s.close);
   const open = useWorkspace((s) => s.open);
@@ -47,6 +48,8 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         </button>
         <button
           type="button"
+          disabled={readOnly}
+          title={readOnly ? "Подключение только для чтения: отправка сообщений недоступна" : undefined}
           onClick={() =>
             open({
               kind: "producer",
@@ -60,7 +63,12 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         >
           Отправить сообщение
         </button>
-        <button type="button" onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}>
+        <button
+          type="button"
+          disabled={readOnly}
+          title={readOnly ? "Подключение только для чтения: вход в группу меняет её состояние" : undefined}
+          onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}
+        >
           Читать как группа
         </button>
       </div>

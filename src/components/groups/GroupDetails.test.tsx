@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionProfile, GroupDescription, GroupPartitionOffset } from "../../api/types";
@@ -81,6 +81,9 @@ describe("GroupDetails", () => {
     renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
     await screen.findByText("нет коммита");
     expect(screen.queryByRole("button", { name: "Удалить группу" })).toBeNull();
+    const join = screen.getByRole("button", { name: "Читать как участник" });
+    await waitFor(() => expect(join).toBeDisabled());
+    expect(join).toHaveAttribute("title", expect.stringContaining("только для чтения"));
   });
 
   it("удаляет пустую группу после ввода id и закрывает вкладку", async () => {

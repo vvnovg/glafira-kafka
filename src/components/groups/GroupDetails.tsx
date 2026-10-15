@@ -27,6 +27,7 @@ interface Props {
 export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
+  const readOnly = connection?.readOnly === true;
   const [refreshMs, setRefreshMs] = useState(0);
   const [panel, setPanel] = useState<Panel>(resetPrefill && canMutate ? "reset" : null);
   const queryClient = useQueryClient();
@@ -96,8 +97,14 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         </button>
         <button
           type="button"
-          disabled={offsets.isPending}
-          title={offsets.isPending ? "Загружаются топики группы" : undefined}
+          disabled={readOnly || offsets.isPending}
+          title={
+            readOnly
+              ? "Подключение только для чтения: вход в группу меняет её состояние"
+              : offsets.isPending
+                ? "Загружаются топики группы"
+                : undefined
+          }
           onClick={() =>
             open({
               kind: "consumer",

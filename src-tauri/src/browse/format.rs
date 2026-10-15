@@ -69,16 +69,27 @@ pub fn decode(bytes: &[u8], format: DataFormat) -> DecodedData {
 }
 
 /// Текст из первых `max` байтов: граница не режет UTF-8-символ, невалидные байты — `�`.
+/// Итоговая длина `text` всегда ≤ `max` (замены `�` занимают 3 байта, поэтому результат
+/// дополнительно обрезается по границе символа).
 fn text_prefix(bytes: &[u8], max: usize) -> (String, bool) {
-    if bytes.len() <= max {
-        return (String::from_utf8_lossy(bytes).into_owned(), false);
+    let mut truncated = bytes.len() > max;
+    let mut end = bytes.len().min(max);
+    if truncated {
+        // Не начинать хвост с продолжающего байта UTF-8 (10xxxxxx): откатываемся к началу символа.
+        while end > 0 && (bytes[end] & 0b1100_0000) == 0b1000_0000 {
+            end -= 1;
+        }
     }
-    let mut cut = max;
-    // Не начинать хвост с продолжающего байта UTF-8 (10xxxxxx): откатываемся к началу символа.
-    while cut > 0 && (bytes[cut] & 0b1100_0000) == 0b1000_0000 {
-        cut -= 1;
+    let mut s = String::from_utf8_lossy(&bytes[..end]).into_owned();
+    if s.len() > max {
+        let mut cut = max;
+        while !s.is_char_boundary(cut) {
+            cut -= 1;
+        }
+        s.truncate(cut);
+        truncated = true;
     }
-    (String::from_utf8_lossy(&bytes[..cut]).into_owned(), true)
+    (s, truncated)
 }
 
 fn detect(bytes: &[u8]) -> DataFormat {
@@ -87,7 +98,7 @@ fn detect(bytes: &[u8]) -> DataFormat {
     };
     let trimmed = s.trim_start();
     if (trimmed.starts_with('{') || trimmed.starts_with('['))
-        && serde_json::from_str::<serde_json::Value>(s).is_ok()
+        && serde_json::from_str::<serde::de::IgnoredAny>(s).is_ok()
     {
         return DataFormat::Json;
     }
@@ -160,16 +171,38 @@ mod tests {
 
     #[test]
     fn hex_and_base64_encode_only_the_visible_prefix() {
-        let big = vec![0xabu8; MAX_TEXT_BYTES * 3];
+        let big: Vec<u8> = (0..MAX_TEXT_BYTES * 3).map(|i| (i % 251) as u8).collect();
         let h = decode(&big, DataFormat::Hex);
         assert!(h.truncated);
-        assert!(h.text.len() <= MAX_TEXT_BYTES);
-        assert_eq!(h.text.len() % 2, 0, "hex не режется посреди байта");
+        assert_eq!(h.text, hex::encode(&big[..MAX_TEXT_BYTES / 2]));
         assert_eq!(h.size, big.len());
         let b = decode(&big, DataFormat::Base64);
         assert!(b.truncated);
-        assert!(b.text.len() <= MAX_TEXT_BYTES);
-        assert_eq!(b.text.len() % 4, 0, "base64 — целыми группами");
+        assert_eq!(
+            b.text,
+            base64::engine::general_purpose::STANDARD.encode(&big[..MAX_TEXT_BYTES / 4 * 3])
+        );
+    }
+
+    #[test]
+    fn lossy_replacement_output_is_capped() {
+        let d = decode(&vec![0xffu8; MAX_TEXT_BYTES], DataFormat::String);
+        assert!(d.truncated);
+        assert!(d.text.len() <= MAX_TEXT_BYTES);
+        let j = decode(&vec![0xffu8; MAX_TEXT_BYTES], DataFormat::Json);
+        assert!(j.truncated && j.text.len() <= MAX_TEXT_BYTES);
+        let small = decode(&[b'a', 0xff, b'b'], DataFormat::String);
+        assert_eq!(small.text, "a\u{FFFD}b");
+        assert!(!small.truncated);
+    }
+
+    #[test]
+    fn auto_detect_json_without_tree() {
+        assert_eq!(
+            decode(b"[1,{\"a\":[]}]", DataFormat::Auto).format,
+            DataFormat::Json
+        );
+        assert_eq!(decode(b"[1,", DataFormat::Auto).format, DataFormat::String);
     }
 
     #[test]
@@ -184,7 +217,7 @@ mod tests {
     }
 
     #[test]
-    fn invalid_utf8_tail_is_cut_cleanly() {
+    fn split_multibyte_char_at_boundary_is_cut_cleanly() {
         let mut v = vec![b'a'; MAX_TEXT_BYTES - 1];
         v.extend("я".as_bytes()); // 2-байтовый символ пересекает границу
         v.extend(vec![b'b'; 10]);

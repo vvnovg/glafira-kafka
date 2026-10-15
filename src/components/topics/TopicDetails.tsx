@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
 import { formatCount } from "../../lib/format";
+import { useConnection } from "../../lib/useConnection";
+import { tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
+import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { TopicActions } from "./TopicActions";
 
 type SubTab = "messages" | "partitions" | "configs";
 const SUBTABS: { id: SubTab; label: string }[] = [
@@ -17,6 +21,11 @@ const SUBTABS: { id: SubTab; label: string }[] = [
 export function TopicDetails({ connectionId, topic }: { connectionId: string; topic: string }) {
   const [sub, setSub] = useState<SubTab>("messages");
   const q = useQuery({ queryKey: ["topic", connectionId, topic], queryFn: () => api.getTopic(connectionId, topic) });
+
+  const connection = useConnection(connectionId);
+  const canMutate = connection !== undefined && !connection.readOnly;
+  const queryClient = useQueryClient();
+  const closeTab = useWorkspace((s) => s.close);
 
   if (q.isPending) return <p className="empty">Загрузка…</p>;
   if (q.error && !q.data) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
@@ -34,6 +43,16 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
           Обновить
         </button>
       </div>
+      {canMutate && connection && !t.internal && (
+        <TopicActions
+          connection={connection}
+          topic={t}
+          onDeleted={() => {
+            void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
+            closeTab(tabId({ kind: "topic", connectionId, topic }));
+          }}
+        />
+      )}
       <div className="subtabs">
         {SUBTABS.map((s) => (
           <button key={s.id} type="button" className={sub === s.id ? "active" : ""} aria-pressed={sub === s.id} onClick={() => setSub(s.id)}>
@@ -85,11 +104,29 @@ function PartitionsTable({ topic }: { topic: TopicDetailsDto }) {
 }
 
 function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: string }) {
+  const connection = useConnection(connectionId);
+  const [editing, setEditing] = useState(false);
   const q = useQuery({
     queryKey: ["topicConfigs", connectionId, topic],
     queryFn: () => api.getTopicConfigs(connectionId, topic),
   });
   if (q.isPending) return <p className="empty">Загрузка…</p>;
   if (q.error) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
-  return <ConfigTable entries={q.data} />;
+  const canEdit = connection !== undefined && !connection.readOnly;
+  return (
+    <>
+      {canEdit && (
+        <div className="toolbar">
+          <button type="button" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>
+            {editing ? "Закрыть редактор" : "Редактировать"}
+          </button>
+        </div>
+      )}
+      {editing && canEdit && connection ? (
+        <ConfigEditor connection={connection} topic={topic} entries={q.data} onDone={() => setEditing(false)} />
+      ) : (
+        <ConfigTable entries={q.data} />
+      )}
+    </>
+  );
 }

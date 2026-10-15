@@ -8,6 +8,7 @@ vi.mock("../../api/client", async (importOriginal) => {
   return {
     ...orig,
     api: {
+      listConnections: vi.fn().mockResolvedValue([]),
       getTopic: vi.fn().mockResolvedValue({
         name: "orders",
         internal: false,

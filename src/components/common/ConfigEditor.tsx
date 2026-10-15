@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ConfigChange, ConfigEntry, ConnectionProfile } from "../../api/types";
@@ -11,9 +11,11 @@ interface Props {
   topic: string;
   entries: ConfigEntry[];
   onDone: () => void;
+  /** Есть несохранённые правки (для блокировки закрытия редактора). */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-export function ConfigEditor({ connection, topic, entries, onDone }: Props) {
+export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange }: Props) {
   const queryClient = useQueryClient();
   const [edits, setEdits] = useState<Record<string, ConfigEdit>>({});
   // Снимок изменений на момент открытия проверки: дальше он не зависит от живых правок/обновления entries.
@@ -33,6 +35,11 @@ export function ConfigEditor({ connection, topic, entries, onDone }: Props) {
       onDone();
     },
   });
+  const dirty = Object.keys(edits).length > 0 || review !== null;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
   const q = query.trim().toLowerCase();
   const visible = entries.filter((e) => !q || e.name.toLowerCase().includes(q));
   const valueOf = (e: ConfigEntry) => {

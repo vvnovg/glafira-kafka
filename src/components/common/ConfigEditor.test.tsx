@@ -42,4 +42,19 @@ describe("ConfigEditor", () => {
     await user.click(screen.getByRole("button", { name: "Проверить изменения" }));
     expect(screen.getByText("1000 → по умолчанию")).toBeInTheDocument();
   });
+
+  it("на prod требует имя подключения", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.alterTopicConfigs).mockClear();
+    const prod: ConnectionProfile = { ...dev, name: "prod-1", environment: "prod" };
+    renderWithClient(<ConfigEditor connection={prod} topic="t" entries={entries} onDone={() => {}} />);
+    const input = screen.getByLabelText("Значение retention.ms");
+    await user.clear(input);
+    await user.type(input, "2000");
+    await user.click(screen.getByRole("button", { name: "Проверить изменения" }));
+    expect(screen.getByRole("button", { name: "Применить" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Имя подключения"), "prod-1");
+    await user.click(screen.getByRole("button", { name: "Применить" }));
+    expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "t", [{ op: "set", name: "retention.ms", value: "2000" }], "prod-1");
+  });
 });

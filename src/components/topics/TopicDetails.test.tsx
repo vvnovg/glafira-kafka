@@ -2,6 +2,8 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithClient } from "../../test/render";
+import { useWorkspace } from "../../state/workspace";
+import { newProfile } from "../connections/profile";
 
 vi.mock("../../api/client", async (importOriginal) => {
   const orig = await importOriginal<typeof import("../../api/client")>();
@@ -9,6 +11,8 @@ vi.mock("../../api/client", async (importOriginal) => {
     ...orig,
     api: {
       listConnections: vi.fn().mockResolvedValue([]),
+      deleteTopics: vi.fn().mockResolvedValue([{ name: "orders" }]),
+      getTopicPolicies: vi.fn().mockResolvedValue([]),
       getTopic: vi.fn().mockResolvedValue({
         name: "orders",
         internal: false,
@@ -70,5 +74,59 @@ describe("TopicDetails: вкладка сообщений", () => {
     await user.click(screen.getByRole("button", { name: "Партиции" }));
     await user.click(screen.getByRole("button", { name: "Сообщения" }));
     expect(screen.getByLabelText("Значение содержит")).toHaveValue("FAILED");
+  });
+});
+
+describe("TopicDetails: мутации", () => {
+  const conn = (extra: object) => ({ ...newProfile(), id: "m", name: "dev-1", environment: "dev", ...extra });
+
+  it("read-only подключение скрывает действия и редактирование", async () => {
+    const user = userEvent.setup();
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([conn({ readOnly: true })] as never);
+    renderWithClient(<TopicDetails connectionId="m" topic="orders" />);
+    await screen.findByRole("button", { name: "Партиции" });
+    await user.click(screen.getByRole("button", { name: "Конфигурация" }));
+    await screen.findByText("compact");
+    expect(screen.queryByRole("button", { name: "Удалить топик" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Редактировать" })).toBeNull();
+  });
+
+  it("internal-топик скрывает действия", async () => {
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([conn({ readOnly: false })] as never);
+    vi.mocked(api.getTopic).mockResolvedValueOnce({
+      name: "__consumer_offsets",
+      internal: true,
+      replicationFactor: 1,
+      messageCount: 0,
+      partitions: [],
+    });
+    renderWithClient(<TopicDetails connectionId="m" topic="__consumer_offsets" />);
+    await screen.findByRole("button", { name: "Партиции" });
+    expect(screen.queryByRole("button", { name: "Удалить топик" })).toBeNull();
+  });
+
+  it("удаление закрывает вкладку топика", async () => {
+    const user = userEvent.setup();
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([conn({ readOnly: false })] as never);
+    useWorkspace.getState().open({ kind: "topic", connectionId: "m", topic: "orders" });
+    renderWithClient(<TopicDetails connectionId="m" topic="orders" />);
+    await user.click(await screen.findByRole("button", { name: "Удалить топик" }));
+    await user.type(screen.getByLabelText("Подтверждение: имя топика"), "orders");
+    await user.click(screen.getByRole("button", { name: "Удалить" }));
+    await vi.waitFor(() => expect(useWorkspace.getState().tabs).toHaveLength(0));
+  });
+
+  it("редактор нельзя закрыть с несохранёнными правками", async () => {
+    const user = userEvent.setup();
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([conn({ readOnly: false })] as never);
+    renderWithClient(<TopicDetails connectionId="m" topic="orders" />);
+    await user.click(await screen.findByRole("button", { name: "Конфигурация" }));
+    await user.click(await screen.findByRole("button", { name: "Редактировать" }));
+    await user.type(screen.getByLabelText("Значение cleanup.policy"), "x");
+    expect(screen.getByRole("button", { name: "Закрыть редактор" })).toBeDisabled();
   });
 });

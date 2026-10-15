@@ -160,6 +160,8 @@ function Purge({ connection, topic, onClose }: { connection: ConnectionProfile; 
     );
   }
 
+  const sortedSel = [...selected].sort((a, b) => a - b);
+  const allSelected = selected.size === ids.length;
   return (
     <div className="panel">
       {compact && (
@@ -179,15 +181,20 @@ function Purge({ connection, topic, onClose }: { connection: ConnectionProfile; 
       </div>
       {run.error && <ErrorBanner error={run.error} />}
       <ConfirmDialog
+        key={sortedSel.join(",")}
         connection={connection}
-        title={`Очистить ${selected.size} из ${ids.length} партиций «${topic.name}»?`}
+        title={
+          allSelected
+            ? `Очистить все партиции топика «${topic.name}»?`
+            : `Очистить партиции [${sortedSel.join(", ")}] топика «${topic.name}»?`
+        }
         objectName={topic.name}
         objectLabel="имя топика"
         confirmLabel="Очистить партиции"
         danger
         busy={run.isPending || selected.size === 0}
         onConfirm={(c) =>
-          run.mutate({ parts: selected.size === ids.length ? null : [...selected].sort((a, b) => a - b), c })
+          run.mutate({ parts: allSelected ? null : sortedSel, c })
         }
         onCancel={onClose}
       >

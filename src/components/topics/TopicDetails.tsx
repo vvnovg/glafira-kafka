@@ -106,6 +106,7 @@ function PartitionsTable({ topic }: { topic: TopicDetailsDto }) {
 function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: string }) {
   const connection = useConnection(connectionId);
   const [editing, setEditing] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const q = useQuery({
     queryKey: ["topicConfigs", connectionId, topic],
     queryFn: () => api.getTopicConfigs(connectionId, topic),
@@ -117,13 +118,18 @@ function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: st
     <>
       {canEdit && (
         <div className="toolbar">
-          <button type="button" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>
+          <button
+            type="button"
+            aria-pressed={editing}
+            disabled={editing && dirty}
+            title={editing && dirty ? "Есть несохранённые изменения: примените или отмените правки" : undefined}
+            onClick={() => setEditing((v) => !v)}>
             {editing ? "Закрыть редактор" : "Редактировать"}
           </button>
         </div>
       )}
       {editing && canEdit && connection ? (
-        <ConfigEditor connection={connection} topic={topic} entries={q.data} onDone={() => setEditing(false)} />
+        <ConfigEditor connection={connection} topic={topic} entries={q.data} onDone={() => setEditing(false)} onDirtyChange={setDirty} />
       ) : (
         <ConfigTable entries={q.data} />
       )}

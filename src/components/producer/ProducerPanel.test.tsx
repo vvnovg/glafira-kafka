@@ -34,6 +34,18 @@ beforeEach(() => {
 });
 
 describe("ProducerPanel", () => {
+  it("«Очистить форму» сбрасывает поля, но сохраняет топик", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ProducerPanel connectionId="dev" />);
+    await user.type(await screen.findByLabelText("Топик"), "orders");
+    await user.type(screen.getByLabelText("Значение"), "v");
+    await user.click(screen.getByRole("button", { name: "Добавить заголовок" }));
+    await user.click(screen.getByRole("button", { name: "Очистить форму" }));
+    expect(screen.getByLabelText("Топик")).toHaveValue("orders");
+    expect(screen.getByLabelText("Значение")).toHaveValue("");
+    expect(screen.queryByLabelText("Имя заголовка 1")).not.toBeInTheDocument();
+  });
+
   it("отправляет сообщение и показывает результат", async () => {
     const user = userEvent.setup();
     renderWithClient(<ProducerPanel connectionId="dev" />);

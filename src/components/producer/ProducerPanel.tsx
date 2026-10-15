@@ -120,6 +120,9 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
     <div className="page producer">
       <div className="toolbar">
         <h2>Producer</h2>
+        <button type="button" onClick={() => replaceForm(emptyProducerForm(form.topic))}>
+          Очистить форму
+        </button>
       </div>
       <TemplatesBar connectionId={connectionId} form={form} onLoad={replaceForm} />
       {readOnly && <p className="warn" role="alert">Подключение открыто только для чтения — отправка недоступна.</p>}

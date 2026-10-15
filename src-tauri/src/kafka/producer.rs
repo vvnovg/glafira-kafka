@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use rdkafka::ClientConfig;
@@ -16,6 +17,7 @@ use crate::kafka::pool::KeyedPool;
 use crate::produce::payload::EncodedMessage;
 use crate::secrets::SecretStore;
 use crate::storage::connections::ConnectionProfile;
+use crate::sync::MutexExt;
 
 pub const MAX_PRODUCERS_PER_CONNECTION: usize = 4;
 
@@ -127,17 +129,41 @@ impl ProducerHandle {
 }
 
 /// Producer'ы по ключу «подключение|настройки».
+///
+/// Освобождение producer'а сбрасывает очередь и ждёт потоки librdkafka (до ~500 мс), поэтому
+/// `get`, `evict_connection` и финальный drop handle — только из blocking-контекста.
 #[derive(Default)]
 pub struct ProducerPool {
     inner: KeyedPool<ProducerHandle>,
+    /// Эпоха подключения: растёт при каждом вытеснении, даже если producer'ов ещё нет.
+    epochs: Mutex<HashMap<String, u64>>,
 }
 
 impl ProducerPool {
+    fn epoch(&self, connection_id: &str) -> u64 {
+        self.epochs
+            .lock_safe()
+            .get(connection_id)
+            .copied()
+            .unwrap_or(0)
+    }
+
+    /// Блокирующий: читает keychain и создаёт клиент. Не более MAX_PRODUCERS_PER_CONNECTION
+    /// на подключение.
     pub fn get(
         &self,
         p: &ConnectionProfile,
         secrets: &dyn SecretStore,
         s: &ProducerSettings,
+    ) -> AppResult<Arc<ProducerHandle>> {
+        self.get_with(p, s, || ProducerHandle::create(p, secrets, s))
+    }
+
+    fn get_with(
+        &self,
+        p: &ConnectionProfile,
+        s: &ProducerSettings,
+        create: impl FnOnce() -> AppResult<ProducerHandle>,
     ) -> AppResult<Arc<ProducerHandle>> {
         let prefix = format!("{}|", p.id);
         let key = format!("{prefix}{}", s.pool_key());
@@ -147,11 +173,21 @@ impl ProducerPool {
             // Редкий случай (много разных настроек): проще пересоздать, чем вести LRU.
             self.evict_connection(&p.id);
         }
-        self.inner
-            .get_or_create(&key, || ProducerHandle::create(p, secrets, s))
+        let epoch = self.epoch(&p.id);
+        let h = self.inner.get_or_create(&key, create)?;
+        if self.epoch(&p.id) != epoch {
+            // Подключение вытеснили во время создания (правка/удаление): не кэшируем.
+            self.inner.evict(&key);
+        }
+        Ok(h)
     }
 
     pub fn evict_connection(&self, connection_id: &str) {
+        *self
+            .epochs
+            .lock_safe()
+            .entry(connection_id.to_string())
+            .or_insert(0) += 1;
         let prefix = format!("{connection_id}|");
         self.inner.evict_where(|id| id.starts_with(&prefix));
     }
@@ -314,5 +350,34 @@ mod pool_tests {
         ));
         pool.evict_connection("a");
         assert!(pool.inner.ids().iter().all(|i| i.starts_with("b|")));
+    }
+
+    #[test]
+    fn eviction_during_creation_discards_the_new_producer() {
+        use std::sync::mpsc::channel;
+        let pool = Arc::new(ProducerPool::default());
+        let p = sample_profile("a");
+        let s = ProducerSettings::default();
+        let secrets = MemoryStore::default();
+        let (started_tx, started_rx) = channel();
+        let (go_tx, go_rx) = channel::<()>();
+        let (pool2, p2) = (pool.clone(), p.clone());
+        let t = std::thread::spawn(move || {
+            pool2.get_with(&p2, &s, || {
+                started_tx.send(()).unwrap();
+                go_rx.recv().unwrap();
+                ProducerHandle::create(&p2, &MemoryStore::default(), &s)
+            })
+        });
+        started_rx.recv().unwrap();
+        pool.evict_connection("a");
+        go_tx.send(()).unwrap();
+        let stale = t.join().unwrap().unwrap();
+        assert!(
+            pool.inner.ids().is_empty(),
+            "устаревший producer не кэшируется"
+        );
+        let fresh = pool.get(&p, &secrets, &s).unwrap();
+        assert!(!Arc::ptr_eq(&stale, &fresh));
     }
 }

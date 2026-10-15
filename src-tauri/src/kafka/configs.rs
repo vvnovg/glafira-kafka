@@ -6,17 +6,8 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use crate::error::{AppError, AppResult};
+use crate::kafka::errors::admin_error;
 use crate::kafka::pool::KafkaHandles;
-
-/// Колбэки ошибок admin-клиента в rust-rdkafka не доставляются, поэтому причину (TLS/SASL)
-/// берём у pooled-консьюмера того же подключения; его опрос блокирующий — уводим с async-потока.
-async fn admin_error(h: &Arc<KafkaHandles>, started: Instant, e: KafkaError) -> AppError {
-    let h = h.clone();
-    let fallback = e.clone();
-    tauri::async_runtime::spawn_blocking(move || h.kafka_err(started, e))
-        .await
-        .unwrap_or_else(|_| crate::error::from_kafka(&fallback, None))
-}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

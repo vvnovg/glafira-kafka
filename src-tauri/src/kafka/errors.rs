@@ -1,11 +1,14 @@
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaError;
 use rdkafka::metadata::Metadata;
+use rdkafka::types::RDKafkaErrorCode;
 
 use crate::error::{AppError, ErrorCode, classify_message, from_kafka};
 use crate::kafka::context::CapturingContext;
+use crate::kafka::pool::KafkaHandles;
 
 /// Сколько максимум ждём доставки отложенных колбэков ошибок клиента.
 const ERROR_DRAIN: Duration = Duration::from_millis(1500);
@@ -32,6 +35,46 @@ pub fn op_error(
     }
     let cause = pick_client_error(&err, ctx.last_error_since(started), ctx.last_error());
     from_kafka(&err, cause.as_deref())
+}
+
+/// Ошибка отдельного элемента admin-ответа (топика, ресурса, группы, партиции).
+/// `message` — контекст для пользователя, в `details` — код и текст брокера.
+pub fn item_error(code: RDKafkaErrorCode, message: &str, context: &str) -> AppError {
+    use RDKafkaErrorCode as C;
+    let app_code = match code {
+        C::TopicAlreadyExists
+        | C::InvalidConfig
+        | C::InvalidRequest
+        | C::PolicyViolation
+        | C::InvalidPartitions
+        | C::InvalidReplicationFactor
+        | C::InvalidReplicaAssignment
+        | C::InvalidTopic
+        | C::OffsetOutOfRange => ErrorCode::InvalidInput,
+        C::TopicAuthorizationFailed
+        | C::GroupAuthorizationFailed
+        | C::ClusterAuthorizationFailed => ErrorCode::NotAuthorized,
+        C::UnknownTopicOrPartition | C::GroupIdNotFound => ErrorCode::NotFound,
+        C::NonEmptyGroup => ErrorCode::GroupNotEmpty,
+        C::RequestTimedOut | C::OperationTimedOut => ErrorCode::Timeout,
+        _ => classify_message(message).unwrap_or(ErrorCode::Internal),
+    };
+    let details = if message.is_empty() {
+        code.to_string()
+    } else {
+        format!("{code}: {message}")
+    };
+    AppError::new(app_code, context).with_details(details)
+}
+
+/// Колбэки ошибок admin-клиента в rust-rdkafka не доставляются, поэтому причину (TLS/SASL)
+/// берём у pooled-консьюмера того же подключения; его опрос блокирующий — уводим с async-потока.
+pub async fn admin_error(h: &Arc<KafkaHandles>, started: Instant, e: KafkaError) -> AppError {
+    let h = h.clone();
+    let fallback = e.clone();
+    tauri::async_runtime::spawn_blocking(move || h.kafka_err(started, e))
+        .await
+        .unwrap_or_else(|_| from_kafka(&fallback, None))
 }
 
 /// Первая порция ожидания метаданных: если за это время ответа нет, а клиент уже сообщил,
@@ -122,6 +165,35 @@ fn needs_client_error(err: &KafkaError) -> bool {
 mod tests {
     use super::*;
     use rdkafka::types::RDKafkaErrorCode as C;
+
+    #[test]
+    fn item_errors_map_to_app_codes() {
+        use crate::error::ErrorCode as E;
+        let cases = [
+            (C::TopicAlreadyExists, E::InvalidInput),
+            (C::InvalidConfig, E::InvalidInput),
+            (C::InvalidPartitions, E::InvalidInput),
+            (C::InvalidReplicationFactor, E::InvalidInput),
+            (C::PolicyViolation, E::InvalidInput),
+            (C::TopicAuthorizationFailed, E::NotAuthorized),
+            (C::GroupAuthorizationFailed, E::NotAuthorized),
+            (C::UnknownTopicOrPartition, E::NotFound),
+            (C::GroupIdNotFound, E::NotFound),
+            (C::NonEmptyGroup, E::GroupNotEmpty),
+            (C::RequestTimedOut, E::Timeout),
+            (C::Unknown, E::Internal),
+        ];
+        for (code, expected) in cases {
+            assert_eq!(item_error(code, "", "ctx").code, expected, "{code:?}");
+        }
+        let e = item_error(
+            C::InvalidConfig,
+            "Invalid value abc for configuration retention.ms",
+            "Не удалось изменить конфигурацию топика",
+        );
+        assert_eq!(e.message, "Не удалось изменить конфигурацию топика");
+        assert!(e.details.unwrap().contains("retention.ms"));
+    }
 
     #[test]
     fn stale_error_used_only_for_auth_or_tls() {

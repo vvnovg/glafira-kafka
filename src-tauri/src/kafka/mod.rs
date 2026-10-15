@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod admin_ext;
 pub mod cluster;
 pub mod config;

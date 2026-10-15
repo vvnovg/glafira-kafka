@@ -36,6 +36,7 @@ KE_IT_BOOTSTRAP=localhost:9092 KE_IT_SASL_BOOTSTRAP=localhost:9094 \
 ## Где хранятся данные
 - Профили подключений: `connections.json` в каталоге данных приложения (macOS: `~/Library/Application Support/dev.kafkaexplorer.app/`).
 - Пароли — в системном хранилище секретов (Keychain / Credential Manager / Secret Service), сервис `kafka-explorer`.
+- Шаблоны сообщений: `templates.json`; история отправки — `history/<id подключения>.json` (последние 100, значения до 64 КБ). История хранится открытым текстом.
 - Логи: `RUST_LOG=debug pnpm tauri dev`.
 
 ## Защита от изменений
@@ -46,6 +47,17 @@ KE_IT_BOOTSTRAP=localhost:9092 KE_IT_SASL_BOOTSTRAP=localhost:9094 \
 - Размер топика на диске вне MVP (librdkafka не поддерживает DescribeLogDirs).
 
 Проверить сброс вручную:
+```bash
+docker exec ke-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group <group>
+```
+
+## Отправка и чтение как группа
+- **Producer**: форматы string / json / hex / base64 / null, заголовки, acks / сжатие / идемпотентность. Плейсхолдеры: `{{uuid}}`, `{{now}}`, `{{nowMillis}}`, `{{seq}}`, `{{randomInt 1 100}}`, `{{randomString 8}}`, `{{env NAME}}`; `\{{` — буквальные `{{`.
+- **Пакетная отправка**: N копий формы или файл JSON Lines (`{"key":…, "value":…, "headers":{…}, "partition":…}` в строке) / CSV (колонки `key,value,partition,header.<имя>`). Пакеты не попадают в историю.
+- **«Отправить повторно»** из просмотра сообщений открывает Producer с точной копией сообщения (усечённые и декодированные с потерями значения не отправляются).
+- **Consumer-сессия** вступает в группу (ребаланс у других участников!). Автокоммит по умолчанию выключен; коммит — вручную кнопками. На подключениях «только чтение» отправка и consumer-сессии запрещены.
+
+Проверить коммиты сессии:
 ```bash
 docker exec ke-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group <group>
 ```

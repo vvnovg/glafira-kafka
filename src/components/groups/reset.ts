@@ -24,10 +24,10 @@ function parseStrategy(form: ResetForm): ResetStrategy {
     case "latest":
       return { type: form.strategy };
     case "offset":
-      if (form.value.trim() === "" || !Number.isInteger(n) || n < 0) throw new Error("Оффсет — целое число ≥ 0");
+      if (form.value.trim() === "" || !Number.isSafeInteger(n) || n < 0) throw new Error("Оффсет — целое число ≥ 0");
       return { type: "offset", offset: n };
     case "shift":
-      if (!Number.isInteger(n) || n === 0) throw new Error("Сдвиг — ненулевое целое число");
+      if (!Number.isSafeInteger(n) || n === 0) throw new Error("Сдвиг — ненулевое целое число");
       return { type: "shift", delta: n };
     case "timestamp": {
       const ms = new Date(form.value).getTime();

@@ -112,4 +112,12 @@ describe("GroupDetails", () => {
     await user.click(screen.getByRole("button", { name: "Удалить группу" }));
     expect(screen.queryByText("member m9")).toBeNull();
   });
+
+  it("read-only: панель сброса не открывается даже с prefill", async () => {
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...dev, readOnly: true }]);
+    vi.mocked(api.describeGroups).mockResolvedValue([stable]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" resetPrefill={{ topic: "orders", partition: 0, offset: 1, nonce: 1 }} />);
+    await screen.findByText("нет коммита");
+    expect(screen.queryByRole("button", { name: "Предпросмотр" })).toBeNull();
+  });
 });

@@ -62,4 +62,24 @@ describe("ResetOffsetsPanel", () => {
     await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
     expect(await screen.findByRole("button", { name: "Применить (0)" })).toBeDisabled();
   });
+
+  it("повторный предпросмотр после применения очищает старый результат", async () => {
+    const user = userEvent.setup();
+    const dev = { ...prod, environment: "dev" as const };
+    renderWithClient(<ResetOffsetsPanel connection={dev} groupId="g" onApplied={() => {}} onClose={() => {}} />);
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    await user.click(await screen.findByRole("button", { name: "Применить (1)" }));
+    expect(await screen.findByText(/оффсет 0 установлен/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    expect(await screen.findByRole("button", { name: "Применить (1)" })).toBeEnabled();
+    expect(screen.queryByText(/оффсет 0 установлен/)).toBeNull();
+  });
+
+  it("пустой предпросмотр", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.previewOffsetReset).mockResolvedValue([]);
+    renderWithClient(<ResetOffsetsPanel connection={prod} groupId="g" onApplied={() => {}} onClose={() => {}} />);
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    expect(await screen.findByText("Нет партиций для сброса")).toBeInTheDocument();
+  });
 });

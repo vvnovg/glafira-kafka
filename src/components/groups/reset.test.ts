@@ -23,6 +23,7 @@ describe("reset", () => {
   it("ошибки ввода", () => {
     const base = defaultResetForm();
     expect(() => buildResetRequest("g", { ...base, strategy: "offset", value: "-1" })).toThrow("Оффсет — целое число ≥ 0");
+    expect(() => buildResetRequest("g", { ...base, strategy: "offset", value: "9007199254740993" })).toThrow("Оффсет — целое число ≥ 0");
     expect(() => buildResetRequest("g", { ...base, strategy: "shift", value: "0" })).toThrow("Сдвиг — ненулевое целое число");
     expect(() => buildResetRequest("g", { ...base, strategy: "timestamp", value: "" })).toThrow("Укажите дату и время");
     expect(() => buildResetRequest("g", { ...base, scope: "topics", scopeText: " " })).toThrow("Укажите хотя бы один топик");

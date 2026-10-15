@@ -28,14 +28,14 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const [refreshMs, setRefreshMs] = useState(0);
-  const [panel, setPanel] = useState<Panel>(resetPrefill ? "reset" : null);
+  const [panel, setPanel] = useState<Panel>(resetPrefill && canMutate ? "reset" : null);
   const queryClient = useQueryClient();
   const closeTab = useWorkspace((s) => s.close);
 
   // Новый предзаполненный сброс («Сбросить группу сюда») открывает панель сброса.
   useEffect(() => {
-    if (resetPrefill) setPanel("reset");
-  }, [resetPrefill]);
+    if (resetPrefill && canMutate) setPanel("reset");
+  }, [resetPrefill, canMutate]);
 
   const desc = useQuery({
     queryKey: ["group", connectionId, groupId],
@@ -131,7 +131,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           </ConfirmDialog>
         </>
       )}
-      {panel === "reset" && connection && (
+      {panel === "reset" && connection && canMutate && (
         <ResetOffsetsPanel
           key={resetPrefill?.nonce ?? 0}
           connection={connection}

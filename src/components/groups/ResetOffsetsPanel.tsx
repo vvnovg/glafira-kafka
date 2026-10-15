@@ -62,6 +62,8 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, onApplied, onC
     try {
       buildResetRequest(groupId, form);
       setFormError(null);
+      apply.reset();
+      setConfirming(false);
       preview.mutate();
     } catch (e) {
       setFormError((e as Error).message);
@@ -112,16 +114,17 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, onApplied, onC
       </fieldset>
       {formError && <p className="warn">{formError}</p>}
       <div className="toolbar">
-        <button type="button" className="primary" disabled={preview.isPending} onClick={runPreview}>
+        <button type="button" className="primary" disabled={preview.isPending || apply.isPending} onClick={runPreview}>
           Предпросмотр
         </button>
-        <button type="button" onClick={onClose}>
+        <button type="button" disabled={apply.isPending} onClick={onClose}>
           Закрыть
         </button>
       </div>
       {preview.error && <ErrorBanner error={preview.error} />}
       {preview.data && (
         <>
+          {rows.length === 0 && <p className="muted">Нет партиций для сброса</p>}
           <table>
             <thead>
               <tr>
@@ -138,10 +141,11 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, onApplied, onC
                 <tr key={`${r.topic}:${r.partition}`} className={r.error || r.target === null ? "warn" : undefined}>
                   <td>{r.topic}</td>
                   <td>{r.partition}</td>
-                  <td>{r.current ?? <span className="muted">нет коммита</span>}</td>
-                  <td>{r.target ?? "—"}</td>
+                  <td>{r.current ?? <span className="muted" title="нет закоммиченного оффсета">нет коммита</span>}</td>
+                  <td title={r.target === null ? (r.error ?? "целевой оффсет не вычислен") : undefined}>{r.target ?? "—"}</td>
                   <td className="muted">
-                    {r.low ?? "—"} / {r.high ?? "—"}
+                    <span title={r.low === null ? "граница партиции неизвестна" : undefined}>{r.low ?? "—"}</span> /{" "}
+                    <span title={r.high === null ? "граница партиции неизвестна" : undefined}>{r.high ?? "—"}</span>
                   </td>
                   <td className="warn">{r.error ?? (r.target === null ? "Нет целевого оффсета — не будет применено" : "")}</td>
                 </tr>

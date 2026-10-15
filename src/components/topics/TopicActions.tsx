@@ -27,7 +27,7 @@ function useInvalidateTopic(connectionId: string, topic: string) {
 
 /** Брокер принимает DeleteRecords, только если в cleanup.policy есть delete. */
 export function purgeBlockReason(cleanup: string | null): string | null {
-  if (cleanup === null) return null;
+  if (cleanup === null || cleanup.trim() === "") return null;
   const parts = cleanup.split(",").map((x) => x.trim());
   if (parts.includes("delete")) return null;
   return `Очистка невозможна: у топика cleanup.policy=${cleanup} (нужно compact,delete или delete)`;

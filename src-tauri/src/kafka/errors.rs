@@ -96,26 +96,60 @@ pub fn fetch_metadata_fast_fail(
     timeout: Duration,
 ) -> Result<Metadata, AppError> {
     let started = Instant::now();
+    let res = fast_fail_flow(
+        timeout,
+        |slice| consumer.fetch_metadata(topic, slice),
+        std::thread::sleep,
+        || started.elapsed(),
+        || {
+            // Колбэки ошибок клиента доставляются только во время poll.
+            let _ = consumer.poll(Duration::ZERO);
+            let recent = started.checked_sub(SUPPRESSION_WINDOW).unwrap_or(started);
+            consumer
+                .context()
+                .last_error_since(recent)
+                .filter(|c| explains_no_answer(c))
+        },
+    );
+    res.map_err(|f| match f {
+        FastFail::Op(e) => op_error(consumer, started, e),
+        FastFail::NoAnswer(e, cause) => from_kafka(&e, Some(&cause)),
+    })
+}
+
+/// Исход `fast_fail_flow` при ошибке.
+#[derive(Debug)]
+enum FastFail {
+    /// Ошибка операции (причину клиента ещё предстоит выяснить).
+    Op(KafkaError),
+    /// Таймаут, который объясняется недавней ошибкой клиента (транспорт/AUTH/TLS).
+    NoAnswer(KafkaError, String),
+}
+
+/// Логика `fetch_metadata_fast_fail` без привязки к клиенту (для тестов).
+/// Транзитные ошибки брокера повторяются в пределах всего `timeout`, в том числе
+/// за границей первой порции; быстрый отказ `explain` проверяется только при таймауте.
+fn fast_fail_flow<T>(
+    timeout: Duration,
+    mut fetch: impl FnMut(Duration) -> Result<T, KafkaError>,
+    mut sleep: impl FnMut(Duration),
+    elapsed: impl Fn() -> Duration,
+    mut explain: impl FnMut() -> Option<String>,
+) -> Result<T, FastFail> {
     let first = timeout.min(FIRST_METADATA_SLICE);
-    let err = match fetch_retrying(consumer, topic, first) {
-        Ok(md) => return Ok(md),
+    let err = match retry_loop(first, &mut fetch, &mut sleep, &elapsed) {
+        Ok(v) => return Ok(v),
         Err(e) => e,
     };
-    let remaining = timeout.saturating_sub(started.elapsed());
-    if !is_timeout(&err) || remaining.is_zero() {
-        return Err(op_error(consumer, started, err));
+    let remaining = timeout.saturating_sub(elapsed());
+    let timed_out = is_timeout(&err);
+    if remaining.is_zero() || !(timed_out || is_retriable_metadata_error(&err)) {
+        return Err(FastFail::Op(err));
     }
-    // Колбэки ошибок клиента доставляются только во время poll.
-    let _ = consumer.poll(Duration::ZERO);
-    let recent = started.checked_sub(SUPPRESSION_WINDOW).unwrap_or(started);
-    if let Some(cause) = consumer
-        .context()
-        .last_error_since(recent)
-        .filter(|c| explains_no_answer(c))
-    {
-        return Err(from_kafka(&err, Some(&cause)));
+    if timed_out && let Some(cause) = explain() {
+        return Err(FastFail::NoAnswer(err, cause));
     }
-    fetch_retrying(consumer, topic, remaining).map_err(|e| op_error(consumer, started, e))
+    retry_loop(remaining, &mut fetch, &mut sleep, &elapsed).map_err(FastFail::Op)
 }
 
 /// Ошибки метаданных, которые брокер возвращает кратковременно (смена лидера после
@@ -140,23 +174,24 @@ fn retry_backoff(attempt: u32) -> Duration {
     Duration::from_millis(200u64 << attempt.min(3))
 }
 
-/// `fetch_metadata`, повторяющий транзитные ошибки брокера в пределах `timeout`.
-fn fetch_retrying(
-    consumer: &BaseConsumer<CapturingContext>,
-    topic: Option<&str>,
-    timeout: Duration,
-) -> Result<Metadata, KafkaError> {
-    let started = Instant::now();
+/// Повторяет `fetch` при транзитных ошибках брокера в пределах `budget`.
+fn retry_loop<T>(
+    budget: Duration,
+    fetch: &mut impl FnMut(Duration) -> Result<T, KafkaError>,
+    sleep: &mut impl FnMut(Duration),
+    elapsed: &impl Fn() -> Duration,
+) -> Result<T, KafkaError> {
+    let start = elapsed();
+    let spent = || elapsed().saturating_sub(start);
     let mut attempt = 0;
     loop {
-        let left = timeout.saturating_sub(started.elapsed());
-        match consumer.fetch_metadata(topic, left) {
+        match fetch(budget.saturating_sub(spent())) {
             Err(e) if is_retriable_metadata_error(&e) => {
                 let pause = retry_backoff(attempt);
-                if timeout.saturating_sub(started.elapsed()) <= pause {
+                if budget.saturating_sub(spent()) <= pause {
                     return Err(e);
                 }
-                std::thread::sleep(pause);
+                sleep(pause);
                 attempt += 1;
             }
             other => return other,
@@ -330,5 +365,84 @@ mod tests {
         let ms = |n| retry_backoff(n).as_millis();
         assert_eq!((ms(0), ms(1), ms(2)), (200, 400, 800));
         assert_eq!(ms(10), 1600);
+    }
+
+    /// Модельные часы: sleep сдвигает время, fetch тоже может тратить время.
+    struct Sim {
+        now: std::cell::Cell<Duration>,
+        calls: std::cell::Cell<u32>,
+    }
+    impl Sim {
+        fn new() -> Self {
+            Sim {
+                now: Default::default(),
+                calls: Default::default(),
+            }
+        }
+        fn run(
+            &self,
+            timeout: Duration,
+            mut results: Vec<Result<u32, KafkaError>>,
+            per_call: Duration,
+        ) -> Result<u32, FastFail> {
+            results.reverse();
+            fast_fail_flow(
+                timeout,
+                |slice| {
+                    self.calls.set(self.calls.get() + 1);
+                    assert!(slice <= timeout);
+                    self.now.set(self.now.get() + per_call);
+                    results
+                        .pop()
+                        .unwrap_or(Err(KafkaError::MetadataFetch(C::NotLeaderForPartition)))
+                },
+                |d| self.now.set(self.now.get() + d),
+                || self.now.get(),
+                || None,
+            )
+        }
+    }
+    fn nl() -> Result<u32, KafkaError> {
+        Err(KafkaError::MetadataFetch(C::NotLeaderForPartition))
+    }
+
+    #[test]
+    fn retriable_errors_retry_across_first_slice_until_success() {
+        let sim = Sim::new();
+        // каждый вызов "тратит" 1 с: успех приходит после границы первых 2 с
+        let r = sim.run(
+            Duration::from_secs(10),
+            vec![nl(), nl(), nl(), nl(), Ok(7)],
+            Duration::from_secs(1),
+        );
+        assert!(matches!(r, Ok(7)));
+        assert_eq!(sim.calls.get(), 5);
+        assert!(sim.now.get() > FIRST_METADATA_SLICE);
+    }
+
+    #[test]
+    fn retriable_errors_stop_when_timeout_exhausted() {
+        let sim = Sim::new();
+        let r = sim.run(Duration::from_secs(3), vec![], Duration::from_millis(500));
+        assert!(matches!(
+            r,
+            Err(FastFail::Op(KafkaError::MetadataFetch(
+                C::NotLeaderForPartition
+            )))
+        ));
+        assert!(sim.now.get() <= Duration::from_secs(4));
+        assert!(sim.calls.get() > 2);
+    }
+
+    #[test]
+    fn non_retriable_non_timeout_error_returns_immediately() {
+        let sim = Sim::new();
+        let r = sim.run(
+            Duration::from_secs(10),
+            vec![Err(KafkaError::MetadataFetch(C::TopicAuthorizationFailed))],
+            Duration::from_millis(10),
+        );
+        assert!(matches!(r, Err(FastFail::Op(_))));
+        assert_eq!(sim.calls.get(), 1);
     }
 }

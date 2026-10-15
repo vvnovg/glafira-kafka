@@ -73,6 +73,15 @@ describe("TopicActions", () => {
     expect(screen.getByText(msg)).toBeInTheDocument();
   });
 
+  it("пустой cleanup.policy считается неизвестным и не блокирует purge", async () => {
+    vi.mocked(api.getTopicPolicies).mockResolvedValueOnce([{ name: "orders", cleanupPolicy: "" }]);
+    renderWithClient(<TopicActions connection={dev} topic={topic} onDeleted={() => {}} />);
+    await vi.waitFor(() => expect(api.getTopicPolicies).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.getByRole("button", { name: "Очистить" })).toBeEnabled();
+    expect(screen.queryByText(/Очистка невозможна/)).toBeNull();
+  });
+
   it("purge при неизвестной политике доступен, но предупреждает", async () => {
     const user = userEvent.setup();
     vi.mocked(api.getTopicPolicies).mockRejectedValueOnce({ code: "INTERNAL", message: "boom" });

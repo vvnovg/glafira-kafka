@@ -74,6 +74,39 @@ describe("ConsumerPanel", () => {
     expect(screen.queryByRole("button", { name: "Подключиться к группе" })).not.toBeInTheDocument();
   });
 
+  it("подключение стало read-only во время сессии: сессия останавливается", async () => {
+    const user = userEvent.setup();
+    const { client } = renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
+    await screen.findByDisplayValue("kafka-explorer-qa-abc123");
+    // Сбой stopSession не оставляет UI в «running»: сессию остановит и бэкенд (cancel_for при сохранении).
+    vi.mocked(api.stopSession).mockRejectedValueOnce(new Error("сбой"));
+    await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
+    act(() => client.setQueryData(["connections"], conns.map((c) => (c.id === "dev" ? { ...c, readOnly: true } : c))));
+    expect(await screen.findByText(/недоступны для подключения только для чтения/)).toBeInTheDocument();
+    expect(api.stopSession).toHaveBeenCalledWith("sid");
+    expect(screen.queryByRole("button", { name: "Подключиться к группе" })).not.toBeInTheDocument();
+  });
+
+  it("read-only во время запуска: поздняя сессия останавливается", async () => {
+    const user = userEvent.setup();
+    let resolveStart: (id: string) => void = () => {};
+    vi.mocked(api.startConsumer).mockImplementationOnce(
+      (_p, cb) =>
+        new Promise((r) => {
+          emit = cb;
+          resolveStart = r;
+        }),
+    );
+    const { client } = renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
+    await screen.findByDisplayValue("kafka-explorer-qa-abc123");
+    await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
+    act(() => client.setQueryData(["connections"], conns.map((c) => (c.id === "dev" ? { ...c, readOnly: true } : c))));
+    await screen.findByText(/недоступны для подключения только для чтения/);
+    // Поздний ответ запуска после автоостановки — сессия тоже останавливается.
+    await act(async () => resolveStart("late"));
+    expect(api.stopSession).toHaveBeenCalledWith("late");
+  });
+
   it("у всех полей формы есть видимые подписи", async () => {
     renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
     await screen.findByDisplayValue("kafka-explorer-qa-abc123");

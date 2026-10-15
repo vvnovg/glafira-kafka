@@ -65,9 +65,25 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
       pause ? api.pausePartitions(state.sessionId as string, [p]) : api.resumePartitions(state.sessionId as string, [p]),
   });
 
+  // Подключение переключили в «только чтение» во время сессии — выходим из группы.
+  // Бэкенд при сохранении профиля тоже отменяет сессии подключения (cancel_for).
+  const readOnly = connection?.readOnly === true;
+  useEffect(() => {
+    if (readOnly && running) void stop();
+  }, [readOnly, running, stop]);
+
   if (!connection) return <p className="empty">Загрузка…</p>;
   if (connection.readOnly) {
-    return <p className="warn page">Consumer-сессии недоступны для подключения только для чтения: вход в группу меняет её состояние.</p>;
+    return (
+      <div className="page">
+        <p className="warn">Consumer-сессии недоступны для подключения только для чтения: вход в группу меняет её состояние.</p>
+        {running && (
+          <button type="button" onClick={() => void stop()}>
+            Отключиться
+          </button>
+        )}
+      </div>
+    );
   }
 
   const launch = (params: ConsumerParams, confirm: string | null) => {

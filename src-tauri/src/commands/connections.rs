@@ -64,6 +64,9 @@ pub fn save_connection_blocking(
         }
         return Err(e);
     }
+    // Живые сессии (browse, consumer, пакет) работают со старым профилем: адресами, учётными
+    // данными, флагом read-only. Останавливаем их — новые запустятся уже с новым профилем.
+    st.sessions.cancel_for(&saved.id);
     st.evict_connection(&saved.id);
     Ok(saved)
 }
@@ -186,5 +189,23 @@ mod tests {
         changed.name = "новое имя".into();
         assert!(save_connection_blocking(&st, input(changed, Some("pw"))).is_err());
         assert_eq!(st.connections.get("a").unwrap(), sample_profile("a"));
+    }
+
+    #[test]
+    fn saving_connection_cancels_its_live_sessions() {
+        use std::sync::atomic::Ordering;
+        let (_d, st) = state(Arc::new(MemoryStore::default()));
+        st.connections.upsert(sample_profile("a")).unwrap();
+        let (_, a) = st.sessions.register("a");
+        let (_, b) = st.sessions.register("b");
+        // Сессии держат старый профиль (адреса, учётные данные, read-only) — их нужно остановить.
+        let mut ro = sample_profile("a");
+        ro.read_only = true;
+        save_connection_blocking(&st, input(ro, None)).unwrap();
+        assert!(
+            a.load(Ordering::Relaxed),
+            "сессия изменённого подключения отменена"
+        );
+        assert!(!b.load(Ordering::Relaxed), "чужие сессии не тронуты");
     }
 }

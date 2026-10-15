@@ -1,5 +1,25 @@
 import type { BrowsedMessage, DecodedData, PayloadInput, ProduceMessage } from "../../api/types";
 
+/**
+ * Текст, который Rust-шаблонизатор (`render`) вернёт без изменений: каждое `{{` экранируется
+ * как `\{{`. Грамматика обратима — буквальный `\{{` превращается в `\\{{` и отрисовывается
+ * обратно в `\{{`. Так «Отправить повторно» и «Повторить» отправляют точную копию: чужие
+ * `{{uuid}}`/`{{env NAME}}` из прочитанных сообщений и отрисованной истории не подставляются.
+ */
+export function literalText(text: string): string {
+  return text.replaceAll("{{", "\\{{");
+}
+
+/** Сообщение, все тексты которого отправятся буквально (см. literalText). */
+export function literalMessage(m: ProduceMessage): ProduceMessage {
+  return {
+    ...m,
+    key: { ...m.key, text: literalText(m.key.text) },
+    value: { ...m.value, text: literalText(m.value.text) },
+    headers: m.headers.map((h) => ({ ...h, value: literalText(h.value) })),
+  };
+}
+
 function payload(d: DecodedData | null): PayloadInput {
   if (!d) return { format: "null", text: "" };
   if (d.truncated) throw new Error("Значение больше 1 МБ показано не полностью — отправить его повторно нельзя");
@@ -18,9 +38,12 @@ function payload(d: DecodedData | null): PayloadInput {
   return { format, text: d.text };
 }
 
-/** Сообщение из Browse → форма Producer (партицию выбирает партиционер). */
+/**
+ * Сообщение из Browse → форма Producer (партицию выбирает партиционер). Тексты экранированы
+ * (literalText): байты прочитанного сообщения не проходят через шаблонизатор.
+ */
 export function browsedToMessage(m: BrowsedMessage): ProduceMessage {
-  return {
+  return literalMessage({
     topic: m.topic,
     partition: null,
     key: payload(m.key),
@@ -34,5 +57,5 @@ export function browsedToMessage(m: BrowsedMessage): ProduceMessage {
         ? { name: h.name, value: v.slice(2), format: "hex" as const }
         : { name: h.name, value: v, format: "string" as const };
     }),
-  };
+  });
 }

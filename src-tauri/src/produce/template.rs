@@ -319,4 +319,25 @@ mod tests {
         assert_eq!(e.code, ErrorCode::InvalidInput);
         assert!(e.message.contains("trace"), "{}", e.message);
     }
+
+    /// Контракт с UI (`literalText` в fromMessage.ts): замена каждого `{{` на `\{{` даёт текст,
+    /// который `render` возвращает без изменений — «Отправить повторно» и «Повторить» шлют
+    /// точную копию, `{{env …}}` из прочитанного сообщения не раскрывается.
+    #[test]
+    fn escaping_every_open_brace_renders_verbatim() {
+        for original in [
+            "{{uuid}}",
+            "{{env TEAM}}",
+            r"a\{{b",
+            r"\\{{x}}",
+            "{{{",
+            "{{{{",
+            "}} {{nope",
+            "без шаблона",
+        ] {
+            let escaped = original.replace("{{", r"\{{");
+            let out = with_ctx(1, |c| render(&escaped, c)).unwrap();
+            assert_eq!(out, original, "{escaped}");
+        }
+    }
 }

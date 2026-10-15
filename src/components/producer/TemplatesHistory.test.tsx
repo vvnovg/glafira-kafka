@@ -74,6 +74,31 @@ describe("HistoryList", () => {
     expect(onRepeat).toHaveBeenCalledWith(expect.objectContaining({ key: { format: "string", text: "old" } }));
   });
 
+  it("повтор — точная копия: {{…}} из истории не отрисовывается заново", async () => {
+    const user = userEvent.setup();
+    const onRepeat = vi.fn();
+    vi.mocked(api.listHistory).mockResolvedValue([
+      {
+        ...history[0],
+        message: {
+          ...message,
+          key: { format: "string", text: "{{uuid}}" },
+          value: { format: "json", text: '{"a":"{{env HOME}}"}' },
+          headers: [{ name: "h", value: "{{seq}}", format: "string" }],
+        },
+      },
+    ]);
+    renderWithClient(<HistoryList connectionId="c" onRepeat={onRepeat} />);
+    await user.click(await screen.findByRole("button", { name: "Повторить" }));
+    expect(onRepeat).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: { format: "string", text: "\\{{uuid}}" },
+        value: { format: "json", text: '{"a":"\\{{env HOME}}"}' },
+        headers: [{ name: "h", value: "\\{{seq}}", format: "string" }],
+      }),
+    );
+  });
+
   it("неизвестный offset показывает «—» с причиной", async () => {
     vi.mocked(api.listHistory).mockResolvedValue([
       { ...history[0], result: { partition: 0, offset: null, timestamp: 0 } },

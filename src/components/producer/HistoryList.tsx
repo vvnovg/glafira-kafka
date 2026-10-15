@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import { formatTimestamp } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { messageToForm, type ProducerForm } from "./form";
+import { literalMessage } from "./fromMessage";
 
 export function HistoryList({ connectionId, onRepeat }: { connectionId: string; onRepeat: (form: ProducerForm) => void }) {
   const q = useQuery({ queryKey: ["history", connectionId], queryFn: () => api.listHistory(connectionId) });
@@ -35,7 +36,8 @@ export function HistoryList({ connectionId, onRepeat }: { connectionId: string; 
                 className="link"
                 disabled={h.truncated}
                 title={h.truncated ? "Значение длиннее 64 КБ сохранено не полностью — повторить нельзя" : undefined}
-                onClick={() => onRepeat(messageToForm(h.message, h.settings))}
+                // В истории — уже отрисованный текст: повтор отправляет его буквально.
+                onClick={() => onRepeat(messageToForm(literalMessage(h.message), h.settings))}
               >
                 Повторить
               </button>

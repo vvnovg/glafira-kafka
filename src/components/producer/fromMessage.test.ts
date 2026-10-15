@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BrowsedMessage, DecodedData } from "../../api/types";
-import { browsedToMessage } from "./fromMessage";
+import { browsedToMessage, literalText } from "./fromMessage";
 
 const d = (format: DecodedData["format"], text: string, truncated = false): DecodedData => ({ format, text, size: text.length, truncated });
 
@@ -61,5 +61,37 @@ describe("browsedToMessage", () => {
     const m = browsedToMessage({ ...base, key: d("string", ""), value: d("base64", "AAH/") });
     expect(m.key).toEqual({ format: "string", text: "" });
     expect(m.value).toEqual({ format: "base64", text: "AAH/" });
+  });
+});
+
+describe("повторная отправка — точная копия без шаблонизации", () => {
+  const base: BrowsedMessage = { topic: "t", partition: 0, offset: 0, timestamp: null, key: null, value: d("string", "v"), headers: [], size: 1 };
+
+  it("экранирует {{ в ключе, значении и строковых заголовках", () => {
+    const m = browsedToMessage({
+      ...base,
+      key: d("string", "{{uuid}}"),
+      value: d("json", '{"secret":"{{env AWS_SECRET_ACCESS_KEY}}","t":"{{now}}"}'),
+      headers: [{ name: "h", value: "x{{seq}}" }],
+    });
+    expect(m.key.text).toBe("\\{{uuid}}");
+    expect(m.value.text).toBe('{"secret":"\\{{env AWS_SECRET_ACCESS_KEY}}","t":"\\{{now}}"}');
+    expect(m.headers[0]).toEqual({ name: "h", value: "x\\{{seq}}", format: "string" });
+  });
+
+  it("буквальный \\{{ остаётся буквальным после отрисовки", () => {
+    expect(browsedToMessage({ ...base, value: d("string", "a\\{{b {{{ c") }).value.text).toBe("a\\\\{{b \\{{{ c");
+  });
+
+  it("текст без {{ не меняется", () => {
+    expect(browsedToMessage({ ...base, value: d("string", "{ } }} \\") }).value.text).toBe("{ } }} \\");
+  });
+});
+
+describe("literalText", () => {
+  it("каждое {{ получает экранирующий \\", () => {
+    expect(literalText("{{a}}{{b}}")).toBe("\\{{a}}\\{{b}}");
+    expect(literalText("{{{{")).toBe("\\{{\\{{");
+    expect(literalText("")).toBe("");
   });
 });

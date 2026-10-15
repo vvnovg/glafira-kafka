@@ -1,6 +1,7 @@
 pub mod browse;
 pub mod cluster;
 pub mod connections;
+pub mod groups;
 pub mod topic_ops;
 pub mod topics;
 

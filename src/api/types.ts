@@ -328,3 +328,115 @@ export interface ResetResult {
   offset: number;
   error?: string;
 }
+
+export type PayloadFormat = "string" | "json" | "hex" | "base64" | "null";
+
+export interface PayloadInput {
+  format: PayloadFormat;
+  text: string;
+}
+
+export interface HeaderInput {
+  name: string;
+  value: string;
+  format: "string" | "hex";
+}
+
+export interface ProduceMessage {
+  topic: string;
+  /** null — партицию выбирает партиционер */
+  partition: number | null;
+  key: PayloadInput;
+  value: PayloadInput;
+  headers: HeaderInput[];
+}
+
+export interface ProducerSettings {
+  acks: "0" | "1" | "all";
+  compression: "none" | "gzip" | "snappy" | "lz4" | "zstd";
+  idempotence: boolean;
+}
+
+export interface ProduceResult {
+  partition: number;
+  /** null — брокер/librdkafka не сообщил offset (например, acks=0) */
+  offset: number | null;
+  timestamp: number;
+}
+
+export interface HistoryEntry {
+  id: string;
+  sentAt: number;
+  message: ProduceMessage;
+  settings: ProducerSettings;
+  result: ProduceResult;
+  /** Значения усечены до 64 КБ — повторить нельзя */
+  truncated: boolean;
+}
+
+export interface Template {
+  /** Пустая строка при создании — id назначает бэкенд */
+  id: string;
+  name: string;
+  /** null — глобальный шаблон */
+  connectionId: string | null;
+  message: ProduceMessage;
+  settings: ProducerSettings;
+}
+
+export type BatchSource =
+  | { type: "copies"; count: number; message: ProduceMessage }
+  | { type: "file"; path: string; format: "jsonl" | "csv"; topic: string };
+
+export interface BatchParams {
+  connectionId: string;
+  source: BatchSource;
+  settings: ProducerSettings;
+  ratePerSec: number | null;
+}
+
+export interface BatchError {
+  /** null — сводная ошибка, не относящаяся к строке */
+  line: number | null;
+  message: string;
+}
+
+export type BatchEvent =
+  | { type: "progress"; sent: number; failed: number; total: number | null }
+  | { type: "errors"; errors: BatchError[] }
+  | { type: "finished"; sent: number; failed: number; notSent: number; cancelled: boolean }
+  | { type: "error"; error: AppError };
+
+export interface ConsumerParams {
+  connectionId: string;
+  groupId: string;
+  topics: string[];
+  topicPattern: string | null;
+  autoOffsetReset: "earliest" | "latest";
+  enableAutoCommit: boolean;
+  isolationLevel: "readCommitted" | "readUncommitted";
+  keyFormat: DataFormat;
+  valueFormat: DataFormat;
+  filter: FilterSpec;
+}
+
+export type RebalanceRecord =
+  | { kind: "assigned"; partitions: TopicPartitionRef[]; at: number }
+  | { kind: "revoked"; partitions: TopicPartitionRef[]; at: number }
+  | { kind: "error"; message: string; at: number };
+
+export type CommitTarget =
+  | { type: "selected"; topic: string; partition: number; offset: number }
+  | { type: "allConsumed" };
+
+export type ConsumeEvent =
+  | { type: "messages"; messages: BrowsedMessage[] }
+  | { type: "progress"; consumed: number; matched: number }
+  | { type: "rebalance"; record: RebalanceRecord }
+  | { type: "committed"; offsets: OffsetTarget[] }
+  | { type: "paused"; partitions: TopicPartitionRef[] }
+  | { type: "resumed"; partitions: TopicPartitionRef[] }
+  | { type: "reconnecting"; message: string }
+  | { type: "recovered" }
+  | { type: "finished"; consumed: number; matched: number }
+  | { type: "error"; error: AppError };

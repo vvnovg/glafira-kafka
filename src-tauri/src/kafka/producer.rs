@@ -6,10 +6,11 @@ use rdkafka::ClientConfig;
 use rdkafka::error::KafkaError;
 use rdkafka::message::{Header, OwnedHeaders};
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::types::RDKafkaErrorCode;
 use rdkafka::util::Timeout;
 use serde::{Deserialize, Serialize};
 
-use crate::error::{AppError, AppResult, from_kafka};
+use crate::error::{AppError, AppResult, ErrorCode, classify_message, from_kafka};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::errors::item_error;
@@ -220,6 +221,51 @@ pub fn owned_headers(headers: &[(String, Vec<u8>)]) -> OwnedHeaders {
     })
 }
 
+/// Ошибка доставки: сначала известные коды librdkafka, затем классификация по тексту
+/// (с учётом причины от клиента — TLS/SASL не должны выглядеть таймаутом).
+fn delivery_error(code: RDKafkaErrorCode, cause: Option<&str>) -> AppError {
+    use RDKafkaErrorCode as C;
+    let context = "Не удалось отправить сообщение";
+    let details = |app: ErrorCode, message: &str| {
+        let d = match cause {
+            Some(c) => format!("{code}\n{c}"),
+            None => code.to_string(),
+        };
+        AppError::new(app, message).with_details(d)
+    };
+    if let Some(c) = cause
+        && let Some(app) = classify_message(c)
+        && matches!(
+            app,
+            ErrorCode::TlsError | ErrorCode::AuthFailed | ErrorCode::ConnectionFailed
+        )
+    {
+        return from_kafka(&KafkaError::MessageProduction(code), Some(c));
+    }
+    match code {
+        C::MessageTimedOut => details(
+            ErrorCode::Timeout,
+            "Сообщение не доставлено за время таймаута",
+        ),
+        C::UnknownTopic | C::UnknownTopicOrPartition => {
+            details(ErrorCode::NotFound, "Топик или партиция не найдены")
+        }
+        C::MessageSizeTooLarge | C::InvalidMessageSize | C::MessageBatchTooLarge => details(
+            ErrorCode::InvalidInput,
+            "Сообщение слишком большое для брокера",
+        ),
+        _ => {
+            let e = item_error(code, cause.unwrap_or(""), context);
+            if e.code != ErrorCode::Internal {
+                e
+            } else {
+                let app = classify_message(&code.to_string()).unwrap_or(ErrorCode::Internal);
+                AppError::new(app, context).with_details(e.details.unwrap_or_default())
+            }
+        }
+    }
+}
+
 /// Отправка с ожиданием подтверждения не дольше таймаута запроса.
 pub async fn send(h: &ProducerHandle, m: &EncodedMessage) -> AppResult<ProduceResult> {
     let timestamp = now_ms();
@@ -245,11 +291,7 @@ pub async fn send(h: &ProducerHandle, m: &EncodedMessage) -> AppResult<ProduceRe
         Err((e, _)) => {
             let cause = h.ctx.last_error_since(started);
             Err(match &e {
-                KafkaError::MessageProduction(code) => item_error(
-                    *code,
-                    cause.as_deref().unwrap_or(""),
-                    "Не удалось отправить сообщение",
-                ),
+                KafkaError::MessageProduction(code) => delivery_error(*code, cause.as_deref()),
                 _ => from_kafka(&e, cause.as_deref()),
             })
         }
@@ -277,6 +319,28 @@ mod tests {
             serde_json::to_value(ProducerSettings::default()).unwrap(),
             serde_json::json!({"acks": "all", "compression": "none", "idempotence": false})
         );
+    }
+
+    #[test]
+    fn delivery_errors_are_classified() {
+        use RDKafkaErrorCode as C;
+        let cases = [
+            (C::MessageTimedOut, ErrorCode::Timeout),
+            (C::UnknownTopic, ErrorCode::NotFound),
+            (C::UnknownTopicOrPartition, ErrorCode::NotFound),
+            (C::UnknownPartition, ErrorCode::InvalidInput),
+            (C::MessageSizeTooLarge, ErrorCode::InvalidInput),
+            (C::InvalidMessageSize, ErrorCode::InvalidInput),
+            (C::TopicAuthorizationFailed, ErrorCode::NotAuthorized),
+            (C::BrokerTransportFailure, ErrorCode::ConnectionFailed),
+        ];
+        for (code, expected) in cases {
+            assert_eq!(delivery_error(code, None).code, expected, "{code:?}");
+        }
+        let e = delivery_error(C::MessageTimedOut, Some("ssl handshake failed"));
+        assert_eq!(e.code, ErrorCode::TlsError, "TLS не выглядит таймаутом");
+        let e = delivery_error(C::MessageTimedOut, Some("SASL authentication error"));
+        assert_eq!(e.code, ErrorCode::AuthFailed);
     }
 
     #[test]

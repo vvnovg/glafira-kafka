@@ -3,6 +3,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use crate::error::{AppError, AppResult};
 use crate::produce::payload::{PayloadFormat, ProduceMessage};
 
+const ESCAPE_HINT: &str = "}}» (чтобы отправить «{{» буквально, пишите «\\{{»)";
 const MAX_RANDOM_STRING: usize = 100_000;
 
 pub struct RenderContext<'a> {
@@ -85,20 +86,29 @@ fn eval(expr: &str, ctx: &mut RenderContext) -> AppResult<String> {
             (ctx.env)(args[0])
                 .ok_or_else(|| invalid(format!("Переменная окружения {} не задана", args[0])))
         }
-        _ => Err(invalid(format!("Неизвестный плейсхолдер {{{{{expr}}}}}"))),
+        _ => Err(invalid(format!(
+            "Неизвестный плейсхолдер «{{{{{expr}}}}}» (чтобы отправить «{{{{» буквально, пишите «\\{{{{»)"
+        ))),
     }
 }
 
-/// Подставляет плейсхолдеры `{{…}}`. Экранирования нет: литерал `{{` в тексте недопустим.
+/// Подставляет плейсхолдеры `{{…}}`.
+/// Экранирование: `\{{` выводится как литерал `{{` и не разбирается как плейсхолдер.
 pub fn render(template: &str, ctx: &mut RenderContext) -> AppResult<String> {
     let mut out = String::with_capacity(template.len());
     let mut rest = template;
     while let Some(start) = rest.find("{{") {
+        if rest[..start].ends_with('\\') {
+            out.push_str(&rest[..start - 1]);
+            out.push_str("{{");
+            rest = &rest[start + 2..];
+            continue;
+        }
         out.push_str(&rest[..start]);
         let after = &rest[start + 2..];
         let end = after
             .find("}}")
-            .ok_or_else(|| invalid("Незакрытый плейсхолдер: нет «}}»".to_string()))?;
+            .ok_or_else(|| invalid(format!("Незакрытый плейсхолдер: нет «{ESCAPE_HINT}")))?;
         out.push_str(&eval(after[..end].trim(), ctx)?);
         rest = &after[end + 2..];
     }
@@ -115,7 +125,8 @@ pub fn render_message(m: &ProduceMessage, ctx: &mut RenderContext) -> AppResult<
         r.value.text = render(&m.value.text, ctx)?;
     }
     for h in &mut r.headers {
-        h.value = render(&h.value, ctx)?;
+        h.value = render(&h.value, ctx)
+            .map_err(|e| AppError::invalid(format!("Заголовок «{}»: {}", h.name, e.message)))?;
     }
     Ok(r)
 }
@@ -167,13 +178,6 @@ mod tests {
 
     #[test]
     fn random_placeholders_respect_arguments() {
-        for _ in 0..50 {
-            let n: i64 = with_ctx(0, |c| render("{{randomInt -5 5}}", c))
-                .unwrap()
-                .parse()
-                .unwrap();
-            assert!((-5..=5).contains(&n));
-        }
         let s = with_ctx(0, |c| render("{{randomString 12}}", c)).unwrap();
         assert_eq!(s.len(), 12);
         assert!(s.chars().all(|c| c.is_ascii_alphanumeric()));
@@ -224,5 +228,95 @@ mod tests {
         assert_eq!(r.key.text, "k-3");
         assert_eq!(r.headers[0].value, "3");
         assert_eq!(r.value.text, "{{unknown}}", "null-значение не рендерится");
+    }
+
+    #[test]
+    fn random_int_covers_range_with_one_rng() {
+        let mut rng = fastrand::Rng::with_seed(1);
+        let mut ctx = RenderContext {
+            seq: 0,
+            now: chrono::Utc
+                .with_ymd_and_hms(2026, 10, 15, 12, 30, 0)
+                .unwrap(),
+            rng: &mut rng,
+            env: &env,
+        };
+        let mut seen = std::collections::HashSet::new();
+        for _ in 0..500 {
+            let n: i64 = render("{{randomInt -2 2}}", &mut ctx)
+                .unwrap()
+                .parse()
+                .unwrap();
+            assert!((-2..=2).contains(&n));
+            seen.insert(n);
+        }
+        assert_eq!(seen.len(), 5, "достижимы обе границы и всё между ними");
+    }
+
+    #[test]
+    fn escape_renders_literal_braces() {
+        assert_eq!(
+            with_ctx(0, |c| render(r"\{{name}}", c)).unwrap(),
+            "{{name}}"
+        );
+        let out = with_ctx(0, |c| render(r#"{"t":"\{{x}}"}"#, c)).unwrap();
+        assert_eq!(out, r#"{"t":"{{x}}"}"#);
+        serde_json::from_str::<serde_json::Value>(&out).unwrap();
+        assert_eq!(with_ctx(5, |c| render(r"\{{ {{seq}}", c)).unwrap(), "{{ 5");
+    }
+
+    #[test]
+    fn error_mentions_escape() {
+        let e = with_ctx(0, |c| render("{{x}}", c)).unwrap_err();
+        assert!(e.message.contains(r"\{{"), "{}", e.message);
+        let e = with_ctx(0, |c| render("{{seq", c)).unwrap_err();
+        assert!(e.message.contains(r"\{{"), "{}", e.message);
+    }
+
+    #[test]
+    fn edge_cases() {
+        assert_eq!(with_ctx(2, |c| render("{{seq}}{{seq}}", c)).unwrap(), "22");
+        assert_eq!(with_ctx(0, |c| render("a}}b", c)).unwrap(), "a}}b");
+        assert_eq!(
+            with_ctx(0, |c| render("{{randomInt 5 5}}", c)).unwrap(),
+            "5"
+        );
+        assert_eq!(
+            with_ctx(0, |c| render("{{randomString 0}}", c)).unwrap(),
+            ""
+        );
+        for bad in ["{{}}", "{{randomInt 99999999999999999999 1}}"] {
+            let e = with_ctx(0, |c| render(bad, c)).unwrap_err();
+            assert_eq!(e.code, ErrorCode::InvalidInput, "{bad}");
+        }
+        let full = "{{randomInt -9223372036854775808 9223372036854775807}}";
+        with_ctx(0, |c| render(full, c))
+            .unwrap()
+            .parse::<i64>()
+            .unwrap();
+    }
+
+    #[test]
+    fn header_error_names_header() {
+        let m = ProduceMessage {
+            topic: "t".into(),
+            partition: None,
+            key: PayloadInput {
+                format: PayloadFormat::Null,
+                text: String::new(),
+            },
+            value: PayloadInput {
+                format: PayloadFormat::Null,
+                text: String::new(),
+            },
+            headers: vec![HeaderInput {
+                name: "trace".into(),
+                value: "{{nope}}".into(),
+                format: HeaderFormat::String,
+            }],
+        };
+        let e = with_ctx(0, |c| render_message(&m, c)).unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert!(e.message.contains("trace"), "{}", e.message);
     }
 }

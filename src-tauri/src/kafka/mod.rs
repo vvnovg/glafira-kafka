@@ -10,4 +10,5 @@ pub mod group_ops;
 pub mod groups;
 pub mod metadata;
 pub mod pool;
+pub mod recovery;
 pub mod topics;

@@ -47,3 +47,21 @@ async fn missing_partition_is_reported() {
     let e = send(&h, &message(&topic, Some(7))).await.unwrap_err();
     assert_ne!(e.code, ErrorCode::Internal, "{e:?}");
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn same_key_without_partition_lands_on_same_partition() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let topic = common::TempTopic::create(&bs, "it-produce-key", 4).await;
+    let h = ProducerHandle::create(
+        &common::plaintext_profile(&bs),
+        &MemoryStore::default(),
+        &ProducerSettings::default(),
+    )
+    .unwrap();
+    let a = send(&h, &message(&topic, None)).await.unwrap();
+    let b = send(&h, &message(&topic, None)).await.unwrap();
+    assert_eq!(a.partition, b.partition);
+    assert_eq!(b.offset, Some(a.offset.unwrap() + 1));
+}

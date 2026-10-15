@@ -83,6 +83,8 @@ impl ProducerSettings {
     }
 
     pub fn apply(&self, cfg: &mut ClientConfig) {
+        // Как в Java-клиентах: ключ попадает в ту же партицию, что у Java/Spring-producer'ов.
+        cfg.set("partitioner", "murmur2_random");
         cfg.set("acks", self.acks.as_str())
             .set("compression.type", self.compression.as_str())
             .set(
@@ -311,6 +313,7 @@ mod tests {
         .unwrap();
         let mut cfg = ClientConfig::new();
         s.apply(&mut cfg);
+        assert_eq!(cfg.get("partitioner"), Some("murmur2_random"));
         assert_eq!(cfg.get("acks"), Some("1"));
         assert_eq!(cfg.get("compression.type"), Some("zstd"));
         assert_eq!(cfg.get("enable.idempotence"), Some("false"));

@@ -58,6 +58,11 @@ pub fn run() {
             commands::groups::preview_offset_reset,
             commands::groups::reset_offsets,
             commands::groups::delete_group,
+            commands::produce::produce,
+            commands::produce::list_history,
+            commands::produce::list_templates,
+            commands::produce::save_template,
+            commands::produce::delete_template,
             commands::browse::start_browse,
             commands::browse::stop_session,
         ])

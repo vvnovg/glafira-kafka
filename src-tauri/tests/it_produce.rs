@@ -1,9 +1,14 @@
 mod common;
 
+use kafka_explorer_lib::commands::produce::produce_impl;
 use kafka_explorer_lib::error::ErrorCode;
 use kafka_explorer_lib::kafka::producer::{ProducerHandle, ProducerSettings, send};
-use kafka_explorer_lib::produce::payload::EncodedMessage;
+use kafka_explorer_lib::produce::payload::{
+    EncodedMessage, PayloadFormat, PayloadInput, ProduceMessage,
+};
 use kafka_explorer_lib::secrets::MemoryStore;
+use kafka_explorer_lib::state::AppState;
+use std::sync::Arc;
 
 fn message(topic: &str, partition: Option<i32>) -> EncodedMessage {
     EncodedMessage {
@@ -64,4 +69,41 @@ async fn same_key_without_partition_lands_on_same_partition() {
     let b = send(&h, &message(&topic, None)).await.unwrap();
     assert_eq!(a.partition, b.partition);
     assert_eq!(b.offset, Some(a.offset.unwrap() + 1));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn produce_command_renders_placeholders_and_records_history() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let topic = common::TempTopic::create(&bs, "it-produce-cmd", 1).await;
+    let dir = tempfile::tempdir().unwrap();
+    let st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+    st.connections
+        .upsert(common::plaintext_profile(&bs))
+        .unwrap();
+    let m = ProduceMessage {
+        topic: topic.to_string(),
+        partition: None,
+        key: PayloadInput {
+            format: PayloadFormat::String,
+            text: "key-{{seq}}".into(),
+        },
+        value: PayloadInput {
+            format: PayloadFormat::Json,
+            text: r#"{"id":"{{uuid}}"}"#.into(),
+        },
+        headers: vec![],
+    };
+    let r = produce_impl(&st, "it".into(), m, ProducerSettings::default(), None)
+        .await
+        .unwrap();
+    assert_eq!(r.offset, Some(0));
+    let history = st.history.list("it").unwrap();
+    assert_eq!(history.len(), 1);
+    assert_eq!(history[0].message.key.text, "key-0");
+    assert!(
+        !history[0].message.value.text.contains("{{"),
+        "в истории — уже подставленные значения"
+    );
 }

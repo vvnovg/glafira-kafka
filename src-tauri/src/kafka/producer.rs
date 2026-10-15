@@ -237,7 +237,20 @@ fn delivery_error(code: RDKafkaErrorCode, cause: Option<&str>) -> AppError {
         };
         AppError::new(app, message).with_details(d)
     };
-    if let Some(c) = cause
+    // Причина от клиента (TLS/SASL/сеть) важнее кода только для таймаута и транспортных кодов;
+    // детерминированные ответы брокера (слишком большое сообщение, нет топика) её не перекрывают.
+    let client_cause_applies = matches!(
+        code,
+        C::MessageTimedOut
+            | C::BrokerTransportFailure
+            | C::AllBrokersDown
+            | C::Resolve
+            | C::Authentication
+            | C::SSL
+            | C::Fail
+    );
+    if client_cause_applies
+        && let Some(c) = cause
         && let Some(app) = classify_message(c)
         && matches!(
             app,
@@ -346,6 +359,29 @@ mod tests {
         assert_eq!(e.code, ErrorCode::TlsError, "TLS не выглядит таймаутом");
         let e = delivery_error(C::MessageTimedOut, Some("SASL authentication error"));
         assert_eq!(e.code, ErrorCode::AuthFailed);
+    }
+
+    #[test]
+    fn deterministic_codes_win_over_connection_cause() {
+        use RDKafkaErrorCode as C;
+        let cause = Some("Connect to ipv4#127.0.0.1:9092 failed: Connection refused");
+        let cases = [
+            (C::MessageSizeTooLarge, ErrorCode::InvalidInput),
+            (C::UnknownTopic, ErrorCode::NotFound),
+            (C::UnknownTopicOrPartition, ErrorCode::NotFound),
+        ];
+        for (code, expected) in cases {
+            assert_eq!(delivery_error(code, cause).code, expected, "{code:?}");
+        }
+        assert_eq!(
+            delivery_error(C::MessageTimedOut, cause).code,
+            ErrorCode::ConnectionFailed,
+            "таймаут с причиной-соединением остаётся ConnectionFailed"
+        );
+        assert_eq!(
+            delivery_error(C::BrokerTransportFailure, cause).code,
+            ErrorCode::ConnectionFailed
+        );
     }
 
     #[test]

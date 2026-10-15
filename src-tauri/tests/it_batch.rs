@@ -26,18 +26,20 @@ impl BatchSink for VecSink {
 }
 
 impl VecSink {
-    fn finished(&self) -> (u64, u64, bool) {
+    /// (sent, failed, notSent, cancelled)
+    fn finished(&self) -> (u64, u64, u64, bool) {
         match self.0.lock().unwrap().last().cloned() {
             Some(BatchEvent::Finished {
                 sent,
                 failed,
+                not_sent,
                 cancelled,
-            }) => (sent, failed, cancelled),
+            }) => (sent, failed, not_sent, cancelled),
             other => panic!("ожидали Finished, получили {other:?}"),
         }
     }
 
-    fn errors(&self) -> Vec<(u64, String)> {
+    fn errors(&self) -> Vec<(Option<u64>, String)> {
         self.0
             .lock()
             .unwrap()
@@ -113,7 +115,7 @@ async fn thousand_copies() {
     })
     .await
     .unwrap();
-    assert_eq!(sink.finished(), (1000, 0, false));
+    assert_eq!(sink.finished(), (1000, 0, 0, false));
     assert_eq!(message_count(&bs, &topic).await, Some(1000));
 }
 
@@ -146,10 +148,10 @@ async fn jsonl_file_with_bad_line() {
         tokio::task::spawn_blocking(move || run(&bs2, params, Arc::new(AtomicBool::new(false))))
             .await
             .unwrap();
-    assert_eq!(sink.finished(), (2, 1, false));
+    assert_eq!(sink.finished(), (2, 1, 0, false));
     let errors = sink.errors();
     assert_eq!(errors.len(), 1);
-    assert_eq!(errors[0].0, 2);
+    assert_eq!(errors[0].0, Some(2));
     assert_eq!(message_count(&bs, &topic).await, Some(2));
 }
 
@@ -170,8 +172,43 @@ async fn cancel_stops_rate_limited_batch() {
         started.elapsed() < Duration::from_secs(3),
         "отмена срабатывает быстро"
     );
-    let (sent, failed, cancelled) = sink.finished();
+    let (sent, failed, not_sent, cancelled) = sink.finished();
     assert!(cancelled);
     assert_eq!(failed, 0);
+    // Ждавшее в ограничителе скорости + не ушедшее из локальной очереди (linger) — единицы.
+    assert!(not_sent < 20, "отменено до отправки: {not_sent}");
     assert!(sent > 0 && sent < 1000, "отправлено {sent}");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn cancel_of_unthrottled_batch_does_not_count_queued_as_failed() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let topic = common::TempTopic::create(&bs, "it-batch-cancel-fast", 1).await;
+    let cancel = Arc::new(AtomicBool::new(false));
+    let (bs2, t, c2) = (bs.clone(), topic.to_string(), cancel.clone());
+    let task = tokio::task::spawn_blocking(move || run(&bs2, copies(&t, 1_000_000, None), c2));
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    cancel.store(true, Ordering::Relaxed);
+    let started = std::time::Instant::now();
+    let sink = task.await.unwrap();
+    assert!(
+        started.elapsed() < Duration::from_secs(3),
+        "отмена срабатывает быстро"
+    );
+    let (sent, failed, not_sent, cancelled) = sink.finished();
+    assert!(cancelled);
+    assert_eq!(
+        failed, 0,
+        "вынутое из локальной очереди — не ошибки брокера"
+    );
+    assert!(not_sent > 0, "часть пакета отменена до отправки");
+    assert!(
+        sent + not_sent < 1_000_000,
+        "отправлено {sent}, отменено {not_sent}"
+    );
+    assert!(sink.errors().is_empty());
+    // Вынутое из очереди в Kafka не попало.
+    assert_eq!(message_count(&bs, &topic).await, Some(sent as i64));
 }

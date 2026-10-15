@@ -347,10 +347,15 @@ mod tests {
         assert_eq!(st.sessions.cancel_for("dev"), 1);
         match wait_last(&rx) {
             BatchEvent::Finished {
-                cancelled, sent, ..
+                cancelled,
+                sent,
+                failed,
+                not_sent,
             } => {
                 assert!(cancelled);
-                assert_eq!(sent, 0);
+                // Первое сообщение было в локальной очереди (вынуто при отмене),
+                // второе ждало в ограничителе скорости — оба «отменено до отправки».
+                assert_eq!((sent, failed, not_sent), (0, 0, 2));
             }
             other => panic!("ожидали Finished, получили {other:?}"),
         }

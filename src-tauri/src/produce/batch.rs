@@ -6,7 +6,9 @@ use std::time::{Duration, Instant};
 
 use rdkafka::client::ClientContext;
 use rdkafka::error::KafkaError;
-use rdkafka::producer::{BaseProducer, BaseRecord, DeliveryResult, ProducerContext};
+use rdkafka::producer::{
+    BaseProducer, BaseRecord, DeliveryResult, Producer, ProducerContext, PurgeConfig,
+};
 use rdkafka::types::RDKafkaErrorCode;
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +29,12 @@ pub const MAX_REPORTED_ERRORS: usize = 20;
 const TICK: Duration = Duration::from_millis(100);
 /// Сколько после отмены ждём подтверждений уже отправленных сообщений.
 const CANCEL_DRAIN: Duration = Duration::from_secs(2);
+/// Локальная очередь librdkafka пакета (по умолчанию 100 000 сообщений / 1 ГБ). Время в очереди
+/// входит в message.timeout.ms: длинная очередь на медленном канале истекала бы, не уйдя в сеть.
+const QUEUE_MAX_MESSAGES: u32 = 10_000;
+const QUEUE_MAX_KBYTES: u32 = 65_536;
+/// Нижняя граница message.timeout.ms пакетного producer'а (ожидание в очереди + доставка).
+const MIN_MESSAGE_TIMEOUT: Duration = Duration::from_secs(120);
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(
@@ -59,7 +67,8 @@ pub struct BatchParams {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchError {
-    pub line: u64,
+    /// Номер строки файла / копии (1-based); None — сводная ошибка, не относящаяся к строке.
+    pub line: Option<u64>,
     pub message: String,
 }
 
@@ -79,9 +88,13 @@ pub enum BatchEvent {
     Errors {
         errors: Vec<BatchError>,
     },
+    /// sent + failed + notSent = число обработанных элементов источника.
     Finished {
         sent: u64,
         failed: u64,
+        /// Отменено до отправки (UI: «отменено до отправки: N»): вынуто из локальной очереди
+        /// librdkafka при отмене или не поставлено в неё. Не ошибки и не в failed.
+        not_sent: u64,
         cancelled: bool,
     },
     Error {
@@ -145,7 +158,14 @@ fn copies_iter(count: u64, message: ProduceMessage) -> impl Iterator<Item = Sour
     })
 }
 
-type Delivery = (u64, Result<(), String>);
+enum Outcome {
+    Sent,
+    Failed(String),
+    /// Сообщение вынуто из локальной очереди при отмене (PurgeQueue) — в сеть не уходило.
+    NotSent,
+}
+
+type Delivery = (u64, Outcome);
 
 struct BatchContext {
     capture: CapturingContext,
@@ -162,7 +182,13 @@ impl ProducerContext for BatchContext {
     type DeliveryOpaque = Box<u64>;
 
     fn delivery(&self, result: &DeliveryResult<'_>, line: Box<u64>) {
-        let r = result.as_ref().map(|_| ()).map_err(|(e, _)| e.to_string());
+        let r = match result {
+            Ok(_) => Outcome::Sent,
+            Err((e, _)) if e.rdkafka_error_code() == Some(RDKafkaErrorCode::PurgeQueue) => {
+                Outcome::NotSent
+            }
+            Err((e, _)) => Outcome::Failed(e.to_string()),
+        };
         let _ = self.deliveries.lock_safe().send((*line, r));
     }
 }
@@ -172,6 +198,7 @@ struct Stats<'a> {
     total: Option<u64>,
     sent: u64,
     failed: u64,
+    not_sent: u64,
     in_flight: u64,
     errors: Vec<BatchError>,
     errors_dirty: bool,
@@ -180,7 +207,7 @@ struct Stats<'a> {
 }
 
 impl Stats<'_> {
-    fn fail(&mut self, line: u64, message: String) {
+    fn fail(&mut self, line: Option<u64>, message: String) {
         self.failed += 1;
         if self.errors.len() < MAX_REPORTED_ERRORS {
             self.errors.push(BatchError { line, message });
@@ -192,8 +219,9 @@ impl Stats<'_> {
         while let Ok((line, r)) = rx.try_recv() {
             self.in_flight = self.in_flight.saturating_sub(1);
             match r {
-                Ok(()) => self.sent += 1,
-                Err(e) => self.fail(line, e),
+                Outcome::Sent => self.sent += 1,
+                Outcome::Failed(e) => self.fail(Some(line), e),
+                Outcome::NotSent => self.not_sent += 1,
             }
         }
     }
@@ -256,10 +284,20 @@ fn run_inner(
         };
     let mut cfg = build_client_config(profile, secrets)?;
     params.settings.apply(&mut cfg);
-    cfg.set("message.timeout.ms", profile.request_timeout_ms.to_string());
-    // Ограничиваем очередь librdkafka (по умолчанию до 1 ГБ): память пакета остаётся ограниченной,
-    // при заполнении send возвращает QueueFull и цикл ждёт подтверждений.
-    cfg.set("queue.buffering.max.kbytes", "65536");
+    // Очередь ограничена (память и время ожидания в ней), при заполнении send возвращает
+    // QueueFull и цикл ждёт подтверждений. Таймаут сообщения покрывает и ожидание в очереди,
+    // поэтому для пакета он не меньше MIN_MESSAGE_TIMEOUT.
+    let message_timeout =
+        Duration::from_millis(profile.request_timeout_ms).max(MIN_MESSAGE_TIMEOUT);
+    cfg.set(
+        "message.timeout.ms",
+        message_timeout.as_millis().to_string(),
+    )
+    .set(
+        "queue.buffering.max.messages",
+        QUEUE_MAX_MESSAGES.to_string(),
+    )
+    .set("queue.buffering.max.kbytes", QUEUE_MAX_KBYTES.to_string());
     let (tx, rx) = mpsc::channel();
     let capture = CapturingContext::default();
     let ctx = BatchContext {
@@ -275,6 +313,7 @@ fn run_inner(
         total,
         sent: 0,
         failed: 0,
+        not_sent: 0,
         in_flight: 0,
         errors: Vec::new(),
         errors_dirty: false,
@@ -290,6 +329,7 @@ fn run_inner(
         loop {
             if stop(&stats) {
                 cancelled = true;
+                stats.not_sent += 1;
                 break 'items;
             }
             let wait = limiter.wait_time(Instant::now());
@@ -304,7 +344,7 @@ fn run_inner(
         let m = match item.message {
             Ok(m) => m,
             Err(e) => {
-                stats.fail(item.line, e);
+                stats.fail(Some(item.line), e);
                 continue;
             }
         };
@@ -334,11 +374,12 @@ fn run_inner(
                     stats.progress(false);
                     if stop(&stats) {
                         cancelled = true;
+                        stats.not_sent += 1;
                         break 'items;
                     }
                 }
                 Err((e, _)) => {
-                    stats.fail(item.line, e.to_string());
+                    stats.fail(Some(item.line), e.to_string());
                     break;
                 }
             }
@@ -348,9 +389,14 @@ fn run_inner(
         stats.progress(false);
     }
 
-    // Ждём подтверждения уже отправленного: до таймаута запроса, после отмены — до CANCEL_DRAIN.
-    // message.timeout.ms = request_timeout_ms гарантирует отчёт librdkafka; запас — на сам poll.
-    let timeout = Duration::from_millis(profile.request_timeout_ms) + Duration::from_secs(1);
+    // Отмена: локальная очередь (ещё не ушедшее в сеть) вынимается сразу — эти сообщения придут
+    // в delivery с PurgeQueue и попадут в notSent; отправленные брокеру ждём до CANCEL_DRAIN.
+    let purge_queue = || producer.purge(PurgeConfig::default().queue());
+    if cancelled {
+        purge_queue();
+    }
+    // Без отмены ждём до message.timeout.ms (librdkafka гарантирует отчёт), запас — на сам poll.
+    let timeout = message_timeout + Duration::from_secs(1);
     let mut deadline = Instant::now() + if cancelled { CANCEL_DRAIN } else { timeout };
     while stats.in_flight > 0 && Instant::now() < deadline {
         producer.poll(TICK);
@@ -358,6 +404,7 @@ fn run_inner(
         stats.progress(false);
         if !cancelled && stop(&stats) {
             cancelled = true;
+            purge_queue();
             deadline = deadline.min(Instant::now() + CANCEL_DRAIN);
         }
     }
@@ -367,19 +414,27 @@ fn run_inner(
         stats.in_flight = 0;
         stats.failed += lost;
         if stats.errors.len() < MAX_REPORTED_ERRORS {
-            let mut message = format!("{lost} сообщений не подтверждены брокером до таймаута");
+            let mut message = if cancelled {
+                format!("{lost} сообщений не подтверждены брокером к моменту отмены")
+            } else {
+                format!("{lost} сообщений не подтверждены брокером до таймаута")
+            };
             if let Some(cause) = capture.last_error() {
                 message.push_str(&format!(": {cause}"));
             }
-            stats.errors.push(BatchError { line: 0, message });
+            stats.errors.push(BatchError {
+                line: None,
+                message,
+            });
             stats.errors_dirty = true;
         }
     }
     stats.progress(true);
-    let (sent, failed) = (stats.sent, stats.failed);
+    let (sent, failed, not_sent) = (stats.sent, stats.failed, stats.not_sent);
     stats.emit(BatchEvent::Finished {
         sent,
         failed,
+        not_sent,
         cancelled,
     });
     Ok(())
@@ -461,12 +516,82 @@ mod tests {
         let v = serde_json::to_value(BatchEvent::Finished {
             sent: 3,
             failed: 1,
+            not_sent: 2,
             cancelled: false,
         })
         .unwrap();
         assert_eq!(
             v,
-            serde_json::json!({"type": "finished", "sent": 3, "failed": 1, "cancelled": false})
+            serde_json::json!({"type": "finished", "sent": 3, "failed": 1, "notSent": 2, "cancelled": false})
+        );
+        let v = serde_json::to_value(BatchEvent::Errors {
+            errors: vec![BatchError {
+                line: None,
+                message: "m".into(),
+            }],
+        })
+        .unwrap();
+        assert_eq!(
+            v,
+            serde_json::json!({"type": "errors", "errors": [{"line": null, "message": "m"}]})
+        );
+    }
+
+    struct VecSink(Mutex<Vec<BatchEvent>>);
+
+    impl BatchSink for VecSink {
+        fn send(&self, e: BatchEvent) -> bool {
+            self.0.lock_safe().push(e);
+            true
+        }
+    }
+
+    #[test]
+    fn cancel_of_unthrottled_batch_counts_queued_as_not_sent() {
+        // Брокер недоступен: всё отправленное лежит в локальной очереди librdkafka,
+        // очередь заполняется (QUEUE_MAX_MESSAGES) и цикл ждёт в QueueFull.
+        let mut profile = crate::storage::connections::sample_profile("c");
+        profile.bootstrap_servers = "127.0.0.1:1".into();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let c2 = cancel.clone();
+        let canceller = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(500));
+            c2.store(true, Ordering::Relaxed);
+        });
+        let sink = VecSink(Mutex::new(Vec::new()));
+        let started = Instant::now();
+        run_batch(
+            &profile,
+            &crate::secrets::MemoryStore::default(),
+            copies(50_000),
+            cancel,
+            &sink,
+        );
+        canceller.join().unwrap();
+        assert!(started.elapsed() < Duration::from_secs(5), "отмена быстрая");
+        let events = sink.0.lock_safe();
+        match events.last() {
+            Some(BatchEvent::Finished {
+                sent,
+                failed,
+                not_sent,
+                cancelled,
+            }) => {
+                assert!(*cancelled);
+                assert_eq!((*sent, *failed), (0, 0), "вынутое из очереди — не ошибки");
+                assert!(
+                    *not_sent >= u64::from(QUEUE_MAX_MESSAGES),
+                    "notSent = {not_sent}"
+                );
+                assert!(*not_sent < 50_000);
+            }
+            other => panic!("ожидали Finished, получили {other:?}"),
+        }
+        assert!(
+            !events
+                .iter()
+                .any(|e| matches!(e, BatchEvent::Errors { .. })),
+            "отмена не порождает ошибок"
         );
     }
 

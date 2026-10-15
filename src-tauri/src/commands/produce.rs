@@ -143,7 +143,7 @@ pub async fn list_templates(
     let st = state.inner().clone();
     blocking(move || {
         st.connections.get(&connection_id)?;
-        Ok(st.templates.list(&connection_id))
+        st.templates.list(&connection_id)
     })
     .await
 }

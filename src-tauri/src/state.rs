@@ -29,7 +29,7 @@ impl AppState {
             sessions: Arc::new(SessionRegistry::default()),
             consumers: Arc::new(Default::default()),
             history: Arc::new(crate::storage::history::HistoryStore::open(data_dir)?),
-            templates: Arc::new(crate::storage::templates::TemplateStore::open(data_dir)?),
+            templates: Arc::new(crate::storage::templates::TemplateStore::open(data_dir)),
         })
     }
 
@@ -204,5 +204,19 @@ mod tests {
         );
         state.connections.upsert(sample_profile("b")).unwrap();
         assert_eq!(state.guarded("b", None).unwrap().id, "b");
+    }
+
+    #[test]
+    fn newer_templates_file_does_not_block_startup() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("templates.json"),
+            r#"{"schemaVersion":99,"templates":[]}"#,
+        )
+        .unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        assert!(state.templates.list("a").is_err());
+        state.connections.upsert(sample_profile("a")).unwrap();
+        assert!(state.handles("a").is_ok(), "остальное работает");
     }
 }

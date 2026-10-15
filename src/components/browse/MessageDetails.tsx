@@ -63,31 +63,32 @@ export function MessageDetails({ message, utc, connectionId }: Props) {
     <div className="details-pane">
       <p className="muted">
         Партиция {message.partition} · offset {message.offset} · {formatTimestamp(message.timestamp, utc)}
+      </p>
+      <div className="toolbar">
         <button
           type="button"
           className="link"
           aria-label="Копировать сообщение как JSON"
           onClick={() => copy(JSON.stringify(message, null, 2))}
         >
-          {" "}
           копировать всё как JSON
         </button>
-      </p>
-      {connection && !connection.readOnly && (
-        <button
-          type="button"
-          className="link"
-          disabled={!resend?.prefill}
-          title={resend?.error ?? undefined}
-          onClick={() => {
-            if (resend?.prefill) open({ kind: "producer", connectionId, prefill: { message: resend.prefill, nonce: Date.now() } });
-          }}
-        >
-          Отправить повторно
-        </button>
-      )}
+        {connection && !connection.readOnly && (
+          <button
+            type="button"
+            className="link"
+            disabled={!resend?.prefill}
+            title={resend?.error ?? undefined}
+            onClick={() => {
+              if (resend?.prefill) open({ kind: "producer", connectionId, prefill: { message: resend.prefill, nonce: Date.now() } });
+            }}
+          >
+            Отправить повторно
+          </button>
+        )}
+        {connection && !connection.readOnly && <ResetGroupHere connectionId={connectionId} topic={message.topic} message={message} />}
+      </div>
       {resend?.error && <p className="warn">{resend.error}</p>}
-      {connection && !connection.readOnly && <ResetGroupHere connectionId={connectionId} topic={message.topic} message={message} />}
       <DataBlock title="Значение" data={message.value} />
       <DataBlock title="Ключ" data={message.key} />
       <section>

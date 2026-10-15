@@ -101,3 +101,4 @@ tr.selected { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 .headers-editor { border: 1px solid var(--border); border-radius: 4px; display: flex; flex-direction: column; gap: 4px; }
 .headers-captions span { width: 160px; }
 .assignment ul { list-style: none; padding: 0; margin: 0 0 8px; }
+.details-pane h4 button.link { margin-left: 8px; }

@@ -81,6 +81,26 @@ impl AppState {
         broken
     }
 
+    /// Удаляет подключение целиком. Само удаление и секрет — обязательные шаги; очистка
+    /// истории и шаблонов best-effort: сбой логируется и не ломает уже выполненное удаление.
+    pub fn delete_connection_full(&self, id: &str) -> AppResult<()> {
+        // Живые browse-сессии удаляемого подключения больше не нужны — даже если удаление ниже упадёт.
+        self.sessions.cancel_for(id);
+        self.connections.delete(id)?;
+        self.secrets.delete(&crate::secrets::secret_key(
+            id,
+            crate::kafka::config::SASL_PASSWORD,
+        ))?;
+        self.evict_connection(id);
+        if let Err(e) = self.history.delete_connection(id) {
+            tracing::warn!("не удалось удалить историю подключения {id}: {}", e.message);
+        }
+        if let Err(e) = self.templates.delete_for_connection(id) {
+            tracing::warn!("не удалось удалить шаблоны подключения {id}: {}", e.message);
+        }
+        Ok(())
+    }
+
     /// Вытесняет все клиенты подключения: admin/consumer-handles и producer'ы.
     pub fn evict_connection(&self, id: &str) {
         self.pool.evict(id);
@@ -150,6 +170,19 @@ mod tests {
             &h1,
             &state.producers.get(&p, state.secrets.as_ref(), &s).unwrap()
         ));
+    }
+
+    #[test]
+    fn delete_connection_data_is_best_effort() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        state.connections.upsert(sample_profile("a")).unwrap();
+        // На месте файла истории — непустой каталог: remove_file упадёт.
+        let hp = dir.path().join("history").join("a.json");
+        std::fs::create_dir_all(&hp).unwrap();
+        std::fs::write(hp.join("x"), b"x").unwrap();
+        state.delete_connection_full("a").unwrap();
+        assert!(state.connections.get("a").is_err(), "подключение удалено");
     }
 
     #[test]

@@ -71,17 +71,7 @@ pub fn save_connection_blocking(
 #[tauri::command]
 pub async fn delete_connection(state: State<'_, AppState>, id: String) -> AppResult<()> {
     let st = state.inner().clone();
-    blocking(move || {
-        // Живые browse-сессии удаляемого подключения больше не нужны — даже если удаление ниже упадёт.
-        st.sessions.cancel_for(&id);
-        st.connections.delete(&id)?;
-        st.secrets.delete(&secret_key(&id, SASL_PASSWORD))?;
-        st.evict_connection(&id);
-        st.history.delete_connection(&id)?;
-        st.templates.delete_for_connection(&id)?;
-        Ok(())
-    })
-    .await
+    blocking(move || st.delete_connection_full(&id)).await
 }
 
 #[tauri::command]

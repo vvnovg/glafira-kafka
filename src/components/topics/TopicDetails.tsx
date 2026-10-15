@@ -28,6 +28,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
   const canMutate = connection !== undefined && !connection.readOnly;
   const queryClient = useQueryClient();
   const closeTab = useWorkspace((s) => s.close);
+  const open = useWorkspace((s) => s.open);
 
   if (q.isPending) return <p className="empty">Загрузка…</p>;
   if (q.error && !q.data) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
@@ -43,6 +44,21 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         </span>
         <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
           Обновить
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            open({
+              kind: "producer",
+              connectionId,
+              prefill: {
+                message: { topic, partition: null, key: { format: "string", text: "" }, value: { format: "json", text: "" }, headers: [] },
+                nonce: Date.now(),
+              },
+            })
+          }
+        >
+          Отправить сообщение
         </button>
       </div>
       {canMutate && connection && !t.internal && (

@@ -1,5 +1,9 @@
 import { create } from "zustand";
 
+import type { ProduceMessage, ProducerSettings } from "../api/types";
+
+export type ProducerPrefill = { message: ProduceMessage; settings?: ProducerSettings; nonce: number };
+
 export type ResetPrefill = { topic: string; partition: number; offset: number; nonce: number };
 
 export type TabSpec =
@@ -8,6 +12,7 @@ export type TabSpec =
   | { kind: "topic"; connectionId: string; topic: string }
   | { kind: "groups"; connectionId: string }
   | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill }
+  | { kind: "producer"; connectionId: string; prefill?: ProducerPrefill }
   | { kind: "connection-form"; connectionId: string | null };
 
 export type Tab = TabSpec & { id: string };

@@ -22,6 +22,8 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
       return `${conn} · Группы`;
     case "group":
       return `${conn} · ${tab.groupId}`;
+    case "producer":
+      return `${conn} · Producer`;
   }
 }
 

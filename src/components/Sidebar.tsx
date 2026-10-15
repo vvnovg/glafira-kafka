@@ -50,6 +50,11 @@ export function Sidebar() {
                   Consumer groups
                 </button>
               </li>
+              <li>
+                <button type="button" className="link" onClick={() => open({ kind: "producer", connectionId: c.id })}>
+                  Producer
+                </button>
+              </li>
             </ul>
           </li>
         ))}

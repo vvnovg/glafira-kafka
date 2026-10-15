@@ -34,6 +34,28 @@ beforeEach(() => {
 });
 
 describe("ProducerPanel", () => {
+  it("«Очистить форму» снимает выбор шаблона", async () => {
+    vi.mocked(api.listTemplates).mockResolvedValue([
+      {
+        id: "t1",
+        name: "Заказ",
+        connectionId: "dev",
+        message: { topic: "orders", partition: null, key: { format: "null", text: "" }, value: { format: "string", text: "v" }, headers: [] },
+        settings: { acks: "all", compression: "none", idempotence: false },
+      },
+    ]);
+    const user = userEvent.setup();
+    renderWithClient(<ProducerPanel connectionId="dev" />);
+    await screen.findByRole("option", { name: "Заказ" });
+    await user.selectOptions(screen.getByLabelText("Шаблон"), "t1");
+    expect(screen.getByLabelText("Значение")).toHaveValue("v");
+    await user.click(screen.getByRole("button", { name: "Очистить форму" }));
+    expect(screen.getByLabelText("Шаблон")).toHaveValue("");
+    expect(screen.queryByRole("button", { name: "удалить шаблон" })).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Шаблон"), "t1");
+    expect(screen.getByLabelText("Значение")).toHaveValue("v");
+  });
+
   it("«Очистить форму» сбрасывает поля, но сохраняет топик", async () => {
     const user = userEvent.setup();
     renderWithClient(<ProducerPanel connectionId="dev" />);

@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -8,9 +8,11 @@ interface Props {
   connectionId: string;
   form: ProducerForm;
   onLoad: (form: ProducerForm) => void;
+  /** Меняется, когда форму заменили не шаблоном (очистка, история) — выбор шаблона снимается. */
+  resetKey?: number;
 }
 
-export function TemplatesBar({ connectionId, form, onLoad }: Props) {
+export function TemplatesBar({ connectionId, form, onLoad, resetKey }: Props) {
   const queryClient = useQueryClient();
   const uid = useId();
   const templates = useQuery({ queryKey: ["templates", connectionId], queryFn: () => api.listTemplates(connectionId) });
@@ -19,6 +21,10 @@ export function TemplatesBar({ connectionId, form, onLoad }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState("");
   const [global, setGlobal] = useState(false);
+  useEffect(() => {
+    setSelected("");
+    setDeleting(false);
+  }, [resetKey]);
   const invalidate = () => void queryClient.invalidateQueries({ queryKey: ["templates"] });
   const save = useMutation({
     mutationFn: () => {
@@ -35,6 +41,7 @@ export function TemplatesBar({ connectionId, form, onLoad }: Props) {
     onSuccess: (t) => {
       setSaving(false);
       setName("");
+      setGlobal(false);
       setSelected(t.id);
       invalidate();
     },

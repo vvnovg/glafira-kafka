@@ -82,6 +82,12 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
     setFormError(null);
     setConfirming(false);
   };
+  // Форма заменена не шаблоном — выбор шаблона в TemplatesBar снимается.
+  const [templateReset, setTemplateReset] = useState(0);
+  const replaceFormDetached = (f: ProducerForm) => {
+    replaceForm(f);
+    setTemplateReset((n) => n + 1);
+  };
   const set = (patch: Partial<ProducerForm>) => {
     edited();
     setForm((f) => ({ ...f, ...patch }));
@@ -120,11 +126,11 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
     <div className="page producer">
       <div className="toolbar">
         <h2>Producer</h2>
-        <button type="button" onClick={() => replaceForm(emptyProducerForm(form.topic))}>
+        <button type="button" onClick={() => replaceFormDetached(emptyProducerForm(form.topic))}>
           Очистить форму
         </button>
       </div>
-      <TemplatesBar connectionId={connectionId} form={form} onLoad={replaceForm} />
+      <TemplatesBar connectionId={connectionId} form={form} onLoad={replaceForm} resetKey={templateReset} />
       {readOnly && <p className="warn" role="alert">Подключение открыто только для чтения — отправка недоступна.</p>}
       <div className="form">
         <label htmlFor={`${uid}-topic`}>Топик</label>
@@ -202,7 +208,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
         ))}
       {!readOnly && <BatchPanel connection={connection} form={form} />}
       <h3>История (последние 100)</h3>
-      <HistoryList connectionId={connectionId} onRepeat={replaceForm} />
+      <HistoryList connectionId={connectionId} onRepeat={replaceFormDetached} />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import type { BrowsedMessage, DecodedData, PayloadInput, ProduceMessage } from "
  * `{{uuid}}`/`{{env NAME}}` из прочитанных сообщений и отрисованной истории не подставляются.
  */
 export function literalText(text: string): string {
-  return text.replaceAll("{{", "\\{{");
+  return text.split("{{").join("\\{{");
 }
 
 /** Сообщение, все тексты которого отправятся буквально (см. literalText). */

@@ -8,6 +8,7 @@ import { type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { groupTotalLag } from "./groupLag";
+import { ResetOffsetsPanel } from "./ResetOffsetsPanel";
 
 const REFRESH_OPTIONS = [
   { label: "Автообновление: выкл.", value: 0 },
@@ -38,7 +39,11 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
 
   const desc = useQuery({
     queryKey: ["group", connectionId, groupId],
-    queryFn: async (): Promise<GroupDescription> => (await api.describeGroups(connectionId, [groupId]))[0],
+    queryFn: async (): Promise<GroupDescription> => {
+      const d = (await api.describeGroups(connectionId, [groupId]))[0];
+      if (!d) throw new Error("Брокер не вернул описание группы");
+      return d;
+    },
     refetchInterval: refreshMs || false,
   });
   const offsets = useQuery({
@@ -94,7 +99,10 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
             className="danger"
             disabled={d?.state !== "Empty"}
             title={d?.state !== "Empty" ? "Удалить можно только группу без участников (Empty)" : undefined}
-            onClick={() => setPanel("delete")}
+            onClick={() => {
+              remove.reset();
+              setPanel("delete");
+            }}
           >
             Удалить группу
           </button>
@@ -114,13 +122,25 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
             danger
             busy={remove.isPending}
             onConfirm={(c) => remove.mutate(c)}
-            onCancel={() => setPanel(null)}
+            onCancel={() => {
+              remove.reset();
+              setPanel(null);
+            }}
           >
             <p className="muted">Будут удалены все закоммиченные оффсеты группы.</p>
           </ConfirmDialog>
         </>
       )}
-      {/* Task 18: панель сброса оффсетов (panel === "reset") */}
+      {panel === "reset" && connection && (
+        <ResetOffsetsPanel
+          key={resetPrefill?.nonce ?? 0}
+          connection={connection}
+          groupId={groupId}
+          prefill={resetPrefill}
+          onApplied={refresh}
+          onClose={() => setPanel(null)}
+        />
+      )}
 
       <h3>Партиции</h3>
       {offsets.error && <ErrorBanner error={offsets.error} onRetry={refresh} />}

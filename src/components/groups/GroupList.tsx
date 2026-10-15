@@ -80,7 +80,9 @@ export function GroupList({ connectionId }: { connectionId: string }) {
             </option>
           ))}
         </select>
-        <button type="button" disabled={q.isFetching} 
+        <button
+          type="button"
+          disabled={q.isFetching}
           onClick={() => {
             void q.refetch();
             void queryClient.invalidateQueries({ queryKey: ["groupDescriptions", connectionId] });

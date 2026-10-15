@@ -92,4 +92,24 @@ describe("GroupDetails", () => {
     expect(api.deleteGroup).toHaveBeenCalledWith("c", "g", { confirm: null, typedName: "g" });
     await vi.waitFor(() => expect(useWorkspace.getState().tabs).toHaveLength(0));
   });
+
+  it("пустой ответ describeGroups даёт понятную ошибку", async () => {
+    vi.mocked(api.describeGroups).mockResolvedValue([]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
+    expect(await screen.findByText("Брокер не вернул описание группы")).toBeInTheDocument();
+  });
+
+  it("отмена удаления сбрасывает устаревшую ошибку GROUP_NOT_EMPTY", async () => {
+    vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Empty", members: [] }]);
+    vi.mocked(api.deleteGroup).mockRejectedValueOnce({ code: "GROUP_NOT_EMPTY", message: "Группа не пуста", details: "member m9" });
+    const user = userEvent.setup();
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
+    await user.click(await screen.findByRole("button", { name: "Удалить группу" }));
+    await user.type(screen.getByLabelText("Подтверждение: id группы"), "g");
+    await user.click(screen.getByRole("button", { name: "Удалить" }));
+    expect(await screen.findByText("member m9")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Отмена" }));
+    await user.click(screen.getByRole("button", { name: "Удалить группу" }));
+    expect(screen.queryByText("member m9")).toBeNull();
+  });
 });

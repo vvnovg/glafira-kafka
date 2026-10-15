@@ -3,6 +3,7 @@ pub mod commands;
 pub mod error;
 pub mod guard;
 pub mod kafka;
+pub mod produce;
 pub mod secrets;
 pub mod state;
 pub mod storage;

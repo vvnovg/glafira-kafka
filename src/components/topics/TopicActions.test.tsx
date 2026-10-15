@@ -64,6 +64,16 @@ describe("TopicActions", () => {
     expect(await screen.findByText("Партиция 0: новый low watermark 10")).toBeInTheDocument();
   });
 
+  it("purge всех партиций отправляет явный список показанных партиций", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<TopicActions connection={dev} topic={topic} onDeleted={() => {}} />);
+    await user.click(screen.getByRole("button", { name: "Очистить" }));
+    expect(screen.getByText("Очистить все партиции топика «orders»?")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Подтверждение: имя топика"), "orders");
+    await user.click(screen.getByRole("button", { name: "Очистить партиции" }));
+    expect(api.purgeTopic).toHaveBeenCalledWith("c", "orders", [0, 1], { confirm: null, typedName: "orders" });
+  });
+
   it("смена выбора партиций сбрасывает введённое имя и обновляет заголовок", async () => {
     const user = userEvent.setup();
     renderWithClient(<TopicActions connection={dev} topic={topic} onDeleted={() => {}} />);

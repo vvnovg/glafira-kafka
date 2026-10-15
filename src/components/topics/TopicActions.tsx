@@ -129,7 +129,7 @@ function Purge({ connection, topic, onClose }: { connection: ConnectionProfile; 
   const cleanup = policy.data?.[0]?.cleanupPolicy ?? null;
   const compact = cleanup?.includes("compact") ?? false;
   const run = useMutation({
-    mutationFn: (v: { parts: number[] | null; c: Parameters<typeof api.purgeTopic>[3] }) =>
+    mutationFn: (v: { parts: number[]; c: Parameters<typeof api.purgeTopic>[3] }) =>
       api.purgeTopic(connection.id, topic.name, v.parts, v.c),
     onSettled: invalidate,
   });
@@ -193,9 +193,7 @@ function Purge({ connection, topic, onClose }: { connection: ConnectionProfile; 
         confirmLabel="Очистить партиции"
         danger
         busy={run.isPending || selected.size === 0}
-        onConfirm={(c) =>
-          run.mutate({ parts: allSelected ? null : sortedSel, c })
-        }
+        onConfirm={(c) => run.mutate({ parts: sortedSel, c })}
         onCancel={onClose}
       >
         <p className="muted">Сообщения до текущего конца выбранных партиций будут удалены безвозвратно.</p>

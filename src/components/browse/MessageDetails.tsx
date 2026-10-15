@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { BrowsedMessage, DecodedData } from "../../api/types";
 import { formatBytes, formatTimestamp } from "../../lib/format";
+import { ErrorBanner } from "../common/ErrorBanner";
 import { useConnection } from "../../lib/useConnection";
 import { useWorkspace } from "../../state/workspace";
 import { prettyText } from "./params";
@@ -96,7 +97,6 @@ function ResetGroupHere({ connectionId, topic, message }: { connectionId: string
     queryFn: () => api.listGroups(connectionId),
     enabled: open,
   });
-  const listId = `groups-${connectionId}`;
   if (!open) {
     return (
       <button type="button" className="link" onClick={() => setOpen(true)}>
@@ -104,32 +104,47 @@ function ResetGroupHere({ connectionId, topic, message }: { connectionId: string
       </button>
     );
   }
+  const list = groups.data?.groups ?? [];
+  // Группа выбирается только из списка: опечатка не создаст коммиты для несуществующей группы.
+  const valid = list.some((g) => g.groupId === group);
   return (
-    <div className="toolbar">
-      <input aria-label="Группа" list={listId} placeholder="group.id" value={group} onChange={(e) => setGroup(e.target.value)} />
-      <datalist id={listId}>
-        {groups.data?.groups.map((g) => (
-          <option key={g.groupId} value={g.groupId} />
-        ))}
-      </datalist>
-      <button
-        type="button"
-        disabled={!group.trim()}
-        onClick={() => {
-          openTab({
-            kind: "group",
-            connectionId,
-            groupId: group.trim(),
-            resetPrefill: { topic, partition: message.partition, offset: message.offset, nonce: Date.now() },
-          });
-          setOpen(false);
-        }}
-      >
-        Перейти к сбросу
-      </button>
-      <button type="button" onClick={() => setOpen(false)}>
-        Отмена
-      </button>
+    <div>
+      {groups.error && <ErrorBanner error={groups.error} onRetry={() => groups.refetch()} />}
+      {groups.data && groups.data.errors.length > 0 && (
+        <p className="warn">Список групп может быть неполным: {groups.data.errors.join("; ")}</p>
+      )}
+      <div className="toolbar">
+        {groups.isPending ? (
+          <span className="muted">Загрузка групп…</span>
+        ) : (
+          <select aria-label="Группа" value={group} onChange={(e) => setGroup(e.target.value)} disabled={list.length === 0}>
+            <option value="">{list.length === 0 ? "Нет групп" : "Выберите группу"}</option>
+            {list.map((g) => (
+              <option key={g.groupId} value={g.groupId}>
+                {g.groupId}
+              </option>
+            ))}
+          </select>
+        )}
+        <button
+          type="button"
+          disabled={!valid}
+          onClick={() => {
+            openTab({
+              kind: "group",
+              connectionId,
+              groupId: group,
+              resetPrefill: { topic, partition: message.partition, offset: message.offset, nonce: Date.now() },
+            });
+            setOpen(false);
+          }}
+        >
+          Перейти к сбросу
+        </button>
+        <button type="button" onClick={() => setOpen(false)}>
+          Отмена
+        </button>
+      </div>
     </div>
   );
 }

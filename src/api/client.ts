@@ -1,6 +1,21 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import type {
   AppError,
+  ConfigChange,
+  Confirmation,
+  GroupDescription,
+  GroupLag,
+  GroupList,
+  GroupPartitionOffset,
+  NewTopicSpec,
+  OffsetTarget,
+  PurgedPartition,
+  ResetPreviewRow,
+  ResetRequest,
+  ResetResult,
+  TopicDeleteResult,
+  TopicGroups,
+  TopicPolicy,
   BrowseEvent,
   BrowseParams,
   ClusterOverview,
@@ -48,6 +63,39 @@ export const api = {
   getTopic: (connectionId: string, topic: string) => call<TopicDetails>("get_topic", { connectionId, topic }),
   getTopicConfigs: (connectionId: string, topic: string) =>
     call<ConfigEntry[]>("get_topic_configs", { connectionId, topic }),
+
+  createTopic: (connectionId: string, spec: NewTopicSpec, confirm: string | null) =>
+    call<void>("create_topic", { connectionId, spec, confirm }),
+  alterTopicConfigs: (connectionId: string, topic: string, changes: ConfigChange[], confirm: string | null) =>
+    call<void>("alter_topic_configs", { connectionId, topic, changes, confirm }),
+  addPartitions: (connectionId: string, topic: string, newTotal: number, confirm: string | null) =>
+    call<void>("add_partitions", { connectionId, topic, newTotal, confirm }),
+  purgeTopic: (connectionId: string, topic: string, partitions: number[] | null, c: Confirmation) =>
+    call<PurgedPartition[]>("purge_topic", { connectionId, topic, partitions, confirm: c.confirm, typedName: c.typedName }),
+  deleteTopics: (connectionId: string, topics: string[], c: Confirmation) =>
+    call<TopicDeleteResult[]>("delete_topics", {
+      connectionId,
+      topics,
+      confirm: c.confirm,
+      typedConfirmation: c.typedName,
+    }),
+  getTopicPolicies: (connectionId: string, topics: string[]) =>
+    call<TopicPolicy[]>("get_topic_policies", { connectionId, topics }),
+
+  listGroups: (connectionId: string) => call<GroupList>("list_groups", { connectionId }),
+  describeGroups: (connectionId: string, groupIds: string[]) =>
+    call<GroupDescription[]>("describe_groups", { connectionId, groupIds }),
+  getGroupOffsets: (connectionId: string, groupId: string) =>
+    call<GroupPartitionOffset[]>("get_group_offsets", { connectionId, groupId }),
+  getGroupsLag: (connectionId: string, groupIds: string[]) =>
+    call<GroupLag[]>("get_groups_lag", { connectionId, groupIds }),
+  getTopicGroups: (connectionId: string, topic: string) => call<TopicGroups>("get_topic_groups", { connectionId, topic }),
+  previewOffsetReset: (connectionId: string, request: ResetRequest) =>
+    call<ResetPreviewRow[]>("preview_offset_reset", { connectionId, request }),
+  resetOffsets: (connectionId: string, groupId: string, offsets: OffsetTarget[], confirm: string | null) =>
+    call<ResetResult[]>("reset_offsets", { connectionId, groupId, offsets, confirm }),
+  deleteGroup: (connectionId: string, groupId: string, c: Confirmation) =>
+    call<void>("delete_group", { connectionId, groupId, confirm: c.confirm, typedName: c.typedName }),
 
   startBrowse: (params: BrowseParams, onEvent: (e: BrowseEvent) => void) => {
     const channel = new Channel<BrowseEvent>();

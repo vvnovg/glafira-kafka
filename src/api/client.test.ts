@@ -53,4 +53,30 @@ describe("api client", () => {
   it("toAppError понимает Error", () => {
     expect(toAppError(new Error("x"))).toEqual({ code: "INTERNAL", message: "x", retryable: false });
   });
+
+  it("операции с топиками передают подтверждение отдельными полями", async () => {
+    invoke.mockResolvedValue([]);
+    await api.deleteTopics("c1", ["a", "b"], { confirm: "prod-1", typedName: "2" });
+    expect(invoke).toHaveBeenCalledWith("delete_topics", {
+      connectionId: "c1",
+      topics: ["a", "b"],
+      confirm: "prod-1",
+      typedConfirmation: "2",
+    });
+    await api.purgeTopic("c1", "t", null, { confirm: null, typedName: "t" });
+    expect(invoke).toHaveBeenLastCalledWith("purge_topic", {
+      connectionId: "c1",
+      topic: "t",
+      partitions: null,
+      confirm: null,
+      typedName: "t",
+    });
+  });
+
+  it("сброс оффсетов передаёт план и подтверждение", async () => {
+    invoke.mockResolvedValue([]);
+    const offsets = [{ topic: "t", partition: 0, offset: 5 }];
+    await api.resetOffsets("c1", "g", offsets, null);
+    expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null });
+  });
 });

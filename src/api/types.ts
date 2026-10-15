@@ -193,3 +193,137 @@ export type BrowseEvent =
   | { type: "recovered" }
   | { type: "finished"; scanned: number; matched: number; reason: FinishReason }
   | { type: "error"; error: AppError };
+
+export interface Confirmation {
+  /** Имя подключения — для prod-подключений. */
+  confirm: string | null;
+  /** Введённое имя объекта (топика, группы) или число топиков при групповом удалении. */
+  typedName: string | null;
+}
+
+export interface NewTopicSpec {
+  name: string;
+  partitions: number;
+  /** -1 — значение брокера по умолчанию */
+  replicationFactor: number;
+  configs: Record<string, string>;
+}
+
+export type ConfigChange = { op: "set"; name: string; value: string } | { op: "delete"; name: string };
+
+export interface PurgedPartition {
+  partition: number;
+  lowWatermark: number | null;
+  error?: string;
+}
+
+export interface TopicDeleteResult {
+  name: string;
+  error?: AppError;
+}
+
+export interface TopicPolicy {
+  name: string;
+  cleanupPolicy: string | null;
+}
+
+export interface TopicPartitionRef {
+  topic: string;
+  partition: number;
+}
+
+export interface GroupSummary {
+  groupId: string;
+  state: string;
+  isSimple: boolean;
+}
+
+export interface GroupList {
+  groups: GroupSummary[];
+  errors: string[];
+}
+
+export interface GroupMember {
+  memberId: string;
+  clientId: string;
+  host: string;
+  assignment: TopicPartitionRef[];
+}
+
+export interface GroupDescription {
+  groupId: string;
+  state: string;
+  assignor: string;
+  members: GroupMember[];
+  error?: string;
+}
+
+export interface GroupPartitionOffset {
+  topic: string;
+  partition: number;
+  committed: number | null;
+  logEnd: number | null;
+  lag: number | null;
+  memberClientId: string | null;
+  error?: string;
+}
+
+export interface GroupLag {
+  groupId: string;
+  totalLag: number | null;
+  topics: string[];
+  error?: string;
+}
+
+export interface TopicGroupLag {
+  groupId: string;
+  state: string;
+  lag: number | null;
+  partitions: number;
+}
+
+export interface TopicGroups {
+  groups: TopicGroupLag[];
+  incomplete: boolean;
+}
+
+export type ResetStrategy =
+  | { type: "earliest" }
+  | { type: "latest" }
+  | { type: "timestamp"; timestampMs: number }
+  | { type: "offset"; offset: number }
+  | { type: "shift"; delta: number };
+
+export type ResetScope =
+  | { type: "all" }
+  | { type: "topics"; topics: string[] }
+  | { type: "partitions"; partitions: TopicPartitionRef[] };
+
+export interface ResetRequest {
+  groupId: string;
+  strategy: ResetStrategy;
+  scope: ResetScope;
+}
+
+export interface ResetPreviewRow {
+  topic: string;
+  partition: number;
+  current: number | null;
+  target: number | null;
+  low: number | null;
+  high: number | null;
+  error?: string;
+}
+
+export interface OffsetTarget {
+  topic: string;
+  partition: number;
+  offset: number;
+}
+
+export interface ResetResult {
+  topic: string;
+  partition: number;
+  offset: number;
+  error?: string;
+}

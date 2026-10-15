@@ -55,7 +55,7 @@ pub fn item_error(code: RDKafkaErrorCode, message: &str, context: &str) -> AppEr
         | C::GroupAuthorizationFailed
         | C::ClusterAuthorizationFailed => ErrorCode::NotAuthorized,
         C::UnknownTopicOrPartition | C::GroupIdNotFound => ErrorCode::NotFound,
-        C::NonEmptyGroup => ErrorCode::GroupNotEmpty,
+        C::NonEmptyGroup | C::UnknownMemberId | C::RebalanceInProgress => ErrorCode::GroupNotEmpty,
         C::RequestTimedOut | C::OperationTimedOut => ErrorCode::Timeout,
         _ => classify_message(message).unwrap_or(ErrorCode::Internal),
     };
@@ -180,6 +180,8 @@ mod tests {
             (C::UnknownTopicOrPartition, E::NotFound),
             (C::GroupIdNotFound, E::NotFound),
             (C::NonEmptyGroup, E::GroupNotEmpty),
+            (C::UnknownMemberId, E::GroupNotEmpty),
+            (C::RebalanceInProgress, E::GroupNotEmpty),
             (C::RequestTimedOut, E::Timeout),
             (C::Unknown, E::Internal),
         ];

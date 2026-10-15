@@ -144,7 +144,20 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
 
       <h3>Партиции</h3>
       {offsets.error && <ErrorBanner error={offsets.error} onRetry={refresh} />}
-      {offsets.data && <p className="muted">Суммарный лаг: {formatCount(groupTotalLag(rows))}</p>}
+      {offsets.data && (
+        <p
+          className="muted"
+          title={
+            groupTotalLag(rows) === null
+              ? rows.every((r) => r.committed === null)
+                ? "нет коммитов"
+                : "лаг неизвестен: ошибка оффсетов партиций"
+              : undefined
+          }
+        >
+          Суммарный лаг: {formatCount(groupTotalLag(rows))}
+        </p>
+      )}
       <OffsetsTable rows={rows} />
 
       <h3>Участники</h3>

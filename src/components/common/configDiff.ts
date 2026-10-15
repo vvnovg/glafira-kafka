@@ -13,14 +13,17 @@ export function isEditable(e: ConfigEntry): boolean {
   return !e.isReadOnly && !e.isSensitive;
 }
 
-/** Правки → изменения для IncrementalAlterConfigs и строки diff «было → стало» (по имени параметра). */
+/** Правки → изменения для IncrementalAlterConfigs, строки diff «было → стало» (по имени параметра)
+ * и невалидные (пустые) правки, которые в изменения не входят. */
 export function diffConfigs(
   entries: ConfigEntry[],
   edits: Record<string, ConfigEdit>,
-): { changes: ConfigChange[]; rows: DiffRow[] } {
+): { changes: ConfigChange[]; rows: DiffRow[]; invalid: string[] } {
   const byName = new Map(entries.map((e) => [e.name, e]));
   const changes: ConfigChange[] = [];
   const rows: DiffRow[] = [];
+  // Пустое значение не отправляется как SET "": для сброса есть «к default».
+  const invalid: string[] = [];
   for (const name of Object.keys(edits).sort()) {
     const e = byName.get(name);
     const edit = edits[name];
@@ -31,9 +34,13 @@ export function diffConfigs(
       rows.push({ name, before: e.value, after: null });
     } else {
       if (edit.value === (e.value ?? "")) continue;
+      if (edit.value.trim() === "") {
+        invalid.push(name);
+        continue;
+      }
       changes.push({ op: "set", name, value: edit.value });
       rows.push({ name, before: e.value, after: edit.value });
     }
   }
-  return { changes, rows };
+  return { changes, rows, invalid };
 }

@@ -35,6 +35,15 @@ describe("ConfigEditor", () => {
     await vi.waitFor(() => expect(onDone).toHaveBeenCalled());
   });
 
+  it("очищенное поле не отправляет пустой set", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ConfigEditor connection={dev} topic="t" entries={entries} onDone={() => {}} />);
+    await user.clear(screen.getByLabelText("Значение retention.ms"));
+    expect(screen.getByText(/пустое значение; используйте «к default»/)).toBeInTheDocument();
+    expect(screen.getByText("изменений: 0")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Проверить изменения" })).toBeDisabled();
+  });
+
   it("сброс к default", async () => {
     const user = userEvent.setup();
     renderWithClient(<ConfigEditor connection={dev} topic="t" entries={entries} onDone={() => {}} />);

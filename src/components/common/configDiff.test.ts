@@ -15,6 +15,16 @@ const entry = (name: string, value: string | null, isDefault: boolean, extra: Pa
 describe("diffConfigs", () => {
   const entries = [entry("retention.ms", "1000", false), entry("cleanup.policy", "delete", true), entry("segment.ms", "5", true)];
 
+  it("пустое значение невалидно и не попадает в изменения", () => {
+    const { changes, rows, invalid } = diffConfigs(entries, {
+      "retention.ms": { kind: "set", value: "  " },
+      "cleanup.policy": { kind: "set", value: "compact" },
+    });
+    expect(changes).toEqual([{ op: "set", name: "cleanup.policy", value: "compact" }]);
+    expect(rows.map((r) => r.name)).toEqual(["cleanup.policy"]);
+    expect(invalid).toEqual(["retention.ms"]);
+  });
+
   it("SET для изменённых, DELETE для сброса, пустые правки отбрасываются", () => {
     const { changes, rows } = diffConfigs(entries, {
       "cleanup.policy": { kind: "set", value: "compact" },

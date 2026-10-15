@@ -71,7 +71,8 @@ fn admin_opts(h: &KafkaHandles) -> AdminOptions {
 }
 
 fn topic_result(r: TopicResult, context: &str) -> AppResult<String> {
-    r.map_err(|(name, code)| item_error(code, &name, context))
+    // Имя объекта не сообщение брокера: в details только код.
+    r.map_err(|(_name, code)| item_error(code, "", context))
 }
 
 pub async fn create_topic(h: &Arc<KafkaHandles>, spec: &NewTopicSpec) -> AppResult<()> {
@@ -223,7 +224,7 @@ pub async fn delete_topics(
         .map(|r| match r {
             Ok(name) => TopicDeleteResult { name, error: None },
             Err((name, code)) => TopicDeleteResult {
-                error: Some(item_error(code, &name, "Не удалось удалить топик")),
+                error: Some(item_error(code, "", "Не удалось удалить топик")),
                 name,
             },
         })

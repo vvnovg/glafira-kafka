@@ -260,9 +260,10 @@ pub fn build_partition_offsets(
         .collect()
 }
 
-/// Сумма лагов партиций с коммитом; None, если хоть одна партиция с ошибкой.
+/// Сумма лагов партиций с коммитом; None, если хоть одна партиция с ошибкой
+/// или коммитов нет вовсе (лаг неизвестен, а не 0).
 pub fn total_lag(rows: &[GroupPartitionOffset]) -> Option<i64> {
-    if rows.iter().any(|r| r.error.is_some()) {
+    if rows.iter().any(|r| r.error.is_some()) || rows.iter().all(|r| r.committed.is_none()) {
         return None;
     }
     Some(rows.iter().filter_map(|r| r.lag).sum())
@@ -522,6 +523,12 @@ mod tests {
             Some(7),
             "партиция без коммита не входит в сумму"
         );
+        assert_eq!(
+            total_lag(&rows[1..2]),
+            None,
+            "нет ни одного коммита → лаг неизвестен, а не 0"
+        );
+        assert_eq!(total_lag(&[]), None);
     }
 
     fn state(p: i32, current: Option<i64>, bounds: Result<(i64, i64), String>) -> PartitionState {

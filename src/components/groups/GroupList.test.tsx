@@ -52,6 +52,12 @@ describe("GroupList", () => {
     expect(screen.queryByText("…")).toBeNull();
   });
 
+  it("группа без коммитов: лаг «—» с подсказкой «нет коммитов»", async () => {
+    vi.mocked(api.getGroupsLag).mockResolvedValue([{ groupId: "orders", totalLag: null, topics: [] }]);
+    renderWithClient(<GroupList connectionId="c" />);
+    expect(await screen.findByTitle("нет коммитов")).toHaveTextContent("—");
+  });
+
   it("«Обновить» перезапрашивает описания и лаг", async () => {
     vi.mocked(api.getGroupsLag).mockResolvedValue([]);
     renderWithClient(<GroupList connectionId="c" />);

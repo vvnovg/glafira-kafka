@@ -387,7 +387,7 @@ pub async fn delete_group(h: &Arc<KafkaHandles>, group: &str) -> AppResult<()> {
         Err(e) => return Err(admin_error(h, started, e).await),
     };
     for r in results {
-        r.map_err(|(name, code)| item_error(code, &name, "Не удалось удалить группу"))?;
+        r.map_err(|(_name, code)| item_error(code, "", "Не удалось удалить группу"))?;
     }
     Ok(())
 }

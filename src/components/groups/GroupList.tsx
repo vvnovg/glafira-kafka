@@ -130,7 +130,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
                 <span>{g.state}</span>
                 <span title={dErr}>{!d ? "…" : dErr ? "—" : full?.members.length}</span>
                 <span title={dErr}>{!d ? "…" : dErr ? "—" : full?.assignor || "—"}</span>
-                <span title={lErr}>{!lag ? "…" : lErr ? "—" : formatCount(fullLag?.totalLag ?? null)}</span>
+                <span title={lErr ?? lagHint(fullLag)}>{!lag ? "…" : lErr ? "—" : formatCount(fullLag?.totalLag ?? null)}</span>
                 <span title={fullLag?.topics.join(", ")}>{fullLag?.topics.join(", ") ?? ""}</span>
               </div>
             );
@@ -139,4 +139,10 @@ export function GroupList({ connectionId }: { connectionId: string }) {
       </div>
     </div>
   );
+}
+
+/** Подсказка для «—» в колонке лага без ошибки запроса. */
+function lagHint(l: GroupLag | undefined): string | undefined {
+  if (!l || l.totalLag !== null) return undefined;
+  return l.topics.length === 0 ? "нет коммитов" : "лаг неизвестен: ошибка оффсетов партиций";
 }

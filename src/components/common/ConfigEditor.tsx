@@ -21,7 +21,8 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
   // Снимок изменений на момент открытия проверки: дальше он не зависит от живых правок/обновления entries.
   const [review, setReview] = useState<{ changes: ConfigChange[]; rows: DiffRow[] } | null>(null);
   const [query, setQuery] = useState("");
-  const { changes } = diffConfigs(entries, edits);
+  const { changes, invalid } = diffConfigs(entries, edits);
+  const invalidSet = new Set(invalid);
   const apply = useMutation({
     mutationFn: (v: { changes: ConfigChange[]; confirm: string | null }) =>
       api.alterTopicConfigs(connection.id, topic, v.changes, v.confirm),
@@ -95,7 +96,10 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
     <div className="panel">
       <div className="toolbar">
         <input aria-label="Поиск параметра" placeholder="Поиск параметра" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <button type="button" className="primary" disabled={changes.length === 0} onClick={() => setReview(diffConfigs(entries, edits))}>
+        <button type="button" className="primary" disabled={changes.length === 0 || invalid.length > 0} onClick={() => {
+          const { changes, rows } = diffConfigs(entries, edits);
+          setReview({ changes, rows });
+        }}>
           Проверить изменения
         </button>
         <button type="button" disabled={Object.keys(edits).length === 0} onClick={() => setEdits({})}>
@@ -122,8 +126,10 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
                   disabled={!isEditable(e)}
                   value={e.isSensitive ? "••••••" : valueOf(e)}
                   placeholder={edits[e.name]?.kind === "reset" ? "по умолчанию" : undefined}
+                  aria-invalid={invalidSet.has(e.name) || undefined}
                   onChange={(ev) => setEdits((s) => ({ ...s, [e.name]: { kind: "set", value: ev.target.value } }))}
                 />
+                {invalidSet.has(e.name) && <div className="warn">пустое значение; используйте «к default»</div>}
               </td>
               <td className="muted">{e.source}</td>
               <td>

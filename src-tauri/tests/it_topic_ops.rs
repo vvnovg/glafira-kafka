@@ -142,6 +142,15 @@ async fn topic_lifecycle() {
         .unwrap();
     assert!(results[0].error.is_none(), "{:?}", results[0]);
     assert_eq!(results[1].error.as_ref().unwrap().code, ErrorCode::NotFound);
+    // Имя объекта не подставляется как сообщение брокера в details.
+    let details = results[1].error.as_ref().unwrap().details.clone();
+    assert!(
+        !details
+            .as_deref()
+            .unwrap_or("")
+            .contains("it-ops-missing-topic"),
+        "{details:?}"
+    );
     let deadline = Instant::now() + Duration::from_secs(15);
     loop {
         let (h1, n1) = (h.clone(), name.clone());

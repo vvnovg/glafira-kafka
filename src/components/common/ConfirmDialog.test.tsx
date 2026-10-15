@@ -47,6 +47,26 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).toHaveBeenCalledWith({ confirm: "prod-1", typedName: null });
   });
 
+  it("prod + имя объекта: нужны оба поля, в onConfirm — оба значения", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog connection={prod} title="Удалить топик?" objectName="orders" objectLabel="имя топика" confirmLabel="Удалить" danger onConfirm={onConfirm} onCancel={() => {}} />,
+    );
+    const button = screen.getByRole("button", { name: "Удалить" });
+    await user.type(screen.getByLabelText("Подтверждение: имя топика"), "orders");
+    expect(button).toBeDisabled();
+    await user.type(screen.getByLabelText("Имя подключения"), "prod-");
+    expect(button).toBeDisabled();
+    await user.type(screen.getByLabelText("Имя подключения"), "1");
+    expect(button).toBeEnabled();
+    await user.clear(screen.getByLabelText("Подтверждение: имя топика"));
+    expect(button).toBeDisabled();
+    await user.type(screen.getByLabelText("Подтверждение: имя топика"), "orders");
+    await user.click(button);
+    expect(onConfirm).toHaveBeenCalledWith({ confirm: "prod-1", typedName: "orders" });
+  });
+
   it("отмена", async () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();

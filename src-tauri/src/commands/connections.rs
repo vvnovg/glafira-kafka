@@ -77,6 +77,8 @@ pub async fn delete_connection(state: State<'_, AppState>, id: String) -> AppRes
         st.connections.delete(&id)?;
         st.secrets.delete(&secret_key(&id, SASL_PASSWORD))?;
         st.evict_connection(&id);
+        st.history.delete_connection(&id)?;
+        st.templates.delete_for_connection(&id)?;
         Ok(())
     })
     .await

@@ -15,8 +15,7 @@ async fn list_stats_details_configs() {
     let Some(bs) = common::bootstrap() else {
         return;
     };
-    let topic = common::unique_topic("it-topics");
-    common::create_topic(&bs, &topic, 3).await;
+    let topic = common::TempTopic::create(&bs, "it-topics", 3).await;
     let msgs: Vec<TestMsg> = (0..5)
         .map(|i| TestMsg {
             partition: i % 3,
@@ -30,7 +29,7 @@ async fn list_stats_details_configs() {
     let h = Arc::new(
         KafkaHandles::create(&common::plaintext_profile(&bs), &MemoryStore::default()).unwrap(),
     );
-    let (h1, t1) = (h.clone(), topic.clone());
+    let (h1, t1) = (h.clone(), topic.to_string());
     let (list, stats, details, missing) = tokio::task::spawn_blocking(move || {
         (
             list_topics(&h1).unwrap(),
@@ -44,7 +43,7 @@ async fn list_stats_details_configs() {
 
     let summary = list
         .iter()
-        .find(|t| t.name == topic)
+        .find(|t| t.name == *topic)
         .expect("топик в списке");
     assert_eq!(summary.partition_count, 3);
     assert_eq!(stats.len(), 1);

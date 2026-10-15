@@ -90,9 +90,8 @@ async fn browse(bs: &str, p: BrowseParams) -> VecSink {
 }
 
 /// 30 сообщений по 3 партициям: key k{i}, value {"n":i,"status":"OK"|"FAILED"(i=7)}, header trace=t{i}.
-async fn seeded_topic(bs: &str) -> String {
-    let topic = common::unique_topic("it-browse");
-    common::create_topic(bs, &topic, 3).await;
+async fn seeded_topic(bs: &str) -> common::TempTopic {
+    let topic = common::TempTopic::create(bs, "it-browse", 3).await;
     let keys: Vec<String> = (0..30).map(|i| format!("k{i}")).collect();
     let values: Vec<String> = (0..30)
         .map(|i| {
@@ -243,8 +242,7 @@ async fn live_tail_receives_new_messages_until_cancelled() {
     let Some(bs) = common::bootstrap() else {
         return;
     };
-    let topic = common::unique_topic("it-live");
-    common::create_topic(&bs, &topic, 1).await;
+    let topic = common::TempTopic::create(&bs, "it-live", 1).await;
     common::produce(
         &bs,
         &topic,

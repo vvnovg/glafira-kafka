@@ -11,8 +11,7 @@ async fn overview_and_broker_config() {
     let Some(bs) = common::bootstrap() else {
         return;
     };
-    let topic = common::unique_topic("it-cluster");
-    common::create_topic(&bs, &topic, 2).await;
+    let _topic = common::TempTopic::create(&bs, "it-cluster", 2).await;
 
     let h = KafkaHandles::create(&common::plaintext_profile(&bs), &MemoryStore::default()).unwrap();
     let h = std::sync::Arc::new(h);

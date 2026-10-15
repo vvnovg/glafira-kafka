@@ -48,10 +48,10 @@ pub struct BrowseParams {
 }
 
 pub const MAX_LIMIT: usize = 100_000;
-const BATCH_SIZE: usize = 200;
+pub(crate) const BATCH_SIZE: usize = 200;
 /// Верхняя граница объёма одного события Messages (сообщения до 1 МиБ текста каждое).
-const MAX_BATCH_BYTES: usize = 4 * 1024 * 1024;
-const BATCH_INTERVAL: Duration = Duration::from_millis(100);
+pub(crate) const MAX_BATCH_BYTES: usize = 4 * 1024 * 1024;
+pub(crate) const BATCH_INTERVAL: Duration = Duration::from_millis(100);
 const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
 const POLL_TIMEOUT: Duration = Duration::from_millis(100);
 const MAX_LAST_MINUTES: i64 = 5_256_000; // 10 лет
@@ -356,7 +356,7 @@ fn now_ms() -> i64 {
         .unwrap_or(0)
 }
 
-fn to_browsed(
+pub(crate) fn to_browsed(
     m: &BorrowedMessage<'_>,
     key_format: DataFormat,
     value_format: DataFormat,
@@ -373,6 +373,7 @@ fn to_browsed(
         })
         .unwrap_or_default();
     BrowsedMessage {
+        topic: m.topic().to_string(),
         partition: m.partition(),
         offset: m.offset(),
         timestamp: m.timestamp().to_millis(),
@@ -384,7 +385,7 @@ fn to_browsed(
 }
 
 /// Оценка объёма сообщения в событии: текст ключа и значения плюс заголовки.
-fn estimated_bytes(m: &BrowsedMessage) -> usize {
+pub(crate) fn estimated_bytes(m: &BrowsedMessage) -> usize {
     let text =
         |d: &Option<crate::browse::format::DecodedData>| d.as_ref().map_or(0, |d| d.text.len());
     text(&m.key)
@@ -579,6 +580,7 @@ mod tests {
 
     fn big_message(offset: i64, value_bytes: usize) -> BrowsedMessage {
         BrowsedMessage {
+            topic: "t".into(),
             partition: 0,
             offset,
             timestamp: None,

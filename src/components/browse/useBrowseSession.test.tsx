@@ -32,6 +32,7 @@ import { useBrowseSession } from "./useBrowseSession";
 
 const params = buildBrowseParams(defaultBrowseForm, "c", "t");
 const msg = (offset: number): BrowsedMessage => ({
+  topic: "t",
   partition: 0,
   offset,
   timestamp: null,

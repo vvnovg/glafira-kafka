@@ -7,7 +7,7 @@ import { previewText } from "./params";
 
 const ROW_HEIGHT = 28;
 
-export const messageKey = (m: BrowsedMessage) => `${m.partition}:${m.offset}`;
+export const messageKey = (m: BrowsedMessage) => `${m.topic}:${m.partition}:${m.offset}`;
 
 interface Props {
   messages: BrowsedMessage[];

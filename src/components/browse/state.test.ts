@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { BrowsedMessage } from "../../api/types";
 import { appendMessages, browseReducer, initialBrowseState } from "./state";
 
-const msg = (offset: number): BrowsedMessage => ({ partition: 0, offset, timestamp: null, key: null, value: null, headers: [], size: 0 });
+const msg = (offset: number): BrowsedMessage => ({ topic: "t", partition: 0, offset, timestamp: null, key: null, value: null, headers: [], size: 0 });
 
 describe("browseReducer", () => {
   it("кольцевой буфер держит последние limit сообщений", () => {

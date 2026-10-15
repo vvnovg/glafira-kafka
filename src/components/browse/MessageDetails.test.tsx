@@ -25,7 +25,7 @@ import { MessageDetails } from "./MessageDetails";
 
 const okGroups = { groups: [{ groupId: "svc", state: "Empty", isSimple: false }], errors: [] as string[] };
 
-const msg: BrowsedMessage = { partition: 2, offset: 41, timestamp: 0, key: null, value: null, headers: [], size: 0 };
+const msg: BrowsedMessage = { topic: "t", partition: 2, offset: 41, timestamp: 0, key: null, value: null, headers: [], size: 0 };
 
 describe("MessageDetails: сбросить группу сюда", () => {
   beforeEach(() => {

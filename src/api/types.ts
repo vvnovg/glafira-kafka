@@ -140,6 +140,7 @@ export interface HeaderView {
 }
 
 export interface BrowsedMessage {
+  topic: string;
   partition: number;
   offset: number;
   timestamp: number | null;

@@ -67,6 +67,11 @@ pub fn run() {
             commands::produce::delete_template,
             commands::browse::start_browse,
             commands::browse::stop_session,
+            commands::consume::start_consumer,
+            commands::consume::commit_offsets,
+            commands::consume::pause_partitions,
+            commands::consume::resume_partitions,
+            commands::consume::suggest_group_id,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -14,6 +14,7 @@ pub struct AppState {
     pub pool: Arc<ClientPool>,
     pub producers: Arc<crate::kafka::producer::ProducerPool>,
     pub sessions: Arc<SessionRegistry>,
+    pub consumers: Arc<crate::consume::control::ConsumerControls>,
     pub history: Arc<crate::storage::history::HistoryStore>,
     pub templates: Arc<crate::storage::templates::TemplateStore>,
 }
@@ -26,6 +27,7 @@ impl AppState {
             pool: Arc::new(ClientPool::default()),
             producers: Arc::new(Default::default()),
             sessions: Arc::new(SessionRegistry::default()),
+            consumers: Arc::new(Default::default()),
             history: Arc::new(crate::storage::history::HistoryStore::open(data_dir)?),
             templates: Arc::new(crate::storage::templates::TemplateStore::open(data_dir)?),
         })

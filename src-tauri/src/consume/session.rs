@@ -144,6 +144,30 @@ fn tpl_of(partitions: &[TopicPartitionRef]) -> AppResult<TopicPartitionList> {
     Ok(tpl)
 }
 
+/// Список партиций для pause/resume. rdkafka возвращает ошибки по партициям лишь внутри
+/// переданного списка (обёртка их отбрасывает), поэтому проверяем заранее: все запрошенные
+/// партиции должны входить в текущее назначение, иначе ответ — ошибка, а не молчаливый успех.
+fn assigned_tpl(
+    consumer: &BaseConsumer<CapturingContext>,
+    ctx: &CapturingContext,
+    partitions: &[TopicPartitionRef],
+) -> AppResult<TopicPartitionList> {
+    let tpl = tpl_of(partitions)?;
+    let assignment = consumer.assignment().map_err(|e| command_error(ctx, e))?;
+    let missing: Vec<String> = partitions
+        .iter()
+        .filter(|p| assignment.find_partition(&p.topic, p.partition).is_none())
+        .map(|p| format!("{}[{}]", p.topic, p.partition))
+        .collect();
+    if !missing.is_empty() {
+        return Err(AppError::invalid(format!(
+            "Партиции не назначены этой сессии: {}",
+            missing.join(", ")
+        )));
+    }
+    Ok(tpl)
+}
+
 /// Ошибки команд не завершают сессию; причину берём из последней ошибки клиента без опроса
 /// консьюмера (опрос забрал бы сообщения из сессии).
 fn command_error(ctx: &CapturingContext, e: KafkaError) -> AppError {
@@ -216,7 +240,7 @@ fn handle(
             let _ = reply.send(r);
         }
         ConsumerCommand::Pause { partitions, reply } => {
-            let r = tpl_of(&partitions)
+            let r = assigned_tpl(consumer, ctx, &partitions)
                 .and_then(|t| consumer.pause(&t).map_err(|e| command_error(ctx, e)));
             if r.is_ok() {
                 out.emit(ConsumeEvent::Paused { partitions });
@@ -224,7 +248,7 @@ fn handle(
             let _ = reply.send(r);
         }
         ConsumerCommand::Resume { partitions, reply } => {
-            let r = tpl_of(&partitions)
+            let r = assigned_tpl(consumer, ctx, &partitions)
                 .and_then(|t| consumer.resume(&t).map_err(|e| command_error(ctx, e)));
             if r.is_ok() {
                 out.emit(ConsumeEvent::Resumed { partitions });

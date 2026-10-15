@@ -14,8 +14,10 @@ use kafka_explorer_lib::consume::session::{ConsumeSink, run_consumer};
 use kafka_explorer_lib::consume::types::{
     CommitTarget, ConsumeEvent, ConsumerParams, IsolationLevel, OffsetReset,
 };
+use kafka_explorer_lib::error::ErrorCode;
 use kafka_explorer_lib::kafka::context::RebalanceRecord;
 use kafka_explorer_lib::kafka::group_ops::group_offsets;
+use kafka_explorer_lib::kafka::groups::TopicPartitionRef;
 use kafka_explorer_lib::kafka::pool::KafkaHandles;
 use kafka_explorer_lib::secrets::MemoryStore;
 
@@ -192,6 +194,79 @@ async fn consume_commit_and_rebalance() {
             started.elapsed() < Duration::from_secs(15),
             "остановка с выходом из группы не зависает"
         );
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn pause_resume_and_unassigned_partition_error() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let topic = common::TempTopic::create(&bs, "it-consume-pause", 1).await;
+    let msg = |v| TestMsg {
+        partition: 0,
+        key: None,
+        value: v,
+        headers: &[],
+    };
+    common::produce(&bs, &topic, &[msg("a"), msg("b"), msg("c")]).await;
+    let group = common::TempGroup::new(&bs, "it-consume-pause");
+    let (bs2, t, g) = (bs.clone(), topic.to_string(), group.to_string());
+
+    tokio::task::spawn_blocking(move || {
+        let s = start(&bs2, &g, &t);
+        wait_until("3 сообщения", || s.sink.messages() == 3);
+        let part = |topic: &str, partition| {
+            vec![TopicPartitionRef {
+                topic: topic.to_string(),
+                partition,
+            }]
+        };
+
+        let e = request(&s.tx, Duration::from_secs(10), |reply| {
+            ConsumerCommand::Pause {
+                partitions: part(&t, 7),
+                reply,
+            }
+        })
+        .unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput, "непринадлежащая партиция");
+        let e = request(&s.tx, Duration::from_secs(10), |reply| {
+            ConsumerCommand::Resume {
+                partitions: part("other-topic", 0),
+                reply,
+            }
+        })
+        .unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+
+        request(&s.tx, Duration::from_secs(10), |reply| {
+            ConsumerCommand::Pause {
+                partitions: part(&t, 0),
+                reply,
+            }
+        })
+        .unwrap();
+        let (bs3, t3) = (bs2.clone(), t.clone());
+        common::block_on(async move { common::produce(&bs3, &t3, &[msg("d"), msg("e")]).await });
+        std::thread::sleep(Duration::from_secs(2));
+        assert_eq!(s.sink.messages(), 3, "на паузе новые сообщения не приходят");
+
+        request(&s.tx, Duration::from_secs(10), |reply| {
+            ConsumerCommand::Resume {
+                partitions: part(&t, 0),
+                reply,
+            }
+        })
+        .unwrap();
+        wait_until("после resume дошли 2 сообщения", || {
+            s.sink.messages() == 5
+        });
+
+        s.cancel.store(true, Ordering::Relaxed);
+        s.handle.join().unwrap();
     })
     .await
     .unwrap();

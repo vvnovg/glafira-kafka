@@ -12,7 +12,11 @@ pub struct AppState {
     pub connections: Arc<ConnectionStore>,
     pub secrets: Arc<dyn SecretStore>,
     pub pool: Arc<ClientPool>,
+    pub producers: Arc<crate::kafka::producer::ProducerPool>,
     pub sessions: Arc<SessionRegistry>,
+    pub consumers: Arc<crate::consume::control::ConsumerControls>,
+    pub history: Arc<crate::storage::history::HistoryStore>,
+    pub templates: Arc<crate::storage::templates::TemplateStore>,
 }
 
 impl AppState {
@@ -21,7 +25,11 @@ impl AppState {
             connections: Arc::new(ConnectionStore::open(data_dir)?),
             secrets,
             pool: Arc::new(ClientPool::default()),
+            producers: Arc::new(Default::default()),
             sessions: Arc::new(SessionRegistry::default()),
+            consumers: Arc::new(Default::default()),
+            history: Arc::new(crate::storage::history::HistoryStore::open(data_dir)?),
+            templates: Arc::new(crate::storage::templates::TemplateStore::open(data_dir)),
         })
     }
 
@@ -70,9 +78,35 @@ impl AppState {
     pub fn evict_if_client_broken(&self, id: &str, e: &AppError) -> bool {
         let broken = matches!(e.code, ErrorCode::AuthFailed | ErrorCode::TlsError);
         if broken {
-            self.pool.evict(id);
+            self.evict_connection(id);
         }
         broken
+    }
+
+    /// Удаляет подключение целиком. Само удаление и секрет — обязательные шаги; очистка
+    /// истории и шаблонов best-effort: сбой логируется и не ломает уже выполненное удаление.
+    pub fn delete_connection_full(&self, id: &str) -> AppResult<()> {
+        // Живые browse-сессии удаляемого подключения больше не нужны — даже если удаление ниже упадёт.
+        self.sessions.cancel_for(id);
+        self.connections.delete(id)?;
+        self.secrets.delete(&crate::secrets::secret_key(
+            id,
+            crate::kafka::config::SASL_PASSWORD,
+        ))?;
+        self.evict_connection(id);
+        if let Err(e) = self.history.delete_connection(id) {
+            tracing::warn!("не удалось удалить историю подключения {id}: {}", e.message);
+        }
+        if let Err(e) = self.templates.delete_for_connection(id) {
+            tracing::warn!("не удалось удалить шаблоны подключения {id}: {}", e.message);
+        }
+        Ok(())
+    }
+
+    /// Вытесняет все клиенты подключения: admin/consumer-handles и producer'ы.
+    pub fn evict_connection(&self, id: &str) {
+        self.pool.evict(id);
+        self.producers.evict_connection(id);
     }
 }
 
@@ -121,6 +155,39 @@ mod tests {
     }
 
     #[test]
+    fn broken_client_errors_evict_producers() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        state.connections.upsert(sample_profile("a")).unwrap();
+        let p = state.profile("a").unwrap();
+        let s = crate::kafka::producer::ProducerSettings::default();
+        let h1 = state.producers.get(&p, state.secrets.as_ref(), &s).unwrap();
+        assert!(!state.evict_if_client_broken("a", &AppError::new(ErrorCode::Timeout, "t")));
+        assert!(Arc::ptr_eq(
+            &h1,
+            &state.producers.get(&p, state.secrets.as_ref(), &s).unwrap()
+        ));
+        assert!(state.evict_if_client_broken("a", &AppError::new(ErrorCode::AuthFailed, "x")));
+        assert!(!Arc::ptr_eq(
+            &h1,
+            &state.producers.get(&p, state.secrets.as_ref(), &s).unwrap()
+        ));
+    }
+
+    #[test]
+    fn delete_connection_data_is_best_effort() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        state.connections.upsert(sample_profile("a")).unwrap();
+        // На месте файла истории — непустой каталог: remove_file упадёт.
+        let hp = dir.path().join("history").join("a.json");
+        std::fs::create_dir_all(&hp).unwrap();
+        std::fs::write(hp.join("x"), b"x").unwrap();
+        state.delete_connection_full("a").unwrap();
+        assert!(state.connections.get("a").is_err(), "подключение удалено");
+    }
+
+    #[test]
     fn guarded_checks_profile() {
         let dir = tempfile::tempdir().unwrap();
         let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
@@ -137,5 +204,19 @@ mod tests {
         );
         state.connections.upsert(sample_profile("b")).unwrap();
         assert_eq!(state.guarded("b", None).unwrap().id, "b");
+    }
+
+    #[test]
+    fn newer_templates_file_does_not_block_startup() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("templates.json"),
+            r#"{"schemaVersion":99,"templates":[]}"#,
+        )
+        .unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        assert!(state.templates.list("a").is_err());
+        state.connections.upsert(sample_profile("a")).unwrap();
+        assert!(state.handles("a").is_ok(), "остальное работает");
     }
 }

@@ -1,8 +1,10 @@
 pub mod browse;
 pub mod commands;
+pub mod consume;
 pub mod error;
 pub mod guard;
 pub mod kafka;
+pub mod produce;
 pub mod secrets;
 pub mod state;
 pub mod storage;
@@ -16,6 +18,10 @@ use tracing_subscriber::EnvFilter;
 use crate::secrets::KeyringStore;
 use crate::state::AppState;
 
+/// Сколько ждать завершения сессий при выходе из приложения (в сумме, не на сессию).
+/// Пакет при отмене ждёт подтверждений до 2 с, выход consumer из группы — доли секунды.
+const EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tracing_subscriber::fmt()
@@ -26,6 +32,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             app.manage(AppState::new(&dir, Arc::new(KeyringStore))?);
@@ -57,14 +64,29 @@ pub fn run() {
             commands::groups::preview_offset_reset,
             commands::groups::reset_offsets,
             commands::groups::delete_group,
+            commands::produce::produce,
+            commands::produce::produce_batch,
+            commands::produce::list_history,
+            commands::produce::list_templates,
+            commands::produce::save_template,
+            commands::produce::delete_template,
             commands::browse::start_browse,
             commands::browse::stop_session,
+            commands::consume::start_consumer,
+            commands::consume::commit_offsets,
+            commands::consume::pause_partitions,
+            commands::consume::resume_partitions,
+            commands::consume::suggest_group_id,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
-                app.state::<AppState>().sessions.cancel_all();
+                // Процесс завершится сразу после колбэка: даём сессиям выйти из группы
+                // (иначе участник висит до session.timeout.ms) и завершить пакеты.
+                if !app.state::<AppState>().sessions.shutdown(EXIT_GRACE) {
+                    tracing::warn!("сессии не завершились за {EXIT_GRACE:?}: выходим без ожидания");
+                }
             }
         });
 }

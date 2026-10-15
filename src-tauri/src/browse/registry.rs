@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
+use std::time::Duration;
 
 use crate::sync::MutexExt;
 
@@ -8,6 +9,8 @@ use crate::sync::MutexExt;
 #[derive(Default)]
 pub struct SessionRegistry {
     sessions: Mutex<HashMap<String, Entry>>,
+    /// Сигнал об удалении сессии — для `shutdown`.
+    removed: Condvar,
 }
 
 struct Entry {
@@ -55,12 +58,26 @@ impl SessionRegistry {
 
     pub fn remove(&self, id: &str) {
         self.sessions.lock_safe().remove(id);
+        self.removed.notify_all();
     }
 
     pub fn cancel_all(&self) {
         for e in self.sessions.lock_safe().values() {
             e.cancel.store(true, Ordering::Relaxed);
         }
+    }
+
+    /// Выход из приложения: отменяет все сессии и ждёт не дольше `timeout`, пока их потоки
+    /// завершатся (consumer — выход из группы, пакет — purge и ожидание подтверждений).
+    /// true — все сессии завершились. Блокирующий вызов.
+    pub fn shutdown(&self, timeout: Duration) -> bool {
+        self.cancel_all();
+        let guard = self.sessions.lock_safe();
+        let (guard, _) = self
+            .removed
+            .wait_timeout_while(guard, timeout, |s| !s.is_empty())
+            .unwrap_or_else(|e| e.into_inner());
+        guard.is_empty()
     }
 
     pub fn len(&self) -> usize {
@@ -75,6 +92,7 @@ impl SessionRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn register_cancel_remove() {
@@ -107,5 +125,40 @@ mod tests {
         assert!(a1.load(Ordering::Relaxed) && a2.load(Ordering::Relaxed));
         assert!(!b.load(Ordering::Relaxed));
         assert_eq!(r.cancel_for("missing"), 0);
+    }
+
+    #[test]
+    fn shutdown_cancels_and_waits_for_sessions_to_finish() {
+        let r = Arc::new(SessionRegistry::default());
+        let (id, flag) = r.register("c");
+        let r2 = r.clone();
+        let worker = std::thread::spawn(move || {
+            // Сессия завершается (выход из группы, purge) только после отмены.
+            while !flag.load(Ordering::Relaxed) {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            std::thread::sleep(Duration::from_millis(100));
+            r2.remove(&id);
+        });
+        let started = Instant::now();
+        assert!(r.shutdown(Duration::from_secs(5)));
+        assert!(
+            started.elapsed() >= Duration::from_millis(100),
+            "дождались сессию"
+        );
+        assert!(r.is_empty());
+        worker.join().unwrap();
+    }
+
+    #[test]
+    fn shutdown_gives_up_after_timeout() {
+        let r = SessionRegistry::default();
+        let (_, flag) = r.register("c");
+        let started = Instant::now();
+        assert!(!r.shutdown(Duration::from_millis(150)));
+        assert!(flag.load(Ordering::Relaxed));
+        let waited = started.elapsed();
+        assert!(waited >= Duration::from_millis(150) && waited < Duration::from_secs(2));
+        assert!(SessionRegistry::default().shutdown(Duration::from_secs(5)));
     }
 }

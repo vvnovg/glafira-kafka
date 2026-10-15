@@ -13,6 +13,7 @@ pub struct HeaderView {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BrowsedMessage {
+    pub topic: String,
     pub partition: i32,
     pub offset: i64,
     pub timestamp: Option<i64>,

@@ -9,7 +9,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { api, toAppError } from "./client";
-import type { BrowseParams } from "./types";
+import type { BrowseParams, ConsumerParams, ProduceMessage } from "./types";
 
 beforeEach(() => {
   invoke.mockReset();
@@ -78,5 +78,51 @@ describe("api client", () => {
     const offsets = [{ topic: "t", partition: 0, offset: 5 }];
     await api.resetOffsets("c1", "g", offsets, null);
     expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null });
+  });
+  it("startConsumer передаёт параметры, Channel и подтверждение", async () => {
+    invoke.mockResolvedValue("sid");
+    const onEvent = vi.fn();
+    const id = await api.startConsumer({ groupId: "g" } as ConsumerParams, onEvent, "prod-1");
+    expect(id).toBe("sid");
+    const [cmd, args] = invoke.mock.calls[0];
+    expect(cmd).toBe("start_consumer");
+    expect(args.confirm).toBe("prod-1");
+    args.onEvent.onmessage({ type: "recovered" });
+    expect(onEvent).toHaveBeenCalledWith({ type: "recovered" });
+  });
+
+  it("produce и commitOffsets", async () => {
+    invoke.mockResolvedValue({ partition: 0, offset: 1, timestamp: 2 });
+    const message = { topic: "t", partition: null, key: { format: "null", text: "" }, value: { format: "string", text: "v" }, headers: [] } as ProduceMessage;
+    const settings = { acks: "all", compression: "none", idempotence: false } as const;
+    await api.produce("c", message, settings, null);
+    expect(invoke).toHaveBeenCalledWith("produce", { connectionId: "c", message, settings, confirm: null });
+    await api.commitOffsets("s", { type: "allConsumed" }, null);
+    expect(invoke).toHaveBeenLastCalledWith("commit_offsets", { sessionId: "s", target: { type: "allConsumed" }, confirm: null });
+  });
+
+  it("pause/resume, шаблоны и suggestGroupId", async () => {
+    invoke.mockResolvedValue(undefined);
+    const parts = [{ topic: "t", partition: 0 }];
+    await api.pausePartitions("s", parts);
+    expect(invoke).toHaveBeenLastCalledWith("pause_partitions", { sessionId: "s", partitions: parts });
+    await api.resumePartitions("s", parts);
+    expect(invoke).toHaveBeenLastCalledWith("resume_partitions", { sessionId: "s", partitions: parts });
+    await api.deleteTemplate("x");
+    expect(invoke).toHaveBeenLastCalledWith("delete_template", { id: "x" });
+    await api.listHistory("c");
+    expect(invoke).toHaveBeenLastCalledWith("list_history", { connectionId: "c" });
+    await api.suggestGroupId();
+    expect(invoke.mock.calls[invoke.mock.calls.length - 1][0]).toBe("suggest_group_id");
+  });
+
+  it("startBatch отдаёт события Channel", async () => {
+    invoke.mockResolvedValue("bid");
+    const onEvent = vi.fn();
+    await api.startBatch({} as never, onEvent, null);
+    const [cmd, args] = invoke.mock.calls[0];
+    expect(cmd).toBe("produce_batch");
+    args.onEvent.onmessage({ type: "progress", sent: 1, failed: 0, total: null });
+    expect(onEvent).toHaveBeenCalled();
   });
 });

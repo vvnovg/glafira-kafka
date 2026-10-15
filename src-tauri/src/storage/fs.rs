@@ -21,6 +21,16 @@ fn tmp_path(path: &Path) -> PathBuf {
     path.with_file_name(name)
 }
 
+/// Новый файл с правами только для владельца (0600 на unix): в данных приложения бывают
+/// подставленные значения `{{env}}` и заголовков. rename сохраняет права временного файла.
+fn create_private(path: &Path) -> std::io::Result<File> {
+    let mut opts = fs::OpenOptions::new();
+    opts.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut opts, 0o600);
+    opts.open(path)
+}
+
 /// Атомарная запись: временный файл → fsync → rename → fsync каталога.
 /// При сбое на любом шаге исходный файл остаётся нетронутым.
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> AppResult<()> {
@@ -31,7 +41,7 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> AppResult<()> {
     let tmp = tmp_path(path);
     let result = (|| -> std::io::Result<()> {
         fs::create_dir_all(dir)?;
-        let mut f = File::create(&tmp)?;
+        let mut f = create_private(&tmp)?;
         f.write_all(bytes)?;
         f.sync_all()?;
         drop(f);
@@ -63,6 +73,57 @@ pub fn read_json<T: DeserializeOwned>(path: &Path) -> AppResult<Option<T>> {
     }
 }
 
+/// Читает JSON; при повреждённом файле (не парсится) переименовывает его в
+/// `<name>.corrupt-<unix-ms>` (сохраняя для пользователя), пишет предупреждение и возвращает None.
+/// Файл с `schemaVersion` выше `max_schema` — не повреждение: возвращается ошибка (fail-closed).
+pub fn read_json_or_quarantine<T: DeserializeOwned>(
+    path: &Path,
+    max_schema: u32,
+) -> AppResult<Option<T>> {
+    let bytes = match fs::read(path) {
+        Ok(b) => b,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(e.into()),
+    };
+    let err = match serde_json::from_slice::<T>(&bytes) {
+        Ok(v) => return Ok(Some(v)),
+        Err(e) => e,
+    };
+    if let Ok(v) = serde_json::from_slice::<serde_json::Value>(&bytes)
+        && v.get("schemaVersion")
+            .and_then(|x| x.as_u64())
+            .is_some_and(|x| x > u64::from(max_schema))
+    {
+        return Err(AppError::internal(format!(
+            "{} создан более новой версией приложения (schemaVersion {})",
+            path.display(),
+            v["schemaVersion"]
+        )));
+    }
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let mut name = path
+        .file_name()
+        .map(|n| n.to_os_string())
+        .unwrap_or_default();
+    name.push(format!(".corrupt-{ms}"));
+    let backup = path.with_file_name(name);
+    fs::rename(path, &backup).map_err(|e| {
+        AppError::internal(format!(
+            "Файл {} повреждён ({err}), не удалось сохранить копию: {e}",
+            path.display()
+        ))
+    })?;
+    tracing::warn!(
+        "файл {} повреждён ({err}); сохранён как {}, начинаем с пустого",
+        path.display(),
+        backup.display()
+    );
+    Ok(None)
+}
+
 pub fn write_json<T: Serialize>(path: &Path, value: &T) -> AppResult<()> {
     atomic_write(path, &serde_json::to_vec_pretty(value)?)
 }
@@ -88,6 +149,19 @@ mod tests {
         atomic_write(&p, b"2").unwrap();
         assert_eq!(std::fs::read(&p).unwrap(), b"2");
         assert!(leftover_tmps(dir.path()).is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn written_files_are_owner_only() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let p = dir.path().join("a.json");
+        std::fs::write(&p, b"old").unwrap();
+        std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o644)).unwrap();
+        atomic_write(&p, b"new").unwrap();
+        let mode = std::fs::metadata(&p).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600, "заменённый файл тоже 0600");
     }
 
     #[test]

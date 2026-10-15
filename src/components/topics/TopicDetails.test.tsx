@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithClient } from "../../test/render";
@@ -90,6 +90,20 @@ describe("TopicDetails: мутации", () => {
     await screen.findByText("compact");
     expect(screen.queryByRole("button", { name: "Удалить топик" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Редактировать" })).toBeNull();
+    for (const name of ["Отправить сообщение", "Читать как группа"]) {
+      const b = screen.getByRole("button", { name });
+      await waitFor(() => expect(b).toBeDisabled());
+      expect(b).toHaveAttribute("title", expect.stringContaining("только для чтения"));
+    }
+  });
+
+  it("обычное подключение: отправка и чтение как группа доступны", async () => {
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([conn({ readOnly: false })] as never);
+    renderWithClient(<TopicDetails connectionId="m" topic="orders" />);
+    await screen.findByRole("button", { name: "Удалить топик" });
+    expect(screen.getByRole("button", { name: "Отправить сообщение" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Читать как группа" })).toBeEnabled();
   });
 
   it("internal-топик скрывает действия", async () => {

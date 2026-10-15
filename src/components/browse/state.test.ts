@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { BrowsedMessage } from "../../api/types";
-import { browseReducer, initialBrowseState } from "./state";
+import { appendMessages, browseReducer, initialBrowseState } from "./state";
 
-const msg = (offset: number): BrowsedMessage => ({ partition: 0, offset, timestamp: null, key: null, value: null, headers: [], size: 0 });
+const msg = (offset: number): BrowsedMessage => ({ topic: "t", partition: 0, offset, timestamp: null, key: null, value: null, headers: [], size: 0 });
 
 describe("browseReducer", () => {
   it("кольцевой буфер держит последние limit сообщений", () => {
@@ -73,5 +73,22 @@ describe("browseReducer", () => {
     expect(s.reconnecting).toBeNull();
     s = browseReducer(browseReducer(browseReducer(s, { type: "start", limit: 1 }), reconnect), { type: "stopped" });
     expect(s.reconnecting).toBeNull();
+  });
+});
+
+describe("appendMessages", () => {
+  it("держит последние limit сообщений", () => {
+    expect(appendMessages([msg(1), msg(2)], [msg(3)], 5).map((m) => m.offset)).toEqual([1, 2, 3]);
+    expect(appendMessages([msg(1), msg(2)], [msg(3), msg(4)], 3).map((m) => m.offset)).toEqual([2, 3, 4]);
+  });
+
+  it("большой пакет вытесняет весь буфер", () => {
+    const batch = [msg(5), msg(6), msg(7), msg(8)];
+    expect(appendMessages([msg(1)], batch, 3).map((m) => m.offset)).toEqual([6, 7, 8]);
+  });
+
+  it("пустой пакет не создаёт новый массив", () => {
+    const buf = [msg(1)];
+    expect(appendMessages(buf, [], 3)).toBe(buf);
   });
 });

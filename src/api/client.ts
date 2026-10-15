@@ -1,6 +1,17 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import type {
   AppError,
+  BatchEvent,
+  BatchParams,
+  CommitTarget,
+  ConsumeEvent,
+  ConsumerParams,
+  HistoryEntry,
+  ProduceMessage,
+  ProduceResult,
+  ProducerSettings,
+  Template,
+  TopicPartitionRef,
   ConfigChange,
   Confirmation,
   GroupDescription,
@@ -103,4 +114,29 @@ export const api = {
     return call<string>("start_browse", { params, onEvent: channel });
   },
   stopSession: (sessionId: string) => call<boolean>("stop_session", { sessionId }),
+
+  produce: (connectionId: string, message: ProduceMessage, settings: ProducerSettings, confirm: string | null) =>
+    call<ProduceResult>("produce", { connectionId, message, settings, confirm }),
+  listHistory: (connectionId: string) => call<HistoryEntry[]>("list_history", { connectionId }),
+  listTemplates: (connectionId: string) => call<Template[]>("list_templates", { connectionId }),
+  saveTemplate: (template: Template) => call<Template>("save_template", { template }),
+  deleteTemplate: (id: string) => call<void>("delete_template", { id }),
+  startBatch: (params: BatchParams, onEvent: (e: BatchEvent) => void, confirm: string | null) => {
+    const channel = new Channel<BatchEvent>();
+    channel.onmessage = onEvent;
+    return call<string>("produce_batch", { params, onEvent: channel, confirm });
+  },
+
+  startConsumer: (params: ConsumerParams, onEvent: (e: ConsumeEvent) => void, confirm: string | null) => {
+    const channel = new Channel<ConsumeEvent>();
+    channel.onmessage = onEvent;
+    return call<string>("start_consumer", { params, onEvent: channel, confirm });
+  },
+  commitOffsets: (sessionId: string, target: CommitTarget, confirm: string | null) =>
+    call<OffsetTarget[]>("commit_offsets", { sessionId, target, confirm }),
+  pausePartitions: (sessionId: string, partitions: TopicPartitionRef[]) =>
+    call<void>("pause_partitions", { sessionId, partitions }),
+  resumePartitions: (sessionId: string, partitions: TopicPartitionRef[]) =>
+    call<void>("resume_partitions", { sessionId, partitions }),
+  suggestGroupId: () => call<string>("suggest_group_id"),
 };

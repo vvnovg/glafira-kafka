@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import type { Confirmation, GroupDescription, GroupPartitionOffset } from "../../api/types";
 import { formatCount } from "../../lib/format";
 import { useConnection } from "../../lib/useConnection";
-import { type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
+import { newConsumerKey, type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { groupTotalLag } from "./groupLag";
@@ -27,10 +27,12 @@ interface Props {
 export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
+  const readOnly = connection?.readOnly === true;
   const [refreshMs, setRefreshMs] = useState(0);
   const [panel, setPanel] = useState<Panel>(resetPrefill && canMutate ? "reset" : null);
   const queryClient = useQueryClient();
   const closeTab = useWorkspace((s) => s.close);
+  const open = useWorkspace((s) => s.open);
 
   // Новый предзаполненный сброс («Сбросить группу сюда») открывает панель сброса.
   useEffect(() => {
@@ -92,6 +94,29 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         </select>
         <button type="button" disabled={desc.isFetching || offsets.isFetching} onClick={refresh}>
           Обновить
+        </button>
+        <button
+          type="button"
+          disabled={readOnly || offsets.isPending}
+          title={
+            readOnly
+              ? "Подключение только для чтения: вход в группу меняет её состояние"
+              : offsets.isPending
+                ? "Загружаются топики группы"
+                : undefined
+          }
+          onClick={() =>
+            open({
+              kind: "consumer",
+              connectionId,
+              key: newConsumerKey(),
+              groupId,
+              // Топики — из закоммиченных партиций группы.
+              topic: [...new Set(rows.map((r) => r.topic))].join(", "),
+            })
+          }
+        >
+          Читать как участник
         </button>
       </div>
       {canMutate && (

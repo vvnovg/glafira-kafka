@@ -67,6 +67,32 @@ function parsePartitions(text: string): number[] | null {
   return out;
 }
 
+export type FilterFields = Pick<
+  BrowseFormState,
+  "keyPattern" | "valuePattern" | "regex" | "caseSensitive" | "headerName" | "headerValue" | "jsonPath" | "fromTime" | "toTime"
+>;
+
+export function buildFilterSpec(f: FilterFields): FilterSpec {
+  const text = (pattern: string): TextMatch | undefined =>
+    pattern ? { pattern, regex: f.regex, caseSensitive: f.caseSensitive } : undefined;
+  const filter: FilterSpec = {};
+  const key = text(f.keyPattern);
+  if (key) filter.key = key;
+  const value = text(f.valuePattern);
+  if (value) filter.value = value;
+  if (f.headerName.trim()) {
+    const hv = text(f.headerValue);
+    filter.header = hv ? { name: f.headerName.trim(), value: hv } : { name: f.headerName.trim() };
+  }
+  if (f.jsonPath.trim()) filter.jsonPath = f.jsonPath.trim();
+  if (f.fromTime) filter.fromTimestamp = parseLocalTime(f.fromTime, "фильтр «с»");
+  if (f.toTime) filter.toTimestamp = parseLocalTime(f.toTime, "фильтр «по»");
+  if (filter.fromTimestamp !== undefined && filter.toTimestamp !== undefined && filter.fromTimestamp > filter.toTimestamp) {
+    throw new Error("Фильтр времени: «с» не может быть позже «по»");
+  }
+  return filter;
+}
+
 export function buildBrowseParams(f: BrowseFormState, connectionId: string, topic: string): BrowseParams {
   if (!Number.isInteger(f.limit) || f.limit < 1 || f.limit > MAX_LIMIT) {
     throw new Error(`Лимит должен быть от 1 до ${MAX_LIMIT}`);
@@ -99,23 +125,7 @@ export function buildBrowseParams(f: BrowseFormState, connectionId: string, topi
       throw new Error(`Неизвестная начальная позиция: ${String(f.startType)}`);
   }
 
-  const text = (pattern: string): TextMatch | undefined =>
-    pattern ? { pattern, regex: f.regex, caseSensitive: f.caseSensitive } : undefined;
-  const filter: FilterSpec = {};
-  const key = text(f.keyPattern);
-  if (key) filter.key = key;
-  const value = text(f.valuePattern);
-  if (value) filter.value = value;
-  if (f.headerName.trim()) {
-    const hv = text(f.headerValue);
-    filter.header = hv ? { name: f.headerName.trim(), value: hv } : { name: f.headerName.trim() };
-  }
-  if (f.jsonPath.trim()) filter.jsonPath = f.jsonPath.trim();
-  if (f.fromTime) filter.fromTimestamp = parseLocalTime(f.fromTime, "фильтр «с»");
-  if (f.toTime) filter.toTimestamp = parseLocalTime(f.toTime, "фильтр «по»");
-  if (filter.fromTimestamp !== undefined && filter.toTimestamp !== undefined && filter.fromTimestamp > filter.toTimestamp) {
-    throw new Error("Фильтр времени: «с» не может быть позже «по»");
-  }
+  const filter = buildFilterSpec(f);
 
   return {
     connectionId,

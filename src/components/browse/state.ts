@@ -34,6 +34,16 @@ export type BrowseAction =
   | { type: "failed"; error: AppError }
   | { type: "stopped" };
 
+/** Кольцевой буфер: одна аллокация на пакет, без промежуточной склейки всего буфера. */
+export function appendMessages(buffer: BrowsedMessage[], batch: BrowsedMessage[], limit: number): BrowsedMessage[] {
+  if (batch.length === 0) return buffer;
+  if (batch.length >= limit) return batch.slice(batch.length - limit);
+  const keep = Math.min(buffer.length, limit - batch.length);
+  const out = buffer.slice(buffer.length - keep);
+  for (const m of batch) out.push(m);
+  return out;
+}
+
 export function browseReducer(s: BrowseState, a: BrowseAction): BrowseState {
   switch (a.type) {
     case "start":
@@ -48,11 +58,8 @@ export function browseReducer(s: BrowseState, a: BrowseAction): BrowseState {
     case "event": {
       const e = a.event;
       switch (e.type) {
-        case "messages": {
-          const merged = s.messages.concat(e.messages);
-          const messages = merged.length > s.limit ? merged.slice(merged.length - s.limit) : merged;
-          return { ...s, messages };
-        }
+        case "messages":
+          return { ...s, messages: appendMessages(s.messages, e.messages, s.limit) };
         case "progress":
           return { ...s, scanned: e.scanned, matched: e.matched };
         case "reachedEnd":

@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
 import { formatCount } from "../../lib/format";
 import { useConnection } from "../../lib/useConnection";
-import { tabId, useWorkspace } from "../../state/workspace";
+import { newConsumerKey, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
 import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
@@ -26,8 +26,10 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
 
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
+  const readOnly = connection?.readOnly === true;
   const queryClient = useQueryClient();
   const closeTab = useWorkspace((s) => s.close);
+  const open = useWorkspace((s) => s.open);
 
   if (q.isPending) return <p className="empty">Загрузка…</p>;
   if (q.error && !q.data) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
@@ -43,6 +45,31 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         </span>
         <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
           Обновить
+        </button>
+        <button
+          type="button"
+          disabled={readOnly}
+          title={readOnly ? "Подключение только для чтения: отправка сообщений недоступна" : undefined}
+          onClick={() =>
+            open({
+              kind: "producer",
+              connectionId,
+              prefill: {
+                message: { topic, partition: null, key: { format: "string", text: "" }, value: { format: "json", text: "" }, headers: [] },
+                nonce: Date.now(),
+              },
+            })
+          }
+        >
+          Отправить сообщение
+        </button>
+        <button
+          type="button"
+          disabled={readOnly}
+          title={readOnly ? "Подключение только для чтения: вход в группу меняет её состояние" : undefined}
+          onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}
+        >
+          Читать как группа
         </button>
       </div>
       {canMutate && connection && !t.internal && (

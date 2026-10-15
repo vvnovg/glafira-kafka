@@ -18,10 +18,23 @@ use crate::kafka::topics::{PartitionBoundsMap, fetch_bounds};
 
 type Key = (String, i32);
 
+/// Меньше этого не имеет смысла начинать сетевой запрос.
+const MIN_STEP: Duration = Duration::from_millis(50);
+
+/// Оставшееся до дедлайна время; None, если дедлайн прошёл (новые запросы не начинаем).
+fn remaining(deadline: Instant) -> Option<Duration> {
+    let left = deadline.saturating_duration_since(Instant::now());
+    (left >= MIN_STEP).then_some(left)
+}
+
 pub fn list_groups(h: &KafkaHandles) -> AppResult<GroupList> {
+    list_groups_within(h, h.timeout)
+}
+
+fn list_groups_within(h: &KafkaHandles, timeout: Duration) -> AppResult<GroupList> {
     let started = Instant::now();
-    let (groups, errors) = admin_ext::list_consumer_groups(&h.admin, h.timeout)
-        .map_err(|e| h.kafka_err(started, e))?;
+    let (groups, errors) =
+        admin_ext::list_consumer_groups(&h.admin, timeout).map_err(|e| h.kafka_err(started, e))?;
     let mut groups: Vec<GroupSummary> = groups
         .into_iter()
         .map(|g| GroupSummary {
@@ -55,8 +68,12 @@ pub fn describe_group(h: &KafkaHandles, id: &str) -> AppResult<GroupDescription>
 }
 
 fn committed(h: &KafkaHandles, group: &str) -> AppResult<CommittedMap> {
+    committed_within(h, group, h.timeout)
+}
+
+fn committed_within(h: &KafkaHandles, group: &str, timeout: Duration) -> AppResult<CommittedMap> {
     let started = Instant::now();
-    match admin_ext::list_consumer_group_offsets(&h.admin, h.timeout, group) {
+    match admin_ext::list_consumer_group_offsets(&h.admin, timeout, group) {
         Ok(Ok(raw)) => Ok(committed_from_raw(&raw)),
         Ok(Err(item)) => Err(item_error(
             item.code,
@@ -68,12 +85,42 @@ fn committed(h: &KafkaHandles, group: &str) -> AppResult<CommittedMap> {
 }
 
 fn bounds(h: &KafkaHandles, keys: &[Key]) -> AppResult<PartitionBoundsMap> {
+    bounds_within(h, keys, h.timeout)
+}
+
+fn bounds_within(
+    h: &KafkaHandles,
+    keys: &[Key],
+    timeout: Duration,
+) -> AppResult<PartitionBoundsMap> {
     let started = Instant::now();
-    fetch_bounds(&h.consumer, keys, h.timeout).map_err(|e| h.kafka_err(started, e))
+    fetch_bounds(&h.consumer, keys, timeout).map_err(|e| h.kafka_err(started, e))
+}
+
+/// Границы под общим дедлайном; при неудаче/таймауте — пустая карта (лаг станет None)
+/// и признак неполноты.
+fn bounds_or_incomplete(
+    h: &KafkaHandles,
+    keys: &[Key],
+    deadline: Instant,
+) -> (PartitionBoundsMap, bool) {
+    if keys.is_empty() {
+        return (PartitionBoundsMap::new(), false);
+    }
+    match remaining(deadline).map(|t| bounds_within(h, keys, t)) {
+        Some(Ok(b)) => (b, false),
+        _ => (PartitionBoundsMap::new(), true),
+    }
 }
 
 pub fn group_offsets(h: &KafkaHandles, group: &str) -> AppResult<Vec<GroupPartitionOffset>> {
     let desc = describe_group(h, group)?;
+    if let (Some(e), false) = (&desc.error, desc.not_found) {
+        return Err(
+            AppError::internal(format!("Не удалось получить участников группы «{group}»"))
+                .with_details(e.clone()),
+        );
+    }
     let committed = committed(h, group)?;
     let assigned: HashMap<Key, String> = desc
         .members
@@ -96,8 +143,21 @@ pub fn group_offsets(h: &KafkaHandles, group: &str) -> AppResult<Vec<GroupPartit
 }
 
 pub fn groups_lag(h: &KafkaHandles, ids: &[String]) -> AppResult<Vec<GroupLag>> {
-    let per_group: Vec<(String, AppResult<CommittedMap>)> =
-        ids.iter().map(|g| (g.clone(), committed(h, g))).collect();
+    // Общий дедлайн на весь пакет: N групп не должны занимать N×timeout.
+    let deadline = Instant::now() + h.timeout;
+    let per_group: Vec<(String, AppResult<CommittedMap>)> = ids
+        .iter()
+        .map(|g| {
+            let c = match remaining(deadline) {
+                Some(t) => committed_within(h, g, t),
+                None => Err(AppError::new(
+                    crate::error::ErrorCode::Timeout,
+                    "Превышено время ожидания пакета групп",
+                )),
+            };
+            (g.clone(), c)
+        })
+        .collect();
     let keys: Vec<Key> = per_group
         .iter()
         .filter_map(|(_, c)| c.as_ref().ok())
@@ -105,7 +165,7 @@ pub fn groups_lag(h: &KafkaHandles, ids: &[String]) -> AppResult<Vec<GroupLag>> 
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
-    let b = bounds(h, &keys)?;
+    let (b, bounds_failed) = bounds_or_incomplete(h, &keys, deadline);
     Ok(per_group
         .into_iter()
         .map(|(group_id, c)| match c {
@@ -116,7 +176,8 @@ pub fn groups_lag(h: &KafkaHandles, ids: &[String]) -> AppResult<Vec<GroupLag>> 
                     group_id,
                     total_lag: total_lag(&rows),
                     topics: topics.into_iter().collect(),
-                    error: None,
+                    error: bounds_failed
+                        .then(|| "Не удалось получить границы партиций в срок".to_string()),
                 }
             }
             Err(e) => GroupLag {
@@ -132,16 +193,16 @@ pub fn groups_lag(h: &KafkaHandles, ids: &[String]) -> AppResult<Vec<GroupLag>> 
 /// Группы с коммитами в топик и их лаг по нему. Перебор групп ограничен таймаутом запроса.
 pub fn topic_groups(h: &KafkaHandles, topic: &str) -> AppResult<TopicGroups> {
     let deadline = Instant::now() + h.timeout;
-    let list = list_groups(h)?;
+    let list = list_groups_within(h, h.timeout)?;
     let mut found: Vec<(GroupSummary, CommittedMap)> = Vec::new();
     let mut incomplete = !list.errors.is_empty();
     for g in list.groups {
-        if Instant::now() >= deadline {
+        let Some(left) = remaining(deadline) else {
             incomplete = true;
             break;
-        }
+        };
         // Ошибка одной группы (например, нет прав) не мешает остальным.
-        let Ok(c) = committed(h, &g.group_id) else {
+        let Ok(c) = committed_within(h, &g.group_id, left) else {
             incomplete = true;
             continue;
         };
@@ -156,7 +217,8 @@ pub fn topic_groups(h: &KafkaHandles, topic: &str) -> AppResult<TopicGroups> {
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
-    let b = bounds(h, &keys)?;
+    let (b, bounds_failed) = bounds_or_incomplete(h, &keys, deadline);
+    incomplete |= bounds_failed;
     Ok(TopicGroups {
         groups: found
             .into_iter()
@@ -256,7 +318,19 @@ pub fn preview_reset(h: &KafkaHandles, req: &ResetRequest) -> AppResult<Vec<Rese
                 .unwrap_or_else(|| Err("нет ответа брокера".to_string())),
         })
         .collect();
-    Ok(plan_reset(&states, &req.strategy, &by_time))
+    let mut rows = plan_reset(&states, &req.strategy, &by_time);
+    // Ошибка чтения коммита — не «коммита нет»: показываем её в строке.
+    for row in &mut rows {
+        if let Some(Err(e)) = committed.get(&(row.topic.clone(), row.partition)) {
+            row.target = None;
+            let msg = format!("коммит: {e}");
+            row.error = Some(match row.error.take() {
+                Some(prev) => format!("{prev}; {msg}"),
+                None => msg,
+            });
+        }
+    }
+    Ok(rows)
 }
 
 /// Применяет ровно переданный план (тот, что пользователь видел в предпросмотре).
@@ -316,4 +390,17 @@ pub async fn delete_group(h: &Arc<KafkaHandles>, group: &str) -> AppResult<()> {
         r.map_err(|(name, code)| item_error(code, &name, "Не удалось удалить группу"))?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn remaining_is_none_after_deadline() {
+        assert!(remaining(Instant::now() - Duration::from_secs(1)).is_none());
+        assert!(remaining(Instant::now()).is_none());
+        let left = remaining(Instant::now() + Duration::from_secs(5)).unwrap();
+        assert!(left <= Duration::from_secs(5) && left > Duration::from_secs(4));
+    }
 }

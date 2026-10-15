@@ -140,10 +140,11 @@ async fn consume_commit_and_rebalance() {
         });
         assert_eq!(a.sink.last_assigned(), Some(2));
 
-        let committed = request(&a.tx, Duration::from_secs(10), |reply| {
+        let committed = request(&a.tx, Duration::from_secs(10), |reply, deadline| {
             ConsumerCommand::Commit {
                 target: CommitTarget::AllConsumed,
                 reply,
+                deadline,
             }
         })
         .unwrap();
@@ -151,7 +152,7 @@ async fn consume_commit_and_rebalance() {
         offs.sort();
         assert_eq!(offs, [(0, 5), (1, 5)]);
 
-        let selected = request(&a.tx, Duration::from_secs(10), |reply| {
+        let selected = request(&a.tx, Duration::from_secs(10), |reply, deadline| {
             ConsumerCommand::Commit {
                 target: CommitTarget::Selected {
                     topic: t.clone(),
@@ -159,6 +160,7 @@ async fn consume_commit_and_rebalance() {
                     offset: 1,
                 },
                 reply,
+                deadline,
             }
         })
         .unwrap();
@@ -225,27 +227,30 @@ async fn pause_resume_and_unassigned_partition_error() {
             }]
         };
 
-        let e = request(&s.tx, Duration::from_secs(10), |reply| {
+        let e = request(&s.tx, Duration::from_secs(10), |reply, deadline| {
             ConsumerCommand::Pause {
                 partitions: part(&t, 7),
                 reply,
+                deadline,
             }
         })
         .unwrap_err();
         assert_eq!(e.code, ErrorCode::InvalidInput, "непринадлежащая партиция");
-        let e = request(&s.tx, Duration::from_secs(10), |reply| {
+        let e = request(&s.tx, Duration::from_secs(10), |reply, deadline| {
             ConsumerCommand::Resume {
                 partitions: part("other-topic", 0),
                 reply,
+                deadline,
             }
         })
         .unwrap_err();
         assert_eq!(e.code, ErrorCode::InvalidInput);
 
-        request(&s.tx, Duration::from_secs(10), |reply| {
+        request(&s.tx, Duration::from_secs(10), |reply, deadline| {
             ConsumerCommand::Pause {
                 partitions: part(&t, 0),
                 reply,
+                deadline,
             }
         })
         .unwrap();
@@ -254,16 +259,44 @@ async fn pause_resume_and_unassigned_partition_error() {
         std::thread::sleep(Duration::from_secs(2));
         assert_eq!(s.sink.messages(), 3, "на паузе новые сообщения не приходят");
 
-        request(&s.tx, Duration::from_secs(10), |reply| {
+        request(&s.tx, Duration::from_secs(10), |reply, deadline| {
             ConsumerCommand::Resume {
                 partitions: part(&t, 0),
                 reply,
+                deadline,
             }
         })
         .unwrap();
         wait_until("после resume дошли 2 сообщения", || {
             s.sink.messages() == 5
         });
+
+        // Просроченная команда не выполняется и не порождает событий.
+        let before = s.sink.0.lock().unwrap().len();
+        let (reply, rx) = mpsc::channel();
+        s.tx.send(ConsumerCommand::Pause {
+            partitions: part(&t, 0),
+            reply,
+            deadline: Instant::now() - Duration::from_secs(1),
+        })
+        .unwrap();
+        assert!(rx.recv_timeout(Duration::from_secs(5)).is_err());
+        let paused = s
+            .sink
+            .0
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|e| matches!(e, ConsumeEvent::Paused { .. }));
+        assert!(paused, "реальная пауза выше эмитила Paused");
+        let events = s.sink.0.lock().unwrap();
+        let pauses = events
+            .iter()
+            .skip(before)
+            .filter(|e| matches!(e, ConsumeEvent::Paused { .. }))
+            .count();
+        assert_eq!(pauses, 0, "просроченная команда не эмитит события");
+        drop(events);
 
         s.cancel.store(true, Ordering::Relaxed);
         s.handle.join().unwrap();

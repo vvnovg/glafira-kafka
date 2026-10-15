@@ -1,3 +1,4 @@
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Receiver;
@@ -12,7 +13,7 @@ use crate::browse::session::{
     BATCH_INTERVAL, BATCH_SIZE, MAX_BATCH_BYTES, estimated_bytes, to_browsed,
 };
 use crate::browse::types::BrowsedMessage;
-use crate::consume::control::ConsumerCommand;
+use crate::consume::control::{ConsumerCommand, socket_timeout_ms};
 use crate::consume::types::{
     CommitTarget, ConsumeEvent, ConsumerParams, IsolationLevel, OffsetReset, subscription, validate,
 };
@@ -93,9 +94,16 @@ pub fn run_consumer(
     commands: Receiver<ConsumerCommand>,
     sink: &dyn ConsumeSink,
 ) {
-    if let Err(error) = run_inner(profile, secrets, &params, &cancel, &commands, sink) {
-        sink.send(ConsumeEvent::Error { error });
-    }
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        run_inner(profile, secrets, &params, &cancel, &commands, sink)
+    }));
+    let error = match result {
+        Ok(Ok(())) => return,
+        Ok(Err(error)) => error,
+        // Паника не должна оставлять UI без терминального события.
+        Err(_) => AppError::internal("Внутренняя ошибка consumer-сессии"),
+    };
+    sink.send(ConsumeEvent::Error { error });
 }
 
 fn create(
@@ -107,6 +115,10 @@ fn create(
     let mut cfg = build_client_config(p, secrets)?;
     cfg.set("group.id", params.group_id.trim())
         .set("client.id", "kafka-explorer-session")
+        .set(
+            "socket.timeout.ms",
+            socket_timeout_ms(p.request_timeout_ms).to_string(),
+        )
         .set(
             "enable.auto.commit",
             if params.enable_auto_commit {
@@ -230,7 +242,14 @@ fn handle(
     out: &mut Out,
 ) {
     match cmd {
-        ConsumerCommand::Commit { target, reply } => {
+        ConsumerCommand::Commit {
+            target,
+            reply,
+            deadline,
+        } => {
+            if Instant::now() >= deadline {
+                return;
+            }
             let r = commit(consumer, ctx, target);
             if let Ok(offsets) = &r {
                 out.emit(ConsumeEvent::Committed {
@@ -239,7 +258,14 @@ fn handle(
             }
             let _ = reply.send(r);
         }
-        ConsumerCommand::Pause { partitions, reply } => {
+        ConsumerCommand::Pause {
+            partitions,
+            reply,
+            deadline,
+        } => {
+            if Instant::now() >= deadline {
+                return;
+            }
             let r = assigned_tpl(consumer, ctx, &partitions)
                 .and_then(|t| consumer.pause(&t).map_err(|e| command_error(ctx, e)));
             if r.is_ok() {
@@ -247,7 +273,14 @@ fn handle(
             }
             let _ = reply.send(r);
         }
-        ConsumerCommand::Resume { partitions, reply } => {
+        ConsumerCommand::Resume {
+            partitions,
+            reply,
+            deadline,
+        } => {
+            if Instant::now() >= deadline {
+                return;
+            }
             let r = assigned_tpl(consumer, ctx, &partitions)
                 .and_then(|t| consumer.resume(&t).map_err(|e| command_error(ctx, e)));
             if r.is_ok() {
@@ -350,4 +383,50 @@ fn run_inner(
     let (consumed, matched) = (out.consumed, out.matched);
     out.emit(ConsumeEvent::Finished { consumed, matched });
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Mutex;
+    use std::sync::atomic::AtomicBool;
+    use std::sync::mpsc;
+
+    use super::*;
+    use crate::secrets::MemoryStore;
+    use crate::storage::connections::sample_profile;
+
+    /// Паникует на первом событии, остальные запоминает.
+    struct PanicOnce(AtomicBool, Mutex<Vec<ConsumeEvent>>);
+    impl ConsumeSink for PanicOnce {
+        fn send(&self, e: ConsumeEvent) -> bool {
+            if !self.0.swap(true, Ordering::SeqCst) {
+                panic!("boom");
+            }
+            self.1.lock().unwrap().push(e);
+            true
+        }
+    }
+
+    #[test]
+    fn panic_yields_terminal_error_event() {
+        let params: ConsumerParams = serde_json::from_value(serde_json::json!({
+            "connectionId": "c", "groupId": "g", "topics": ["t"],
+            "autoOffsetReset": "earliest", "enableAutoCommit": false, "isolationLevel": "readCommitted",
+            "keyFormat": "auto", "valueFormat": "auto"
+        }))
+        .unwrap();
+        let mut profile = sample_profile("c");
+        profile.bootstrap_servers = "127.0.0.1:1".into();
+        let sink = PanicOnce(AtomicBool::new(false), Mutex::default());
+        let (_tx, rx) = mpsc::channel();
+        let cancel = Arc::new(AtomicBool::new(true));
+        run_consumer(&profile, &MemoryStore::default(), params, cancel, rx, &sink);
+        let events = sink.1.lock().unwrap();
+        match events.last() {
+            Some(ConsumeEvent::Error { error }) => {
+                assert_eq!(error.message, "Внутренняя ошибка consumer-сессии")
+            }
+            other => panic!("ожидали Error, получили {other:?}"),
+        }
+    }
 }

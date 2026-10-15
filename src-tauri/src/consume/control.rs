@@ -1,25 +1,43 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::consume::types::CommitTarget;
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::groups::{OffsetTarget, TopicPartitionRef};
 use crate::sync::MutexExt;
 
+/// Верхняя граница `socket.timeout.ms` consumer'а: берётся из таймаута запроса подключения.
+pub fn socket_timeout_ms(request_timeout_ms: u64) -> u64 {
+    request_timeout_ms.clamp(1_000, 300_000)
+}
+
+/// Сколько вызывающий ждёт ответа сессии. Синхронный коммит — это поиск координатора плюс сам
+/// OffsetCommit, каждый ограничен `socket.timeout.ms` (см. `socket_timeout_ms`), поэтому
+/// берём 2 × socket.timeout + 2 с запаса на опрос команд между poll'ами.
+pub fn reply_timeout(request_timeout_ms: u64) -> Duration {
+    Duration::from_millis(2 * socket_timeout_ms(request_timeout_ms)) + Duration::from_secs(2)
+}
+
 /// Команды в поток consumer-сессии (consumer не Sync — обращаться к нему можно только из его потока).
 pub enum ConsumerCommand {
     Commit {
         target: CommitTarget,
+        /// После этого момента вызывающий уже получил Timeout — команду выполнять нельзя.
+        deadline: Instant,
         reply: Sender<AppResult<Vec<OffsetTarget>>>,
     },
     Pause {
         partitions: Vec<TopicPartitionRef>,
+        /// После этого момента вызывающий уже получил Timeout — команду выполнять нельзя.
+        deadline: Instant,
         reply: Sender<AppResult<()>>,
     },
     Resume {
         partitions: Vec<TopicPartitionRef>,
+        /// После этого момента вызывающий уже получил Timeout — команду выполнять нельзя.
+        deadline: Instant,
         reply: Sender<AppResult<()>>,
     },
 }
@@ -69,10 +87,11 @@ impl ConsumerControls {
 pub fn request<T>(
     tx: &Sender<ConsumerCommand>,
     timeout: Duration,
-    make: impl FnOnce(Sender<AppResult<T>>) -> ConsumerCommand,
+    make: impl FnOnce(Sender<AppResult<T>>, Instant) -> ConsumerCommand,
 ) -> AppResult<T> {
     let (reply, rx) = mpsc::channel();
-    tx.send(make(reply)).map_err(|_| session_gone())?;
+    tx.send(make(reply, Instant::now() + timeout))
+        .map_err(|_| session_gone())?;
     match rx.recv_timeout(timeout) {
         Ok(r) => r,
         Err(RecvTimeoutError::Timeout) => Err(AppError::new(
@@ -100,28 +119,40 @@ mod tests {
             let _second = rx.recv();
             std::thread::sleep(Duration::from_millis(300));
         });
-        let ok = request(&tx, Duration::from_secs(2), |reply| {
+        let ok = request(&tx, Duration::from_secs(2), |reply, deadline| {
             ConsumerCommand::Pause {
                 partitions: vec![],
                 reply,
+                deadline,
             }
         });
         assert!(ok.is_ok());
-        let slow = request(&tx, Duration::from_millis(100), |reply| {
+        let slow = request(&tx, Duration::from_millis(100), |reply, deadline| {
             ConsumerCommand::Resume {
                 partitions: vec![],
                 reply,
+                deadline,
             }
         });
         assert_eq!(slow.unwrap_err().code, ErrorCode::Timeout);
         worker.join().unwrap();
-        let closed = request(&tx, Duration::from_millis(100), |reply| {
+        let closed = request(&tx, Duration::from_millis(100), |reply, deadline| {
             ConsumerCommand::Resume {
                 partitions: vec![],
                 reply,
+                deadline,
             }
         });
         assert_eq!(closed.unwrap_err().code, ErrorCode::NotFound);
+    }
+
+    #[test]
+    fn reply_timeout_covers_socket_bound() {
+        for ms in [0, 500, 30_000, 10_000_000] {
+            let socket = Duration::from_millis(socket_timeout_ms(ms));
+            assert!(reply_timeout(ms) >= 2 * socket + Duration::from_secs(2));
+        }
+        assert_eq!(socket_timeout_ms(30_000), 30_000);
     }
 
     #[test]

@@ -6,7 +6,7 @@ use tauri::ipc::Channel;
 
 use super::blocking;
 use crate::browse::registry::SessionRegistry;
-use crate::consume::control::{ConsumerCommand, ConsumerControls, request};
+use crate::consume::control::{ConsumerCommand, ConsumerControls, reply_timeout, request};
 use crate::consume::session::{ConsumeSink, run_consumer};
 use crate::consume::types::{
     CommitTarget, ConsumeEvent, ConsumerParams, current_user, default_group_id, validate,
@@ -74,14 +74,12 @@ pub fn start_consumer_impl<S: ConsumeSink>(
     Ok(id)
 }
 
-/// Таймаут ожидания ответа сессии: таймаут запроса подключения + 2 с запаса. Сессия коммитит
-/// синхронно (CommitMode::Sync), то есть ответ приходит не раньше окончания коммита, который
-/// ограничен request timeout клиента; запас покрывает опрос команд между poll'ами (~100 мс).
+/// Таймаут ожидания ответа сессии (`reply_timeout`): consumer создаётся с
+/// `socket.timeout.ms` = таймаут запроса подключения, а синхронный коммит состоит из поиска
+/// координатора и OffsetCommit — каждый ограничен socket.timeout, поэтому ждём 2 × это + запас.
+/// Команда несёт deadline и после таймаута не выполняется.
 fn session_timeout(st: &AppState, connection_id: &str) -> AppResult<Duration> {
-    Ok(
-        Duration::from_millis(st.profile(connection_id)?.request_timeout_ms)
-            + Duration::from_secs(2),
-    )
+    Ok(reply_timeout(st.profile(connection_id)?.request_timeout_ms))
 }
 
 #[tauri::command]
@@ -104,9 +102,10 @@ pub async fn commit_offsets_impl(
     st.guarded(&connection_id, confirm.as_deref())?;
     let timeout = session_timeout(st, &connection_id)?;
     blocking(move || {
-        request(&tx, timeout, |reply| ConsumerCommand::Commit {
+        request(&tx, timeout, |reply, deadline| ConsumerCommand::Commit {
             target,
             reply,
+            deadline,
         })
     })
     .await
@@ -121,9 +120,10 @@ pub async fn pause_partitions(
     let (connection_id, tx) = state.consumers.get(&session_id)?;
     let timeout = session_timeout(state.inner(), &connection_id)?;
     blocking(move || {
-        request(&tx, timeout, |reply| ConsumerCommand::Pause {
+        request(&tx, timeout, |reply, deadline| ConsumerCommand::Pause {
             partitions,
             reply,
+            deadline,
         })
     })
     .await
@@ -138,9 +138,10 @@ pub async fn resume_partitions(
     let (connection_id, tx) = state.consumers.get(&session_id)?;
     let timeout = session_timeout(state.inner(), &connection_id)?;
     blocking(move || {
-        request(&tx, timeout, |reply| ConsumerCommand::Resume {
+        request(&tx, timeout, |reply, deadline| ConsumerCommand::Resume {
             partitions,
             reply,
+            deadline,
         })
     })
     .await

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use crate::error::{AppError, AppResult};
+use crate::sync::MutexExt;
 
 const SERVICE: &str = "kafka-explorer";
 
@@ -54,19 +55,18 @@ pub struct MemoryStore {
 
 impl SecretStore for MemoryStore {
     fn get(&self, key: &str) -> AppResult<Option<String>> {
-        Ok(self.values.lock().unwrap().get(key).cloned())
+        Ok(self.values.lock_safe().get(key).cloned())
     }
 
     fn set(&self, key: &str, value: &str) -> AppResult<()> {
         self.values
-            .lock()
-            .unwrap()
+            .lock_safe()
             .insert(key.to_string(), value.to_string());
         Ok(())
     }
 
     fn delete(&self, key: &str) -> AppResult<()> {
-        self.values.lock().unwrap().remove(key);
+        self.values.lock_safe().remove(key);
         Ok(())
     }
 }

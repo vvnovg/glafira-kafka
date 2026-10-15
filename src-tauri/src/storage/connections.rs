@@ -1,11 +1,12 @@
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult};
+use crate::storage::fs::{read_json, write_json};
+use crate::sync::RwLockExt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -156,19 +157,17 @@ pub struct ConnectionStore {
 
 impl ConnectionStore {
     pub fn open(dir: &Path) -> AppResult<Self> {
-        fs::create_dir_all(dir)?;
+        std::fs::create_dir_all(dir)?;
         let path = dir.join("connections.json");
-        let connections = if path.exists() {
-            let file: ConnectionsFile = serde_json::from_slice(&fs::read(&path)?)?;
-            if file.schema_version > CURRENT_SCHEMA_VERSION {
+        let connections = match read_json::<ConnectionsFile>(&path)? {
+            Some(file) if file.schema_version > CURRENT_SCHEMA_VERSION => {
                 return Err(AppError::internal(format!(
                     "connections.json создан более новой версией приложения (schemaVersion {})",
                     file.schema_version
                 )));
             }
-            file.connections
-        } else {
-            Vec::new()
+            Some(file) => file.connections,
+            None => Vec::new(),
         };
         Ok(Self {
             path,
@@ -177,13 +176,12 @@ impl ConnectionStore {
     }
 
     pub fn list(&self) -> Vec<ConnectionProfile> {
-        self.cache.read().unwrap().clone()
+        self.cache.read_safe().clone()
     }
 
     pub fn get(&self, id: &str) -> AppResult<ConnectionProfile> {
         self.cache
-            .read()
-            .unwrap()
+            .read_safe()
             .iter()
             .find(|c| c.id == id)
             .cloned()
@@ -192,7 +190,7 @@ impl ConnectionStore {
 
     pub fn upsert(&self, profile: ConnectionProfile) -> AppResult<ConnectionProfile> {
         validate_profile(&profile)?;
-        let mut cache = self.cache.write().unwrap();
+        let mut cache = self.cache.write_safe();
         let mut next = cache.clone();
         match next.iter_mut().find(|c| c.id == profile.id) {
             Some(slot) => *slot = profile.clone(),
@@ -204,7 +202,7 @@ impl ConnectionStore {
     }
 
     pub fn delete(&self, id: &str) -> AppResult<()> {
-        let mut cache = self.cache.write().unwrap();
+        let mut cache = self.cache.write_safe();
         if !cache.iter().any(|c| c.id == id) {
             return Err(AppError::not_found(format!("Подключение {id} не найдено")));
         }
@@ -214,16 +212,14 @@ impl ConnectionStore {
         Ok(())
     }
 
-    /// Запись через временный файл + rename, чтобы не оставить битый JSON.
     fn persist(&self, list: &[ConnectionProfile]) -> AppResult<()> {
-        let file = ConnectionsFile {
-            schema_version: CURRENT_SCHEMA_VERSION,
-            connections: list.to_vec(),
-        };
-        let tmp = self.path.with_extension("json.tmp");
-        fs::write(&tmp, serde_json::to_vec_pretty(&file)?)?;
-        fs::rename(&tmp, &self.path)?;
-        Ok(())
+        write_json(
+            &self.path,
+            &ConnectionsFile {
+                schema_version: CURRENT_SCHEMA_VERSION,
+                connections: list.to_vec(),
+            },
+        )
     }
 }
 

@@ -5,6 +5,7 @@ pub mod kafka;
 pub mod secrets;
 pub mod state;
 pub mod storage;
+pub mod sync;
 
 use std::sync::Arc;
 

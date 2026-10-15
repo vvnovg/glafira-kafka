@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
+use crate::sync::MutexExt;
+
 /// Длительные сессии (browse, позже — consumer-сессии) по id; отмена через флаг.
 #[derive(Default)]
 pub struct SessionRegistry {
@@ -17,7 +19,7 @@ impl SessionRegistry {
     pub fn register(&self, connection_id: &str) -> (String, Arc<AtomicBool>) {
         let id = uuid::Uuid::new_v4().to_string();
         let flag = Arc::new(AtomicBool::new(false));
-        self.sessions.lock().unwrap().insert(
+        self.sessions.lock_safe().insert(
             id.clone(),
             Entry {
                 connection_id: connection_id.to_string(),
@@ -28,7 +30,7 @@ impl SessionRegistry {
     }
 
     pub fn cancel(&self, id: &str) -> bool {
-        match self.sessions.lock().unwrap().get(id) {
+        match self.sessions.lock_safe().get(id) {
             Some(e) => {
                 e.cancel.store(true, Ordering::Relaxed);
                 true
@@ -39,7 +41,7 @@ impl SessionRegistry {
 
     /// Отменяет все сессии подключения (например, при его удалении); возвращает их число.
     pub fn cancel_for(&self, connection_id: &str) -> usize {
-        let sessions = self.sessions.lock().unwrap();
+        let sessions = self.sessions.lock_safe();
         let mut n = 0;
         for e in sessions
             .values()
@@ -52,17 +54,17 @@ impl SessionRegistry {
     }
 
     pub fn remove(&self, id: &str) {
-        self.sessions.lock().unwrap().remove(id);
+        self.sessions.lock_safe().remove(id);
     }
 
     pub fn cancel_all(&self) {
-        for e in self.sessions.lock().unwrap().values() {
+        for e in self.sessions.lock_safe().values() {
             e.cancel.store(true, Ordering::Relaxed);
         }
     }
 
     pub fn len(&self) -> usize {
-        self.sessions.lock().unwrap().len()
+        self.sessions.lock_safe().len()
     }
 
     pub fn is_empty(&self) -> bool {

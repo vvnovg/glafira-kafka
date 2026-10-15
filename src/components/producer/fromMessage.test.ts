@@ -38,4 +38,28 @@ describe("browsedToMessage", () => {
     expect(browsedToMessage(base).key).toEqual({ format: "null", text: "" });
     expect(() => browsedToMessage({ ...base, value: d("string", "v", true) })).toThrow("больше 1 МБ");
   });
+
+  const base: BrowsedMessage = { topic: "t", partition: 0, offset: 0, timestamp: null, key: null, value: d("string", "v"), headers: [], size: 1 };
+
+  it("заголовки: граничные hex-значения", () => {
+    const h = (value: string) => browsedToMessage({ ...base, headers: [{ name: "h", value }] }).headers[0];
+    expect(h("0x")).toEqual({ name: "h", value: "0x", format: "string" });
+    expect(h("0xabc")).toEqual({ name: "h", value: "0xabc", format: "string" });
+    expect(h("0xABCD")).toEqual({ name: "h", value: "ABCD", format: "hex" });
+    expect(h("0xff00")).toEqual({ name: "h", value: "ff00", format: "hex" });
+  });
+
+  it("потеряные при декодировании данные и невалидный JSON", () => {
+    expect(() => browsedToMessage({ ...base, value: d("string", "a\uFFFDb") })).toThrow("с потерями");
+    expect(() => browsedToMessage({ ...base, key: d("json", "\uFFFD") })).toThrow("с потерями");
+    expect(browsedToMessage({ ...base, value: d("hex", "\uFFFD".length ? "ff" : "") }).value.format).toBe("hex");
+    const bad = { ...d("json", "{oops"), error: "Невалидный JSON" };
+    expect(browsedToMessage({ ...base, value: bad }).value).toEqual({ format: "string", text: "{oops" });
+  });
+
+  it("пустой ключ и base64", () => {
+    const m = browsedToMessage({ ...base, key: d("string", ""), value: d("base64", "AAH/") });
+    expect(m.key).toEqual({ format: "string", text: "" });
+    expect(m.value).toEqual({ format: "base64", text: "AAH/" });
+  });
 });

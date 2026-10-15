@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ConnectionProfile } from "../../api/types";
@@ -59,14 +59,17 @@ describe("ConfirmDialog", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("при busy поля и отмена заблокированы, Escape и Enter не действуют", async () => {
-    const user = userEvent.setup();
+  it("при busy поля и отмена заблокированы, Escape и Enter не действуют", () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();
-    render(<ConfirmDialog connection={dev} title="t" objectName="x" confirmLabel="Да" busy onConfirm={onConfirm} onCancel={onCancel} />);
+    const { unmount } = render(<ConfirmDialog connection={dev} title="t" objectName="x" confirmLabel="Да" busy onConfirm={() => {}} onCancel={() => {}} />);
     expect(screen.getByLabelText("Подтверждение: имя")).toBeDisabled();
+    unmount();
+    render(<ConfirmDialog connection={dev} title="t" confirmLabel="Да" busy onConfirm={onConfirm} onCancel={onCancel} />);
     expect(screen.getByRole("button", { name: "Отмена" })).toBeDisabled();
-    await user.keyboard("{Escape}{Enter}");
+    const dialog = screen.getByRole("group", { name: "t" });
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    fireEvent.keyDown(dialog, { key: "Enter" });
     expect(onCancel).not.toHaveBeenCalled();
     expect(onConfirm).not.toHaveBeenCalled();
   });

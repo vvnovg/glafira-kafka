@@ -37,8 +37,10 @@ export function TopicList({ connectionId }: { connectionId: string }) {
   const [creating, setCreating] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [deleting, setDeleting] = useState(false);
+  const [deleteTargets, setDeleteTargets] = useState<string[] | null>(null);
+  const deleting = deleteTargets !== null;
   const toggle = (name: string) =>
+    !deleting &&
     setSelected((s) => {
       const next = new Set(s);
       if (next.has(name)) next.delete(name);
@@ -101,9 +103,14 @@ export function TopicList({ connectionId }: { connectionId: string }) {
     }),
   });
   const policies = new Map<string, string | null>();
+  const policyErrors = new Map<string, string>();
   policyResults.forEach((r, i) => {
     const slice = names.slice(chunks[i] * STATS_CHUNK, (chunks[i] + 1) * STATS_CHUNK);
-    if (r.isError && !r.data) for (const n of slice) policies.set(n, null);
+    if (r.isError && !r.data)
+      for (const n of slice) {
+        policies.set(n, null);
+        policyErrors.set(n, r.error instanceof Error ? r.error.message : String((r.error as { message?: string } | null)?.message ?? r.error));
+      }
     for (const p of r.data ?? []) policies.set(p.name, p.cleanupPolicy);
   });
 
@@ -155,12 +162,13 @@ export function TopicList({ connectionId }: { connectionId: string }) {
         </button>
         {canMutate && (
           <>
-            <button type="button" onClick={() => setCreating(true)} disabled={creating}>
+            <button type="button" onClick={() => setCreating(true)} disabled={creating || deleting}>
               Создать топик
             </button>
             <button
               type="button"
               aria-pressed={selecting}
+              disabled={deleting}
               onClick={() => {
                 setSelecting((v) => !v);
                 setSelected(new Set());
@@ -169,7 +177,8 @@ export function TopicList({ connectionId }: { connectionId: string }) {
               {selecting ? "Отменить выбор" : "Выбрать"}
             </button>
             {selecting && (
-              <button type="button" className="danger" disabled={selected.size === 0} onClick={() => setDeleting(true)}>
+              <button type="button" className="danger" disabled={selected.size === 0 || deleting || creating}
+                onClick={() => setDeleteTargets([...selected].sort())}>
                 Удалить ({selected.size})
               </button>
             )}
@@ -193,8 +202,8 @@ export function TopicList({ connectionId }: { connectionId: string }) {
       {deleting && connection && (
         <DeleteTopicsPanel
           connection={connection}
-          topics={[...selected].sort()}
-          onCancel={() => setDeleting(false)}
+          topics={deleteTargets}
+          onCancel={() => setDeleteTargets(null)}
           onDone={(deleted) => {
             setSelected((s) => new Set([...s].filter((n) => !deleted.includes(n))));
             void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
@@ -231,6 +240,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                       type="checkbox"
                       aria-label={`Выбрать ${t.name}`}
                       checked={selected.has(t.name)}
+                      disabled={deleting}
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => e.stopPropagation()}
                       onChange={() => toggle(t.name)}
@@ -244,7 +254,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 <span>{t.partitionCount}</span>
                 <span>{t.replicationFactor}</span>
                 <span>{formatCount(counts.get(t.name))}</span>
-                <span title={policies.has(t.name) && policies.get(t.name) == null ? "Не удалось загрузить cleanup.policy" : undefined}>
+                <span title={policies.has(t.name) && policies.get(t.name) == null ? `Не удалось загрузить cleanup.policy: ${policyErrors.get(t.name) ?? "причина неизвестна"}` : undefined}>
                   {policies.has(t.name) ? (policies.get(t.name) ?? "—") : "…"}
                 </span>
                 <span className={t.underReplicated > 0 ? "warn" : ""}>

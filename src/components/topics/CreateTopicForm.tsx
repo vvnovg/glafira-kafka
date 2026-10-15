@@ -60,7 +60,7 @@ export function CreateTopicForm({ connection, onCreated, onCancel }: Props) {
   return (
     <div className="panel">
       <h3>Новый топик</h3>
-      <div className="form">
+      <fieldset className="form" disabled={confirming} style={{ border: 0, padding: 0, margin: 0 }}>
         <label htmlFor="ct-name">Имя топика</label>
         <input id="ct-name" value={name} onChange={(e) => setName(e.target.value)} />
         {name && nameError && <p className="warn full">{nameError}</p>}
@@ -80,7 +80,7 @@ export function CreateTopicForm({ connection, onCreated, onCancel }: Props) {
         </select>
         <label htmlFor="ct-configs">Доп. конфиги (key=value)</label>
         <textarea id="ct-configs" rows={3} value={extra} onChange={(e) => setExtra(e.target.value)} />
-      </div>
+      </fieldset>
       {(extraError || numbersError) && <p className="warn">{extraError ?? numbersError}</p>}
       {valid && <pre className="muted">{buildCreateCommand(connection.bootstrapServers, spec)}</pre>}
       {create.error && <ErrorBanner error={create.error} />}

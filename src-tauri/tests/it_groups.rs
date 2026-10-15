@@ -220,3 +220,130 @@ async fn active_group_cannot_be_reset_or_deleted() {
         .unwrap();
     assert!(!list.groups.iter().any(|s| s.group_id == g1));
 }
+
+/// Ждёт, пока топик исчезнет из метаданных брокера.
+fn wait_topic_gone(bs: &str, name: &str) {
+    use rdkafka::ClientConfig;
+    use rdkafka::consumer::BaseConsumer;
+    use std::time::{Duration, Instant};
+    let c: BaseConsumer = ClientConfig::new()
+        .set("bootstrap.servers", bs)
+        .create()
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    loop {
+        let md = c.fetch_metadata(None, Duration::from_secs(2)).unwrap();
+        if !md.topics().iter().any(|t| t.name() == name) {
+            return;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "топик {name} не удалился за 15 с"
+        );
+        std::thread::sleep(Duration::from_millis(200));
+    }
+}
+
+/// Удалённый топик с коммитами группы не роняет весь просмотр: строки/группы
+/// с живыми топиками получают данные, удалённые помечаются ошибкой.
+/// cp-kafka 7.6 при удалении топика сам убирает коммиты групп по нему, так что строка
+/// удалённого топика обычно исчезает; окно до очистки покрывает
+/// bounds_for_missing_topic_degrade_per_partition.
+#[tokio::test(flavor = "multi_thread")]
+async fn deleted_topic_degrades_per_row() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let (healthy, healthy_group) = seeded(&bs).await;
+    let doomed = common::TempTopic::create(&bs, "it-grp-doomed", 1).await;
+    let mixed = common::TempGroup::new(&bs, "it-grp-mixed");
+    common::commit_group_offsets(&bs, &mixed, &doomed, &[(0, 0)]);
+    common::commit_group_offsets(&bs, &mixed, &healthy, &[(0, 1)]);
+    let h = handles(&bs);
+    let (hg, mg, ht, dt) = (
+        healthy_group.to_string(),
+        mixed.to_string(),
+        healthy.to_string(),
+        doomed.to_string(),
+    );
+    // Прогрев: клиент видел удаляемый топик в метаданных (как долгоживущий пул).
+    {
+        let (h, mg) = (h.clone(), mg.clone());
+        tokio::task::spawn_blocking(move || assert_eq!(group_offsets(&h, &mg).unwrap().len(), 2))
+            .await
+            .unwrap();
+    }
+    common::delete_topics_sync(&bs, std::slice::from_ref(&dt));
+    {
+        let (bs, dt) = (bs.clone(), dt.clone());
+        tokio::task::spawn_blocking(move || wait_topic_gone(&bs, &dt))
+            .await
+            .unwrap();
+    }
+    tokio::task::spawn_blocking(move || {
+        let limit = h.timeout;
+        let started = std::time::Instant::now();
+        let rows = group_offsets(&h, &mg);
+        eprintln!("group_offsets: {:?} за {:?}", rows, started.elapsed());
+        let rows = rows.expect("group_offsets не должен падать целиком");
+        assert!(started.elapsed() < limit, "group_offsets сжёг дедлайн");
+        let live = rows
+            .iter()
+            .find(|r| r.topic == ht)
+            .expect("строка живого топика");
+        assert_eq!(
+            (live.committed, live.log_end, live.lag),
+            (Some(1), Some(5), Some(4))
+        );
+        assert!(live.error.is_none(), "{:?}", live.error);
+        if let Some(dead) = rows.iter().find(|r| r.topic == dt) {
+            assert_eq!(dead.lag, None);
+            assert!(dead.error.is_some());
+        }
+
+        let started = std::time::Instant::now();
+        let lag = groups_lag(&h, &[hg.clone(), mg.clone()]);
+        eprintln!("groups_lag: {:?} за {:?}", lag, started.elapsed());
+        let lag = lag.expect("groups_lag не должен падать целиком");
+        assert!(started.elapsed() < limit, "groups_lag сжёг дедлайн");
+        let healthy_lag = lag.iter().find(|l| l.group_id == hg).unwrap();
+        assert_eq!(healthy_lag.total_lag, Some(3));
+        assert!(healthy_lag.error.is_none(), "{:?}", healthy_lag.error);
+
+        let started = std::time::Instant::now();
+        let tg = topic_groups(&h, &ht);
+        eprintln!("topic_groups: {:?} за {:?}", tg, started.elapsed());
+        let tg = tg.expect("topic_groups не должен падать целиком");
+        assert!(started.elapsed() < limit, "topic_groups сжёг дедлайн");
+        let g = tg.groups.iter().find(|x| x.group_id == hg).unwrap();
+        assert_eq!(g.lag, Some(3));
+        let m = tg.groups.iter().find(|x| x.group_id == mg).unwrap();
+        assert_eq!(m.lag, Some(4));
+    })
+    .await
+    .unwrap();
+    drop(doomed);
+}
+
+/// Партиция несуществующего топика (окно между удалением топика и очисткой коммитов
+/// координатором) получает ошибку только в своей строке и не тянет дедлайн.
+#[tokio::test(flavor = "multi_thread")]
+async fn bounds_for_missing_topic_degrade_per_partition() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let topic = common::TempTopic::create(&bs, "it-grp", 1).await;
+    let h = handles(&bs);
+    let (live, ghost) = (topic.to_string(), common::unique_topic("it-ghost"));
+    tokio::task::spawn_blocking(move || {
+        let keys = vec![(live.clone(), 0), (ghost.clone(), 0)];
+        let started = std::time::Instant::now();
+        let b = kafka_explorer_lib::kafka::topics::fetch_bounds(&h.consumer, &keys, h.timeout)
+            .expect("ошибка одной партиции не роняет запрос");
+        assert!(started.elapsed() < h.timeout);
+        assert_eq!(b[&(live, 0)], Ok((0, 0)));
+        assert!(b[&(ghost, 0)].is_err());
+    })
+    .await
+    .unwrap();
+}

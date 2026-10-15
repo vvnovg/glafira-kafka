@@ -66,7 +66,7 @@ fn decode_hex(text: &str) -> Result<Vec<u8>, String> {
 }
 
 pub fn encode_payload(p: &PayloadInput, what: &str) -> AppResult<Option<Vec<u8>>> {
-    let bad = |e: String| AppError::invalid(format!("Некорректное {what}: {e}"));
+    let bad = |e: String| AppError::invalid(format!("Не удалось закодировать {what}: {e}"));
     Ok(match p.format {
         PayloadFormat::Null => None,
         PayloadFormat::String => Some(p.text.as_bytes().to_vec()),

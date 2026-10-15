@@ -10,12 +10,14 @@ import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { TopicActions } from "./TopicActions";
+import { TopicGroups } from "./TopicGroups";
 
-type SubTab = "messages" | "partitions" | "configs";
+type SubTab = "messages" | "partitions" | "configs" | "groups";
 const SUBTABS: { id: SubTab; label: string }[] = [
   { id: "messages", label: "Сообщения" },
   { id: "partitions", label: "Партиции" },
   { id: "configs", label: "Конфигурация" },
+  { id: "groups", label: "Consumer groups" },
 ];
 
 export function TopicDetails({ connectionId, topic }: { connectionId: string; topic: string }) {
@@ -66,6 +68,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
       </div>
       {sub === "partitions" && <PartitionsTable topic={t} />}
       {sub === "configs" && <TopicConfigs connectionId={connectionId} topic={topic} />}
+      {sub === "groups" && <TopicGroups connectionId={connectionId} topic={topic} />}
     </div>
   );
 }

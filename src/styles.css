@@ -81,7 +81,7 @@ tr.clickable:hover, .row.clickable:hover { background: var(--bg-alt); }
 .row.header { position: sticky; top: 0; z-index: 1; background: var(--bg-alt); color: var(--muted); }
 tr.selected { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 .row.selected { background: color-mix(in srgb, var(--accent) 15%, transparent); }
-.topic-row { grid-template-columns: minmax(200px, 1fr) 90px 60px 120px 90px; }
+.topic-row { grid-template-columns: 28px minmax(200px, 1fr) 90px 60px 120px 130px 90px; }
 .msg-row { grid-template-columns: 50px 90px 190px minmax(80px, 1fr) minmax(160px, 3fr) 50px 70px; }
 .browse { display: flex; flex-direction: column; gap: 8px; height: 100%; }
 .browse-body { display: flex; gap: 8px; flex: 1; min-height: 300px; }

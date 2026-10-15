@@ -5,6 +5,9 @@ import { api } from "../../api/client";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { useWorkspace } from "../../state/workspace";
+import { useConnection } from "../../lib/useConnection";
+import { CreateTopicForm } from "./CreateTopicForm";
+import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import {
@@ -29,6 +32,19 @@ export function TopicList({ connectionId }: { connectionId: string }) {
   const debouncedQuery = useDebouncedValue(query, 250);
   const queryClient = useQueryClient();
   const open = useWorkspace((s) => s.open);
+  const connection = useConnection(connectionId);
+  const canMutate = connection !== undefined && !connection.readOnly;
+  const [creating, setCreating] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const toggle = (name: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
 
   const q = useQuery({
     queryKey: ["topics", connectionId],
@@ -73,6 +89,23 @@ export function TopicList({ connectionId }: { connectionId: string }) {
       isError: statsResults[i]?.isError ?? false,
     })),
   );
+
+  const policyResults = useQueries({
+    queries: chunks.map((c) => {
+      const slice = names.slice(c * STATS_CHUNK, (c + 1) * STATS_CHUNK);
+      return {
+        queryKey: ["topicPolicies", connectionId, slice],
+        queryFn: () => api.getTopicPolicies(connectionId, slice),
+        staleTime: 60_000,
+      };
+    }),
+  });
+  const policies = new Map<string, string | null>();
+  policyResults.forEach((r, i) => {
+    const slice = names.slice(chunks[i] * STATS_CHUNK, (chunks[i] + 1) * STATS_CHUNK);
+    if (r.isError && !r.data) for (const n of slice) policies.set(n, null);
+    for (const p of r.data ?? []) policies.set(p.name, p.cleanupPolicy);
+  });
 
   if (q.isPending) return <p className="empty">Загрузка списка топиков…</p>;
   if (q.error)
@@ -120,16 +153,62 @@ export function TopicList({ connectionId }: { connectionId: string }) {
         >
           Обновить
         </button>
+        {canMutate && (
+          <>
+            <button type="button" onClick={() => setCreating(true)} disabled={creating}>
+              Создать топик
+            </button>
+            <button
+              type="button"
+              aria-pressed={selecting}
+              onClick={() => {
+                setSelecting((v) => !v);
+                setSelected(new Set());
+              }}
+            >
+              {selecting ? "Отменить выбор" : "Выбрать"}
+            </button>
+            {selecting && (
+              <button type="button" className="danger" disabled={selected.size === 0} onClick={() => setDeleting(true)}>
+                Удалить ({selected.size})
+              </button>
+            )}
+          </>
+        )}
         <span className="muted">
           {rows.length} из {q.data.length}
         </span>
       </div>
+      {creating && connection && (
+        <CreateTopicForm
+          connection={connection}
+          onCancel={() => setCreating(false)}
+          onCreated={(name) => {
+            setCreating(false);
+            void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
+            open({ kind: "topic", connectionId, topic: name });
+          }}
+        />
+      )}
+      {deleting && connection && (
+        <DeleteTopicsPanel
+          connection={connection}
+          topics={[...selected].sort()}
+          onCancel={() => setDeleting(false)}
+          onDone={(deleted) => {
+            setSelected((s) => new Set([...s].filter((n) => !deleted.includes(n))));
+            void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
+          }}
+        />
+      )}
       <div className="vlist" ref={parentRef}>
         <div className="row header topic-row" style={{ height: ROW_HEIGHT }}>
+          <span />
           <span>Имя</span>
           <span>Партиции</span>
           <span>RF</span>
           <span>Сообщений (≈)</span>
+          <span>cleanup.policy</span>
           <span>Under-repl.</span>
         </div>
         <div
@@ -143,9 +222,21 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 className="row clickable topic-row"
                 style={{ top: item.start, height: ROW_HEIGHT }}
                 {...activateProps(() =>
-                  open({ kind: "topic", connectionId, topic: t.name }),
+                  selecting ? toggle(t.name) : open({ kind: "topic", connectionId, topic: t.name }),
                 )}
               >
+                <span>
+                  {selecting && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Выбрать ${t.name}`}
+                      checked={selected.has(t.name)}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onChange={() => toggle(t.name)}
+                    />
+                  )}
+                </span>
                 <span title={t.name}>
                   {t.name}
                   {t.internal && <span className="muted"> (внутр.)</span>}
@@ -153,6 +244,9 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 <span>{t.partitionCount}</span>
                 <span>{t.replicationFactor}</span>
                 <span>{formatCount(counts.get(t.name))}</span>
+                <span title={policies.has(t.name) && policies.get(t.name) == null ? "Не удалось загрузить cleanup.policy" : undefined}>
+                  {policies.has(t.name) ? (policies.get(t.name) ?? "—") : "…"}
+                </span>
                 <span className={t.underReplicated > 0 ? "warn" : ""}>
                   {t.underReplicated}
                 </span>

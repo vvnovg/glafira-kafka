@@ -1,0 +1,60 @@
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ConnectionProfile } from "../../api/types";
+import { renderWithClient } from "../../test/render";
+import { newProfile } from "../connections/profile";
+
+vi.mock("../../api/client", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("../../api/client")>();
+  return {
+    ...orig,
+    api: {
+      createTopic: vi.fn().mockResolvedValue(undefined),
+      getClusterOverview: vi.fn().mockResolvedValue({ brokers: [{ id: 1, host: "h", port: 1 }] }),
+    },
+  };
+});
+
+import { api } from "../../api/client";
+import { CreateTopicForm } from "./CreateTopicForm";
+
+const dev: ConnectionProfile = { ...newProfile(), id: "c", name: "dev-1", environment: "dev" };
+const prod: ConnectionProfile = { ...dev, environment: "prod", name: "prod-1" };
+
+beforeEach(() => vi.clearAllMocks());
+
+describe("CreateTopicForm", () => {
+  it("валидирует имя, показывает команду и создаёт топик", async () => {
+    const user = userEvent.setup();
+    const onCreated = vi.fn();
+    renderWithClient(<CreateTopicForm connection={dev} onCreated={onCreated} onCancel={() => {}} />);
+    await user.type(screen.getByLabelText("Имя топика"), "bad name");
+    expect(screen.getByText(/Недопустимый символ/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Создать" })).toBeDisabled();
+    await user.clear(screen.getByLabelText("Имя топика"));
+    await user.type(screen.getByLabelText("Имя топика"), "orders");
+    await user.clear(screen.getByLabelText("Партиции"));
+    await user.type(screen.getByLabelText("Партиции"), "3");
+    await user.selectOptions(screen.getByLabelText("Пресет"), "compact");
+    expect(screen.getByText(/--topic orders --partitions 3/)).toHaveTextContent("--config cleanup.policy=compact");
+    await user.click(screen.getByRole("button", { name: "Создать" }));
+    expect(api.createTopic).toHaveBeenCalledWith(
+      "c",
+      { name: "orders", partitions: 3, replicationFactor: 1, configs: { "cleanup.policy": "compact" } },
+      null,
+    );
+    await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("orders"));
+  });
+
+  it("в prod просит имя подключения перед созданием", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<CreateTopicForm connection={prod} onCreated={() => {}} onCancel={() => {}} />);
+    await user.type(screen.getByLabelText("Имя топика"), "t");
+    await user.click(screen.getByRole("button", { name: "Создать" }));
+    expect(api.createTopic).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText("Имя подключения"), "prod-1");
+    await user.click(screen.getByRole("button", { name: "Создать топик" }));
+    expect(api.createTopic).toHaveBeenCalledWith("c", expect.objectContaining({ name: "t" }), "prod-1");
+  });
+});

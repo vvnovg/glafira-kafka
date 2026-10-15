@@ -44,6 +44,33 @@ describe("ConfirmDialog", () => {
     expect(onCancel).toHaveBeenCalled();
   });
 
+  it("Escape отменяет, Enter подтверждает, фокус в первом поле", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    render(<ConfirmDialog connection={dev} title="t" objectName="x" confirmLabel="Да" onConfirm={onConfirm} onCancel={onCancel} />);
+    const input = screen.getByLabelText("Подтверждение: имя");
+    expect(input).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onConfirm).not.toHaveBeenCalled();
+    await user.type(input, "x{Enter}");
+    expect(onConfirm).toHaveBeenCalledWith({ confirm: null, typedName: "x" });
+    await user.keyboard("{Escape}");
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("при busy поля и отмена заблокированы, Escape и Enter не действуют", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    render(<ConfirmDialog connection={dev} title="t" objectName="x" confirmLabel="Да" busy onConfirm={onConfirm} onCancel={onCancel} />);
+    expect(screen.getByLabelText("Подтверждение: имя")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Отмена" })).toBeDisabled();
+    await user.keyboard("{Escape}{Enter}");
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it("needsConfirmation", () => {
     expect(needsConfirmation(dev)).toBe(false);
     expect(needsConfirmation(dev, "orders")).toBe(true);

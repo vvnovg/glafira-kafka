@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import type { Confirmation, ConnectionProfile } from "../../api/types";
 
 /** Нужен ли диалог: prod-подключение или операция с вводом имени объекта (удаление, purge). */
@@ -39,25 +39,45 @@ export function ConfirmDialog({
 }: Props) {
   const [connName, setConnName] = useState("");
   const [typed, setTyped] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
   const isProd = connection.environment === "prod";
   const ok =
     (!isProd || connName.trim() === connection.name.trim()) &&
     (objectName === undefined || typed.trim() === objectName);
 
+  useEffect(() => {
+    rootRef.current?.querySelector("input")?.focus();
+  }, []);
+
+  const submit = () =>
+    onConfirm({
+      confirm: isProd ? connName.trim() : null,
+      typedName: objectName !== undefined ? typed.trim() : null,
+    });
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      if (!busy) onCancel();
+    } else if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement)) {
+      e.preventDefault();
+      if (ok && !busy) submit();
+    }
+  };
+
   return (
-    <div className="confirm" role="group" aria-label={title}>
+    <div className="confirm" role="group" aria-label={title} ref={rootRef} onKeyDown={onKeyDown}>
       <strong>{title}</strong>
       {children}
       {objectName !== undefined && (
         <label>
           Для подтверждения введите {objectLabel} <code>{objectName}</code>
-          <input aria-label={`Подтверждение: ${objectLabel}`} value={typed} onChange={(e) => setTyped(e.target.value)} />
+          <input aria-label={`Подтверждение: ${objectLabel}`} value={typed} disabled={busy} onChange={(e) => setTyped(e.target.value)} />
         </label>
       )}
       {isProd && (
         <label>
           Это prod-подключение. Введите его имя <code>{connection.name}</code>
-          <input aria-label="Имя подключения" value={connName} onChange={(e) => setConnName(e.target.value)} />
+          <input aria-label="Имя подключения" value={connName} disabled={busy} onChange={(e) => setConnName(e.target.value)} />
         </label>
       )}
       <div className="toolbar">
@@ -65,16 +85,11 @@ export function ConfirmDialog({
           type="button"
           className={danger ? "danger" : "primary"}
           disabled={!ok || busy}
-          onClick={() =>
-            onConfirm({
-              confirm: isProd ? connName.trim() : null,
-              typedName: objectName !== undefined ? typed.trim() : null,
-            })
-          }
+          onClick={submit}
         >
           {confirmLabel}
         </button>
-        <button type="button" onClick={onCancel}>
+        <button type="button" disabled={busy} onClick={onCancel}>
           Отмена
         </button>
       </div>

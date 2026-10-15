@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { PayloadFormat, PayloadInput, ProduceMessage, ProducerSettings } from "../../api/types";
@@ -13,11 +13,15 @@ import { HeadersEditor } from "./HeadersEditor";
 const FORMATS: PayloadFormat[] = ["string", "json", "hex", "base64", "null"];
 
 function PayloadField({ label, value, onChange }: { label: string; value: PayloadInput; onChange: (v: PayloadInput) => void }) {
+  const id = useId();
   return (
     <div className="payload-field">
       <div className="toolbar">
-        <label htmlFor={`pf-${label}`}>{label}</label>
-        <select aria-label={`Формат: ${label}`} value={value.format} onChange={(e) => onChange({ ...value, format: e.target.value as PayloadFormat })}>
+        <label htmlFor={`${id}-text`}>{label}</label>
+        <label htmlFor={`${id}-format`} className="muted">
+          Формат {label === "Ключ" ? "ключа" : "значения"}
+        </label>
+        <select id={`${id}-format`} value={value.format} onChange={(e) => onChange({ ...value, format: e.target.value as PayloadFormat })}>
           {FORMATS.map((f) => (
             <option key={f} value={f}>
               {f}
@@ -26,7 +30,7 @@ function PayloadField({ label, value, onChange }: { label: string; value: Payloa
         </select>
       </div>
       <textarea
-        id={`pf-${label}`}
+        id={`${id}-text`}
         rows={label === "Значение" ? 8 : 2}
         disabled={value.format === "null"}
         value={value.text}
@@ -39,15 +43,12 @@ function PayloadField({ label, value, onChange }: { label: string; value: Payloa
 export function ProducerPanel({ connectionId, prefill }: { connectionId: string; prefill?: ProducerPrefill }) {
   const connection = useConnection(connectionId);
   const queryClient = useQueryClient();
+  const uid = useId();
   const [form, setForm] = useState<ProducerForm>(() =>
     prefill ? messageToForm(prefill.message, prefill.settings) : emptyProducerForm(),
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
-  // Новый prefill («Отправить повторно», «Отправить сообщение» из топика) заменяет форму.
-  useEffect(() => {
-    if (prefill) setForm(messageToForm(prefill.message, prefill.settings));
-  }, [prefill]);
   const topics = useQuery({ queryKey: ["topics", connectionId], queryFn: () => api.listTopics(connectionId) });
   const send = useMutation({
     mutationFn: ({ message, confirm }: { message: ProduceMessage; confirm: string | null }) =>
@@ -57,8 +58,40 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
       void queryClient.invalidateQueries({ queryKey: ["history", connectionId] });
     },
   });
-  const set = (patch: Partial<ProducerForm>) => setForm((f) => ({ ...f, ...patch }));
-  const setSettings = (patch: Partial<ProducerSettings>) => setForm((f) => ({ ...f, settings: { ...f.settings, ...patch } }));
+  // Новый prefill («Отправить повторно», «Отправить сообщение» из топика) заменяет форму.
+  useEffect(() => {
+    if (prefill) {
+      setForm(messageToForm(prefill.message, prefill.settings));
+      send.reset();
+      setFormError(null);
+      setConfirming(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill]);
+  // Правка формы делает прошлый результат неактуальным.
+  const edited = () => {
+    if (send.data || send.error) send.reset();
+  };
+  const set = (patch: Partial<ProducerForm>) => {
+    edited();
+    setForm((f) => ({ ...f, ...patch }));
+  };
+  const setSettings = (patch: Partial<ProducerSettings>) => {
+    edited();
+    setForm((f) => ({ ...f, settings: { ...f.settings, ...patch } }));
+  };
+
+  const requestSend = () => {
+    if (!connection) return;
+    if (!needsConfirmation(connection)) return submit(null);
+    try {
+      formToMessage(form);
+      setFormError(null);
+      setConfirming(true);
+    } catch (e) {
+      setFormError((e as Error).message);
+    }
+  };
 
   const submit = (confirm: string | null) => {
     try {
@@ -80,13 +113,13 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
       </div>
       {readOnly && <p className="warn" role="alert">Подключение открыто только для чтения — отправка недоступна.</p>}
       <div className="form">
-        <label htmlFor="pr-topic">Топик</label>
-        <input id="pr-topic" list={`topics-${connectionId}`} value={form.topic} onChange={(e) => set({ topic: e.target.value })} />
-        <datalist id={`topics-${connectionId}`}>
+        <label htmlFor={`${uid}-topic`}>Топик</label>
+        <input id={`${uid}-topic`} list={`${uid}-topics`} value={form.topic} onChange={(e) => set({ topic: e.target.value })} />
+        <datalist id={`${uid}-topics`}>
           {topics.data?.filter((t) => !t.internal).map((t) => <option key={t.name} value={t.name} />)}
         </datalist>
-        <label htmlFor="pr-partition">Партиция</label>
-        <input id="pr-partition" placeholder="авто" value={form.partition} onChange={(e) => set({ partition: e.target.value })} />
+        <label htmlFor={`${uid}-partition`}>Партиция</label>
+        <input id={`${uid}-partition`} placeholder="авто" value={form.partition} onChange={(e) => set({ partition: e.target.value })} />
       </div>
       <PayloadField label="Ключ" value={form.key} onChange={(key) => set({ key })} />
       <PayloadField label="Значение" value={form.value} onChange={(value) => set({ value })} />
@@ -147,7 +180,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
               type="button"
               className="primary"
               disabled={send.isPending}
-              onClick={() => (needsConfirmation(connection) ? setConfirming(true) : submit(null))}
+              onClick={requestSend}
             >
               Отправить
             </button>

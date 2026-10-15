@@ -5,6 +5,13 @@ export function HeadersEditor({ headers, onChange }: { headers: HeaderInput[]; o
   return (
     <fieldset className="headers-editor">
       <legend>Заголовки</legend>
+      {headers.length > 0 && (
+        <div className="toolbar muted headers-captions">
+          <span>Имя</span>
+          <span>Значение</span>
+          <span>Формат</span>
+        </div>
+      )}
       {headers.map((h, i) => (
         <div key={i} className="toolbar">
           <input aria-label={`Имя заголовка ${i + 1}`} placeholder="имя" value={h.name} onChange={(e) => set(i, { name: e.target.value })} />

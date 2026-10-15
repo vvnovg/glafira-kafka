@@ -99,3 +99,4 @@ tr.selected { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 .producer textarea { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .payload-field { display: flex; flex-direction: column; gap: 4px; }
 .headers-editor { border: 1px solid var(--border); border-radius: 4px; display: flex; flex-direction: column; gap: 4px; }
+.headers-captions span { width: 160px; }

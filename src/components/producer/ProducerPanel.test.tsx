@@ -83,4 +83,24 @@ describe("ProducerPanel", () => {
     await user.click(screen.getByRole("button", { name: "Отправить" }));
     expect(await screen.findByTitle(/не вернул offset/)).toHaveTextContent("—");
   });
+
+  it("prod: ошибка валидации вместо диалога", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ProducerPanel connectionId="prod" />);
+    await screen.findByLabelText("Топик");
+    await user.click(screen.getByRole("button", { name: "Отправить" }));
+    expect(screen.getByText("Укажите топик")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Имя подключения")).not.toBeInTheDocument();
+  });
+
+  it("правка формы убирает старый результат; у формата есть видимая подпись", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ProducerPanel connectionId="dev" />);
+    expect(await screen.findByLabelText("Формат значения")).toBeVisible();
+    await user.type(screen.getByLabelText("Топик"), "orders");
+    await user.click(screen.getByRole("button", { name: "Отправить" }));
+    await screen.findByText(/партиция 0, offset 41/);
+    await user.type(screen.getByLabelText("Значение"), "x");
+    expect(screen.queryByText(/партиция 0, offset 41/)).not.toBeInTheDocument();
+  });
 });

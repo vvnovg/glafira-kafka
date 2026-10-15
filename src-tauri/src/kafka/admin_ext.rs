@@ -120,7 +120,6 @@ unsafe fn slice<'a, T>(p: *const T, n: usize) -> &'a [T] {
 
 /// # Safety
 /// `e` — NULL или живой `rd_kafka_error_t`, принадлежащий событию результата (не освобождается).
-#[allow(dead_code)] // используется функциями consumer-групп (Task 7)
 unsafe fn error_obj(e: *const rd::rd_kafka_error_t) -> Option<ItemError> {
     if e.is_null() {
         return None;
@@ -292,4 +291,371 @@ pub fn incremental_alter_topic_configs(
         }
     }
     Ok(Ok(()))
+}
+
+// ---- consumer groups ----
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupListing {
+    pub group_id: String,
+    /// Stable, Empty, PreparingRebalance, CompletingRebalance, Dead, Unknown.
+    pub state: String,
+    pub is_simple: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MemberRaw {
+    pub member_id: String,
+    pub client_id: String,
+    pub host: String,
+    pub assignment: Vec<(String, i32)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupDescriptionRaw {
+    pub group_id: String,
+    pub state: String,
+    pub assignor: String,
+    pub members: Vec<MemberRaw>,
+    pub error: Option<ItemError>,
+}
+
+struct ListOffsetsRequest(*mut rd::rd_kafka_ListConsumerGroupOffsets_t);
+impl Drop for ListOffsetsRequest {
+    fn drop(&mut self) {
+        // SAFETY: ненулевой указатель из rd_kafka_ListConsumerGroupOffsets_new, владеем им.
+        // rd_kafka_ListConsumerGroupOffsets кладёт в свой op копию запроса
+        // (rd_kafka_ListConsumerGroupOffsets_copy), исходный остаётся нашим.
+        unsafe { rd::rd_kafka_ListConsumerGroupOffsets_destroy(self.0) }
+    }
+}
+
+struct AlterOffsetsRequest(*mut rd::rd_kafka_AlterConsumerGroupOffsets_t);
+impl Drop for AlterOffsetsRequest {
+    fn drop(&mut self) {
+        // SAFETY: ненулевой указатель из rd_kafka_AlterConsumerGroupOffsets_new, владеем им.
+        // rd_kafka_AlterConsumerGroupOffsets кладёт в свой op копию запроса
+        // (rd_kafka_AlterConsumerGroupOffsets_copy), исходный остаётся нашим.
+        unsafe { rd::rd_kafka_AlterConsumerGroupOffsets_destroy(self.0) }
+    }
+}
+
+struct PartitionList(*mut rd::rd_kafka_topic_partition_list_t);
+impl Drop for PartitionList {
+    fn drop(&mut self) {
+        // SAFETY: ненулевой указатель из rd_kafka_topic_partition_list_new, владеем им.
+        // rd_kafka_AlterConsumerGroupOffsets_new копирует список
+        // (rd_kafka_topic_partition_list_copy), поэтому исходный освобождаем сами.
+        unsafe { rd::rd_kafka_topic_partition_list_destroy(self.0) }
+    }
+}
+
+fn state_name(s: rd::rd_kafka_consumer_group_state_t) -> String {
+    // SAFETY: rd_kafka_consumer_group_state_name принимает любое значение перечисления и
+    // возвращает указатель на статическую строку; string() обрабатывает NULL.
+    unsafe { string(rd::rd_kafka_consumer_group_state_name(s)) }
+}
+
+/// # Safety
+/// `list` — NULL или живой список партиций, принадлежащий событию результата и
+/// не изменяемый на время вызова.
+unsafe fn read_partitions(list: *const rd::rd_kafka_topic_partition_list_t) -> Vec<RawPartition> {
+    if list.is_null() {
+        return Vec::new();
+    }
+    // SAFETY: см. контракт функции — указатель ненулевой и указывает на живой список.
+    let l = unsafe { &*list };
+    let cnt = usize::try_from(l.cnt).unwrap_or(0);
+    // SAFETY: elems — массив как минимум из cnt инициализированных элементов списка.
+    unsafe { slice(l.elems, cnt) }
+        .iter()
+        .map(|e| RawPartition {
+            // SAFETY: имя топика принадлежит элементу списка и копируется сразу.
+            topic: unsafe { string(e.topic) },
+            partition: e.partition,
+            offset: e.offset,
+            error: (e.err != NO_ERROR).then(|| {
+                let code: RDKafkaErrorCode = e.err.into();
+                ItemError {
+                    message: code.to_string(),
+                    code,
+                }
+            }),
+        })
+        .collect()
+}
+
+fn partition_list(items: &[(String, i32, i64)]) -> KafkaResult<PartitionList> {
+    let size = i32::try_from(items.len())
+        .map_err(|_| KafkaError::AdminOpCreation("Слишком много партиций в запросе".into()))?;
+    // SAFETY: создаём пустой список нужной ёмкости; владение переходит к PartitionList.
+    let list = unsafe { rd::rd_kafka_topic_partition_list_new(size) };
+    if list.is_null() {
+        return Err(null_result("список партиций"));
+    }
+    let list = PartitionList(list);
+    for (topic, partition, offset) in items {
+        let t = cstring(topic)?;
+        // SAFETY: список жив; t живёт до конца итерации, librdkafka копирует имя топика.
+        let e = unsafe { rd::rd_kafka_topic_partition_list_add(list.0, t.as_ptr(), *partition) };
+        if e.is_null() {
+            return Err(null_result("элемент списка партиций"));
+        }
+        // SAFETY: e — ненулевой указатель на только что добавленный элемент списка; он
+        // действителен до следующего add (возможен realloc), а пишем мы до него.
+        unsafe { (*e).offset = *offset };
+    }
+    Ok(list)
+}
+
+/// Результат единственной группы из ответа ListConsumerGroupOffsets/AlterConsumerGroupOffsets.
+///
+/// # Safety
+/// `groups` — NULL или массив из `n` живых group_result, принадлежащих событию,
+/// которое переживает вызов.
+unsafe fn single_group_result(
+    groups: *const *const rd::rd_kafka_group_result_t,
+    n: usize,
+) -> KafkaResult<ItemResult<Vec<RawPartition>>> {
+    // SAFETY: см. контракт функции.
+    let Some(g) = unsafe { slice(groups, n) }.first().copied() else {
+        return Err(unexpected_event());
+    };
+    if g.is_null() {
+        return Err(unexpected_event());
+    }
+    // SAFETY: g — живой group_result; объект ошибки (или NULL) принадлежит ему.
+    if let Some(e) = unsafe { error_obj(rd::rd_kafka_group_result_error(g)) } {
+        return Ok(Err(e));
+    }
+    // SAFETY: g жив; список партиций (или NULL) принадлежит group_result.
+    Ok(Ok(unsafe {
+        read_partitions(rd::rd_kafka_group_result_partitions(g))
+    }))
+}
+
+/// Все consumer groups кластера. Второй элемент — частичные ошибки (например, брокер,
+/// не ответивший на ListGroups); список групп при этом может быть неполным.
+pub fn list_consumer_groups(
+    admin: &Admin,
+    timeout: Duration,
+) -> KafkaResult<(Vec<GroupListing>, Vec<ItemError>)> {
+    let ev = run(
+        admin,
+        rd::rd_kafka_admin_op_t::RD_KAFKA_ADMIN_OP_LISTCONSUMERGROUPS,
+        timeout,
+        // SAFETY: rk, opts, queue живы на время вызова (гарантия `run`); librdkafka
+        // копирует опции в свой op.
+        |rk, opts, queue| unsafe { rd::rd_kafka_ListConsumerGroups(rk, opts, queue) },
+    )?;
+    // SAFETY: событие живо; результат (или NULL при другом типе события) принадлежит событию.
+    let result = unsafe { rd::rd_kafka_event_ListConsumerGroups_result(ev.0) };
+    if result.is_null() {
+        return Err(unexpected_event());
+    }
+    let (mut n, mut m) = (0usize, 0usize);
+    // SAFETY: result жив, пока жив ev; n — валидный выходной параметр.
+    let valid = unsafe { rd::rd_kafka_ListConsumerGroups_result_valid(result, &mut n) };
+    // SAFETY: массив из n листингов, принадлежащих событию; срез не переживает ev.
+    let groups = unsafe { slice(valid, n) }
+        .iter()
+        .filter(|g| !g.is_null())
+        .map(|&g| {
+            // SAFETY: g — ненулевой живой листинг события; строка копируется сразу.
+            let group_id = unsafe { string(rd::rd_kafka_ConsumerGroupListing_group_id(g)) };
+            // SAFETY: то же.
+            let state = unsafe { rd::rd_kafka_ConsumerGroupListing_state(g) };
+            // SAFETY: то же.
+            let simple = unsafe { rd::rd_kafka_ConsumerGroupListing_is_simple_consumer_group(g) };
+            GroupListing {
+                group_id,
+                state: state_name(state),
+                is_simple: simple != 0,
+            }
+        })
+        .collect();
+    // SAFETY: result жив, пока жив ev; m — валидный выходной параметр.
+    let errs = unsafe { rd::rd_kafka_ListConsumerGroups_result_errors(result, &mut m) };
+    // SAFETY: массив из m объектов ошибок, принадлежащих событию; срез не переживает ev.
+    let errors = unsafe { slice(errs, m) }
+        .iter()
+        // SAFETY: e — NULL или живой объект ошибки события (не освобождается).
+        .filter_map(|&e| unsafe { error_obj(e) })
+        .collect();
+    Ok((groups, errors))
+}
+
+/// # Safety
+/// `m` — ненулевое живое описание участника, принадлежащее событию.
+unsafe fn read_member(m: *const rd::rd_kafka_MemberDescription_t) -> MemberRaw {
+    // SAFETY: см. контракт; назначение (или NULL) принадлежит участнику.
+    let assignment = unsafe { rd::rd_kafka_MemberDescription_assignment(m) };
+    let parts = if assignment.is_null() {
+        Vec::new()
+    } else {
+        // SAFETY: assignment ненулевой и жив; список (или NULL) принадлежит назначению.
+        unsafe { read_partitions(rd::rd_kafka_MemberAssignment_partitions(assignment)) }
+    };
+    MemberRaw {
+        // SAFETY: строки принадлежат живому участнику и копируются сразу.
+        member_id: unsafe { string(rd::rd_kafka_MemberDescription_consumer_id(m)) },
+        // SAFETY: то же.
+        client_id: unsafe { string(rd::rd_kafka_MemberDescription_client_id(m)) },
+        // SAFETY: то же.
+        host: unsafe { string(rd::rd_kafka_MemberDescription_host(m)) },
+        assignment: parts.into_iter().map(|p| (p.topic, p.partition)).collect(),
+    }
+}
+
+/// # Safety
+/// `g` — ненулевое живое описание группы, принадлежащее событию.
+unsafe fn read_group_description(
+    g: *const rd::rd_kafka_ConsumerGroupDescription_t,
+) -> GroupDescriptionRaw {
+    // SAFETY: см. контракт.
+    let count = unsafe { rd::rd_kafka_ConsumerGroupDescription_member_count(g) };
+    let members = (0..count)
+        // SAFETY: g жив; при индексе вне диапазона возвращается NULL (отфильтровываем).
+        .map(|i| unsafe { rd::rd_kafka_ConsumerGroupDescription_member(g, i) })
+        .filter(|m| !m.is_null())
+        // SAFETY: m — ненулевой живой участник, принадлежащий описанию группы.
+        .map(|m| unsafe { read_member(m) })
+        .collect();
+    GroupDescriptionRaw {
+        // SAFETY: строки и объекты принадлежат живому описанию и копируются сразу.
+        group_id: unsafe { string(rd::rd_kafka_ConsumerGroupDescription_group_id(g)) },
+        // SAFETY: то же.
+        state: state_name(unsafe { rd::rd_kafka_ConsumerGroupDescription_state(g) }),
+        // SAFETY: то же.
+        assignor: unsafe { string(rd::rd_kafka_ConsumerGroupDescription_partition_assignor(g)) },
+        members,
+        // SAFETY: объект ошибки (или NULL) принадлежит описанию группы, не освобождается.
+        error: unsafe { error_obj(rd::rd_kafka_ConsumerGroupDescription_error(g)) },
+    }
+}
+
+/// Описания групп в порядке `ids`. Несуществующая группа приходит со state `Dead`
+/// (и, в зависимости от версии брокера, с ошибкой GROUP_ID_NOT_FOUND в `error`).
+pub fn describe_consumer_groups(
+    admin: &Admin,
+    timeout: Duration,
+    ids: &[String],
+) -> KafkaResult<Vec<GroupDescriptionRaw>> {
+    if ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let names = ids
+        .iter()
+        .map(|s| cstring(s))
+        .collect::<KafkaResult<Vec<_>>>()?;
+    let mut ptrs: Vec<*const c_char> = names.iter().map(|c| c.as_ptr()).collect();
+    let ev = run(
+        admin,
+        rd::rd_kafka_admin_op_t::RD_KAFKA_ADMIN_OP_DESCRIBECONSUMERGROUPS,
+        timeout,
+        |rk, opts, queue| {
+            // SAFETY: rk, opts, queue живы на время вызова (гарантия `run`); ptrs — массив
+            // из ptrs.len() указателей на живые CString из names. librdkafka копирует
+            // имена (rd_strdup) и опции, после возврата массив ей не нужен.
+            unsafe {
+                rd::rd_kafka_DescribeConsumerGroups(rk, ptrs.as_mut_ptr(), ptrs.len(), opts, queue)
+            }
+        },
+    )?;
+    // SAFETY: событие живо; результат (или NULL при другом типе события) принадлежит событию.
+    let result = unsafe { rd::rd_kafka_event_DescribeConsumerGroups_result(ev.0) };
+    if result.is_null() {
+        return Err(unexpected_event());
+    }
+    let mut n = 0usize;
+    // SAFETY: result жив, пока жив ev; n — валидный выходной параметр.
+    let arr = unsafe { rd::rd_kafka_DescribeConsumerGroups_result_groups(result, &mut n) };
+    // SAFETY: массив из n описаний, принадлежащих событию; срез не переживает ev.
+    let out = unsafe { slice(arr, n) }
+        .iter()
+        .filter(|g| !g.is_null())
+        // SAFETY: g — ненулевое живое описание группы, принадлежащее событию.
+        .map(|&g| unsafe { read_group_description(g) })
+        .collect();
+    Ok(out)
+}
+
+/// Все закоммиченные партиции группы (список партиций запроса — NULL).
+pub fn list_consumer_group_offsets(
+    admin: &Admin,
+    timeout: Duration,
+    group: &str,
+) -> KafkaResult<ItemResult<Vec<RawPartition>>> {
+    let g = cstring(group)?;
+    // SAFETY: g — живая C-строка на время вызова, librdkafka копирует её; NULL-список
+    // партиций допустим и означает «все партиции группы».
+    let req = unsafe { rd::rd_kafka_ListConsumerGroupOffsets_new(g.as_ptr(), std::ptr::null()) };
+    if req.is_null() {
+        return Err(null_result("запрос ListConsumerGroupOffsets"));
+    }
+    let req = ListOffsetsRequest(req);
+    let ev = run(
+        admin,
+        rd::rd_kafka_admin_op_t::RD_KAFKA_ADMIN_OP_LISTCONSUMERGROUPOFFSETS,
+        timeout,
+        |rk, opts, queue| {
+            let mut arr = [req.0];
+            // SAFETY: rk, opts, queue живы на время вызова (гарантия `run`); arr — массив
+            // ровно из одного живого запроса (требование API). librdkafka копирует запрос
+            // и опции, владение req остаётся у нас.
+            unsafe { rd::rd_kafka_ListConsumerGroupOffsets(rk, arr.as_mut_ptr(), 1, opts, queue) }
+        },
+    )?;
+    // SAFETY: событие живо; результат (или NULL при другом типе события) принадлежит событию.
+    let result = unsafe { rd::rd_kafka_event_ListConsumerGroupOffsets_result(ev.0) };
+    if result.is_null() {
+        return Err(unexpected_event());
+    }
+    let mut n = 0usize;
+    // SAFETY: result жив, пока жив ev; n — валидный выходной параметр.
+    let groups = unsafe { rd::rd_kafka_ListConsumerGroupOffsets_result_groups(result, &mut n) };
+    // SAFETY: массив из n group_result, принадлежащих событию, которое живо до конца функции.
+    unsafe { single_group_result(groups, n) }
+}
+
+/// Задаёт оффсеты группы; результат — по каждой партиции. Брокер принимает изменение
+/// только для неактивной группы. Пустой список или отрицательный оффсет librdkafka
+/// отклоняет целиком (`KafkaError` с кодом InvalidArgument).
+pub fn alter_consumer_group_offsets(
+    admin: &Admin,
+    timeout: Duration,
+    group: &str,
+    offsets: &[(String, i32, i64)],
+) -> KafkaResult<ItemResult<Vec<RawPartition>>> {
+    let g = cstring(group)?;
+    let list = partition_list(offsets)?;
+    // SAFETY: g и list живы на время вызова (оба ненулевые — требование rd_assert);
+    // librdkafka копирует имя группы и список партиций.
+    let req = unsafe { rd::rd_kafka_AlterConsumerGroupOffsets_new(g.as_ptr(), list.0) };
+    if req.is_null() {
+        return Err(null_result("запрос AlterConsumerGroupOffsets"));
+    }
+    let req = AlterOffsetsRequest(req);
+    let ev = run(
+        admin,
+        rd::rd_kafka_admin_op_t::RD_KAFKA_ADMIN_OP_ALTERCONSUMERGROUPOFFSETS,
+        timeout,
+        |rk, opts, queue| {
+            let mut arr = [req.0];
+            // SAFETY: rk, opts, queue живы на время вызова (гарантия `run`); arr — массив
+            // ровно из одного живого запроса (требование API). librdkafka копирует запрос
+            // и опции, владение req остаётся у нас.
+            unsafe { rd::rd_kafka_AlterConsumerGroupOffsets(rk, arr.as_mut_ptr(), 1, opts, queue) }
+        },
+    )?;
+    // SAFETY: событие живо; результат (или NULL при другом типе события) принадлежит событию.
+    let result = unsafe { rd::rd_kafka_event_AlterConsumerGroupOffsets_result(ev.0) };
+    if result.is_null() {
+        return Err(unexpected_event());
+    }
+    let mut n = 0usize;
+    // SAFETY: result жив, пока жив ev; n — валидный выходной параметр.
+    let groups = unsafe { rd::rd_kafka_AlterConsumerGroupOffsets_result_groups(result, &mut n) };
+    // SAFETY: массив из n group_result, принадлежащих событию, которое живо до конца функции.
+    unsafe { single_group_result(groups, n) }
 }

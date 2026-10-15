@@ -12,6 +12,7 @@ pub struct AppState {
     pub connections: Arc<ConnectionStore>,
     pub secrets: Arc<dyn SecretStore>,
     pub pool: Arc<ClientPool>,
+    pub producers: Arc<crate::kafka::producer::ProducerPool>,
     pub sessions: Arc<SessionRegistry>,
 }
 
@@ -21,6 +22,7 @@ impl AppState {
             connections: Arc::new(ConnectionStore::open(data_dir)?),
             secrets,
             pool: Arc::new(ClientPool::default()),
+            producers: Arc::new(Default::default()),
             sessions: Arc::new(SessionRegistry::default()),
         })
     }
@@ -70,9 +72,15 @@ impl AppState {
     pub fn evict_if_client_broken(&self, id: &str, e: &AppError) -> bool {
         let broken = matches!(e.code, ErrorCode::AuthFailed | ErrorCode::TlsError);
         if broken {
-            self.pool.evict(id);
+            self.evict_connection(id);
         }
         broken
+    }
+
+    /// Вытесняет все клиенты подключения: admin/consumer-handles и producer'ы.
+    pub fn evict_connection(&self, id: &str) {
+        self.pool.evict(id);
+        self.producers.evict_connection(id);
     }
 }
 
@@ -118,6 +126,26 @@ mod tests {
                 "{code:?} вытесняет"
             );
         }
+    }
+
+    #[test]
+    fn broken_client_errors_evict_producers() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        state.connections.upsert(sample_profile("a")).unwrap();
+        let p = state.profile("a").unwrap();
+        let s = crate::kafka::producer::ProducerSettings::default();
+        let h1 = state.producers.get(&p, state.secrets.as_ref(), &s).unwrap();
+        assert!(!state.evict_if_client_broken("a", &AppError::new(ErrorCode::Timeout, "t")));
+        assert!(Arc::ptr_eq(
+            &h1,
+            &state.producers.get(&p, state.secrets.as_ref(), &s).unwrap()
+        ));
+        assert!(state.evict_if_client_broken("a", &AppError::new(ErrorCode::AuthFailed, "x")));
+        assert!(!Arc::ptr_eq(
+            &h1,
+            &state.producers.get(&p, state.secrets.as_ref(), &s).unwrap()
+        ));
     }
 
     #[test]

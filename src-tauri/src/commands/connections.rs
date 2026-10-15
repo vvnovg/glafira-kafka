@@ -64,7 +64,7 @@ pub fn save_connection_blocking(
         }
         return Err(e);
     }
-    st.pool.evict(&saved.id);
+    st.evict_connection(&saved.id);
     Ok(saved)
 }
 
@@ -76,7 +76,7 @@ pub async fn delete_connection(state: State<'_, AppState>, id: String) -> AppRes
         st.sessions.cancel_for(&id);
         st.connections.delete(&id)?;
         st.secrets.delete(&secret_key(&id, SASL_PASSWORD))?;
-        st.pool.evict(&id);
+        st.evict_connection(&id);
         Ok(())
     })
     .await
@@ -86,7 +86,7 @@ pub async fn delete_connection(state: State<'_, AppState>, id: String) -> AppRes
 pub async fn disconnect(state: State<'_, AppState>, connection_id: String) -> AppResult<()> {
     let st = state.inner().clone();
     blocking(move || {
-        st.pool.evict(&connection_id);
+        st.evict_connection(&connection_id);
         Ok(())
     })
     .await

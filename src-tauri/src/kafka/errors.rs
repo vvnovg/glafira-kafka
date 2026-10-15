@@ -50,7 +50,8 @@ pub fn item_error(code: RDKafkaErrorCode, message: &str, context: &str) -> AppEr
         | C::InvalidReplicationFactor
         | C::InvalidReplicaAssignment
         | C::InvalidTopic
-        | C::OffsetOutOfRange => ErrorCode::InvalidInput,
+        | C::OffsetOutOfRange
+        | C::UnknownPartition => ErrorCode::InvalidInput,
         C::TopicAuthorizationFailed
         | C::GroupAuthorizationFailed
         | C::ClusterAuthorizationFailed => ErrorCode::NotAuthorized,
@@ -293,6 +294,7 @@ mod tests {
             (C::InvalidPartitions, E::InvalidInput),
             (C::InvalidReplicationFactor, E::InvalidInput),
             (C::PolicyViolation, E::InvalidInput),
+            (C::UnknownPartition, E::InvalidInput),
             (C::TopicAuthorizationFailed, E::NotAuthorized),
             (C::GroupAuthorizationFailed, E::NotAuthorized),
             (C::UnknownTopicOrPartition, E::NotFound),

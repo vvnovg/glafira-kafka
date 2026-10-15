@@ -105,6 +105,25 @@ impl<T> KeyedPool<T> {
         Ok(created)
     }
 
+    pub fn ids(&self) -> Vec<String> {
+        self.inner.lock_safe().items.keys().cloned().collect()
+    }
+
+    /// Вытесняет все элементы, чьи id удовлетворяют предикату (освобождение — вне мьютекса).
+    pub fn evict_where(&self, pred: impl Fn(&str) -> bool) {
+        let removed: Vec<Arc<T>> = {
+            let mut st = self.inner.lock_safe();
+            let ids: Vec<String> = st.items.keys().filter(|id| pred(id)).cloned().collect();
+            ids.iter()
+                .filter_map(|id| {
+                    *st.generations.entry(id.clone()).or_insert(0) += 1;
+                    st.items.remove(id)
+                })
+                .collect()
+        };
+        drop(removed);
+    }
+
     pub fn evict(&self, id: &str) {
         let removed = {
             let mut st = self.inner.lock_safe();
@@ -165,6 +184,19 @@ mod tests {
         assert!(Arc::ptr_eq(&a, &b));
         pool.evict("c");
         assert_eq!(*pool.get_or_create("c", || Ok(3)).unwrap(), 3);
+    }
+
+    #[test]
+    fn keyed_pool_lists_and_evicts_by_predicate() {
+        let pool = KeyedPool::<u32>::default();
+        for id in ["a|1", "a|2", "b|1"] {
+            pool.get_or_create(id, || Ok(0)).unwrap();
+        }
+        let mut ids = pool.ids();
+        ids.sort();
+        assert_eq!(ids, ["a|1", "a|2", "b|1"]);
+        pool.evict_where(|id| id.starts_with("a|"));
+        assert_eq!(pool.ids(), ["b|1"]);
     }
 
     #[test]

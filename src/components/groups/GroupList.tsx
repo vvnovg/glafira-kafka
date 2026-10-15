@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { api, toAppError } from "../../api/client";
 import type { GroupDescription, GroupLag } from "../../api/types";
@@ -13,12 +13,14 @@ import { filterGroups, GROUP_CHUNK, groupStates } from "./groupFilter";
 
 const ROW_HEIGHT = 30;
 const EMPTY: never[] = [];
+const NO_DATA = "нет данных в ответе брокера";
 
 export function GroupList({ connectionId }: { connectionId: string }) {
   const [query, setQuery] = useState("");
   const [state, setState] = useState("all");
   const debounced = useDebouncedValue(query, 250);
   const open = useWorkspace((s) => s.open);
+  const queryClient = useQueryClient();
   const q = useQuery({ queryKey: ["groups", connectionId], queryFn: () => api.listGroups(connectionId) });
   const all = q.data?.groups ?? EMPTY;
   const rows = useMemo(() => filterGroups(all, debounced, state), [all, debounced, state]);
@@ -55,9 +57,11 @@ export function GroupList({ connectionId }: { connectionId: string }) {
     const d = details[i];
     if (d?.isError && !d.data) for (const id of slice) descById.set(id, { error: toAppError(d.error).message });
     d?.data?.forEach((x) => descById.set(x.groupId, x));
+    if (d?.isSuccess) for (const id of slice) if (!descById.has(id)) descById.set(id, { error: NO_DATA });
     const l = lags[i];
     if (l?.isError && !l.data) for (const id of slice) lagById.set(id, { error: toAppError(l.error).message });
     l?.data?.forEach((x) => lagById.set(x.groupId, x));
+    if (l?.isSuccess) for (const id of slice) if (!lagById.has(id)) lagById.set(id, { error: NO_DATA });
   });
 
   if (q.isPending) return <p className="empty">Загрузка групп…</p>;
@@ -76,7 +80,13 @@ export function GroupList({ connectionId }: { connectionId: string }) {
             </option>
           ))}
         </select>
-        <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
+        <button type="button" disabled={q.isFetching} 
+          onClick={() => {
+            void q.refetch();
+            void queryClient.invalidateQueries({ queryKey: ["groupDescriptions", connectionId] });
+            void queryClient.invalidateQueries({ queryKey: ["groupsLag", connectionId] });
+          }}
+        >
           Обновить
         </button>
         <span className="muted">

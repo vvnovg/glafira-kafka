@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithClient } from "../../test/render";
 
@@ -39,5 +40,29 @@ describe("GroupList", () => {
     expect(await screen.findByText("range")).toBeInTheDocument();
     const lagCell = await screen.findByTitle(/lag boom/);
     expect(lagCell).toHaveTextContent("—");
+  });
+
+  it("id, отсутствующий в ответе брокера, показывается как «—», а не «…»", async () => {
+    vi.mocked(api.describeGroups).mockResolvedValue([]);
+    vi.mocked(api.getGroupsLag).mockResolvedValue([]);
+    renderWithClient(<GroupList connectionId="c" />);
+    expect(await screen.findByText("orders")).toBeInTheDocument();
+    await vi.waitFor(() => expect(screen.getAllByTitle("нет данных в ответе брокера").length).toBeGreaterThanOrEqual(3));
+    screen.getAllByTitle("нет данных в ответе брокера").forEach((c) => expect(c).toHaveTextContent("—"));
+    expect(screen.queryByText("…")).toBeNull();
+  });
+
+  it("«Обновить» перезапрашивает описания и лаг", async () => {
+    vi.mocked(api.getGroupsLag).mockResolvedValue([]);
+    renderWithClient(<GroupList connectionId="c" />);
+    await screen.findByText("orders");
+    await vi.waitFor(() => expect(vi.mocked(api.getGroupsLag).mock.calls.length).toBeGreaterThan(0));
+    const l0 = vi.mocked(api.getGroupsLag).mock.calls.length;
+    const d0 = vi.mocked(api.describeGroups).mock.calls.length;
+    await userEvent.setup().click(screen.getByRole("button", { name: "Обновить" }));
+    await vi.waitFor(() => {
+      expect(vi.mocked(api.getGroupsLag).mock.calls.length).toBe(l0 + 1);
+      expect(vi.mocked(api.describeGroups).mock.calls.length).toBe(d0 + 1);
+    });
   });
 });

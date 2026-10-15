@@ -25,6 +25,17 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).toHaveBeenCalledWith({ confirm: null, typedName: "orders" });
   });
 
+  it("имя объекта с пробелом на конце подтверждается (trim с обеих сторон)", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog connection={dev} title="Удалить группу?" objectName="grp " objectLabel="id группы" confirmLabel="Удалить" danger onConfirm={onConfirm} onCancel={() => {}} />,
+    );
+    await user.type(screen.getByLabelText("Подтверждение: id группы"), "grp ");
+    await user.click(screen.getByRole("button", { name: "Удалить" }));
+    expect(onConfirm).toHaveBeenCalledWith({ confirm: null, typedName: "grp" });
+  });
+
   it("для prod требует имя подключения", async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();

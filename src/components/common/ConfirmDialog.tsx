@@ -43,7 +43,7 @@ export function ConfirmDialog({
   const isProd = connection.environment === "prod";
   const ok =
     (!isProd || connName.trim() === connection.name.trim()) &&
-    (objectName === undefined || typed.trim() === objectName);
+    (objectName === undefined || typed.trim() === objectName.trim());
 
   useEffect(() => {
     rootRef.current?.querySelector("input")?.focus();

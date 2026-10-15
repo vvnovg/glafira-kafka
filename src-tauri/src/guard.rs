@@ -25,7 +25,7 @@ pub fn ensure_mutation_allowed(p: &ConnectionProfile, confirm: Option<&str>) -> 
 
 /// Удаление и очистка требуют ввести имя объекта (при удалении нескольких топиков — их число).
 pub fn ensure_name_confirmed(expected: &str, typed: Option<&str>) -> AppResult<()> {
-    if typed.map(str::trim) == Some(expected) {
+    if typed.map(str::trim) == Some(expected.trim()) {
         Ok(())
     } else {
         Err(AppError::new(
@@ -81,6 +81,9 @@ mod tests {
     fn object_name_must_match_exactly() {
         assert!(ensure_name_confirmed("orders", Some("orders")).is_ok());
         assert!(ensure_name_confirmed("orders", Some(" orders ")).is_ok());
+        // Сравнение симметрично: id с пробелом на конце подтверждается (UI отправляет trim).
+        assert!(ensure_name_confirmed("grp ", Some("grp")).is_ok());
+        assert!(ensure_name_confirmed("grp ", Some("grp ")).is_ok());
         for typed in [None, Some("order"), Some("ORDERS")] {
             let e = ensure_name_confirmed("orders", typed).unwrap_err();
             assert_eq!(e.code, ErrorCode::ConfirmationRequired, "{typed:?}");

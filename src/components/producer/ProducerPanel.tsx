@@ -9,6 +9,7 @@ import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { emptyProducerForm, formToMessage, messageToForm, type ProducerForm } from "./form";
 import { HeadersEditor } from "./HeadersEditor";
+import { BatchPanel } from "./BatchPanel";
 import { HistoryList } from "./HistoryList";
 import { TemplatesBar } from "./TemplatesBar";
 
@@ -196,6 +197,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
             </button>
           </div>
         ))}
+      {!readOnly && <BatchPanel connection={connection} form={form} />}
       <h3>История (последние 100)</h3>
       <HistoryList connectionId={connectionId} onRepeat={replaceForm} />
     </div>

@@ -196,3 +196,32 @@ async fn cleanup_policies_in_one_request() {
     assert_eq!(policies[0].cleanup_policy.as_deref(), Some("delete"));
     assert_eq!(policies[1].cleanup_policy.as_deref(), Some("compact"));
 }
+
+/// Сразу после увеличения числа партиций метаданные могут отдавать NotLeaderForPartition;
+/// воспроизводится не всегда, но чтение обязано проходить.
+#[tokio::test(flavor = "multi_thread")]
+async fn topic_details_right_after_add_partitions() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let h = handles(&bs);
+    let name = common::unique_topic("it-ops-grow");
+    let _cleanup = common::TempTopic::adopt(&bs, name.clone());
+    let spec = NewTopicSpec {
+        name: name.clone(),
+        partitions: 3,
+        replication_factor: 1,
+        configs: BTreeMap::new(),
+    };
+    create_topic(&h, &spec).await.unwrap();
+    wait_topic(&bs, &name, 3).await;
+    add_partitions(&h, &name, 5).await.unwrap();
+    for _ in 0..10 {
+        let h2 = h.clone();
+        let n = name.clone();
+        tokio::task::spawn_blocking(move || topic_details(&h2, &n))
+            .await
+            .unwrap()
+            .unwrap();
+    }
+}

@@ -97,7 +97,7 @@ pub fn fetch_metadata_fast_fail(
 ) -> Result<Metadata, AppError> {
     let started = Instant::now();
     let first = timeout.min(FIRST_METADATA_SLICE);
-    let err = match consumer.fetch_metadata(topic, first) {
+    let err = match fetch_retrying(consumer, topic, first) {
         Ok(md) => return Ok(md),
         Err(e) => e,
     };
@@ -115,9 +115,53 @@ pub fn fetch_metadata_fast_fail(
     {
         return Err(from_kafka(&err, Some(&cause)));
     }
-    consumer
-        .fetch_metadata(topic, remaining)
-        .map_err(|e| op_error(consumer, started, e))
+    fetch_retrying(consumer, topic, remaining).map_err(|e| op_error(consumer, started, e))
+}
+
+/// Ошибки метаданных, которые брокер возвращает кратковременно (смена лидера после
+/// изменения топика, выборы): повтор через короткую паузу обычно проходит.
+fn is_retriable_metadata_error(err: &KafkaError) -> bool {
+    use RDKafkaErrorCode as C;
+    matches!(
+        err,
+        KafkaError::MetadataFetch(
+            C::NotLeaderForPartition
+                | C::LeaderNotAvailable
+                | C::BrokerNotAvailable
+                | C::ReplicaNotAvailable
+                | C::UnknownLeaderEpoch
+                | C::FencedLeaderEpoch
+        )
+    )
+}
+
+/// Пауза перед повтором номер `attempt` (с нуля): 200, 400, 800, 1600 мс и далее 1600 мс.
+fn retry_backoff(attempt: u32) -> Duration {
+    Duration::from_millis(200u64 << attempt.min(3))
+}
+
+/// `fetch_metadata`, повторяющий транзитные ошибки брокера в пределах `timeout`.
+fn fetch_retrying(
+    consumer: &BaseConsumer<CapturingContext>,
+    topic: Option<&str>,
+    timeout: Duration,
+) -> Result<Metadata, KafkaError> {
+    let started = Instant::now();
+    let mut attempt = 0;
+    loop {
+        let left = timeout.saturating_sub(started.elapsed());
+        match consumer.fetch_metadata(topic, left) {
+            Err(e) if is_retriable_metadata_error(&e) => {
+                let pause = retry_backoff(attempt);
+                if timeout.saturating_sub(started.elapsed()) <= pause {
+                    return Err(e);
+                }
+                std::thread::sleep(pause);
+                attempt += 1;
+            }
+            other => return other,
+        }
+    }
 }
 
 fn is_timeout(err: &KafkaError) -> bool {
@@ -248,5 +292,43 @@ mod tests {
         assert!(!needs_client_error(&KafkaError::AdminOp(
             C::TopicAuthorizationFailed
         )));
+    }
+
+    #[test]
+    fn retriable_metadata_errors() {
+        for c in [
+            C::NotLeaderForPartition,
+            C::LeaderNotAvailable,
+            C::BrokerNotAvailable,
+            C::ReplicaNotAvailable,
+            C::UnknownLeaderEpoch,
+            C::FencedLeaderEpoch,
+        ] {
+            assert!(
+                is_retriable_metadata_error(&KafkaError::MetadataFetch(c)),
+                "{c:?}"
+            );
+        }
+        for c in [
+            C::OperationTimedOut,
+            C::BrokerTransportFailure,
+            C::TopicAuthorizationFailed,
+            C::UnknownTopicOrPartition,
+        ] {
+            assert!(
+                !is_retriable_metadata_error(&KafkaError::MetadataFetch(c)),
+                "{c:?}"
+            );
+        }
+        assert!(!is_retriable_metadata_error(&KafkaError::AdminOp(
+            C::NotLeaderForPartition
+        )));
+    }
+
+    #[test]
+    fn retry_backoff_doubles_and_caps() {
+        let ms = |n| retry_backoff(n).as_millis();
+        assert_eq!((ms(0), ms(1), ms(2)), (200, 400, 800));
+        assert_eq!(ms(10), 1600);
     }
 }

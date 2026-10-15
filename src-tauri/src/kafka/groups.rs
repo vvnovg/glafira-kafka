@@ -575,6 +575,31 @@ mod tests {
     }
 
     #[test]
+    fn plan_reset_timestamp_error_branches() {
+        let states = vec![state(0, Some(5), Ok((2, 10)))];
+        let ts = ResetStrategy::Timestamp { timestamp_ms: 1 };
+        // нет записи в lookup → ошибка, не high
+        let rows = plan_reset(&states, &ts, &TimeLookup::new());
+        assert_eq!(rows[0].target, None);
+        assert!(
+            rows[0]
+                .error
+                .as_deref()
+                .unwrap()
+                .contains("Нет ответа брокера")
+        );
+        // отрицательный оффсет → ошибка, не low
+        let neg = TimeLookup::from([(key("t", 0), Ok(Some(-1)))]);
+        let rows = plan_reset(&states, &ts, &neg);
+        assert_eq!(rows[0].target, None);
+        assert!(rows[0].error.is_some());
+        // Ok(None) → high
+        let none = TimeLookup::from([(key("t", 0), Ok(None))]);
+        let rows = plan_reset(&states, &ts, &none);
+        assert_eq!((rows[0].target, rows[0].error.as_deref()), (Some(10), None));
+    }
+
+    #[test]
     fn plan_reset_reports_partition_errors() {
         let states = vec![state(0, Some(1), Err("нет лидера".into()))];
         let rows = plan_reset(&states, &ResetStrategy::Earliest, &TimeLookup::new());

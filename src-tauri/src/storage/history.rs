@@ -80,6 +80,14 @@ impl HistoryStore {
     pub fn open(data_dir: &Path) -> AppResult<Self> {
         let dir = data_dir.join("history");
         std::fs::create_dir_all(&dir)?;
+        // История — открытым текстом: каталог только для владельца (файлы — 0600, см. atomic_write).
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Err(e) = std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)) {
+                tracing::warn!("не удалось ограничить права {}: {e}", dir.display());
+            }
+        }
         Ok(Self {
             dir,
             lock: Mutex::new(()),
@@ -276,5 +284,23 @@ mod tests {
             assert!(store.append(bad, entry(1, "v")).is_err());
             assert!(store.delete_connection(bad).is_err());
         }
+    }
+
+    /// История — открытым текстом, с подставленными {{env}} и значениями заголовков (токены):
+    /// файлы доступны только владельцу.
+    #[cfg(unix)]
+    #[test]
+    fn history_files_are_private() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let hist = dir.path().join("history");
+        // Каталог от прежней версии с правами по умолчанию.
+        std::fs::create_dir(&hist).unwrap();
+        std::fs::set_permissions(&hist, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let store = HistoryStore::open(dir.path()).unwrap();
+        store.append("c", entry(1, "v")).unwrap();
+        let mode = |p: &Path| std::fs::metadata(p).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode(&hist), 0o700);
+        assert_eq!(mode(&hist.join("c.json")), 0o600);
     }
 }

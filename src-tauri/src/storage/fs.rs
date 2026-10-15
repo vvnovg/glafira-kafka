@@ -21,6 +21,16 @@ fn tmp_path(path: &Path) -> PathBuf {
     path.with_file_name(name)
 }
 
+/// Новый файл с правами только для владельца (0600 на unix): в данных приложения бывают
+/// подставленные значения `{{env}}` и заголовков. rename сохраняет права временного файла.
+fn create_private(path: &Path) -> std::io::Result<File> {
+    let mut opts = fs::OpenOptions::new();
+    opts.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut opts, 0o600);
+    opts.open(path)
+}
+
 /// Атомарная запись: временный файл → fsync → rename → fsync каталога.
 /// При сбое на любом шаге исходный файл остаётся нетронутым.
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> AppResult<()> {
@@ -31,7 +41,7 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> AppResult<()> {
     let tmp = tmp_path(path);
     let result = (|| -> std::io::Result<()> {
         fs::create_dir_all(dir)?;
-        let mut f = File::create(&tmp)?;
+        let mut f = create_private(&tmp)?;
         f.write_all(bytes)?;
         f.sync_all()?;
         drop(f);
@@ -139,6 +149,19 @@ mod tests {
         atomic_write(&p, b"2").unwrap();
         assert_eq!(std::fs::read(&p).unwrap(), b"2");
         assert!(leftover_tmps(dir.path()).is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn written_files_are_owner_only() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let p = dir.path().join("a.json");
+        std::fs::write(&p, b"old").unwrap();
+        std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o644)).unwrap();
+        atomic_write(&p, b"new").unwrap();
+        let mode = std::fs::metadata(&p).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600, "заменённый файл тоже 0600");
     }
 
     #[test]

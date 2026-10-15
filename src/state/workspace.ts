@@ -13,6 +13,7 @@ export type TabSpec =
   | { kind: "groups"; connectionId: string }
   | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill }
   | { kind: "producer"; connectionId: string; prefill?: ProducerPrefill }
+  | { kind: "consumer"; connectionId: string; key: string; topic?: string; groupId?: string }
   | { kind: "connection-form"; connectionId: string | null };
 
 export type Tab = TabSpec & { id: string };
@@ -23,12 +24,17 @@ export function tabId(spec: TabSpec): string {
       return `topic:${spec.connectionId}:${spec.topic}`;
     case "group":
       return `group:${spec.connectionId}:${spec.groupId}`;
+    case "consumer":
+      return `consumer:${spec.connectionId}:${spec.key}`;
     case "connection-form":
       return `connection-form:${spec.connectionId ?? "new"}`;
     default:
       return `${spec.kind}:${spec.connectionId}`;
   }
 }
+
+/** Новая вкладка consumer-сессии (каждый вызов — отдельная сессия). */
+export const newConsumerKey = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 interface WorkspaceState {
   tabs: Tab[];

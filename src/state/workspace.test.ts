@@ -1,11 +1,22 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { tabId, useWorkspace } from "./workspace";
+import { newConsumerKey, tabId, useWorkspace } from "./workspace";
 
 beforeEach(() => {
   useWorkspace.setState({ tabs: [], activeId: null });
 });
 
 describe("workspace", () => {
+  it("consumer-сессии открываются параллельно в отдельных вкладках", () => {
+    const { open } = useWorkspace.getState();
+    const a = newConsumerKey();
+    const b = newConsumerKey();
+    expect(a).not.toBe(b);
+    open({ kind: "consumer", connectionId: "c", key: a, topic: "orders" });
+    open({ kind: "consumer", connectionId: "c", key: b, topic: "orders" });
+    expect(useWorkspace.getState().tabs.map((t) => t.id)).toEqual([`consumer:c:${a}`, `consumer:c:${b}`]);
+    expect(tabId({ kind: "consumer", connectionId: "c", key: "k" })).toBe("consumer:c:k");
+  });
+
   it("повторное открытие активирует существующую вкладку", () => {
     const { open } = useWorkspace.getState();
     open({ kind: "topics", connectionId: "c" });

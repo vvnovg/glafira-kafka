@@ -1,10 +1,19 @@
 import type { FilterFields as Fields } from "./params";
 
 /** Fieldset «Фильтры»: общий для просмотра топика и consumer-сессии. */
-export function FilterFields<T extends Fields>({ value: form, onChange }: { value: T; onChange: (v: T) => void }) {
+export function FilterFields<T extends Fields>({
+  value: form,
+  onChange,
+  disabled,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  /** Например, пока идёт consumer-сессия: фильтр применяется только при запуске. */
+  disabled?: boolean;
+}) {
   const set = <K extends keyof Fields>(k: K, v: Fields[K]) => onChange({ ...form, [k]: v } as T);
   return (
-    <fieldset>
+    <fieldset disabled={disabled}>
       <legend>Фильтры</legend>
       <label className="field">
         <span>Ключ содержит</span>

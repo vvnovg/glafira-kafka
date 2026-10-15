@@ -1,6 +1,7 @@
 import type { Tab } from "../state/workspace";
 import { ConnectionFormTab } from "./connections/ConnectionFormTab";
 import { ClusterOverview } from "./cluster/ClusterOverview";
+import { ConsumerPanel } from "./consumer/ConsumerPanel";
 import { TopicList } from "./topics/TopicList";
 import { GroupList } from "./groups/GroupList";
 import { GroupDetails } from "./groups/GroupDetails";
@@ -23,5 +24,7 @@ export function TabContent({ tab }: { tab: Tab }) {
       return <GroupDetails connectionId={tab.connectionId} groupId={tab.groupId} resetPrefill={tab.resetPrefill} />;
     case "producer":
       return <ProducerPanel connectionId={tab.connectionId} prefill={tab.prefill} />;
+    case "consumer":
+      return <ConsumerPanel connectionId={tab.connectionId} topic={tab.topic} groupId={tab.groupId} />;
   }
 }

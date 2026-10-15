@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { useWorkspace } from "../state/workspace";
+import { newConsumerKey, useWorkspace } from "../state/workspace";
 import { ErrorBanner } from "./common/ErrorBanner";
 import { EnvBadge } from "./common/EnvBadge";
 
@@ -53,6 +53,11 @@ export function Sidebar() {
               <li>
                 <button type="button" className="link" onClick={() => open({ kind: "producer", connectionId: c.id })}>
                   Producer
+                </button>
+              </li>
+              <li>
+                <button type="button" className="link" onClick={() => open({ kind: "consumer", connectionId: c.id, key: newConsumerKey() })}>
+                  Consumer-сессия
                 </button>
               </li>
             </ul>

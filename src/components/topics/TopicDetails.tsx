@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
 import { formatCount } from "../../lib/format";
 import { useConnection } from "../../lib/useConnection";
-import { tabId, useWorkspace } from "../../state/workspace";
+import { newConsumerKey, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
 import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
@@ -59,6 +59,9 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
           }
         >
           Отправить сообщение
+        </button>
+        <button type="button" onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}>
+          Читать как группа
         </button>
       </div>
       {canMutate && connection && !t.internal && (

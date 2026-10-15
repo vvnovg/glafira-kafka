@@ -9,6 +9,8 @@ import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { emptyProducerForm, formToMessage, messageToForm, type ProducerForm } from "./form";
 import { HeadersEditor } from "./HeadersEditor";
+import { HistoryList } from "./HistoryList";
+import { TemplatesBar } from "./TemplatesBar";
 
 const FORMATS: PayloadFormat[] = ["string", "json", "hex", "base64", "null"];
 
@@ -72,6 +74,13 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
   const edited = () => {
     if (send.data || send.error) send.reset();
   };
+  // Шаблон или запись истории заменяют форму целиком.
+  const replaceForm = (f: ProducerForm) => {
+    setForm(f);
+    send.reset();
+    setFormError(null);
+    setConfirming(false);
+  };
   const set = (patch: Partial<ProducerForm>) => {
     edited();
     setForm((f) => ({ ...f, ...patch }));
@@ -111,6 +120,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
       <div className="toolbar">
         <h2>Producer</h2>
       </div>
+      <TemplatesBar connectionId={connectionId} form={form} onLoad={replaceForm} />
       {readOnly && <p className="warn" role="alert">Подключение открыто только для чтения — отправка недоступна.</p>}
       <div className="form">
         <label htmlFor={`${uid}-topic`}>Топик</label>
@@ -186,6 +196,8 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
             </button>
           </div>
         ))}
+      <h3>История (последние 100)</h3>
+      <HistoryList connectionId={connectionId} onRepeat={replaceForm} />
     </div>
   );
 }

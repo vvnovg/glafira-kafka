@@ -11,6 +11,9 @@ pub enum ErrorCode {
     Timeout,
     InvalidInput,
     NotFound,
+    ReadOnly,
+    ConfirmationRequired,
+    GroupNotEmpty,
     Internal,
 }
 
@@ -181,5 +184,17 @@ mod tests {
             json,
             serde_json::json!({"code": "INVALID_INPUT", "message": "плохо", "retryable": false})
         );
+    }
+
+    #[test]
+    fn mutation_codes_serialize_and_are_not_retryable() {
+        for (code, name) in [
+            (ErrorCode::ReadOnly, "READ_ONLY"),
+            (ErrorCode::ConfirmationRequired, "CONFIRMATION_REQUIRED"),
+            (ErrorCode::GroupNotEmpty, "GROUP_NOT_EMPTY"),
+        ] {
+            assert_eq!(serde_json::to_value(code).unwrap(), name);
+            assert!(!AppError::new(code, "x").retryable);
+        }
     }
 }

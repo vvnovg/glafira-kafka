@@ -29,6 +29,18 @@ impl AppState {
         self.connections.get(id)
     }
 
+    /// Профиль подключения, если мутирующая операция на нём разрешена (см. `guard`).
+    /// Не читает keychain и не ходит в сеть — можно вызывать на async-потоке.
+    pub fn guarded(
+        &self,
+        connection_id: &str,
+        confirm: Option<&str>,
+    ) -> AppResult<ConnectionProfile> {
+        let p = self.connections.get(connection_id)?;
+        crate::guard::ensure_mutation_allowed(&p, confirm)?;
+        Ok(p)
+    }
+
     pub fn handles(&self, id: &str) -> AppResult<Arc<KafkaHandles>> {
         let profile = self.connections.get(id)?;
         self.pool.get(&profile, self.secrets.as_ref())
@@ -106,5 +118,24 @@ mod tests {
                 "{code:?} вытесняет"
             );
         }
+    }
+
+    #[test]
+    fn guarded_checks_profile() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        assert_eq!(
+            state.guarded("nope", None).unwrap_err().code,
+            ErrorCode::NotFound
+        );
+        let mut p = sample_profile("a");
+        p.read_only = true;
+        state.connections.upsert(p).unwrap();
+        assert_eq!(
+            state.guarded("a", None).unwrap_err().code,
+            ErrorCode::ReadOnly
+        );
+        state.connections.upsert(sample_profile("b")).unwrap();
+        assert_eq!(state.guarded("b", None).unwrap().id, "b");
     }
 }

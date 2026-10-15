@@ -1,6 +1,7 @@
 pub mod browse;
 pub mod commands;
 pub mod error;
+pub mod guard;
 pub mod kafka;
 pub mod secrets;
 pub mod state;

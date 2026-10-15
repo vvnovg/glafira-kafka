@@ -6,6 +6,9 @@ export type ErrorCode =
   | "TIMEOUT"
   | "INVALID_INPUT"
   | "NOT_FOUND"
+  | "READ_ONLY"
+  | "CONFIRMATION_REQUIRED"
+  | "GROUP_NOT_EMPTY"
   | "INTERNAL";
 
 export interface AppError {

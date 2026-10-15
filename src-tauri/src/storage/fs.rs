@@ -1,18 +1,23 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::error::{AppError, AppResult};
 
+/// Уникальное имя временного файла в том же каталоге: `<name>.<pid>.<n>.tmp`.
+/// Параллельные писатели в один путь не делят временный файл.
 fn tmp_path(path: &Path) -> PathBuf {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let n = COUNTER.fetch_add(1, Ordering::Relaxed);
     let mut name = path
         .file_name()
         .map(|n| n.to_os_string())
         .unwrap_or_default();
-    name.push(".tmp");
+    name.push(format!(".{}.{n}.tmp", std::process::id()));
     path.with_file_name(name)
 }
 
@@ -67,6 +72,14 @@ mod tests {
     use super::*;
     use crate::error::ErrorCode;
 
+    fn leftover_tmps(dir: &Path) -> Vec<PathBuf> {
+        std::fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .filter(|p| p.extension().is_some_and(|x| x == "tmp"))
+            .collect()
+    }
+
     #[test]
     fn writes_replaces_and_leaves_no_tmp() {
         let dir = tempfile::tempdir().unwrap();
@@ -74,7 +87,7 @@ mod tests {
         atomic_write(&p, b"1").unwrap();
         atomic_write(&p, b"2").unwrap();
         assert_eq!(std::fs::read(&p).unwrap(), b"2");
-        assert!(!tmp_path(&p).exists());
+        assert!(leftover_tmps(dir.path()).is_empty());
     }
 
     #[test]
@@ -85,16 +98,54 @@ mod tests {
         assert_eq!(std::fs::read(&p).unwrap(), b"[]");
     }
 
+    #[cfg(unix)]
     #[test]
     fn failure_keeps_original_file() {
+        use std::os::unix::fs::PermissionsExt;
         let dir = tempfile::tempdir().unwrap();
-        let p = dir.path().join("a.json");
+        let sub = dir.path().join("d");
+        let p = sub.join("a.json");
         atomic_write(&p, b"old").unwrap();
-        // Каталог на месте временного файла: создать его не получится.
-        std::fs::create_dir(tmp_path(&p)).unwrap();
+        // Каталог только для чтения: временный файл не создать.
+        std::fs::set_permissions(&sub, std::fs::Permissions::from_mode(0o555)).unwrap();
+        let err = atomic_write(&p, b"new");
+        std::fs::set_permissions(&sub, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(err.unwrap_err().code, ErrorCode::Internal);
+        assert_eq!(std::fs::read(&p).unwrap(), b"old");
+        assert!(leftover_tmps(&sub).is_empty());
+    }
+
+    #[test]
+    fn failed_rename_removes_tmp() {
+        let dir = tempfile::tempdir().unwrap();
+        // На месте целевого файла — непустой каталог: rename не пройдёт.
+        let p = dir.path().join("a.json");
+        std::fs::create_dir(&p).unwrap();
+        std::fs::write(p.join("x"), b"x").unwrap();
         let err = atomic_write(&p, b"new").unwrap_err();
         assert_eq!(err.code, ErrorCode::Internal);
-        assert_eq!(std::fs::read(&p).unwrap(), b"old");
+        assert!(leftover_tmps(dir.path()).is_empty());
+    }
+
+    #[test]
+    fn concurrent_writers_do_not_clobber_each_other() {
+        let dir = tempfile::tempdir().unwrap();
+        let p = dir.path().join("h.json");
+        let a = vec!["a".repeat(64); 256];
+        let b = vec!["b".repeat(64); 256];
+        std::thread::scope(|s| {
+            for v in [&a, &b] {
+                let p = &p;
+                s.spawn(move || {
+                    for _ in 0..100 {
+                        write_json(p, v).unwrap();
+                    }
+                });
+            }
+        });
+        let got: Vec<String> = read_json(&p).unwrap().unwrap();
+        assert!(got == a || got == b);
+        assert!(leftover_tmps(dir.path()).is_empty());
     }
 
     #[test]

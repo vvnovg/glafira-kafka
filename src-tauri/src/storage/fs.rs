@@ -63,6 +63,57 @@ pub fn read_json<T: DeserializeOwned>(path: &Path) -> AppResult<Option<T>> {
     }
 }
 
+/// Читает JSON; при повреждённом файле (не парсится) переименовывает его в
+/// `<name>.corrupt-<unix-ms>` (сохраняя для пользователя), пишет предупреждение и возвращает None.
+/// Файл с `schemaVersion` выше `max_schema` — не повреждение: возвращается ошибка (fail-closed).
+pub fn read_json_or_quarantine<T: DeserializeOwned>(
+    path: &Path,
+    max_schema: u32,
+) -> AppResult<Option<T>> {
+    let bytes = match fs::read(path) {
+        Ok(b) => b,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(e.into()),
+    };
+    let err = match serde_json::from_slice::<T>(&bytes) {
+        Ok(v) => return Ok(Some(v)),
+        Err(e) => e,
+    };
+    if let Ok(v) = serde_json::from_slice::<serde_json::Value>(&bytes)
+        && v.get("schemaVersion")
+            .and_then(|x| x.as_u64())
+            .is_some_and(|x| x > u64::from(max_schema))
+    {
+        return Err(AppError::internal(format!(
+            "{} создан более новой версией приложения (schemaVersion {})",
+            path.display(),
+            v["schemaVersion"]
+        )));
+    }
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let mut name = path
+        .file_name()
+        .map(|n| n.to_os_string())
+        .unwrap_or_default();
+    name.push(format!(".corrupt-{ms}"));
+    let backup = path.with_file_name(name);
+    fs::rename(path, &backup).map_err(|e| {
+        AppError::internal(format!(
+            "Файл {} повреждён ({err}), не удалось сохранить копию: {e}",
+            path.display()
+        ))
+    })?;
+    tracing::warn!(
+        "файл {} повреждён ({err}); сохранён как {}, начинаем с пустого",
+        path.display(),
+        backup.display()
+    );
+    Ok(None)
+}
+
 pub fn write_json<T: Serialize>(path: &Path, value: &T) -> AppResult<()> {
     atomic_write(path, &serde_json::to_vec_pretty(value)?)
 }

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::{AppError, AppResult};
 use crate::kafka::producer::ProducerSettings;
 use crate::produce::payload::ProduceMessage;
-use crate::storage::fs::{read_json, write_json};
+use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::RwLockExt;
 
 const SCHEMA_VERSION: u32 = 1;
@@ -40,7 +40,7 @@ pub struct TemplateStore {
 impl TemplateStore {
     pub fn open(data_dir: &Path) -> AppResult<Self> {
         let path = data_dir.join("templates.json");
-        let templates = match read_json::<TemplatesFile>(&path)? {
+        let templates = match read_json_or_quarantine::<TemplatesFile>(&path, SCHEMA_VERSION)? {
             Some(f) if f.schema_version > SCHEMA_VERSION => {
                 return Err(AppError::internal(format!(
                     "templates.json создан более новой версией приложения (schemaVersion {})",
@@ -191,6 +191,26 @@ mod tests {
             store.save(template(" ", None)).unwrap_err().code,
             ErrorCode::InvalidInput
         );
+    }
+
+    #[test]
+    fn corrupt_file_is_quarantined() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("templates.json"), "{ не json").unwrap();
+        let store = TemplateStore::open(dir.path()).unwrap();
+        assert!(store.list("c").is_empty());
+        let backups = std::fs::read_dir(dir.path())
+            .unwrap()
+            .filter(|e| {
+                e.as_ref()
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("templates.json.corrupt-")
+            })
+            .count();
+        assert_eq!(backups, 1);
+        store.save(template("x", None)).unwrap();
     }
 
     #[test]

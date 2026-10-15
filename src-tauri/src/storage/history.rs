@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::{AppError, AppResult};
 use crate::kafka::producer::{ProduceResult, ProducerSettings};
 use crate::produce::payload::ProduceMessage;
-use crate::storage::fs::{read_json, write_json};
+use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::MutexExt;
 
 pub const HISTORY_LIMIT: usize = 100;
@@ -66,6 +66,9 @@ struct HistoryFile {
     entries: Vec<HistoryEntry>,
 }
 
+/// Сообщения хранятся уже после подстановки плейсхолдеров, открытым текстом (включая значения
+/// заголовков и результаты `{{env}}`) — секреты в них попадают в `history/<id>.json` как есть.
+///
 /// История отправленных сообщений: по файлу на подключение (`history/<id>.json`).
 pub struct HistoryStore {
     dir: PathBuf,
@@ -95,7 +98,7 @@ impl HistoryStore {
     }
 
     fn read(&self, path: &Path) -> AppResult<Vec<HistoryEntry>> {
-        match read_json::<HistoryFile>(path)? {
+        match read_json_or_quarantine::<HistoryFile>(path, SCHEMA_VERSION)? {
             Some(f) if f.schema_version > SCHEMA_VERSION => Err(AppError::internal(format!(
                 "{} создан более новой версией приложения (schemaVersion {})",
                 path.display(),
@@ -202,6 +205,28 @@ mod tests {
         assert!(e.message.value.text.len() <= MAX_HISTORY_TEXT);
         store.append("c", entry(2, "short")).unwrap();
         assert!(!store.list("c").unwrap()[0].truncated);
+    }
+
+    #[test]
+    fn corrupt_file_is_quarantined() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = HistoryStore::open(dir.path()).unwrap();
+        let p = dir.path().join("history").join("c.json");
+        std::fs::write(&p, "{ не json").unwrap();
+        assert!(store.list("c").unwrap().is_empty());
+        store.append("c", entry(1, "v")).unwrap();
+        assert_eq!(store.list("c").unwrap().len(), 1);
+        let backups = std::fs::read_dir(dir.path().join("history"))
+            .unwrap()
+            .filter(|e| {
+                e.as_ref()
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("c.json.corrupt-")
+            })
+            .count();
+        assert_eq!(backups, 1);
     }
 
     #[test]

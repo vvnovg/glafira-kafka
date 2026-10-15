@@ -1,9 +1,7 @@
-use std::sync::Arc;
-
 use tauri::State;
 use tauri::ipc::Channel;
 
-use crate::browse::registry::SessionRegistry;
+use super::RemoveOnDrop;
 use crate::browse::session::{BrowseParams, EventSink, run_browse};
 use crate::browse::types::BrowseEvent;
 use crate::error::{AppError, AppResult};
@@ -12,18 +10,6 @@ use crate::state::AppState;
 impl EventSink for Channel<BrowseEvent> {
     fn send(&self, event: BrowseEvent) -> bool {
         Channel::<BrowseEvent>::send(self, event).is_ok()
-    }
-}
-
-/// Снимает сессию с учёта при любом выходе из потока, включая панику.
-struct RemoveOnDrop {
-    sessions: Arc<SessionRegistry>,
-    id: String,
-}
-
-impl Drop for RemoveOnDrop {
-    fn drop(&mut self) {
-        self.sessions.remove(&self.id);
     }
 }
 

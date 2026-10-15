@@ -1,8 +1,10 @@
 use tauri::State;
+use tauri::ipc::Channel;
 
-use super::blocking;
-use crate::error::AppResult;
+use super::{RemoveOnDrop, blocking};
+use crate::error::{AppError, AppResult};
 use crate::kafka::producer::{self, ProduceResult, ProducerSettings};
+use crate::produce::batch::{self, BatchEvent, BatchParams, BatchSink};
 use crate::produce::payload::{ProduceMessage, encode_message};
 use crate::produce::template::{RenderContext, render_message, system_env};
 use crate::state::AppState;
@@ -73,6 +75,51 @@ pub async fn produce_impl(
         tracing::warn!("не удалось записать историю отправки: {}", e.message);
     }
     Ok(result)
+}
+
+impl BatchSink for Channel<BatchEvent> {
+    fn send(&self, event: BatchEvent) -> bool {
+        Channel::<BatchEvent>::send(self, event).is_ok()
+    }
+}
+
+/// Пакетная отправка: сессия в общем реестре (останавливается `stop_session` и удалением
+/// подключения), прогресс — событиями в канал. Возвращает id сессии.
+#[tauri::command]
+pub fn produce_batch(
+    state: State<'_, AppState>,
+    params: BatchParams,
+    on_event: Channel<BatchEvent>,
+    confirm: Option<String>,
+) -> AppResult<String> {
+    produce_batch_impl(state.inner(), params, on_event, confirm)
+}
+
+// Мутирующая команда: `guarded` — первым делом, до проверки параметров и открытия файла.
+// Producer, файл и keychain — только в отдельном потоке сессии.
+pub fn produce_batch_impl(
+    st: &AppState,
+    params: BatchParams,
+    sink: impl BatchSink,
+    confirm: Option<String>,
+) -> AppResult<String> {
+    let profile = st.guarded(&params.connection_id, confirm.as_deref())?;
+    batch::validate(&params)?;
+    let secrets = st.secrets.clone();
+    let (id, cancel) = st.sessions.register(&params.connection_id);
+    // Guard создаётся до spawn: при ошибке запуска замыкание дропается вместе с ним.
+    let guard = RemoveOnDrop {
+        sessions: st.sessions.clone(),
+        id: id.clone(),
+    };
+    std::thread::Builder::new()
+        .name(format!("batch-{id}"))
+        .spawn(move || {
+            let _guard = guard;
+            batch::run_batch(&profile, secrets.as_ref(), params, cancel, &sink);
+        })
+        .map_err(|e| AppError::internal(format!("Не удалось запустить поток отправки: {e}")))?;
+    Ok(id)
 }
 
 #[tauri::command]
@@ -206,5 +253,108 @@ mod tests {
         let m = message("{\"a\": {{uuid}}}", PayloadFormat::Json);
         let e = produce_impl(&st, "dev".into(), m, ProducerSettings::default(), None).await;
         assert_eq!(e.unwrap_err().code, ErrorCode::InvalidInput);
+    }
+
+    struct ChanSink(std::sync::Mutex<std::sync::mpsc::Sender<BatchEvent>>);
+
+    impl BatchSink for ChanSink {
+        fn send(&self, e: BatchEvent) -> bool {
+            self.0.lock().unwrap().send(e).is_ok()
+        }
+    }
+
+    fn sink() -> (ChanSink, std::sync::mpsc::Receiver<BatchEvent>) {
+        let (tx, rx) = std::sync::mpsc::channel();
+        (ChanSink(std::sync::Mutex::new(tx)), rx)
+    }
+
+    fn batch_params(connection_id: &str, count: u64, rate: Option<u32>) -> BatchParams {
+        BatchParams {
+            connection_id: connection_id.into(),
+            source: crate::produce::batch::BatchSource::Copies {
+                count,
+                message: message("{{seq}}", PayloadFormat::String),
+            },
+            settings: ProducerSettings::default(),
+            rate_per_sec: rate,
+        }
+    }
+
+    fn wait_last(rx: &std::sync::mpsc::Receiver<BatchEvent>) -> BatchEvent {
+        let mut last = None;
+        while let Ok(e) = rx.recv_timeout(std::time::Duration::from_secs(10)) {
+            last = Some(e);
+        }
+        last.expect("ни одного события")
+    }
+
+    #[test]
+    fn batch_is_guarded_before_validation() {
+        let (_d, st) = state();
+        let e = produce_batch_impl(
+            &st,
+            batch_params("ro", 1, None),
+            sink().0,
+            Some("conn-ro".into()),
+        );
+        assert_eq!(e.unwrap_err().code, ErrorCode::ReadOnly);
+        // Невалидные параметры (0 копий) не меняют код: guard — первым.
+        let e = produce_batch_impl(&st, batch_params("ro", 0, None), sink().0, None);
+        assert_eq!(e.unwrap_err().code, ErrorCode::ReadOnly);
+        let e = produce_batch_impl(&st, batch_params("prod", 0, None), sink().0, None);
+        assert_eq!(e.unwrap_err().code, ErrorCode::ConfirmationRequired);
+        let e = produce_batch_impl(&st, batch_params("nope", 1, None), sink().0, None);
+        assert_eq!(e.unwrap_err().code, ErrorCode::NotFound);
+        for bad in [0, crate::produce::batch::MAX_COPIES + 1] {
+            let e = produce_batch_impl(&st, batch_params("dev", bad, None), sink().0, None);
+            assert_eq!(e.unwrap_err().code, ErrorCode::InvalidInput);
+        }
+        assert!(
+            st.sessions.is_empty(),
+            "отклонённый пакет не регистрирует сессию"
+        );
+    }
+
+    #[test]
+    fn batch_missing_file_ends_with_error_event() {
+        let (d, st) = state();
+        let params = BatchParams {
+            source: crate::produce::batch::BatchSource::File {
+                path: d.path().join("missing.jsonl").to_string_lossy().into(),
+                format: crate::produce::source::FileFormat::Jsonl,
+                topic: "t".into(),
+            },
+            ..batch_params("dev", 1, None)
+        };
+        let (s, rx) = sink();
+        produce_batch_impl(&st, params, s, None).unwrap();
+        match wait_last(&rx) {
+            BatchEvent::Error { error } => assert_eq!(error.code, ErrorCode::InvalidInput),
+            other => panic!("ожидали Error, получили {other:?}"),
+        }
+        assert!(st.sessions.is_empty(), "сессия снята с учёта");
+    }
+
+    #[test]
+    fn deleting_connection_cancels_batch() {
+        let (_d, st) = state();
+        let (s, rx) = sink();
+        // Брокер недоступен, 1 сообщение/с: пакет ждёт в ограничителе скорости.
+        produce_batch_impl(&st, batch_params("dev", 1000, Some(1)), s, None).unwrap();
+        assert_eq!(st.sessions.len(), 1);
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        let started = std::time::Instant::now();
+        assert_eq!(st.sessions.cancel_for("dev"), 1);
+        match wait_last(&rx) {
+            BatchEvent::Finished {
+                cancelled, sent, ..
+            } => {
+                assert!(cancelled);
+                assert_eq!(sent, 0);
+            }
+            other => panic!("ожидали Finished, получили {other:?}"),
+        }
+        assert!(started.elapsed() < std::time::Duration::from_secs(5));
+        assert!(st.sessions.is_empty(), "сессия снята с учёта");
     }
 }

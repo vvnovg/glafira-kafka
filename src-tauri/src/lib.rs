@@ -59,6 +59,7 @@ pub fn run() {
             commands::groups::reset_offsets,
             commands::groups::delete_group,
             commands::produce::produce,
+            commands::produce::produce_batch,
             commands::produce::list_history,
             commands::produce::list_templates,
             commands::produce::save_template,

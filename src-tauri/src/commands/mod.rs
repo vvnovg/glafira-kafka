@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use rdkafka::admin::ResourceSpecifier;
 
+use crate::browse::registry::SessionRegistry;
 use crate::error::{AppError, AppResult};
 use crate::kafka::configs::{ConfigEntryDto, describe_configs};
 use crate::kafka::pool::KafkaHandles;
@@ -64,4 +65,16 @@ pub(crate) async fn pooled_configs(
         describe_configs(&h, spec).await
     })
     .await
+}
+
+/// Снимает сессию с учёта при любом выходе из потока, включая панику.
+pub(crate) struct RemoveOnDrop {
+    pub(crate) sessions: Arc<SessionRegistry>,
+    pub(crate) id: String,
+}
+
+impl Drop for RemoveOnDrop {
+    fn drop(&mut self) {
+        self.sessions.remove(&self.id);
+    }
 }

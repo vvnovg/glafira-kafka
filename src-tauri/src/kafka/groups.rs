@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::admin_ext::{GroupDescriptionRaw, RawPartition};
 use crate::kafka::topics::PartitionBoundsMap;
+use rdkafka::types::RDKafkaErrorCode;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,6 +48,9 @@ pub struct GroupDescription {
     pub members: Vec<GroupMember>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Брокер ответил GROUP_ID_NOT_FOUND: группы не существует (во фронтенд не уходит).
+    #[serde(skip)]
+    pub not_found: bool,
 }
 
 impl From<GroupDescriptionRaw> for GroupDescription {
@@ -73,6 +77,10 @@ impl From<GroupDescriptionRaw> for GroupDescription {
                     }
                 })
                 .collect(),
+            not_found: r
+                .error
+                .as_ref()
+                .is_some_and(|e| e.code == RDKafkaErrorCode::GroupIdNotFound),
             error: r.error.map(|e| format!("{}: {}", e.code, e.message)),
         }
     }
@@ -380,7 +388,7 @@ fn not_empty_error(d: &GroupDescription, action: &str) -> AppError {
 }
 
 fn description_ok(d: &GroupDescription) -> AppResult<()> {
-    match &d.error {
+    match d.error.as_ref().filter(|_| !d.not_found) {
         Some(e) => Err(AppError::internal(format!(
             "Не удалось получить состояние группы «{}»",
             d.group_id
@@ -392,6 +400,10 @@ fn description_ok(d: &GroupDescription) -> AppResult<()> {
 
 pub fn check_resettable(d: &GroupDescription) -> AppResult<()> {
     description_ok(d)?;
+    if d.not_found {
+        // Несуществующая группа: коммиты создадут её.
+        return Ok(());
+    }
     match d.state.as_str() {
         "Empty" | "Dead" => Ok(()),
         _ => Err(not_empty_error(d, "Сброс оффсетов")),
@@ -400,6 +412,12 @@ pub fn check_resettable(d: &GroupDescription) -> AppResult<()> {
 
 pub fn check_deletable(d: &GroupDescription) -> AppResult<()> {
     description_ok(d)?;
+    if d.not_found {
+        return Err(AppError::not_found(format!(
+            "Группа «{}» не найдена",
+            d.group_id
+        )));
+    }
     match d.state.as_str() {
         "Empty" => Ok(()),
         "Dead" => Err(AppError::not_found(format!(
@@ -695,7 +713,23 @@ mod tests {
                 })
                 .collect(),
             error: None,
+            not_found: false,
         }
+    }
+
+    #[test]
+    fn group_id_not_found_means_nonexistent() {
+        let mut d = desc("Dead", 0);
+        d.error = Some("GroupIdNotFound (Broker: Group ID not found): x".into());
+        d.not_found = true;
+        assert!(check_resettable(&d).is_ok());
+        let e = check_deletable(&d).unwrap_err();
+        assert_eq!(e.code, ErrorCode::NotFound);
+        assert!(e.message.contains("не найдена"));
+        // Прочие ошибки describe остаются ошибками.
+        d.not_found = false;
+        assert_eq!(check_resettable(&d).unwrap_err().code, ErrorCode::Internal);
+        assert_eq!(check_deletable(&d).unwrap_err().code, ErrorCode::Internal);
     }
 
     #[test]

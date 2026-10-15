@@ -174,6 +174,19 @@ fn retry_backoff(attempt: u32) -> Duration {
     Duration::from_millis(200u64 << attempt.min(3))
 }
 
+/// Повторяет запрос при транзитных ошибках брокера (смена лидера и т. п.) в пределах `timeout`.
+/// rust-rdkafka возвращает ошибки и метаданных, и ListOffsets как `MetadataFetch`, поэтому
+/// подходит для обоих видов запросов.
+pub fn retry_transient<T>(
+    timeout: Duration,
+    mut fetch: impl FnMut(Duration) -> Result<T, KafkaError>,
+) -> Result<T, KafkaError> {
+    let started = Instant::now();
+    retry_loop(timeout, &mut fetch, &mut std::thread::sleep, &|| {
+        started.elapsed()
+    })
+}
+
 /// Повторяет `fetch` при транзитных ошибках брокера в пределах `budget`.
 fn retry_loop<T>(
     budget: Duration,
@@ -244,6 +257,32 @@ fn needs_client_error(err: &KafkaError) -> bool {
 mod tests {
     use super::*;
     use rdkafka::types::RDKafkaErrorCode as C;
+
+    #[test]
+    fn retry_transient_retries_leader_errors_then_succeeds() {
+        let mut calls = 0;
+        let r = retry_transient(Duration::from_secs(5), |_| {
+            calls += 1;
+            if calls < 3 {
+                Err(KafkaError::MetadataFetch(C::NotLeaderForPartition))
+            } else {
+                Ok(42)
+            }
+        });
+        assert_eq!(r.unwrap(), 42);
+        assert_eq!(calls, 3);
+    }
+
+    #[test]
+    fn retry_transient_does_not_retry_other_errors() {
+        let mut calls = 0;
+        let r: Result<(), _> = retry_transient(Duration::from_secs(5), |_| {
+            calls += 1;
+            Err(KafkaError::MetadataFetch(C::UnknownTopicOrPartition))
+        });
+        assert!(r.is_err());
+        assert_eq!(calls, 1);
+    }
 
     #[test]
     fn item_errors_map_to_app_codes() {

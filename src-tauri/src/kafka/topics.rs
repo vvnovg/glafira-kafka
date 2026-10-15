@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::error::{AppError, AppResult};
 use crate::kafka::context::CapturingContext;
-use crate::kafka::errors::fetch_metadata_fast_fail;
+use crate::kafka::errors::{fetch_metadata_fast_fail, retry_transient};
 use crate::kafka::metadata::{TopicMeta, convert};
 use crate::kafka::pool::KafkaHandles;
 
@@ -98,8 +98,12 @@ pub fn fetch_bounds(
     if parts.is_empty() {
         return Ok(HashMap::new());
     }
-    let low = list_offsets(c, parts, Offset::Beginning, timeout)?;
-    let high = list_offsets(c, parts, Offset::End, timeout)?;
+    // Оба запроса укладываются в общий `timeout`; транзитные ошибки лидера (сразу после
+    // добавления партиций) повторяются, а не превращаются в ошибку всего чтения.
+    let started = Instant::now();
+    let low = retry_transient(timeout, |t| list_offsets(c, parts, Offset::Beginning, t))?;
+    let remaining = timeout.saturating_sub(started.elapsed());
+    let high = retry_transient(remaining, |t| list_offsets(c, parts, Offset::End, t))?;
     Ok(parts
         .iter()
         .map(|k| (k.clone(), combine(low.get(k), high.get(k))))

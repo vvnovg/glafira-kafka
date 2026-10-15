@@ -155,3 +155,35 @@ async fn topic_lifecycle() {
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn cleanup_policies_in_one_request() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let a = common::TempTopic::create(&bs, "it-policy-a", 1).await;
+    let b = common::TempTopic::create(&bs, "it-policy-b", 1).await;
+    let h = handles(&bs);
+    let (h1, b1) = (h.clone(), b.to_string());
+    tokio::task::spawn_blocking(move || {
+        alter_topic_configs(
+            &h1,
+            &b1,
+            &[ConfigChange::Set {
+                name: "cleanup.policy".into(),
+                value: "compact".into(),
+            }],
+        )
+    })
+    .await
+    .unwrap()
+    .unwrap();
+    let policies = kafka_explorer_lib::kafka::configs::describe_topic_policies(
+        &h,
+        &[a.to_string(), b.to_string()],
+    )
+    .await
+    .unwrap();
+    assert_eq!(policies[0].cleanup_policy.as_deref(), Some("delete"));
+    assert_eq!(policies[1].cleanup_policy.as_deref(), Some("compact"));
+}

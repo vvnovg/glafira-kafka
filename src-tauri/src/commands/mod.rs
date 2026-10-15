@@ -1,12 +1,17 @@
 pub mod browse;
 pub mod cluster;
 pub mod connections;
+pub mod topic_ops;
 pub mod topics;
+
+use std::future::Future;
+use std::sync::Arc;
 
 use rdkafka::admin::ResourceSpecifier;
 
 use crate::error::{AppError, AppResult};
 use crate::kafka::configs::{ConfigEntryDto, describe_configs};
+use crate::kafka::pool::KafkaHandles;
 use crate::state::AppState;
 
 /// Блокирующие вызовы librdkafka не выполняются на async-потоках Tauri.
@@ -20,25 +25,41 @@ where
         .map_err(|e| AppError::internal(format!("Фоновая задача завершилась аварийно: {e}")))?
 }
 
-/// DescribeConfigs на pooled-handles; при AUTH/TLS-ошибке handles вытесняются (как в
-/// `AppState::with_handles`), последняя ссылка освобождается на blocking-потоке.
+/// Async-операция на pooled-handles подключения: handles берутся (keychain, создание клиента) и
+/// освобождаются на blocking-потоке; при AUTH/TLS-ошибке вытесняются из пула
+/// (как в `AppState::with_handles`).
+pub(crate) async fn with_pooled<T, F, Fut>(
+    state: &AppState,
+    connection_id: String,
+    op: F,
+) -> AppResult<T>
+where
+    F: FnOnce(Arc<KafkaHandles>) -> Fut,
+    Fut: Future<Output = AppResult<T>>,
+{
+    let (st, id) = (state.clone(), connection_id.clone());
+    let h = blocking(move || st.handles(&id)).await?;
+    let r = op(h.clone()).await;
+    let (st, err) = (state.clone(), r.as_ref().err().cloned());
+    let _ = blocking(move || {
+        if let Some(e) = &err {
+            st.evict_if_client_broken(&connection_id, e);
+        }
+        drop(h);
+        Ok(())
+    })
+    .await;
+    r
+}
+
+/// DescribeConfigs на pooled-handles.
 pub(crate) async fn pooled_configs(
     state: &AppState,
     connection_id: String,
     spec: ResourceSpecifier<'_>,
 ) -> AppResult<Vec<ConfigEntryDto>> {
-    let st = state.clone();
-    let id = connection_id.clone();
-    let h = blocking(move || st.handles(&id)).await?;
-    let r = describe_configs(&h, spec).await;
-    if let Err(e) = &r {
-        let (st, e) = (state.clone(), e.clone());
-        let _ = blocking(move || {
-            st.evict_if_client_broken(&connection_id, &e);
-            drop(h);
-            Ok(())
-        })
-        .await;
-    }
-    r
+    with_pooled(state, connection_id, |h| async move {
+        describe_configs(&h, spec).await
+    })
+    .await
 }

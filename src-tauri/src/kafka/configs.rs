@@ -1,4 +1,4 @@
-use rdkafka::admin::{AdminOptions, ResourceSpecifier};
+use rdkafka::admin::{AdminOptions, OwnedResourceSpecifier, ResourceSpecifier};
 use rdkafka::error::KafkaError;
 use serde::Serialize;
 
@@ -52,4 +52,45 @@ pub async fn describe_configs(
         .collect();
     entries.sort_by(|a, b| a.name.cmp(&b.name));
     Ok(entries)
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicPolicy {
+    pub name: String,
+    /// None — значение не получено (ошибка ресурса или нет прав).
+    pub cleanup_policy: Option<String>,
+}
+
+/// cleanup.policy для набора топиков одним пакетным DescribeConfigs.
+pub async fn describe_topic_policies(
+    h: &Arc<KafkaHandles>,
+    topics: &[String],
+) -> AppResult<Vec<TopicPolicy>> {
+    if topics.is_empty() {
+        return Ok(Vec::new());
+    }
+    let specs: Vec<ResourceSpecifier> =
+        topics.iter().map(|t| ResourceSpecifier::Topic(t)).collect();
+    let started = Instant::now();
+    let opts = AdminOptions::new().request_timeout(Some(h.timeout));
+    let results = match h.admin.describe_configs(&specs, &opts).await {
+        Ok(r) => r,
+        Err(e) => return Err(admin_error(h, started, e).await),
+    };
+    // Ответ сопоставляется по имени ресурса: порядок librdkafka не гарантирует.
+    let mut found: std::collections::HashMap<String, Option<String>> = Default::default();
+    for r in results.into_iter().flatten() {
+        if let OwnedResourceSpecifier::Topic(name) = &r.specifier {
+            let value = r.get("cleanup.policy").and_then(|e| e.value.clone());
+            found.insert(name.clone(), value);
+        }
+    }
+    Ok(topics
+        .iter()
+        .map(|t| TopicPolicy {
+            name: t.clone(),
+            cleanup_policy: found.get(t).cloned().flatten(),
+        })
+        .collect())
 }

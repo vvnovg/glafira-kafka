@@ -43,6 +43,12 @@ pub fn run() {
             commands::topics::get_topic_stats,
             commands::topics::get_topic,
             commands::topics::get_topic_configs,
+            commands::topic_ops::create_topic,
+            commands::topic_ops::alter_topic_configs,
+            commands::topic_ops::add_partitions,
+            commands::topic_ops::purge_topic,
+            commands::topic_ops::delete_topics,
+            commands::topic_ops::get_topic_policies,
             commands::browse::start_browse,
             commands::browse::stop_session,
         ])

@@ -17,6 +17,7 @@ pub struct AppState {
     pub consumers: Arc<crate::consume::control::ConsumerControls>,
     pub history: Arc<crate::storage::history::HistoryStore>,
     pub templates: Arc<crate::storage::templates::TemplateStore>,
+    pub policy: Arc<crate::policy::Policy>,
 }
 
 impl AppState {
@@ -30,7 +31,14 @@ impl AppState {
             consumers: Arc::new(Default::default()),
             history: Arc::new(crate::storage::history::HistoryStore::open(data_dir)?),
             templates: Arc::new(crate::storage::templates::TemplateStore::open(data_dir)),
+            policy: Arc::new(crate::policy::Policy::default()),
         })
+    }
+
+    /// Политика администратора (читается при запуске в lib.rs).
+    pub fn with_policy(mut self, policy: crate::policy::Policy) -> Self {
+        self.policy = Arc::new(policy);
+        self
     }
 
     pub fn profile(&self, id: &str) -> AppResult<ConnectionProfile> {

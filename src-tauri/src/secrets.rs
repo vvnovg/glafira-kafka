@@ -7,8 +7,6 @@ use crate::kafka::config::{
 };
 use crate::sync::MutexExt;
 
-const SERVICE: &str = "kafka-explorer";
-
 pub trait SecretStore: Send + Sync {
     fn get(&self, key: &str) -> AppResult<Option<String>>;
     fn set(&self, key: &str, value: &str) -> AppResult<()>;
@@ -36,7 +34,8 @@ fn keyring_err(e: keyring::Error) -> AppError {
 
 impl SecretStore for KeyringStore {
     fn get(&self, key: &str) -> AppResult<Option<String>> {
-        let entry = keyring::Entry::new(SERVICE, key).map_err(keyring_err)?;
+        let entry =
+            keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key).map_err(keyring_err)?;
         match entry.get_password() {
             Ok(v) => Ok(Some(v)),
             Err(keyring::Error::NoEntry) => Ok(None),
@@ -45,13 +44,14 @@ impl SecretStore for KeyringStore {
     }
 
     fn set(&self, key: &str, value: &str) -> AppResult<()> {
-        keyring::Entry::new(SERVICE, key)
+        keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key)
             .and_then(|e| e.set_password(value))
             .map_err(keyring_err)
     }
 
     fn delete(&self, key: &str) -> AppResult<()> {
-        let entry = keyring::Entry::new(SERVICE, key).map_err(keyring_err)?;
+        let entry =
+            keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key).map_err(keyring_err)?;
         match entry.delete_credential() {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(e) => Err(keyring_err(e)),

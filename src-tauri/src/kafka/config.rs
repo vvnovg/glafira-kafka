@@ -2,7 +2,9 @@ use rdkafka::ClientConfig;
 
 use crate::error::{AppError, AppResult};
 use crate::secrets::{SecretStore, secret_key};
-use crate::storage::connections::{ConnectionProfile, SaslConfig, SecurityConfig, TlsConfig};
+use crate::storage::connections::{
+    CertFormat, ConnectionProfile, SaslConfig, SecurityConfig, TlsConfig,
+};
 
 pub const SASL_PASSWORD: &str = "sasl.password";
 pub const SSL_KEY_PASSWORD: &str = "ssl.key.password";
@@ -51,7 +53,15 @@ fn apply_tls(
     tls: &TlsConfig,
     secrets: &dyn SecretStore,
 ) -> AppResult<()> {
-    let secret = |field: &str| secrets.get(&secret_key(id, field));
+    // Читаем только секреты, нужные форматам (та же матрица, что в secret_ops при сохранении):
+    // лишние обращения к keychain медленны, а его недоступность не должна ломать профили без паролей.
+    let secret = |used: bool, field: &str| -> AppResult<Option<String>> {
+        if used {
+            secrets.get(&secret_key(id, field))
+        } else {
+            Ok(None)
+        }
+    };
     match tls
         .ca_location
         .as_deref()
@@ -66,7 +76,7 @@ fn apply_tls(
             let pem = crate::tls::load_ca(
                 tls.ca_format,
                 path,
-                secret(SSL_TRUSTSTORE_PASSWORD)?.as_deref(),
+                secret(tls.ca_format != CertFormat::Pem, SSL_TRUSTSTORE_PASSWORD)?.as_deref(),
             )?;
             c.set("ssl.ca.pem", pem);
         }
@@ -74,8 +84,16 @@ fn apply_tls(
     if let Some(cert) = &tls.client_cert {
         let id_pem = crate::tls::load_identity(
             cert,
-            secret(SSL_KEY_PASSWORD)?.as_deref(),
-            secret(SSL_KEYSTORE_PASSWORD)?.as_deref(),
+            secret(
+                matches!(cert.format, CertFormat::Pem | CertFormat::Jks),
+                SSL_KEY_PASSWORD,
+            )?
+            .as_deref(),
+            secret(
+                matches!(cert.format, CertFormat::Pkcs12 | CertFormat::Jks),
+                SSL_KEYSTORE_PASSWORD,
+            )?
+            .as_deref(),
         )?;
         c.set("ssl.certificate.pem", id_pem.certificate_pem);
         c.set("ssl.key.pem", id_pem.key_pem);
@@ -181,6 +199,85 @@ mod tests {
                 .contains("BEGIN CERTIFICATE")
         );
         assert!(c.get("ssl.key.pem").unwrap().contains("BEGIN PRIVATE KEY"));
+    }
+
+    /// Хранилище, которое падает на любом ключе, кроме разрешённых: недоступный keychain
+    /// не должен ломать профили, которым эти секреты не нужны.
+    struct StrictStore {
+        allowed: Vec<String>,
+        inner: MemoryStore,
+    }
+
+    impl StrictStore {
+        fn new(id: &str, allowed: &[&str]) -> Self {
+            Self {
+                allowed: allowed.iter().map(|f| secret_key(id, f)).collect(),
+                inner: MemoryStore::default(),
+            }
+        }
+    }
+
+    impl SecretStore for StrictStore {
+        fn get(&self, key: &str) -> AppResult<Option<String>> {
+            if !self.allowed.iter().any(|k| k == key) {
+                return Err(AppError::internal(format!(
+                    "неожиданное чтение секрета {key}"
+                )));
+            }
+            self.inner.get(key)
+        }
+        fn set(&self, key: &str, value: &str) -> AppResult<()> {
+            self.inner.set(key, value)
+        }
+        fn delete(&self, key: &str) -> AppResult<()> {
+            self.inner.delete(key)
+        }
+    }
+
+    fn client(format: CertFormat, cert: &str, key: Option<&str>) -> Option<ClientCert> {
+        Some(ClientCert {
+            format,
+            certificate_path: fixture(cert),
+            key_path: key.map(fixture),
+            alias: None,
+        })
+    }
+
+    #[test]
+    fn tls_reads_only_the_secrets_the_formats_need() {
+        let ssl = |t: TlsConfig| {
+            let mut p = sample_profile("c1");
+            p.security = SecurityConfig::Ssl { tls: t };
+            p
+        };
+        // PEM CA + PEM-клиент: только пароль ключа.
+        let p = ssl(tls(
+            Some(fixture("ca.pem")),
+            client(CertFormat::Pem, "client.pem", Some("client.key")),
+        ));
+        build_client_config(&p, &StrictStore::new("c1", &[SSL_KEY_PASSWORD])).unwrap();
+
+        // PKCS12-клиент без CA: только пароль хранилища.
+        let p = ssl(tls(
+            None,
+            client(CertFormat::Pkcs12, "client-nopass.p12", None),
+        ));
+        build_client_config(&p, &StrictStore::new("c1", &[SSL_KEYSTORE_PASSWORD])).unwrap();
+
+        // Только PEM CA: секреты не читаются вовсе.
+        let p = ssl(tls(Some(fixture("ca.pem")), None));
+        build_client_config(&p, &StrictStore::new("c1", &[])).unwrap();
+
+        // CA в PKCS12: только пароль truststore.
+        let p = ssl(TlsConfig {
+            ca_format: CertFormat::Pkcs12,
+            ..tls(Some(fixture("truststore.p12")), None)
+        });
+        let store = StrictStore::new("c1", &[SSL_TRUSTSTORE_PASSWORD]);
+        store
+            .set(&secret_key("c1", SSL_TRUSTSTORE_PASSWORD), "storepass")
+            .unwrap();
+        build_client_config(&p, &store).unwrap();
     }
 
     #[test]

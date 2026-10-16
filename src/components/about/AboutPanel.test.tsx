@@ -18,6 +18,7 @@ vi.mock("../../api/client", async (importOriginal) => {
   };
 });
 
+import { save } from "@tauri-apps/plugin-dialog";
 import { api } from "../../api/client";
 import { AboutPanel } from "./AboutPanel";
 
@@ -31,5 +32,16 @@ describe("AboutPanel", () => {
     await user.click(screen.getByRole("button", { name: "Собрать диагностику" }));
     expect(api.exportDiagnostics).toHaveBeenCalledWith("/tmp/diag.zip");
     expect(await screen.findByText(/Архив сохранён/)).toBeInTheDocument();
+  });
+
+  it("отмена диалога: экспорта и ошибки нет", async () => {
+    vi.mocked(save).mockResolvedValueOnce(null);
+    vi.mocked(api.exportDiagnostics).mockClear();
+    const user = userEvent.setup();
+    renderWithClient(<AboutPanel />);
+    await user.click(await screen.findByRole("button", { name: "Собрать диагностику" }));
+    expect(api.exportDiagnostics).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Архив сохранён/)).not.toBeInTheDocument();
   });
 });

@@ -59,7 +59,12 @@ pub fn write_archive(
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let bytes = std::fs::read(path)?;
+        let bytes = match std::fs::read(path) {
+            Ok(b) => b,
+            // Файл успел уйти при ротации между перечислением и чтением.
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => return Err(e.into()),
+        };
         zip.start_file(format!("logs/{name}"), opts)
             .map_err(zip_err)?;
         zip.write_all(&bytes)?;
@@ -128,6 +133,34 @@ mod tests {
         assert!(
             info_json.contains("\"version\": \"0.2.0\"") && info_json.contains("\"tier\": \"pro\"")
         );
+    }
+
+    #[test]
+    fn missing_log_file_is_skipped() {
+        let dir = tempfile::tempdir().unwrap();
+        let log = dir.path().join("app.log");
+        std::fs::write(&log, "x").unwrap();
+        let out = dir.path().join("diag.zip");
+        write_archive(
+            &out,
+            &info(),
+            &[],
+            &PolicyStatus::default(),
+            &LicenseStatus {
+                tier: Tier::Free,
+                state: LicenseState::None,
+                source: None,
+                licensee: None,
+                kind: None,
+                expires: None,
+                days_left: None,
+                error: None,
+            },
+            &[dir.path().join("app.1.log"), log],
+        )
+        .unwrap();
+        let zip = zip::ZipArchive::new(std::fs::File::open(&out).unwrap()).unwrap();
+        assert_eq!(zip.len(), 3);
     }
 
     #[test]

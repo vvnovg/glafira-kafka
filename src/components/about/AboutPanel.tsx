@@ -11,13 +11,16 @@ export function AboutPanel() {
   const [saved, setSaved] = useState<string | null>(null);
   const diag = useMutation({
     mutationFn: async () => {
+      setSaved(null);
       const date = new Date().toISOString().slice(0, 10);
       const path = await save({ defaultPath: `diagnostics-${date}.zip`, filters: [{ name: "ZIP", extensions: ["zip"] }] });
       if (!path) return null;
       await api.exportDiagnostics(path);
       return path;
     },
-    onSuccess: (path) => setSaved(path),
+    onSuccess: (path) => {
+      if (path) setSaved(path);
+    },
   });
 
   if (info.error) return <ErrorBanner error={info.error} onRetry={() => info.refetch()} />;

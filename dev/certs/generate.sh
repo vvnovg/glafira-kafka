@@ -30,6 +30,9 @@ openssl pkcs12 -export -name client -in $OUT/client.pem -inkey $OUT/client.key \
   -certfile $OUT/ca.pem -passout pass:$P -out $OUT/client.p12
 openssl pkcs12 -export -name client -in $OUT/client.pem -inkey $OUT/client.key \
   -certfile $OUT/ca.pem -passout pass: -out $OUT/client-nopass.p12
+# Старые алгоритмы (RC2/3DES) — для проверки legacy-провайдера OpenSSL 3 (нужен OpenSSL 3.x)
+openssl pkcs12 -export -legacy -name client -in $OUT/client.pem -inkey $OUT/client.key \
+  -certfile $OUT/ca.pem -passout pass:$P -out $OUT/client-legacy.p12
 
 # keytool (Java) — из образа Kafka
 KT=(docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/$OUT:/out" -w /out --entrypoint keytool confluentinc/cp-kafka:7.6.1)

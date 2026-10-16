@@ -95,7 +95,9 @@ mod tests {
         p.security = SecurityConfig::Ssl {
             tls: TlsConfig {
                 ca_location: None,
+                ca_format: Default::default(),
                 verify_hostname: false,
+                client_cert: None,
             },
         };
         let c = build_client_config(&p, &MemoryStore::default()).unwrap();
@@ -110,7 +112,9 @@ mod tests {
         p.security = SecurityConfig::SaslSsl {
             tls: TlsConfig {
                 ca_location: Some("/ca.pem".into()),
+                ca_format: Default::default(),
                 verify_hostname: true,
+                client_cert: None,
             },
             sasl: SaslConfig {
                 mechanism: SaslMechanism::ScramSha512,

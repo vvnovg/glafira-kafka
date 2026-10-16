@@ -9,6 +9,7 @@ pub mod secrets;
 pub mod state;
 pub mod storage;
 pub mod sync;
+pub mod tls;
 
 use std::sync::Arc;
 

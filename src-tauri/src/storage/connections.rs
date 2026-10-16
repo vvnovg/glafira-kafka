@@ -46,13 +46,37 @@ fn default_request_timeout() -> u64 {
     30_000
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CertFormat {
+    #[default]
+    Pem,
+    Pkcs12,
+    Jks,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClientCert {
+    pub format: CertFormat,
+    pub certificate_path: String,
+    #[serde(default)]
+    pub key_path: Option<String>,
+    #[serde(default)]
+    pub alias: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TlsConfig {
     #[serde(default)]
     pub ca_location: Option<String>,
+    #[serde(default)]
+    pub ca_format: CertFormat,
     #[serde(default = "default_true")]
     pub verify_hostname: bool,
+    #[serde(default)]
+    pub client_cert: Option<ClientCert>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -119,7 +143,39 @@ pub fn parse_bootstrap(s: &str) -> AppResult<Vec<(String, u16)>> {
 
 fn is_secret_property(key: &str) -> bool {
     let k = key.to_ascii_lowercase();
-    k.contains("password") || k.contains("secret") || k.contains("sasl.jaas.config")
+    k.contains("password")
+        || k.contains("secret")
+        || k.contains("sasl.jaas.config")
+        || k == "ssl.key.pem"
+        || k == "ssl.keystore.key"
+}
+
+fn validate_path(path: &str, what: &str) -> AppResult<()> {
+    if path.trim().is_empty() {
+        return Err(AppError::invalid(format!("Укажите файл: {what}")));
+    }
+    if !std::path::Path::new(path.trim()).is_absolute() {
+        return Err(AppError::invalid(format!(
+            "{what}: укажите абсолютный путь (сейчас «{path}»)"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_tls(tls: &TlsConfig) -> AppResult<()> {
+    if let Some(ca) = tls.ca_location.as_deref().filter(|s| !s.trim().is_empty()) {
+        validate_path(ca, "доверенный CA")?;
+    }
+    if let Some(cc) = &tls.client_cert {
+        validate_path(&cc.certificate_path, "клиентский сертификат")?;
+        if cc.format == CertFormat::Pem {
+            match cc.key_path.as_deref() {
+                Some(k) if !k.trim().is_empty() => validate_path(k, "ключ клиента")?,
+                _ => return Err(AppError::invalid("Укажите файл: ключ клиента (PEM)")),
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
@@ -135,6 +191,9 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
         && sasl.username.trim().is_empty()
     {
         return Err(AppError::invalid("Укажите имя пользователя SASL"));
+    }
+    if let SecurityConfig::Ssl { tls } | SecurityConfig::SaslSsl { tls, .. } = &p.security {
+        validate_tls(tls)?;
     }
     // Секреты хранятся только в keychain: connections.json не должен их содержать.
     if let Some(key) = p.extra_properties.keys().find(|k| is_secret_property(k)) {
@@ -249,6 +308,94 @@ pub fn sample_profile(id: &str) -> ConnectionProfile {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn old_tls_profiles_get_defaults() {
+        let tls: TlsConfig =
+            serde_json::from_str(r#"{"caLocation":"/ca.pem","verifyHostname":false}"#).unwrap();
+        assert_eq!(tls.ca_format, CertFormat::Pem);
+        assert_eq!(tls.client_cert, None);
+        assert!(!tls.verify_hostname);
+    }
+
+    #[test]
+    fn client_cert_json_shape() {
+        let tls = TlsConfig {
+            ca_location: None,
+            ca_format: CertFormat::Jks,
+            verify_hostname: true,
+            client_cert: Some(ClientCert {
+                format: CertFormat::Pkcs12,
+                certificate_path: "/c.p12".into(),
+                key_path: None,
+                alias: None,
+            }),
+        };
+        let v = serde_json::to_value(&tls).unwrap();
+        assert_eq!(v["caFormat"], "jks");
+        assert_eq!(v["clientCert"]["format"], "pkcs12");
+        assert_eq!(v["clientCert"]["certificatePath"], "/c.p12");
+    }
+
+    fn tls_profile(tls: TlsConfig) -> ConnectionProfile {
+        let mut p = sample_profile("a");
+        p.security = SecurityConfig::Ssl { tls };
+        p
+    }
+
+    #[test]
+    fn validation_of_certificate_paths() {
+        let base = TlsConfig {
+            ca_location: None,
+            ca_format: CertFormat::Pem,
+            verify_hostname: true,
+            client_cert: None,
+        };
+        let pem = |cert: &str, key: Option<&str>| TlsConfig {
+            client_cert: Some(ClientCert {
+                format: CertFormat::Pem,
+                certificate_path: cert.into(),
+                key_path: key.map(String::from),
+                alias: None,
+            }),
+            ..base.clone()
+        };
+        let abs = if cfg!(windows) {
+            "C:\\c\\c.pem"
+        } else {
+            "/c/c.pem"
+        };
+        assert!(validate_profile(&tls_profile(pem(abs, Some(abs)))).is_ok());
+        for (tls, needle) in [
+            (pem("", Some(abs)), "сертификат"),
+            (pem("rel/c.pem", Some(abs)), "абсолютный"),
+            (pem(abs, None), "ключ"),
+            (
+                TlsConfig {
+                    ca_location: Some("ca.pem".into()),
+                    ..base.clone()
+                },
+                "абсолютный",
+            ),
+        ] {
+            let e = validate_profile(&tls_profile(tls)).unwrap_err();
+            assert_eq!(e.code, ErrorCode::InvalidInput);
+            assert!(e.message.to_lowercase().contains(needle), "{}", e.message);
+        }
+    }
+
+    #[test]
+    fn private_key_material_is_rejected_in_extra_properties() {
+        for key in ["ssl.key.pem", "SSL.KEYSTORE.KEY"] {
+            let mut p = sample_profile("a");
+            p.extra_properties.insert(key.into(), "x".into());
+            assert_eq!(
+                validate_profile(&p).unwrap_err().code,
+                ErrorCode::InvalidInput,
+                "{key}"
+            );
+        }
+    }
     use super::*;
     use crate::error::ErrorCode;
 
@@ -285,7 +432,9 @@ mod tests {
         b.security = SecurityConfig::SaslSsl {
             tls: TlsConfig {
                 ca_location: Some("/ca.pem".into()),
+                ca_format: CertFormat::Pem,
                 verify_hostname: false,
+                client_cert: None,
             },
             sasl: SaslConfig {
                 mechanism: SaslMechanism::ScramSha512,

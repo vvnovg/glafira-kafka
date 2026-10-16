@@ -39,3 +39,21 @@ test("раздел CHANGELOG ищется точно: 0.2.0 не засчиты�
   assert.deepEqual(p.length, 1);
   assert.ok(p[0].includes("CHANGELOG"));
 });
+
+const withDevKeys = () =>
+  files({ licensePublic: "DEV\n", tauriConf: JSON.stringify({ version: "0.2.0", plugins: { updater: { pubkey: "REPLACE_WITH_UPDATER_PUBKEY" } } }) });
+
+test("по умолчанию (тег) строго: ключи — ошибки, даже если передан warnings", () => {
+  const warnings = [];
+  const p = checkRelease({ tag: "v0.2.0", files: withDevKeys(), warnings });
+  assert.equal(p.length, 2);
+  assert.deepEqual(warnings, []);
+});
+
+test("пробный прогон: ключи — предупреждения, версии и CHANGELOG — по-прежнему ошибки", () => {
+  const warnings = [];
+  assert.deepEqual(checkRelease({ tag: "v0.2.0", files: withDevKeys(), dryRun: true, warnings }), []);
+  assert.equal(warnings.length, 2);
+  const p = checkRelease({ tag: "v0.3.0", files: withDevKeys(), dryRun: true, warnings: [] });
+  assert.equal(p.length, 4);
+});

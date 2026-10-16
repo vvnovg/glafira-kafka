@@ -3,9 +3,21 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # Пробный прогон: сборка всех платформ и latest.json без публикации.
+  # Запуск вручную возможен, только когда release.yml уже в ветке по умолчанию (main).
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Пробный прогон (без публикации; публикация — только по тегу v*)"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   RELEASES_REPO: vvnovg/glafira-kafka-releases
@@ -15,22 +27,37 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: node --test "scripts/*.test.mjs"
-      - run: node scripts/check-release.mjs "${GITHUB_REF_NAME}"
+      # По тегу — версия из тега и строгая проверка; вручную — версия из package.json,
+      # а проблемы с ключами (dev-ключ лицензий, заглушка updater) только предупреждения.
       - id: v
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-      - name: Секреты подписи updater и публикации заданы
+        env:
+          EVENT: ${{ github.event_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$EVENT" = "push" ]; then
+            tag="$GITHUB_REF_NAME"
+            node scripts/check-release.mjs "$tag"
+          else
+            if [ "$DRY_RUN" != "true" ]; then
+              echo "::error::вручную доступен только пробный прогон; релиз публикуется пушем тега v*"; exit 1
+            fi
+            tag="v$(node -p 'require("./package.json").version')"
+            node scripts/check-release.mjs --dry-run "$tag"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+      - name: Секрет подписи updater задан
         env:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           if [ -z "$KEY" ]; then echo "::error::нет секрета TAURI_SIGNING_PRIVATE_KEY"; exit 1; fi
-          if [ -z "$RELEASES_TOKEN" ]; then echo "::error::нет секрета RELEASES_TOKEN"; exit 1; fi
 
   build:
     needs: check
@@ -76,6 +103,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake libcurl4-openssl-dev libsasl2-dev rpm
       - run: pnpm install --frozen-lockfile
+      # Только пробный прогон: на пуше тега переменная не задаётся, и build.rs
+      # не даст собрать релиз с dev-ключом лицензий.
+      - name: Пробный прогон — разрешить dev-ключ лицензий
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "KE_ALLOW_DEV_LICENSE_KEY=1" >> "$GITHUB_ENV"
       # Пустые APPLE_* в окружении ломают сборку (bundler пытается импортировать пустой сертификат),
       # поэтому переменные выставляются только когда секреты заданы.
       - name: Подпись Apple (если заданы секреты)
@@ -99,8 +131,7 @@ jobs:
               printf '%s<<%s\n%s\n%s\n' "$name" "$delim" "$value" "$delim" >> "$GITHUB_ENV"
             fi
           done
-      # KE_ALLOW_DEV_LICENSE_KEY здесь не задаётся: build.rs не даст собрать релиз с dev-ключом лицензий.
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # action-v0.6.2
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -120,6 +151,8 @@ jobs:
           dst="$BUNDLE/macos/${name}_${VERSION}_${{ matrix.arch }}.app.tar.gz"
           mv "$src" "$dst"
           mv "$src.sig" "$dst.sig"
+      # TODO(подпись Apple): .pkg подписывается Developer ID Installer, но отдельно не нотаризуется
+      # (notarytool submit + stapler staple) — добавить, когда появятся секреты APPLE_*.
       - name: .pkg (macOS)
         if: runner.os == 'macOS'
         shell: bash
@@ -155,11 +188,12 @@ jobs:
             ${{ env.BUNDLE }}/appimage/*.AppImage.sig
           if-no-files-found: error
 
-  publish:
+  assemble:
     needs: [check, build]
     runs-on: ubuntu-22.04
     env:
       VERSION: ${{ needs.check.outputs.version }}
+      TAG: ${{ needs.check.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -167,31 +201,59 @@ jobs:
           node-version: 22
       - uses: actions/download-artifact@v4
         with:
-          path: dist-release
+          pattern: bundle-*
+          path: release/assets
           merge-multiple: true
       # GitHub сам заменяет пробелы в именах ассетов, и URL в latest.json перестали бы совпадать
       # с реальными. Переименовываем заранее (подпись .sig от имени файла не зависит).
       - name: Имена артефактов без пробелов
         run: |
           shopt -s nullglob
-          for f in dist-release/*; do
+          for f in release/assets/*; do
             base="$(basename "$f")"
             new="${base// /_}"
-            if [ "$base" != "$new" ]; then mv "$f" "dist-release/$new"; fi
+            if [ "$base" != "$new" ]; then mv "$f" "release/assets/$new"; fi
           done
-          ls -la dist-release
+          ls -la release/assets
       - name: Описание и latest.json
         run: |
-          awk -v v="## $VERSION" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
-          if [ ! -s notes.md ]; then echo "::error::пустой раздел CHANGELOG для $VERSION"; exit 1; fi
-          node scripts/make-latest-json.mjs --version "$VERSION" --notes-file notes.md \
-            --base-url "https://github.com/${RELEASES_REPO}/releases/download/v${VERSION}" --dir dist-release > latest.json
+          awk -v v="## $VERSION" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > release/notes.md
+          if [ ! -s release/notes.md ]; then echo "::error::пустой раздел CHANGELOG для $VERSION"; exit 1; fi
+          node scripts/make-latest-json.mjs --version "$VERSION" --notes-file release/notes.md \
+            --base-url "https://github.com/${RELEASES_REPO}/releases/download/${TAG}" --dir release/assets > latest.json
           node -e 'const p = Object.keys(JSON.parse(require("fs").readFileSync("latest.json","utf8")).platforms).sort().join(","); if (p !== "darwin-aarch64,darwin-x86_64,linux-x86_64,windows-x86_64") { console.error("::error::в latest.json не все платформы: " + p); process.exit(1); }'
-          mv latest.json dist-release/latest.json
-          cat dist-release/latest.json
+          mv latest.json release/assets/latest.json
+          cat release/assets/latest.json
+      # И для пробного прогона, и для публикации: готовый набор ассетов + описание.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ needs.check.outputs.tag }}
+          path: release
+          if-no-files-found: error
+
+  publish:
+    needs: [check, assemble]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      TAG: ${{ needs.check.outputs.tag }}
+    steps:
+      - name: Токен публикации задан
+        env:
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          if [ -z "$RELEASES_TOKEN" ]; then echo "::error::нет секрета RELEASES_TOKEN"; exit 1; fi
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.check.outputs.tag }}
+          path: release
+      # Атомарно: черновик со всеми ассетами, и только потом — публикация с пометкой latest.
+      # Бета публикуется обычным релизом: updater берёт releases/latest/download/latest.json,
+      # а без явного --latest GitHub может не пометить тег -beta как последний.
       - name: Публикация в репозиторий релизов
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
-          # Бета публикуется обычным релизом: updater берёт releases/latest, а предрелизы туда не попадают.
-          gh release create "v${VERSION}" dist-release/* --repo "$RELEASES_REPO" --title "v${VERSION}" --notes-file notes.md
+          gh release create "$TAG" release/assets/* --repo "$RELEASES_REPO" --title "$TAG" --notes-file release/notes.md --draft
+          gh release edit "$TAG" --repo "$RELEASES_REPO" --draft=false --latest

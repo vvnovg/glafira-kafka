@@ -1,7 +1,19 @@
-# Kafka Explorer
+# Glafira for Apache Kafka
 
-Desktop-приложение (Tauri 2 + Rust + React) для интерактивной работы с Kafka-кластерами.
+Desktop-приложение (Tauri 2 + Rust + React) для интерактивной работы с кластерами Apache Kafka.
+
+Apache Kafka is a trademark of the Apache Software Foundation; this project is not affiliated with the ASF.
 Спецификация: `docs/superpowers/specs/2026-10-14-kafka-explorer-design.md`.
+
+## Установка
+Установщики (macOS `.dmg`/`.pkg`, Windows `.msi`, Linux `.deb`/`.rpm`/`.AppImage`) — в разделе релизов:
+https://github.com/vvnovg/glafira-kafka-releases/releases
+
+Бета-сборки могут быть неподписанными. Чтобы открыть:
+- **macOS:** правый клик по приложению → «Открыть» → «Открыть», либо «Системные настройки» → «Конфиденциальность и безопасность» → «Все равно открыть».
+- **Windows:** SmartScreen → «Подробнее» → «Выполнить в любом случае».
+
+Для администраторов (тихая установка, политика, зеркало обновлений): `docs/admin.md`. Лицензии: `docs/licensing.md`.
 
 ## Требования
 - Rust stable (`rustup`), cmake, Xcode Command Line Tools (macOS)
@@ -36,8 +48,13 @@ Windows: если падает `librdkafka_is_built_with_every_compression_codec
 - Просмотр сообщений переживает перезапуск брокера: временные ошибки терпятся, сессия завершается ошибкой, если связь не восстановилась за 60 с.
 
 ## Где хранятся данные
-- Профили подключений: `connections.json` в каталоге данных приложения (macOS: `~/Library/Application Support/dev.kafkaexplorer.app/`).
-- Пароли — в системном хранилище секретов (Keychain / Credential Manager / Secret Service), сервис `kafka-explorer`.
+- Профили подключений: `connections.json` в каталоге данных приложения (macOS: `~/Library/Application Support/io.github.vvnovg.glafira.kafka/`).
+- Пароли — в системном хранилище секретов (Keychain / Credential Manager / Secret Service), сервис `glafira-kafka`.
+- Переход со старого имени (Kafka Explorer, `dev.kafkaexplorer.app`): при первом запуске, если в новом каталоге данных нет
+  `connections.json`, из старого каталога рядом копируются `connections.json`, `templates.json`, `license.json`, `history/`,
+  а пароли подключений — из сервиса keychain `kafka-explorer` в `glafira-kafka`. Уже существующее не перезаписывается,
+  старые данные и записи keychain не удаляются (их можно удалить вручную). В логе — `миграция данных`.
+  macOS может один раз спросить доступ к старым записям Keychain.
 - Шаблоны сообщений: `templates.json`; история отправки — `history/<id подключения>.json` (последние 100, значения до 64 КБ). История хранится открытым текстом и содержит уже отрисованные сообщения: значения, подставленные из `{{env NAME}}`, и значения заголовков (например, токены) записываются как есть. Файлы данных создаются с правами только для владельца (0600, каталог `history/` — 0700 на macOS/Linux). Если `templates.json` не читается (например, создан более новой версией), недоступны только шаблоны — ошибка показывается в панели шаблонов.
 - Лицензия: `license.json` (только если ключ введён вручную).
 - Логи: `RUST_LOG=debug pnpm tauri dev`.

@@ -7,5 +7,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    // Тесты scripts/ — на node:test, их запускает `pnpm test:scripts`.
+    include: ["src/**/*.{test,spec}.?(c|m)[jt]s?(x)"],
   },
 });

@@ -200,4 +200,39 @@ mod tests {
         // На машине разработчика политики обычно нет; проверяем только, что чтение не падает.
         let _ = load();
     }
+
+    #[test]
+    fn documented_examples_parse() {
+        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/../docs/admin");
+        let json = read_json_file(Path::new(&format!("{base}/policy.json")));
+        let p = crate::policy::resolve("doc", json);
+        assert!(p.status.errors.is_empty(), "{:?}", p.status.errors);
+        assert!(!p.status.updates_enabled);
+        assert!(p.status.update_url.is_some());
+        assert!(p.status.has_license_key);
+
+        // Профиль MDM: содержимое PayloadContent[0] попадает в Managed Preferences как есть.
+        let profile = plist::Value::from_file(format!("{base}/policy.mobileconfig")).unwrap();
+        let content = profile
+            .as_dictionary()
+            .and_then(|d| d.get("PayloadContent"))
+            .and_then(|v| v.as_array())
+            .and_then(|a| a.first())
+            .and_then(|v| v.as_dictionary())
+            .expect("PayloadContent[0]");
+        assert_eq!(
+            content.get("PayloadType").and_then(|v| v.as_string()),
+            Some(crate::product::IDENTIFIER)
+        );
+        for key in ["updatesEnabled", "updateUrl", "licenseKey"] {
+            assert!(content.contains_key(key), "{key}");
+        }
+
+        let reg = std::fs::read_to_string(format!("{base}/policy.reg")).unwrap();
+        assert!(reg.contains(&format!(
+            r"[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\{}\{}]",
+            crate::product::POLICY_VENDOR,
+            crate::product::POLICY_PRODUCT
+        )));
+    }
 }

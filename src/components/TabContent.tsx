@@ -6,11 +6,14 @@ import { TopicList } from "./topics/TopicList";
 import { GroupList } from "./groups/GroupList";
 import { GroupDetails } from "./groups/GroupDetails";
 import { ProducerPanel } from "./producer/ProducerPanel";
+import { AboutPanel } from "./about/AboutPanel";
 import { LicensePanel } from "./license/LicensePanel";
 import { TopicDetails } from "./topics/TopicDetails";
 
 export function TabContent({ tab }: { tab: Tab }) {
   switch (tab.kind) {
+    case "about":
+      return <AboutPanel />;
     case "license":
       return <LicensePanel />;
     case "connection-form":

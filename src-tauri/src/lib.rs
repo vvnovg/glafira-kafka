@@ -1,10 +1,13 @@
 pub mod browse;
 pub mod commands;
 pub mod consume;
+pub mod diagnostics;
 pub mod error;
 pub mod guard;
 pub mod kafka;
 pub mod license;
+pub mod logging;
+pub mod migrate;
 pub mod policy;
 pub mod produce;
 pub mod product;
@@ -17,35 +20,59 @@ pub mod tls;
 use std::sync::Arc;
 
 use tauri::Manager;
-use tracing_subscriber::EnvFilter;
 
 use crate::secrets::KeyringStore;
 use crate::state::AppState;
 
 /// Сколько ждать завершения сессий при выходе из приложения (в сумме, не на сессию).
 /// Пакет при отмене ждёт подтверждений до 2 с, выход consumer из группы — доли секунды.
-const EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
+pub(crate) const EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// Завершает сессии перед выходом процесса: consumer выходят из группы (иначе участник
+/// висит до session.timeout.ms), пакеты дожидаются подтверждений. Вызывается из
+/// `RunEvent::Exit` и из хука updater перед `process::exit` на Windows.
+pub(crate) fn shutdown_sessions<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    if !app.state::<AppState>().sessions.shutdown(EXIT_GRACE) {
+        tracing::warn!("сессии не завершились за {EXIT_GRACE:?}: выходим без ожидания");
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .init();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
+            crate::logging::init(&app.path().app_log_dir()?);
+            tracing::info!(version = env!("CARGO_PKG_VERSION"), "запуск");
             let dir = app.path().app_data_dir()?;
+            // Каталог данных Tauri — `<базовый каталог>/<identifier>`: прежние лежат рядом.
+            if let Some(parent) = dir.parent() {
+                let report = crate::migrate::migrate(
+                    &dir,
+                    &crate::migrate::legacy_sources(parent),
+                    &KeyringStore::default(),
+                );
+                if let Some(from) = &report.from {
+                    tracing::info!(
+                        from,
+                        files = report.files.len(),
+                        secrets = report.secrets,
+                        "миграция данных"
+                    );
+                }
+                for e in &report.errors {
+                    tracing::warn!("миграция: {e}");
+                }
+            }
             let policy = crate::policy::sources::load();
             tracing::info!(
                 managed = policy.status.managed,
                 updates = policy.status.updates_enabled,
                 "политика"
             );
-            let st = AppState::new(&dir, Arc::new(KeyringStore))?.with_policy(policy);
+            let st = AppState::new(&dir, Arc::new(KeyringStore::default()))?.with_policy(policy);
             tracing::info!(tier = ?st.license.status().tier, "лицензия");
             app.manage(st);
             Ok(())
@@ -89,6 +116,10 @@ pub fn run() {
             commands::consume::pause_partitions,
             commands::consume::resume_partitions,
             commands::consume::suggest_group_id,
+            commands::app::get_app_info,
+            commands::app::export_diagnostics,
+            commands::app::check_update,
+            commands::app::install_update,
             commands::license::get_policy_status,
             commands::license::get_license_status,
             commands::license::set_license_key,
@@ -98,11 +129,8 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
-                // Процесс завершится сразу после колбэка: даём сессиям выйти из группы
-                // (иначе участник висит до session.timeout.ms) и завершить пакеты.
-                if !app.state::<AppState>().sessions.shutdown(EXIT_GRACE) {
-                    tracing::warn!("сессии не завершились за {EXIT_GRACE:?}: выходим без ожидания");
-                }
+                // Процесс завершится сразу после колбэка: даём сессиям завершиться.
+                shutdown_sessions(app);
             }
         });
 }

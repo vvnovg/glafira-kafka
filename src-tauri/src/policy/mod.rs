@@ -98,10 +98,14 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
         match (key.as_str(), value) {
             (KEY_UPDATES_ENABLED, PolicyValue::Bool(b)) => status.updates_enabled = b,
             (KEY_UPDATES_ENABLED, PolicyValue::Int(i @ (0 | 1))) => status.updates_enabled = i == 1,
-            (KEY_UPDATE_URL, PolicyValue::Str(u))
-                if u.starts_with("https://") || u.starts_with("http://") =>
-            {
+            (KEY_UPDATE_URL, PolicyValue::Str(u)) if u.starts_with("https://") => {
                 status.update_url = Some(u)
+            }
+            (KEY_UPDATE_URL, PolicyValue::Str(u)) if u.starts_with("http://") => {
+                broken = true;
+                status.errors.push(format!(
+                    "{key}: нужен адрес https:// — обновления по http не загружаются"
+                ));
             }
             (KEY_LICENSE_KEY, PolicyValue::Str(s)) if !s.trim().is_empty() => {
                 license_key = Some(s.trim().to_string());
@@ -197,6 +201,26 @@ mod tests {
             assert!(!p.status.updates_enabled);
             assert_eq!(p.status.errors.len(), 1, "{:?}", p.status.errors);
         }
+    }
+
+    #[test]
+    fn plain_http_update_url_is_rejected() {
+        // Релизный updater отвергает не-https (InsecureTransportProtocol): ошибка видна сразу в политике.
+        let p = resolve(
+            "src",
+            values(&[(
+                "updateUrl",
+                PolicyValue::Str("http://mirror.corp/latest.json".into()),
+            )]),
+        );
+        assert!(!p.status.updates_enabled);
+        assert_eq!(p.status.update_url, None);
+        assert_eq!(p.status.errors.len(), 1);
+        assert!(
+            p.status.errors[0].contains("https://"),
+            "{:?}",
+            p.status.errors
+        );
     }
 
     #[test]

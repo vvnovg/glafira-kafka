@@ -26,7 +26,18 @@ pub fn secret_key(connection_id: &str, field: &str) -> String {
 }
 
 /// OS keychain: macOS Keychain, Windows Credential Manager, Secret Service.
-pub struct KeyringStore;
+/// `service` — имя сервиса записей; прежние имена нужны только для миграции.
+pub struct KeyringStore {
+    pub service: &'static str,
+}
+
+impl Default for KeyringStore {
+    fn default() -> Self {
+        Self {
+            service: crate::product::KEYCHAIN_SERVICE,
+        }
+    }
+}
 
 fn keyring_err(e: keyring::Error) -> AppError {
     AppError::internal("Ошибка доступа к системному хранилищу секретов").with_details(e.to_string())
@@ -34,8 +45,7 @@ fn keyring_err(e: keyring::Error) -> AppError {
 
 impl SecretStore for KeyringStore {
     fn get(&self, key: &str) -> AppResult<Option<String>> {
-        let entry =
-            keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key).map_err(keyring_err)?;
+        let entry = keyring::Entry::new(self.service, key).map_err(keyring_err)?;
         match entry.get_password() {
             Ok(v) => Ok(Some(v)),
             Err(keyring::Error::NoEntry) => Ok(None),
@@ -44,14 +54,13 @@ impl SecretStore for KeyringStore {
     }
 
     fn set(&self, key: &str, value: &str) -> AppResult<()> {
-        keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key)
+        keyring::Entry::new(self.service, key)
             .and_then(|e| e.set_password(value))
             .map_err(keyring_err)
     }
 
     fn delete(&self, key: &str) -> AppResult<()> {
-        let entry =
-            keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key).map_err(keyring_err)?;
+        let entry = keyring::Entry::new(self.service, key).map_err(keyring_err)?;
         match entry.delete_credential() {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(e) => Err(keyring_err(e)),

@@ -1,3 +1,4 @@
+import { i18n } from "../../i18n";
 import type { BrowseParams, DataFormat, DecodedData, FilterSpec, StartPosition, TextMatch } from "../../api/types";
 
 export interface BrowseFormState {
@@ -49,7 +50,7 @@ const MAX_MINUTES = 5_256_000;
 
 function parseLocalTime(value: string, what: string): number {
   const ms = new Date(value).getTime();
-  if (!value || Number.isNaN(ms)) throw new Error(`Укажите корректное время: ${what}`);
+  if (!value || Number.isNaN(ms)) throw new Error(i18n.t("browse.errors.invalidTime", { what }));
   return ms;
 }
 
@@ -59,9 +60,9 @@ function parsePartitions(text: string): number[] | null {
   const out: number[] = [];
   for (const raw of t.split(",")) {
     const part = raw.trim();
-    if (!/^\d+$/.test(part)) throw new Error(`Партиции: «${part}» — не номер партиции`);
+    if (!/^\d+$/.test(part)) throw new Error(i18n.t("browse.errors.badPartition", { part }));
     const n = Number(part);
-    if (!Number.isSafeInteger(n)) throw new Error(`Партиции: «${part}» — не номер партиции`);
+    if (!Number.isSafeInteger(n)) throw new Error(i18n.t("browse.errors.badPartition", { part }));
     if (!out.includes(n)) out.push(n);
   }
   return out;
@@ -85,17 +86,17 @@ export function buildFilterSpec(f: FilterFields): FilterSpec {
     filter.header = hv ? { name: f.headerName.trim(), value: hv } : { name: f.headerName.trim() };
   }
   if (f.jsonPath.trim()) filter.jsonPath = f.jsonPath.trim();
-  if (f.fromTime) filter.fromTimestamp = parseLocalTime(f.fromTime, "фильтр «с»");
-  if (f.toTime) filter.toTimestamp = parseLocalTime(f.toTime, "фильтр «по»");
+  if (f.fromTime) filter.fromTimestamp = parseLocalTime(f.fromTime, i18n.t("browse.errors.filterFrom"));
+  if (f.toTime) filter.toTimestamp = parseLocalTime(f.toTime, i18n.t("browse.errors.filterTo"));
   if (filter.fromTimestamp !== undefined && filter.toTimestamp !== undefined && filter.fromTimestamp > filter.toTimestamp) {
-    throw new Error("Фильтр времени: «с» не может быть позже «по»");
+    throw new Error(i18n.t("browse.errors.timeOrder"));
   }
   return filter;
 }
 
 export function buildBrowseParams(f: BrowseFormState, connectionId: string, topic: string): BrowseParams {
   if (!Number.isInteger(f.limit) || f.limit < 1 || f.limit > MAX_LIMIT) {
-    throw new Error(`Лимит должен быть от 1 до ${MAX_LIMIT}`);
+    throw new Error(i18n.t("browse.errors.limit", { max: MAX_LIMIT }));
   }
   let start: StartPosition;
   switch (f.startType) {
@@ -104,25 +105,25 @@ export function buildBrowseParams(f: BrowseFormState, connectionId: string, topi
       break;
     case "latest":
       if (!Number.isInteger(f.count) || f.count < 1 || f.count > MAX_LIMIT) {
-        throw new Error(`Количество сообщений должно быть целым числом от 1 до ${MAX_LIMIT}`);
+        throw new Error(i18n.t("browse.errors.count", { max: MAX_LIMIT }));
       }
       start = { type: "latest", count: f.count };
       break;
     case "offset":
-      if (!Number.isInteger(f.offset) || f.offset < 0) throw new Error("Offset должен быть целым числом от 0");
+      if (!Number.isInteger(f.offset) || f.offset < 0) throw new Error(i18n.t("browse.errors.offset"));
       start = { type: "offset", offset: f.offset };
       break;
     case "timestamp":
-      start = { type: "timestamp", timestampMs: parseLocalTime(f.timestamp, "время начала") };
+      start = { type: "timestamp", timestampMs: parseLocalTime(f.timestamp, i18n.t("browse.errors.startTime")) };
       break;
     case "lastMinutes":
       if (!Number.isInteger(f.minutes) || f.minutes < 1 || f.minutes > MAX_MINUTES) {
-        throw new Error(`Минуты должны быть целым числом от 1 до ${MAX_MINUTES}`);
+        throw new Error(i18n.t("browse.errors.minutes", { max: MAX_MINUTES }));
       }
       start = { type: "lastMinutes", minutes: f.minutes };
       break;
     default:
-      throw new Error(`Неизвестная начальная позиция: ${String(f.startType)}`);
+      throw new Error(i18n.t("browse.errors.unknownStart", { value: String(f.startType) }));
   }
 
   const filter = buildFilterSpec(f);

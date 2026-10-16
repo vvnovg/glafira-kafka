@@ -652,5 +652,88 @@
       "errPartitionFormat": "«{{token}}»: ожидается топик:партиция",
       "errNoPartition": "Укажите хотя бы одну партицию"
     }
+  },
+  "browse": {
+    "form": {
+      "from": "Откуда",
+      "startPosition": "Начальная позиция",
+      "startLatest": "Последние N",
+      "startEarliest": "С начала",
+      "startOffset": "С оффсета",
+      "startTimestamp": "С времени",
+      "startLastMinutes": "За последние X минут",
+      "offsetAria": "Оффсет",
+      "timeAria": "Время",
+      "minutesAria": "Минут",
+      "partitionsAria": "Партиции",
+      "partitionsPlaceholder": "партиции: все",
+      "limit": "Лимит",
+      "format": "Формат",
+      "key": "ключ",
+      "value": "значение"
+    },
+    "filters": {
+      "title": "Фильтры",
+      "keyContains": "Ключ содержит",
+      "valueContains": "Значение содержит",
+      "header": "Заголовок",
+      "headerValue": "Значение заголовка",
+      "timeFrom": "Время с",
+      "timeTo": "Время по"
+    },
+    "panel": {
+      "restart": "Перезапустить",
+      "read": "Читать",
+      "stop": "Остановить",
+      "summary": "просмотрено {{scanned}} · найдено {{matched}} · в таблице {{shown}}",
+      "reconnecting": "переподключение: {{reason}}…",
+      "waiting": "ждём новые сообщения…",
+      "reading": "читаем…",
+      "finishLimit": "достигнут лимит",
+      "finishEnd": "дочитано до конца",
+      "finishCancelled": "остановлено"
+    },
+    "table": {
+      "colTime": "Время",
+      "colTimeUtc": "Время (UTC)",
+      "colKey": "Ключ",
+      "colValue": "Значение",
+      "colSize": "Размер"
+    },
+    "details": {
+      "value": "Значение",
+      "key": "Ключ",
+      "copyKeyAria": "Копировать ключ",
+      "copyValueAria": "Копировать значение",
+      "copy": "копировать",
+      "truncated": "Показан первый 1 МБ значения.",
+      "select": "Выберите сообщение",
+      "meta": "Партиция {{partition}} · offset {{offset}} · {{time}}",
+      "copyJsonAria": "Копировать сообщение как JSON",
+      "copyJson": "копировать всё как JSON",
+      "resend": "Отправить повторно",
+      "resetHere": "Сбросить группу сюда…",
+      "incompleteGroups": "Список групп может быть неполным: {{errors}}",
+      "loadingGroups": "Загрузка групп…",
+      "groupAria": "Группа",
+      "noGroups": "Нет групп",
+      "chooseGroup": "Выберите группу",
+      "goToReset": "Перейти к сбросу",
+      "cancel": "Отмена",
+      "headers": "Заголовки ({{count}})"
+    },
+    "errors": {
+      "invalidTime": "Укажите корректное время: {{what}}",
+      "badPartition": "Партиции: «{{part}}» — не номер партиции",
+      "filterFrom": "фильтр «с»",
+      "filterTo": "фильтр «по»",
+      "timeOrder": "Фильтр времени: «с» не может быть позже «по»",
+      "limit": "Лимит должен быть от 1 до {{max}}",
+      "count": "Количество сообщений должно быть целым числом от 1 до {{max}}",
+      "offset": "Offset должен быть целым числом от 0",
+      "startTime": "время начала",
+      "minutes": "Минуты должны быть целым числом от 1 до {{max}}",
+      "unknownStart": "Неизвестная начальная позиция: {{value}}"
+    }
   }
 }

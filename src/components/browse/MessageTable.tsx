@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { BrowsedMessage } from "../../api/types";
 import { activateProps } from "../../lib/activate";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function MessageTable({ messages, selectedKey, onSelect, utc }: Props) {
+  const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: messages.length,
@@ -29,11 +31,11 @@ export function MessageTable({ messages, selectedKey, onSelect, utc }: Props) {
       <div className="row header msg-row" style={{ height: ROW_HEIGHT }}>
         <span>P</span>
         <span>Offset</span>
-        <span>Время{utc ? " (UTC)" : ""}</span>
-        <span>Ключ</span>
-        <span>Значение</span>
+        <span>{utc ? t("browse.table.colTimeUtc") : t("browse.table.colTime")}</span>
+        <span>{t("browse.table.colKey")}</span>
+        <span>{t("browse.table.colValue")}</span>
         <span>Hdr</span>
-        <span>Размер</span>
+        <span>{t("browse.table.colSize")}</span>
       </div>
       <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
         {virtualizer.getVirtualItems().map((item) => {

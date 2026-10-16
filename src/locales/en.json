@@ -650,5 +650,88 @@
       "errPartitionFormat": "“{{token}}”: expected topic:partition",
       "errNoPartition": "Specify at least one partition"
     }
+  },
+  "browse": {
+    "form": {
+      "from": "From",
+      "startPosition": "Start position",
+      "startLatest": "Latest N",
+      "startEarliest": "From beginning",
+      "startOffset": "From offset",
+      "startTimestamp": "From time",
+      "startLastMinutes": "Last X minutes",
+      "offsetAria": "Offset",
+      "timeAria": "Time",
+      "minutesAria": "Minutes",
+      "partitionsAria": "Partitions",
+      "partitionsPlaceholder": "partitions: all",
+      "limit": "Limit",
+      "format": "Format",
+      "key": "key",
+      "value": "value"
+    },
+    "filters": {
+      "title": "Filters",
+      "keyContains": "Key contains",
+      "valueContains": "Value contains",
+      "header": "Header",
+      "headerValue": "Header value",
+      "timeFrom": "Time from",
+      "timeTo": "Time to"
+    },
+    "panel": {
+      "restart": "Restart",
+      "read": "Read",
+      "stop": "Stop",
+      "summary": "scanned {{scanned}} · matched {{matched}} · in table {{shown}}",
+      "reconnecting": "reconnecting: {{reason}}…",
+      "waiting": "waiting for new messages…",
+      "reading": "reading…",
+      "finishLimit": "limit reached",
+      "finishEnd": "reached end of topic",
+      "finishCancelled": "stopped"
+    },
+    "table": {
+      "colTime": "Time",
+      "colTimeUtc": "Time (UTC)",
+      "colKey": "Key",
+      "colValue": "Value",
+      "colSize": "Size"
+    },
+    "details": {
+      "value": "Value",
+      "key": "Key",
+      "copyKeyAria": "Copy key",
+      "copyValueAria": "Copy value",
+      "copy": "copy",
+      "truncated": "Showing the first 1 MB of the value.",
+      "select": "Select a message",
+      "meta": "Partition {{partition}} · offset {{offset}} · {{time}}",
+      "copyJsonAria": "Copy message as JSON",
+      "copyJson": "copy all as JSON",
+      "resend": "Resend",
+      "resetHere": "Reset group here…",
+      "incompleteGroups": "The group list may be incomplete: {{errors}}",
+      "loadingGroups": "Loading groups…",
+      "groupAria": "Group",
+      "noGroups": "No groups",
+      "chooseGroup": "Select a group",
+      "goToReset": "Go to reset",
+      "cancel": "Cancel",
+      "headers": "Headers ({{count}})"
+    },
+    "errors": {
+      "invalidTime": "Enter a valid time: {{what}}",
+      "badPartition": "Partitions: “{{part}}” is not a partition number",
+      "filterFrom": "“from” filter",
+      "filterTo": "“to” filter",
+      "timeOrder": "Time filter: “from” cannot be later than “to”",
+      "limit": "Limit must be between 1 and {{max}}",
+      "count": "Message count must be an integer between 1 and {{max}}",
+      "offset": "Offset must be an integer ≥ 0",
+      "startTime": "start time",
+      "minutes": "Minutes must be an integer between 1 and {{max}}",
+      "unknownStart": "Unknown start position: {{value}}"
+    }
   }
 }

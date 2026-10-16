@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { FilterFields as Fields } from "./params";
 
 /** Fieldset «Фильтры»: общий для просмотра топика и consumer-сессии. */
@@ -11,16 +12,17 @@ export function FilterFields<T extends Fields>({
   /** Например, пока идёт consumer-сессия: фильтр применяется только при запуске. */
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const set = <K extends keyof Fields>(k: K, v: Fields[K]) => onChange({ ...form, [k]: v } as T);
   return (
     <fieldset disabled={disabled}>
-      <legend>Фильтры</legend>
+      <legend>{t("browse.filters.title")}</legend>
       <label className="field">
-        <span>Ключ содержит</span>
+        <span>{t("browse.filters.keyContains")}</span>
         <input placeholder="k7" value={form.keyPattern} onChange={(e) => set("keyPattern", e.target.value)} />
       </label>
       <label className="field">
-        <span>Значение содержит</span>
+        <span>{t("browse.filters.valueContains")}</span>
         <input placeholder="FAILED" value={form.valuePattern} onChange={(e) => set("valuePattern", e.target.value)} />
       </label>
       <label>
@@ -30,11 +32,11 @@ export function FilterFields<T extends Fields>({
         <input type="checkbox" checked={form.caseSensitive} onChange={(e) => set("caseSensitive", e.target.checked)} /> Aa
       </label>
       <label className="field">
-        <span>Заголовок</span>
+        <span>{t("browse.filters.header")}</span>
         <input placeholder="trace-id" value={form.headerName} onChange={(e) => set("headerName", e.target.value)} style={{ width: 110 }} />
       </label>
       <label className="field">
-        <span>Значение заголовка</span>
+        <span>{t("browse.filters.headerValue")}</span>
         <input placeholder="abc-123" value={form.headerValue} onChange={(e) => set("headerValue", e.target.value)} style={{ width: 130 }} />
       </label>
       <label className="field">
@@ -47,11 +49,11 @@ export function FilterFields<T extends Fields>({
         />
       </label>
       <label className="field">
-        <span>Время с</span>
+        <span>{t("browse.filters.timeFrom")}</span>
         <input type="datetime-local" step={1} value={form.fromTime} onChange={(e) => set("fromTime", e.target.value)} />
       </label>
       <label className="field">
-        <span>Время по</span>
+        <span>{t("browse.filters.timeTo")}</span>
         <input type="datetime-local" step={1} value={form.toTime} onChange={(e) => set("toTime", e.target.value)} />
       </label>
     </fieldset>

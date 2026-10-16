@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { BrowsedMessage, DecodedData } from "../../api/types";
@@ -18,7 +19,9 @@ function copy(text: string) {
   }
 }
 
-function DataBlock({ title, data }: { title: string; data: DecodedData | null }) {
+function DataBlock({ kind, data }: { kind: "key" | "value"; data: DecodedData | null }) {
+  const { t } = useTranslation();
+  const title = t(kind === "key" ? "browse.details.key" : "browse.details.value");
   return (
     <section>
       <h4>
@@ -27,15 +30,15 @@ function DataBlock({ title, data }: { title: string; data: DecodedData | null })
           <button
             type="button"
             className="link"
-            aria-label={`Копировать ${title === "Ключ" ? "ключ" : "значение"}`}
+            aria-label={t(kind === "key" ? "browse.details.copyKeyAria" : "browse.details.copyValueAria")}
             onClick={() => copy(data.text)}
           >
-            копировать
+            {t("browse.details.copy")}
           </button>
         )}
       </h4>
       {data?.error && <p className="warn">{tr(data.error)}</p>}
-      {data?.truncated && <p className="warn">Показан первый 1 МБ значения.</p>}
+      {data?.truncated && <p className="warn">{t("browse.details.truncated")}</p>}
       <pre>{data ? prettyText(data) : <span className="muted">null</span>}</pre>
     </section>
   );
@@ -48,6 +51,7 @@ interface Props {
 }
 
 export function MessageDetails({ message, utc, connectionId }: Props) {
+  const { t } = useTranslation();
   const connection = useConnection(connectionId);
   const open = useWorkspace((s) => s.open);
   // Причина, по которой повторная отправка невозможна (например, усечённое значение), показывается в интерфейсе.
@@ -59,20 +63,20 @@ export function MessageDetails({ message, utc, connectionId }: Props) {
       return { prefill: null, error: (e as Error).message };
     }
   }, [message]);
-  if (!message) return <div className="details-pane muted">Выберите сообщение</div>;
+  if (!message) return <div className="details-pane muted">{t("browse.details.select")}</div>;
   return (
     <div className="details-pane">
       <p className="muted">
-        Партиция {message.partition} · offset {message.offset} · {formatTimestamp(message.timestamp, utc)}
+        {t("browse.details.meta", { partition: message.partition, offset: message.offset, time: formatTimestamp(message.timestamp, utc) })}
       </p>
       <div className="toolbar">
         <button
           type="button"
           className="link"
-          aria-label="Копировать сообщение как JSON"
+          aria-label={t("browse.details.copyJsonAria")}
           onClick={() => copy(JSON.stringify(message, null, 2))}
         >
-          копировать всё как JSON
+          {t("browse.details.copyJson")}
         </button>
         {connection && !connection.readOnly && (
           <button
@@ -84,16 +88,16 @@ export function MessageDetails({ message, utc, connectionId }: Props) {
               if (resend?.prefill) open({ kind: "producer", connectionId, prefill: { message: resend.prefill, nonce: Date.now() } });
             }}
           >
-            Отправить повторно
+            {t("browse.details.resend")}
           </button>
         )}
         {connection && !connection.readOnly && <ResetGroupHere connectionId={connectionId} topic={message.topic} message={message} />}
       </div>
       {resend?.error && <p className="warn">{resend.error}</p>}
-      <DataBlock title="Значение" data={message.value} />
-      <DataBlock title="Ключ" data={message.key} />
+      <DataBlock kind="value" data={message.value} />
+      <DataBlock kind="key" data={message.key} />
       <section>
-        <h4>Заголовки ({message.headers.length})</h4>
+        <h4>{t("browse.details.headers", { count: message.headers.length })}</h4>
         {message.headers.length > 0 && (
           <table>
             <tbody>
@@ -115,6 +119,7 @@ export function MessageDetails({ message, utc, connectionId }: Props) {
 
 /** Выбор группы → вкладка группы с предзаполненным сбросом: группа начнёт чтение с этого сообщения. */
 function ResetGroupHere({ connectionId, topic, message }: { connectionId: string; topic: string; message: BrowsedMessage }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [group, setGroup] = useState("");
   const openTab = useWorkspace((s) => s.open);
@@ -126,7 +131,7 @@ function ResetGroupHere({ connectionId, topic, message }: { connectionId: string
   if (!open) {
     return (
       <button type="button" className="link" onClick={() => setOpen(true)}>
-        Сбросить группу сюда…
+        {t("browse.details.resetHere")}
       </button>
     );
   }
@@ -137,14 +142,14 @@ function ResetGroupHere({ connectionId, topic, message }: { connectionId: string
     <div>
       {groups.error && <ErrorBanner error={groups.error} onRetry={() => groups.refetch()} />}
       {groups.data && groups.data.errors.length > 0 && (
-        <p className="warn">Список групп может быть неполным: {groups.data.errors.map(tr).join("; ")}</p>
+        <p className="warn">{t("browse.details.incompleteGroups", { errors: groups.data.errors.map(tr).join("; ") })}</p>
       )}
       <div className="toolbar">
         {groups.isPending ? (
-          <span className="muted">Загрузка групп…</span>
+          <span className="muted">{t("browse.details.loadingGroups")}</span>
         ) : (
-          <select aria-label="Группа" value={group} onChange={(e) => setGroup(e.target.value)} disabled={list.length === 0}>
-            <option value="">{list.length === 0 ? "Нет групп" : "Выберите группу"}</option>
+          <select aria-label={t("browse.details.groupAria")} value={group} onChange={(e) => setGroup(e.target.value)} disabled={list.length === 0}>
+            <option value="">{list.length === 0 ? t("browse.details.noGroups") : t("browse.details.chooseGroup")}</option>
             {list.map((g) => (
               <option key={g.groupId} value={g.groupId}>
                 {g.groupId}
@@ -165,10 +170,10 @@ function ResetGroupHere({ connectionId, topic, message }: { connectionId: string
             setOpen(false);
           }}
         >
-          Перейти к сбросу
+          {t("browse.details.goToReset")}
         </button>
         <button type="button" onClick={() => setOpen(false)}>
-          Отмена
+          {t("browse.details.cancel")}
         </button>
       </div>
     </div>

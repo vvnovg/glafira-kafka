@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { BrowsedMessage } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
@@ -9,9 +10,10 @@ import { messageKey, MessageTable } from "./MessageTable";
 import { buildBrowseParams, defaultBrowseForm } from "./params";
 import { useBrowseSession } from "./useBrowseSession";
 
-const FINISH_TEXT = { limit: "достигнут лимит", endOfTopic: "дочитано до конца", cancelled: "остановлено" } as const;
+const FINISH_KEYS = { limit: "browse.panel.finishLimit", endOfTopic: "browse.panel.finishEnd", cancelled: "browse.panel.finishCancelled" } as const;
 
 export function BrowsePanel({ connectionId, topic }: { connectionId: string; topic: string }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(defaultBrowseForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [selected, setSelected] = useState<BrowsedMessage | null>(null);
@@ -35,23 +37,25 @@ export function BrowsePanel({ connectionId, topic }: { connectionId: string; top
       <BrowseForm form={form} onChange={setForm} />
       <div className="toolbar">
         <button type="button" className="primary" onClick={onStart}>
-          {running ? "Перезапустить" : "Читать"}
+          {running ? t("browse.panel.restart") : t("browse.panel.read")}
         </button>
         <button type="button" disabled={!running} onClick={() => void stop()}>
-          Остановить
+          {t("browse.panel.stop")}
         </button>
         <label>
           <input type="checkbox" checked={utc} onChange={(e) => setUtc(e.target.checked)} /> UTC
         </label>
         <span className="muted">
-          просмотрено {formatCount(state.scanned)} · найдено {formatCount(state.matched)} · в таблице {state.messages.length}
+          {t("browse.panel.summary", { scanned: formatCount(state.scanned), matched: formatCount(state.matched), shown: state.messages.length })}
           {running &&
-            (state.reconnecting
-              ? ` · переподключение: ${tr(state.reconnecting)}…`
-              : state.reachedEnd
-                ? " · ждём новые сообщения…"
-                : " · читаем…")}
-          {state.status === "finished" && state.finishReason && ` · ${FINISH_TEXT[state.finishReason]}`}
+            ` · ${
+              state.reconnecting
+                ? t("browse.panel.reconnecting", { reason: tr(state.reconnecting) })
+                : state.reachedEnd
+                  ? t("browse.panel.waiting")
+                  : t("browse.panel.reading")
+            }`}
+          {state.status === "finished" && state.finishReason && ` · ${t(FINISH_KEYS[state.finishReason])}`}
         </span>
       </div>
       {formError && <ErrorBanner error={{ code: "INVALID_INPUT", message: formError, retryable: false }} />}

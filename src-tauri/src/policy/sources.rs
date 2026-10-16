@@ -68,8 +68,11 @@ fn json_type(v: &serde_json::Value) -> &'static str {
 }
 
 pub fn read_plist_file(path: &Path) -> RawPolicy {
-    if !path.exists() {
-        return RawPolicy::Absent;
+    // Только NotFound — «политики нет»; любая другая ошибка stat (нет прав и т.п.) — fail-closed.
+    match std::fs::metadata(path) {
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return RawPolicy::Absent,
+        Err(e) => return RawPolicy::Unreadable(e.to_string()),
     }
     let value = match plist::Value::from_file(path) {
         Ok(v) => v,
@@ -178,6 +181,17 @@ mod tests {
         assert_eq!(v["licenseKey"], PolicyValue::Str("a.b".into()));
         assert_eq!(v["n"], PolicyValue::Int(3));
         std::fs::write(&path, "not a plist").unwrap();
+        assert!(matches!(read_plist_file(&path), RawPolicy::Unreadable(_)));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn plist_stat_error_is_unreadable_not_absent() {
+        // Путь через обычный файл даёт ENOTDIR: это не «политики нет», а ошибка (fail-closed).
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("file");
+        std::fs::write(&file, "x").unwrap();
+        let path = file.join("p.plist");
         assert!(matches!(read_plist_file(&path), RawPolicy::Unreadable(_)));
     }
 

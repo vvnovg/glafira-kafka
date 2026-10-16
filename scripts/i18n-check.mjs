@@ -77,6 +77,37 @@ export function findCyrillic(files) {
   return hits;
 }
 
+/** Код Rust без строк-комментариев и без модуля тестов в конце файла (там бывают тестовые ключи). */
+function rustCode(content) {
+  const tests = content.search(/^#\[cfg\(test\)\]\s*mod tests\b/m);
+  const code = tests >= 0 ? content.slice(0, tests) : content;
+  return code
+    .split("\n")
+    .filter((line) => !/^\s*\/\//.test(line))
+    .join("\n");
+}
+
+/** Ключи и английские шаблоны из макросов Rust: app_err!(…, "key", "English {{p}}" …) и ltext!("key", "English" …). */
+export function rustKeys(files /* {path: content} */) {
+  const out = new Map();
+  const re = /(?:app_err!\(\s*[^,]+,|ltext!\()\s*"([\w.]+)"\s*,\s*"((?:[^"\\]|\\.)*)"/g;
+  for (const content of Object.values(files)) {
+    for (const m of rustCode(content).matchAll(re)) out.set(m[1], m[2].replace(/\\"/g, '"'));
+  }
+  return out;
+}
+
+/** Каждый ключ Rust есть в en.json, текст en совпадает с шаблоном Rust (единый английский). */
+export function checkRustKeys(rust, enFlat) {
+  const problems = [];
+  for (const [key, template] of rust) {
+    if (!enFlat.has(key)) problems.push(`en: нет ключа ${key} (используется в Rust)`);
+    else if (enFlat.get(key) !== template)
+      problems.push(`en: ${key} отличается от шаблона в Rust: «${enFlat.get(key)}» ≠ «${template}»`);
+  }
+  return problems;
+}
+
 function walk(dir, exts, out = []) {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
@@ -95,6 +126,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       .map((f) => [f.replace(/\.json$/, ""), JSON.parse(readFileSync(join(locales, f), "utf8"))]),
   );
   const problems = checkDictionaries(dicts);
+  const rustFiles = Object.fromEntries(
+    walk(join(root, "src-tauri/src"), [".rs"]).map((p) => [relative(root, p), readFileSync(p, "utf8")]),
+  );
+  const rust = rustKeys(rustFiles);
+  problems.push(...checkRustKeys(rust, flatten(dicts.en)));
   if (!process.argv.includes("--no-cyrillic-scan")) {
     const files = Object.fromEntries(
       walk(join(root, "src"), [".ts", ".tsx"]).map((p) => [relative(root, p), readFileSync(p, "utf8")]),
@@ -105,5 +141,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.error(problems.map((p) => `✗ ${p}`).join("\n"));
     process.exit(1);
   }
-  console.log(`✓ словари ${Object.keys(dicts).join(", ")} согласованы`);
+  console.log(`✓ словари ${Object.keys(dicts).join(", ")} согласованы, ключей из Rust: ${rust.size}`);
 }

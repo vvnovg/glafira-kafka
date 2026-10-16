@@ -12,8 +12,19 @@ export type ErrorCode =
   | "PRO_REQUIRED"
   | "INTERNAL";
 
+/** Текст из Rust: ключ словаря, параметры и английский текст (запасной вариант). */
+export interface LocalizedText {
+  key: string;
+  params: Record<string, string>;
+  text: string;
+}
+
 export interface AppError {
   code: ErrorCode;
+  /** Ключ словаря; у старых ошибок — `errors.generic` с `params.message`. */
+  key?: string;
+  params?: Record<string, string>;
+  /** Английский текст (или исходный текст у старых ошибок). */
   message: string;
   details?: string;
   retryable: boolean;

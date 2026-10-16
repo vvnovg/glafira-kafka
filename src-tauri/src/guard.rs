@@ -1,23 +1,24 @@
 //! Защита мутирующих операций (спец. §5): проверяется в Rust, а не только в UI.
 
-use crate::error::{AppError, AppResult, ErrorCode};
+use crate::error::{AppResult, ErrorCode};
 use crate::storage::connections::{ConnectionProfile, Environment};
 
 /// read-only запрещает любые изменения; prod без read-only требует ввести имя подключения.
 pub fn ensure_mutation_allowed(p: &ConnectionProfile, confirm: Option<&str>) -> AppResult<()> {
     if p.read_only {
-        return Err(AppError::new(
+        return Err(app_err!(
             ErrorCode::ReadOnly,
-            format!("Подключение «{}» открыто только для чтения", p.name),
+            "errors.guard.readOnly",
+            "Connection “{{name}}” is read-only",
+            name = p.name
         ));
     }
     if p.environment == Environment::Prod && confirm.map(str::trim) != Some(p.name.trim()) {
-        return Err(AppError::new(
+        return Err(app_err!(
             ErrorCode::ConfirmationRequired,
-            format!(
-                "Для изменений в prod-подключении введите его имя «{}»",
-                p.name
-            ),
+            "errors.guard.prodConfirm",
+            "To change a prod connection, type its name “{{name}}”",
+            name = p.name
         ));
     }
     Ok(())
@@ -28,9 +29,11 @@ pub fn ensure_name_confirmed(expected: &str, typed: Option<&str>) -> AppResult<(
     if typed.map(str::trim) == Some(expected.trim()) {
         Ok(())
     } else {
-        Err(AppError::new(
+        Err(app_err!(
             ErrorCode::ConfirmationRequired,
-            format!("Для подтверждения введите «{expected}»"),
+            "errors.guard.typeToConfirm",
+            "Type “{{expected}}” to confirm",
+            expected = expected
         ))
     }
 }
@@ -47,6 +50,9 @@ mod tests {
         p.read_only = true;
         let e = ensure_mutation_allowed(&p, Some(&p.name.clone())).unwrap_err();
         assert_eq!(e.code, ErrorCode::ReadOnly);
+        assert_eq!(e.key, "errors.guard.readOnly");
+        assert_eq!(e.params["name"], p.name);
+        assert_eq!(e.message, format!("Connection “{}” is read-only", p.name));
     }
 
     #[test]
@@ -57,7 +63,11 @@ mod tests {
         for confirm in [None, Some(""), Some("kafka-pro"), Some("KAFKA-PROD")] {
             let e = ensure_mutation_allowed(&p, confirm).unwrap_err();
             assert_eq!(e.code, ErrorCode::ConfirmationRequired, "{confirm:?}");
-            assert!(e.message.contains("kafka-prod"), "{}", e.message);
+            assert_eq!(e.key, "errors.guard.prodConfirm");
+            assert_eq!(
+                e.message,
+                "To change a prod connection, type its name “kafka-prod”"
+            );
         }
         assert!(ensure_mutation_allowed(&p, Some("kafka-prod")).is_ok());
         assert!(ensure_mutation_allowed(&p, Some(" kafka-prod ")).is_ok());
@@ -87,6 +97,8 @@ mod tests {
         for typed in [None, Some("order"), Some("ORDERS")] {
             let e = ensure_name_confirmed("orders", typed).unwrap_err();
             assert_eq!(e.code, ErrorCode::ConfirmationRequired, "{typed:?}");
+            assert_eq!(e.key, "errors.guard.typeToConfirm");
+            assert_eq!(e.message, "Type “orders” to confirm");
         }
     }
 }

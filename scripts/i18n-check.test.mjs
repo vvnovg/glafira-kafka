@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkDictionaries, findCyrillic, flatten, placeholders } from "./i18n-check.mjs";
+import { checkDictionaries, checkRustKeys, findCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -32,4 +32,38 @@ test("кириллица в коде вне словарей и тестов", (
     "src/i18n/languages.ts": "{ nativeName: \"Русский\" }\n",
   };
   assert.deepEqual(findCyrillic(files), ["src/a.tsx:2"]);
+});
+
+test("ключи из Rust", () => {
+  const rust = rustKeys({
+    "a.rs": 'app_err!(ErrorCode::ReadOnly, "errors.guard.readOnly", "Connection “{{name}}” is read-only", name = n)',
+    "b.rs": 'let t = ltext!("messages.x", "Hi");',
+  });
+  assert.deepEqual([...rust.keys()].sort(), ["errors.guard.readOnly", "messages.x"]);
+  const en = flatten({ errors: { guard: { readOnly: "Connection “{{name}}” is read-only" } }, messages: { x: "Hello" } });
+  const p = checkRustKeys(rust, en);
+  assert.deepEqual(p.length, 1);
+  assert.ok(p[0].includes("messages.x"));
+});
+
+test("ключи из Rust: многострочный вызов после rustfmt и экранированные кавычки", () => {
+  const rust = rustKeys({
+    "c.rs": 'Err(app_err!(\n            ErrorCode::ConfirmationRequired,\n            "errors.guard.typeToConfirm",\n            "Type \\"{{expected}}\\" to confirm",\n            expected = expected\n        ))',
+  });
+  assert.equal(rust.get("errors.guard.typeToConfirm"), 'Type "{{expected}}" to confirm');
+  assert.deepEqual(checkRustKeys(rust, new Map()), ["en: нет ключа errors.guard.typeToConfirm (используется в Rust)"]);
+});
+
+test("ключи из Rust: комментарии и модуль тестов не считаются", () => {
+  const rust = rustKeys({
+    "d.rs": [
+      '/// `ltext!("messages.doc", "Doc")` → LocalizedText',
+      'let a = ltext!("messages.real", "Real");',
+      "#[cfg(test)]",
+      "mod tests {",
+      '    let t = ltext!("messages.test.only", "Test");',
+      "}",
+    ].join("\n"),
+  });
+  assert.deepEqual([...rust.keys()], ["messages.real"]);
 });

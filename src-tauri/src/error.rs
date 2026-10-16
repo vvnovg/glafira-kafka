@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use rdkafka::error::KafkaError;
 use serde::Serialize;
 
@@ -23,6 +25,11 @@ pub enum ErrorCode {
 #[error("{message}")]
 pub struct AppError {
     pub code: ErrorCode,
+    /// Ключ словаря интерфейса (`src/locales/*.json`).
+    pub key: String,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub params: BTreeMap<String, String>,
+    /// Английский текст (для логов и как запасной вариант перевода).
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
@@ -32,14 +39,34 @@ pub struct AppError {
 pub type AppResult<T> = Result<T, AppError>;
 
 impl AppError {
+    /// Старый конструктор (до переноса на ключи): текст показывается как есть через `errors.generic`.
     pub fn new(code: ErrorCode, message: impl Into<String>) -> Self {
-        let retryable = matches!(code, ErrorCode::ConnectionFailed | ErrorCode::Timeout);
+        let message = message.into();
+        let mut params = BTreeMap::new();
+        params.insert("message".to_string(), message.clone());
         Self {
             code,
-            message: message.into(),
+            key: "errors.generic".to_string(),
+            params,
+            message,
             details: None,
-            retryable,
+            retryable: Self::retryable_code(code),
         }
+    }
+
+    pub fn localized(code: ErrorCode, text: crate::i18n::LocalizedText) -> Self {
+        Self {
+            code,
+            key: text.key,
+            params: text.params,
+            message: text.text,
+            details: None,
+            retryable: Self::retryable_code(code),
+        }
+    }
+
+    fn retryable_code(code: ErrorCode) -> bool {
+        matches!(code, ErrorCode::ConnectionFailed | ErrorCode::Timeout)
     }
 
     pub fn with_details(mut self, details: impl Into<String>) -> Self {
@@ -239,7 +266,13 @@ mod tests {
         let json = serde_json::to_value(AppError::invalid("плохо")).unwrap();
         assert_eq!(
             json,
-            serde_json::json!({"code": "INVALID_INPUT", "message": "плохо", "retryable": false})
+            serde_json::json!({
+                "code": "INVALID_INPUT",
+                "key": "errors.generic",
+                "params": {"message": "плохо"},
+                "message": "плохо",
+                "retryable": false
+            })
         );
     }
 

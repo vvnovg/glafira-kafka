@@ -9,5 +9,13 @@
     "details": "Details",
     "openLicense": "Open “License”",
     "proHint": "Available in Pro — activate a license on the “License” screen"
+  },
+  "errors": {
+    "generic": "{{message}}",
+    "guard": {
+      "readOnly": "Connection “{{name}}” is read-only",
+      "prodConfirm": "To change a prod connection, type its name “{{name}}”",
+      "typeToConfirm": "Type “{{expected}}” to confirm"
+    }
   }
 }

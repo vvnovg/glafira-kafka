@@ -59,6 +59,11 @@ describe("api client", () => {
     expect(onEvent).toHaveBeenCalledWith({ type: "reachedEnd" });
   });
 
+  it("toAppError сохраняет key и params ошибки из Rust", () => {
+    const e = { code: "READ_ONLY", key: "errors.guard.readOnly", params: { name: "p" }, message: "Connection “p” is read-only", retryable: false };
+    expect(toAppError(e)).toEqual(e);
+  });
+
   it("toAppError понимает Error", () => {
     expect(toAppError(new Error("x"))).toEqual({ code: "INTERNAL", message: "x", retryable: false });
   });

@@ -1,3 +1,5 @@
+#[macro_use]
+pub mod i18n;
 pub mod browse;
 pub mod commands;
 pub mod consume;

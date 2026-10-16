@@ -48,6 +48,7 @@ export function isAppError(e: unknown): e is AppError {
 }
 
 export function toAppError(e: unknown): AppError {
+  // Ошибка из Rust приходит целиком: key/params/details сохраняются как есть.
   if (isAppError(e)) return e;
   if (e instanceof Error) return { code: "INTERNAL", message: e.message, retryable: false };
   return { code: "INTERNAL", message: String(e), retryable: false };

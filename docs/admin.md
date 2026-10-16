@@ -3,12 +3,27 @@
 ## Установка
 | ОС | Файл | Тихая установка |
 |---|---|---|
-| macOS | `Glafira for Apache Kafka_<версия>_aarch64.pkg` / `_x64.pkg` | `sudo installer -pkg <файл>.pkg -target /` (Jamf, Intune, Kandji) |
-| Windows | `Glafira for Apache Kafka_<версия>_x64_en-US.msi` | `msiexec /i <файл>.msi /qn` (SCCM, Intune) — установка на машину |
-| Linux | `.deb`, `.rpm`, `.AppImage` | `sudo apt install ./<файл>.deb`, `sudo dnf install ./<файл>.rpm` |
+| macOS | `Glafira_for_Apache_Kafka_<версия>_aarch64.pkg` / `_x64.pkg` | `sudo installer -pkg <файл>.pkg -target /` (Jamf, Intune, Kandji) |
+| Windows | `Glafira_for_Apache_Kafka_<версия>_x64_en-US.msi` | `msiexec /i <файл>.msi /qn` (SCCM, Intune) — установка на машину |
+| Linux | `Glafira_for_Apache_Kafka_<версия>_amd64.deb`, `Glafira_for_Apache_Kafka-<версия>-1.x86_64.rpm`, `Glafira_for_Apache_Kafka_<версия>_amd64.AppImage` | `sudo apt install ./<файл>.deb`, `sudo dnf install ./<файл>.rpm` |
 
 Установщики — в разделе релизов `https://github.com/vvnovg/glafira-kafka-releases/releases`.
-Точные имена файлов смотрите в релизе (GitHub заменяет пробелы в именах на точки).
+Пробелы в именах файлов заменены на `_` при публикации; точные имена смотрите в релизе.
+Исполняемый файл приложения — `glafira-kafka` (`glafira-kafka.exe` на Windows, `/usr/bin/glafira-kafka` на Linux).
+
+### Обновление установленного приложения
+Встроенное обновление («О программе» → «Проверить обновления») скачивает установщик того же типа, что установлен:
+
+| Установлено из | Что делает обновление | Права |
+|---|---|---|
+| `.pkg` / `.dmg` (macOS) | заменяет `.app` на месте | если `.app` принадлежит root (установка из `.pkg` в `/Applications`) — запрос пароля администратора |
+| `.msi` (Windows, на машину) | запускает новый MSI | UAC; у пользователя без прав администратора обновление не установится |
+| `.deb` / `.rpm` (Linux) | ставит новый пакет через `dpkg -i` / `rpm -U` | пароль администратора (pkexec, иначе zenity/kdialog + sudo) |
+| `.AppImage` | заменяет файл AppImage | запись в каталог с AppImage |
+
+**Управляемые парки** (SCCM, Intune, Jamf, Kandji, репозиторий пакетов): обычные пользователи без прав
+администратора не смогут установить обновление сами. Рекомендуется политика `updatesEnabled = false` и раздача
+новых версий теми же средствами, что и установка (на Linux — через свой репозиторий apt/dnf или `apt install ./<файл>.deb`).
 
 ## Политика
 Приложение читает политику при запуске. Пользователь не может её изменить.
@@ -22,10 +37,11 @@
 | Ключ | Тип | По умолчанию | Смысл |
 |---|---|---|---|
 | `updatesEnabled` | bool (`dword` 0/1 в реестре) | `true` | `false` — приложение не обращается к серверу обновлений |
-| `updateUrl` | строка | публичный `latest.json` | зеркало с одобренными версиями (формат — `latest.json` Tauri) |
+| `updateUrl` | строка, только `https://` | публичный `latest.json` | зеркало с одобренными версиями (формат — `latest.json` Tauri). Адрес `http://` считается ошибкой политики: обновления выключаются |
 | `licenseKey` | строка | — | ключ организации: Pro у всех пользователей |
 
-Если политика есть, но не читается, обновления выключаются, а в «О программе» и «Лицензия» показывается ошибка политики.
+Если политика есть, но не читается или содержит недопустимое значение, обновления выключаются, а в «О программе»
+и «Лицензия» показывается ошибка политики.
 
 ### Проверка политики вручную (macOS)
 `defaults write` в `/Library/Managed Preferences` на современной macOS не работает (туда пишет только MDM).
@@ -44,11 +60,17 @@ plutil -p "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"
 ## Внутреннее зеркало обновлений
 Скопируйте из релиза установщики, `*.sig` и `latest.json`, замените в `latest.json` адреса `url` на адреса зеркала
 и укажите адрес `latest.json` в `updateUrl`. Подписи остаются прежними: приложение проверяет их встроенным ключом.
+Зеркало должно отдаваться по `https://` (по `http` приложение обновления не загружает).
+
+В `latest.json` по записи на каждый тип установки: `darwin-aarch64`, `darwin-x86_64`, `windows-x86_64`,
+`linux-x86_64-deb`, `linux-x86_64-rpm`, `linux-x86_64-appimage` и `linux-x86_64` (тоже AppImage — запасная запись).
+Сохраните все записи: установка из `.deb` скачивает только `.deb`, из `.rpm` — только `.rpm`.
 
 ## Сеть
 Приложение подключается только к:
 - брокерам Kafka из профилей пользователя;
-- серверу обновлений (`github.com`, `objects.githubusercontent.com` или `updateUrl`), если обновления не выключены.
+- серверу обновлений, если обновления не выключены: `github.com` и хосты, куда GitHub перенаправляет загрузку ассетов
+  релизов (`release-assets.githubusercontent.com`, `objects.githubusercontent.com`), — или хост из `updateUrl`.
 
 Телеметрии и отчётов о сбоях нет.
 

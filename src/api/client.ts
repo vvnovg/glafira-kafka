@@ -7,6 +7,8 @@ import type {
   ConsumeEvent,
   ConsumerParams,
   HistoryEntry,
+  LicenseStatus,
+  PolicyStatus,
   ProduceMessage,
   ProduceResult,
   ProducerSettings,
@@ -58,6 +60,10 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 }
 
 export const api = {
+  getLicenseStatus: () => call<LicenseStatus>("get_license_status"),
+  setLicenseKey: (key: string) => call<LicenseStatus>("set_license_key", { key }),
+  removeLicenseKey: () => call<LicenseStatus>("remove_license_key"),
+  getPolicyStatus: () => call<PolicyStatus>("get_policy_status"),
   listConnections: () => call<ConnectionProfile[]>("list_connections"),
   saveConnection: (profile: ConnectionProfile, saslPassword?: string, tlsPasswords?: TlsPasswordsInput) =>
     call<ConnectionProfile>("save_connection", {

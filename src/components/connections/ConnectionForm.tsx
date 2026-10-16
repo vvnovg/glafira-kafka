@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
+import { useLicense } from "../../lib/useLicense";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { formatProps, parseProps, withProtocol } from "./profile";
@@ -27,6 +28,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const close = useWorkspace((s) => s.close);
   const closeForConnection = useWorkspace((s) => s.closeForConnection);
   const isNew = initial.id === "";
+  const { locked } = useLicense();
   const sec = profile.security;
 
   const update = (patch: Partial<ConnectionProfile>) => setProfile((p) => ({ ...p, ...patch }));
@@ -97,11 +99,14 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
             update({ environment, readOnly: isNew && environment === "prod" ? true : profile.readOnly });
           }}
         >
-          {ENVIRONMENTS.map((env) => (
-            <option key={env} value={env}>
-              {env}
-            </option>
-          ))}
+          {ENVIRONMENTS.map((env) => {
+            const proOnly = env === "prod" && locked && initial.environment !== "prod";
+            return (
+              <option key={env} value={env} disabled={proOnly}>
+                {proOnly ? "prod (Pro)" : env}
+              </option>
+            );
+          })}
         </select>
 
         <label htmlFor="cf-ro">Только чтение</label>

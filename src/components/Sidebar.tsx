@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { newConsumerKey, useWorkspace } from "../state/workspace";
+import { PRO_HINT, useLicense } from "../lib/useLicense";
+import { ProLock } from "./common/ProLock";
 import { ErrorBanner } from "./common/ErrorBanner";
 import { EnvBadge } from "./common/EnvBadge";
 
 export function Sidebar() {
   const { data: connections = [], error, isSuccess } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const open = useWorkspace((s) => s.open);
+  const { status, locked } = useLicense();
 
   return (
     <aside className="sidebar">
@@ -56,14 +59,31 @@ export function Sidebar() {
                 </button>
               </li>
               <li>
-                <button type="button" className="link" onClick={() => open({ kind: "consumer", connectionId: c.id, key: newConsumerKey() })}>
+                <button
+                  type="button"
+                  className="link"
+                  disabled={locked}
+                  title={locked ? PRO_HINT : undefined}
+                  onClick={() => open({ kind: "consumer", connectionId: c.id, key: newConsumerKey() })}
+                >
                   Consumer-сессия
+                  {locked && (
+                    <>
+                      {" "}
+                      <ProLock />
+                    </>
+                  )}
                 </button>
               </li>
             </ul>
           </li>
         ))}
       </ul>
+      <div className="sidebar-footer">
+        <button type="button" className="link" onClick={() => open({ kind: "license" })}>
+          Лицензия: {status ? (status.tier === "pro" ? "Pro" : "Free") : "…"}
+        </button>
+      </div>
     </aside>
   );
 }

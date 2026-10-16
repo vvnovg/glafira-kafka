@@ -3,8 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { Confirmation, GroupDescription, GroupPartitionOffset } from "../../api/types";
 import { formatCount } from "../../lib/format";
+import { PRO_HINT, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
 import { newConsumerKey, type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
+import { ProLock } from "../common/ProLock";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { groupTotalLag } from "./groupLag";
@@ -28,6 +30,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const readOnly = connection?.readOnly === true;
+  const { locked } = useLicense();
   const [refreshMs, setRefreshMs] = useState(0);
   const [panel, setPanel] = useState<Panel>(resetPrefill && canMutate ? "reset" : null);
   const queryClient = useQueryClient();
@@ -97,11 +100,13 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         </button>
         <button
           type="button"
-          disabled={readOnly || offsets.isPending}
+          disabled={readOnly || locked || offsets.isPending}
           title={
             readOnly
               ? "Подключение только для чтения: вход в группу меняет её состояние"
-              : offsets.isPending
+              : locked
+                ? PRO_HINT
+                : offsets.isPending
                 ? "Загружаются топики группы"
                 : undefined
           }
@@ -117,6 +122,12 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           }
         >
           Читать как участник
+          {locked && (
+            <>
+              {" "}
+              <ProLock />
+            </>
+          )}
         </button>
       </div>
       {canMutate && (

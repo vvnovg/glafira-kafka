@@ -1517,7 +1517,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake rpm
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake libcurl4-openssl-dev libsasl2-dev rpm
       - run: pnpm install --frozen-lockfile
       - name: Подпись Apple (если заданы секреты)
         if: runner.os == 'macOS'

@@ -10,4 +10,9 @@
 # so turning the flag on needs no extra library.
 #
 # Checked by kafka::producer::tests::librdkafka_is_built_with_every_compression_codec.
+#
+# Stale builds: cmake-rs does not emit rerun-if-env-changed for
+# CMAKE_TOOLCHAIN_FILE_*, so a target/ dir (or CI rust-cache entry) built before
+# this file was wired in keeps a librdkafka without snappy. If the codec test
+# fails on Windows, run `cargo clean -p rdkafka-sys` (or drop the cache) and rebuild.
 set(WITH_SNAPPY ON CACHE BOOL "With Snappy (set by kafka-explorer)" FORCE)

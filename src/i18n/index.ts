@@ -36,7 +36,7 @@ void instance.init({
 });
 
 if (import.meta.env.DEV) {
-  i18next.on("missingKey", (_lngs, _ns, key) => console.warn(`[i18n] нет ключа ${key}`));
+  i18next.on("missingKey", (_lngs, _ns, key) => console.warn(`[i18n] missing key ${key}`));
 }
 
 export const i18n = i18next;

@@ -105,7 +105,9 @@ pub fn classify_message(text: &str) -> Option<ErrorCode> {
 /// «certificate verify failed», в который оно вложено.
 fn tls_message(text: &str) -> &'static str {
     let t = text.to_lowercase();
-    if t.contains("hostname mismatch") || t.contains("ip address mismatch") {
+    if t.contains("plaintext broker listener") {
+        "На этом адресе брокер принимает соединения без TLS — проверьте порт или выберите протокол без SSL"
+    } else if t.contains("hostname mismatch") || t.contains("ip address mismatch") {
         "Имя хоста брокера не совпадает с его сертификатом"
     } else if t.contains("certificate verify failed") {
         "Сертификат брокера не подписан доверенным CA — проверьте «Доверенный CA»"
@@ -201,6 +203,10 @@ mod tests {
     fn tls_errors_get_specific_messages() {
         let err = KafkaError::MetadataFetch(RDKafkaErrorCode::OperationTimedOut);
         for (client, expected) in [
+            (
+                "ssl://localhost:9092/bootstrap: SSL handshake failed: Disconnected: SSL connection closed by peer: connecting to a PLAINTEXT broker listener? (after 17ms in state SSL_HANDSHAKE)",
+                "без TLS",
+            ),
             (
                 "ssl://h:9095/bootstrap: SSL handshake failed: error:0A000086:SSL routines::certificate verify failed: broker certificate could not be verified",
                 "не подписан доверенным CA",

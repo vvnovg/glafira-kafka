@@ -1,3 +1,4 @@
+import { i18n } from "../../i18n";
 import type { BrowsedMessage, DecodedData, PayloadInput, ProduceMessage } from "../../api/types";
 
 /**
@@ -22,14 +23,14 @@ export function literalMessage(m: ProduceMessage): ProduceMessage {
 
 function payload(d: DecodedData | null): PayloadInput {
   if (!d) return { format: "null", text: "" };
-  if (d.truncated) throw new Error("Значение больше 1 МБ показано не полностью — отправить его повторно нельзя");
+  if (d.truncated) throw new Error(i18n.t("producer.resend.truncated"));
   // DataFormat = auto | string | json | hex | base64: форматов реестра схем нет,
   // поэтому все значения воспроизводятся побайтно. "auto" в ответе не встречается.
   let format = d.format === "auto" ? "string" : d.format;
   if (format === "string" || format === "json") {
     // Rust декодирует через from_utf8_lossy: U+FFFD означает потерю исходных байт.
     if (d.text.includes("\uFFFD")) {
-      throw new Error("Значение декодировано с потерями (не UTF-8) — переключите формат на hex/base64, чтобы отправить точную копию");
+      throw new Error(i18n.t("producer.resend.lossy"));
     }
     // Невалидный JSON (d.error): текст — те же байты, но Producer отклонит формат json,
     // поэтому отправляем как string — байты сохраняются точно.

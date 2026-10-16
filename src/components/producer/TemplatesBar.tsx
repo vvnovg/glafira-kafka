@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function TemplatesBar({ connectionId, form, onLoad, resetKey }: Props) {
+  const { t: tt } = useTranslation();
   const queryClient = useQueryClient();
   const uid = useId();
   const templates = useQuery({ queryKey: ["templates", connectionId], queryFn: () => api.listTemplates(connectionId) });
@@ -58,7 +60,7 @@ export function TemplatesBar({ connectionId, form, onLoad, resetKey }: Props) {
 
   return (
     <div className="toolbar">
-      <label htmlFor={`${uid}-tpl`}>Шаблон</label>
+      <label htmlFor={`${uid}-tpl`}>{tt("producer.templates.label")}</label>
       <select
         id={`${uid}-tpl`}
         value={selected}
@@ -73,43 +75,43 @@ export function TemplatesBar({ connectionId, form, onLoad, resetKey }: Props) {
         {templates.data?.map((t) => (
           <option key={t.id} value={t.id}>
             {t.name}
-            {t.connectionId === null ? " (все подключения)" : ""}
+            {t.connectionId === null ? ` ${tt("producer.templates.allSuffix")}` : ""}
           </option>
         ))}
       </select>
       {current &&
         (deleting ? (
-          <span role="group" aria-label={`Удалить шаблон «${current.name}»?`}>
-            Удалить шаблон «{current.name}»?{" "}
+          <span role="group" aria-label={tt("producer.templates.deleteConfirm", { name: current.name })}>
+            {tt("producer.templates.deleteConfirm", { name: current.name })}{" "}
             <button type="button" className="danger" disabled={remove.isPending} onClick={() => remove.mutate(current.id)}>
-              Удалить
+              {tt("common.delete")}
             </button>{" "}
             <button type="button" disabled={remove.isPending} onClick={() => setDeleting(false)}>
-              Отмена
+              {tt("common.cancel")}
             </button>
           </span>
         ) : (
           <button type="button" className="link" onClick={() => setDeleting(true)}>
-            удалить шаблон
+            {tt("producer.templates.delete")}
           </button>
         ))}
       {saving ? (
         <>
-          <label htmlFor={`${uid}-name`}>Имя шаблона</label>
+          <label htmlFor={`${uid}-name`}>{tt("producer.templates.nameLabel")}</label>
           <input id={`${uid}-name`} value={name} onChange={(e) => setName(e.target.value)} />
           <label>
-            <input type="checkbox" checked={global} onChange={(e) => setGlobal(e.target.checked)} /> Для всех подключений
+            <input type="checkbox" checked={global} onChange={(e) => setGlobal(e.target.checked)} /> {tt("producer.templates.global")}
           </label>
           <button type="button" className="primary" disabled={!name.trim() || save.isPending} onClick={() => save.mutate()}>
-            Сохранить
+            {tt("common.save")}
           </button>
           <button type="button" onClick={() => setSaving(false)}>
-            Отмена
+            {tt("common.cancel")}
           </button>
         </>
       ) : (
         <button type="button" onClick={() => setSaving(true)}>
-          Сохранить как шаблон
+          {tt("producer.templates.saveAs")}
         </button>
       )}
       {templates.error && <ErrorBanner error={templates.error} onRetry={() => templates.refetch()} />}

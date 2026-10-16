@@ -1,3 +1,4 @@
+import { i18n } from "../../i18n";
 import type { HeaderInput, PayloadInput, ProduceMessage, ProducerSettings } from "../../api/types";
 
 export interface ProducerForm {
@@ -26,11 +27,11 @@ export function emptyProducerForm(topic = ""): ProducerForm {
 /** Проверки формы до отправки; содержимое форматов и плейсхолдеры проверяет Rust. */
 export function formToMessage(f: ProducerForm): ProduceMessage {
   const topic = f.topic.trim();
-  if (!topic) throw new Error("Укажите топик");
+  if (!topic) throw new Error(i18n.t("producer.form.errTopic"));
   let partition: number | null = null;
   const p = f.partition.trim();
   if (p) {
-    if (!/^\d+$/.test(p)) throw new Error("Партиция — целое число ≥ 0");
+    if (!/^\d+$/.test(p)) throw new Error(i18n.t("producer.form.errPartition"));
     partition = Number(p);
   }
   return {

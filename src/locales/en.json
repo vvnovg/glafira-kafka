@@ -733,5 +733,98 @@
       "minutes": "Minutes must be an integer between 1 and {{max}}",
       "unknownStart": "Unknown start position: {{value}}"
     }
+  },
+  "producer": {
+    "clearForm": "Clear form",
+    "readOnly": "The connection is read-only — sending is unavailable.",
+    "topic": "Topic",
+    "partition": "Partition",
+    "partitionAuto": "auto",
+    "key": "Key",
+    "value": "Value",
+    "keyFormat": "Key format",
+    "valueFormat": "Value format",
+    "placeholders": "Placeholders: {{list}}",
+    "settings": {
+      "legend": "Producer settings",
+      "compression": "compression",
+      "idempotence": "idempotence"
+    },
+    "sent": "Sent: partition {{partition}}, offset <offset/>, {{time}}",
+    "noOffsetHint": "The broker did not return an offset (for example, with acks=0)",
+    "confirmTitle": "Send a message to “{{topic}}”?",
+    "confirmLabel": "Send to prod",
+    "send": "Send",
+    "headers": {
+      "legend": "Headers",
+      "colName": "Name",
+      "colValue": "Value",
+      "colFormat": "Format",
+      "namePlaceholder": "name",
+      "valuePlaceholder": "value",
+      "nameAria": "Header {{n}} name",
+      "valueAria": "Header {{n}} value",
+      "formatAria": "Header {{n}} format",
+      "removeAria": "Remove header {{n}}",
+      "add": "Add header"
+    },
+    "history": {
+      "title": "History (last 100)",
+      "empty": "The send history is empty.",
+      "colTime": "Time",
+      "colTopic": "Topic",
+      "colKey": "Key",
+      "repeat": "Repeat",
+      "truncatedHint": "The value is longer than 64 KB and was stored incompletely — it cannot be repeated"
+    },
+    "templates": {
+      "label": "Template",
+      "allSuffix": "(all connections)",
+      "deleteConfirm": "Delete template “{{name}}”?",
+      "delete": "delete template",
+      "nameLabel": "Template name",
+      "global": "For all connections",
+      "saveAs": "Save as template"
+    },
+    "form": {
+      "errTopic": "Specify a topic",
+      "errPartition": "Partition must be an integer ≥ 0"
+    },
+    "resend": {
+      "truncated": "The value is larger than 1 MB and was shown incompletely — it cannot be resent",
+      "lossy": "The value was decoded lossily (not UTF-8) — switch the format to hex/base64 to send an exact copy"
+    },
+    "batch": {
+      "legend": "Batch send",
+      "readOnly": "The connection is read-only — batch send is unavailable.",
+      "modeCopies": "N copies of the form",
+      "modeFile": "from file",
+      "modeFileAria": "From file",
+      "count": "Copies",
+      "chooseFile": "Choose file…",
+      "rate": "Rate",
+      "rateAria": "Messages per second",
+      "rateUnlimited": "unlimited",
+      "hintCopies": "Placeholders are substituted for each copy; {{seq}} is the copy number, starting at 0.",
+      "hintFile": "JSON Lines: {\"key\":…, \"value\":…, \"headers\":{…}, \"partition\":…} per line. CSV: columns key, value, partition, header.<name>.",
+      "errCount": "Copies must be from 1 to 1,000,000",
+      "errNoFile": "Choose a file",
+      "errFormat": "Supported files: .jsonl, .ndjson and .csv",
+      "errTopic": "Specify a topic in the form above",
+      "errRate": "Rate must be an integer ≥ 1",
+      "progress": "sent {{sent}} of {{total}} · errors {{failed}}",
+      "progressUnknown": "sent {{sent}} of <total/> · errors {{failed}}",
+      "totalUnknownHint": "The total is unknown: the file is read as a stream",
+      "cancelled": "cancelled",
+      "done": "done",
+      "notSent": "cancelled before sending: {{count}}",
+      "noLine": "no line: ",
+      "line": "line {{line}}: ",
+      "truncated": "List truncated: showing {{shown}} of {{total}} errors.",
+      "confirmTitle": "Start batch send?",
+      "confirmLabel": "Start on prod",
+      "start": "Start",
+      "cancel": "Cancel"
+    }
   }
 }

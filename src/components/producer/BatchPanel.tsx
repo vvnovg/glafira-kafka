@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api, toAppError } from "../../api/client";
 import type { BatchSource, ConnectionProfile } from "../../api/types";
@@ -15,6 +16,7 @@ interface Run {
 }
 
 export function BatchPanel({ connection, form }: { connection: ConnectionProfile; form: ProducerForm }) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>("copies");
   const [count, setCount] = useState("10");
   const [rate, setRate] = useState("");
@@ -56,13 +58,13 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
   const buildSource = (): BatchSource => {
     if (mode === "copies") {
       const n = Number(count);
-      if (!Number.isInteger(n) || n < 1 || n > 1_000_000) throw new Error("Копий — от 1 до 1 000 000");
+      if (!Number.isInteger(n) || n < 1 || n > 1_000_000) throw new Error(t("producer.batch.errCount"));
       return { type: "copies", count: n, message: formToMessage(form) };
     }
-    if (!path) throw new Error("Выберите файл");
+    if (!path) throw new Error(t("producer.batch.errNoFile"));
     const format = fileFormatOf(path);
-    if (!format) throw new Error("Поддерживаются файлы .jsonl, .ndjson и .csv");
-    if (!form.topic.trim()) throw new Error("Укажите топик в форме выше");
+    if (!format) throw new Error(t("producer.batch.errFormat"));
+    if (!form.topic.trim()) throw new Error(t("producer.batch.errTopic"));
     return { type: "file", path, format, topic: form.topic.trim() };
   };
 
@@ -71,7 +73,7 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
     try {
       const source = buildSource();
       const r = rate.trim() ? Number(rate) : null;
-      if (r !== null && (!Number.isInteger(r) || r < 1)) throw new Error("Скорость — целое число ≥ 1");
+      if (r !== null && (!Number.isInteger(r) || r < 1)) throw new Error(t("producer.batch.errRate"));
       setFormError(null);
       return { source, ratePerSec: r };
     } catch (e) {
@@ -126,38 +128,38 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
 
   return (
     <fieldset className="panel">
-      <legend>Пакетная отправка</legend>
+      <legend>{t("producer.batch.legend")}</legend>
       {connection.readOnly ? (
-        <p className="warn">Подключение только для чтения — пакетная отправка недоступна.</p>
+        <p className="warn">{t("producer.batch.readOnly")}</p>
       ) : (
         <>
           <div className="toolbar">
             <label>
-              <input type="radio" name={modeName} checked={mode === "copies"} onChange={() => setMode("copies")} /> N копий формы
+              <input type="radio" name={modeName} checked={mode === "copies"} onChange={() => setMode("copies")} /> {t("producer.batch.modeCopies")}
             </label>
             <label>
-              <input type="radio" aria-label="Из файла" name={modeName} checked={mode === "file"} onChange={() => setMode("file")} /> из файла
+              <input type="radio" aria-label={t("producer.batch.modeFileAria")} name={modeName} checked={mode === "file"} onChange={() => setMode("file")} /> {t("producer.batch.modeFile")}
             </label>
             {mode === "copies" ? (
               <label>
-                Копий{" "}
-                <input aria-label="Копий" type="number" min={1} value={count} onChange={(e) => setCount(e.target.value)} style={{ width: 100 }} />
+                {t("producer.batch.count")}{" "}
+                <input aria-label={t("producer.batch.count")} type="number" min={1} value={count} onChange={(e) => setCount(e.target.value)} style={{ width: 100 }} />
               </label>
             ) : (
               <>
                 <button type="button" onClick={() => void chooseFile()}>
-                  Выбрать файл…
+                  {t("producer.batch.chooseFile")}
                 </button>
                 {path && <code>{path}</code>}
               </>
             )}
             <label>
-              Скорость{" "}
+              {t("producer.batch.rate")}{" "}
               <input
-                aria-label="Сообщений в секунду"
+                aria-label={t("producer.batch.rateAria")}
                 type="number"
                 min={1}
-                placeholder="без ограничения"
+                placeholder={t("producer.batch.rateUnlimited")}
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
                 style={{ width: 120 }}
@@ -166,8 +168,8 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
           </div>
           <p className="muted">
             {mode === "copies"
-              ? "Плейсхолдеры подставляются для каждой копии, {{seq}} — номер копии с 0."
-              : "JSON Lines: {\"key\":…, \"value\":…, \"headers\":{…}, \"partition\":…} в строке. CSV: колонки key, value, partition, header.<имя>."}
+              ? t("producer.batch.hintCopies", { seq: "{{seq}}" })
+              : t("producer.batch.hintFile")}
           </p>
         </>
       )}
@@ -177,15 +179,17 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
         <div role="status">
           <p>
             {state.total !== null ? (
-              `отправлено ${state.sent} из ${state.total} · ошибок ${state.failed}`
+              t("producer.batch.progress", { sent: state.sent, total: state.total, failed: state.failed })
             ) : (
-              <>
-                отправлено {state.sent} из <span title="Общее число неизвестно: файл читается потоком">—</span> · ошибок {state.failed}
-              </>
+              <Trans
+                i18nKey="producer.batch.progressUnknown"
+                values={{ sent: state.sent, failed: state.failed }}
+                components={{ total: <span title={t("producer.batch.totalUnknownHint")}>—</span> }}
+              />
             )}
           </p>
-          {state.status === "finished" && <p>{state.cancelled ? "отменено" : "готово"}</p>}
-          {state.status === "finished" && state.notSent > 0 && <p>отменено до отправки: {state.notSent}</p>}
+          {state.status === "finished" && <p>{state.cancelled ? t("producer.batch.cancelled") : t("producer.batch.done")}</p>}
+          {state.status === "finished" && state.notSent > 0 && <p>{t("producer.batch.notSent", { count: state.notSent })}</p>}
         </div>
       )}
       {shown > 0 && (
@@ -193,14 +197,14 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
           <ul className="warn">
             {state.errors.map((e, i) => (
               <li key={i}>
-                {e.line === null ? "без строки: " : `строка ${e.line}: `}
+                {e.line === null ? t("producer.batch.noLine") : t("producer.batch.line", { line: e.line })}
                 {tr(e.message)}
               </li>
             ))}
           </ul>
           {state.failed > shown && (
             <p className="muted">
-              Список усечён: показаны {shown} из {state.failed} ошибок.
+              {t("producer.batch.truncated", { shown, total: state.failed })}
             </p>
           )}
         </>
@@ -209,8 +213,8 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
         (confirming ? (
           <ConfirmDialog
             connection={connection}
-            title="Запустить пакетную отправку?"
-            confirmLabel="Запустить в prod"
+            title={t("producer.batch.confirmTitle")}
+            confirmLabel={t("producer.batch.confirmLabel")}
             onConfirm={(c) => {
               const v = validate();
               if (v) void start(v, c.confirm);
@@ -221,10 +225,10 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
         ) : (
           <div className="toolbar">
             <button type="button" className="primary" disabled={running} onClick={request}>
-              Запустить
+              {t("producer.batch.start")}
             </button>
             <button type="button" disabled={!running} onClick={() => void cancel()}>
-              Отменить
+              {t("producer.batch.cancel")}
             </button>
           </div>
         ))}

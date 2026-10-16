@@ -735,5 +735,98 @@
       "minutes": "Минуты должны быть целым числом от 1 до {{max}}",
       "unknownStart": "Неизвестная начальная позиция: {{value}}"
     }
+  },
+  "producer": {
+    "clearForm": "Очистить форму",
+    "readOnly": "Подключение открыто только для чтения — отправка недоступна.",
+    "topic": "Топик",
+    "partition": "Партиция",
+    "partitionAuto": "авто",
+    "key": "Ключ",
+    "value": "Значение",
+    "keyFormat": "Формат ключа",
+    "valueFormat": "Формат значения",
+    "placeholders": "Плейсхолдеры: {{list}}",
+    "settings": {
+      "legend": "Параметры продюсера",
+      "compression": "сжатие",
+      "idempotence": "идемпотентность"
+    },
+    "sent": "Отправлено: партиция {{partition}}, offset <offset/>, {{time}}",
+    "noOffsetHint": "Брокер не вернул offset (например, при acks=0)",
+    "confirmTitle": "Отправить сообщение в «{{topic}}»?",
+    "confirmLabel": "Отправить в prod",
+    "send": "Отправить",
+    "headers": {
+      "legend": "Заголовки",
+      "colName": "Имя",
+      "colValue": "Значение",
+      "colFormat": "Формат",
+      "namePlaceholder": "имя",
+      "valuePlaceholder": "значение",
+      "nameAria": "Имя заголовка {{n}}",
+      "valueAria": "Значение заголовка {{n}}",
+      "formatAria": "Формат заголовка {{n}}",
+      "removeAria": "Удалить заголовок {{n}}",
+      "add": "Добавить заголовок"
+    },
+    "history": {
+      "title": "История (последние 100)",
+      "empty": "История отправки пуста.",
+      "colTime": "Время",
+      "colTopic": "Топик",
+      "colKey": "Ключ",
+      "repeat": "Повторить",
+      "truncatedHint": "Значение длиннее 64 КБ сохранено не полностью — повторить нельзя"
+    },
+    "templates": {
+      "label": "Шаблон",
+      "allSuffix": "(все подключения)",
+      "deleteConfirm": "Удалить шаблон «{{name}}»?",
+      "delete": "удалить шаблон",
+      "nameLabel": "Имя шаблона",
+      "global": "Для всех подключений",
+      "saveAs": "Сохранить как шаблон"
+    },
+    "form": {
+      "errTopic": "Укажите топик",
+      "errPartition": "Партиция — целое число ≥ 0"
+    },
+    "resend": {
+      "truncated": "Значение больше 1 МБ показано не полностью — отправить его повторно нельзя",
+      "lossy": "Значение декодировано с потерями (не UTF-8) — переключите формат на hex/base64, чтобы отправить точную копию"
+    },
+    "batch": {
+      "legend": "Пакетная отправка",
+      "readOnly": "Подключение только для чтения — пакетная отправка недоступна.",
+      "modeCopies": "N копий формы",
+      "modeFile": "из файла",
+      "modeFileAria": "Из файла",
+      "count": "Копий",
+      "chooseFile": "Выбрать файл…",
+      "rate": "Скорость",
+      "rateAria": "Сообщений в секунду",
+      "rateUnlimited": "без ограничения",
+      "hintCopies": "Плейсхолдеры подставляются для каждой копии, {{seq}} — номер копии с 0.",
+      "hintFile": "JSON Lines: {\"key\":…, \"value\":…, \"headers\":{…}, \"partition\":…} в строке. CSV: колонки key, value, partition, header.<имя>.",
+      "errCount": "Копий — от 1 до 1 000 000",
+      "errNoFile": "Выберите файл",
+      "errFormat": "Поддерживаются файлы .jsonl, .ndjson и .csv",
+      "errTopic": "Укажите топик в форме выше",
+      "errRate": "Скорость — целое число ≥ 1",
+      "progress": "отправлено {{sent}} из {{total}} · ошибок {{failed}}",
+      "progressUnknown": "отправлено {{sent}} из <total/> · ошибок {{failed}}",
+      "totalUnknownHint": "Общее число неизвестно: файл читается потоком",
+      "cancelled": "отменено",
+      "done": "готово",
+      "notSent": "отменено до отправки: {{count}}",
+      "noLine": "без строки: ",
+      "line": "строка {{line}}: ",
+      "truncated": "Список усечён: показаны {{shown}} из {{total}} ошибок.",
+      "confirmTitle": "Запустить пакетную отправку?",
+      "confirmLabel": "Запустить в prod",
+      "start": "Запустить",
+      "cancel": "Отменить"
+    }
   }
 }

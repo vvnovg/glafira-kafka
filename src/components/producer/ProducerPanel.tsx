@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import { useEffect, useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
@@ -15,14 +16,16 @@ import { TemplatesBar } from "./TemplatesBar";
 
 const FORMATS: PayloadFormat[] = ["string", "json", "hex", "base64", "null"];
 
-function PayloadField({ label, value, onChange }: { label: string; value: PayloadInput; onChange: (v: PayloadInput) => void }) {
+function PayloadField({ kind, value, onChange }: { kind: "key" | "value"; value: PayloadInput; onChange: (v: PayloadInput) => void }) {
+  const { t } = useTranslation();
   const id = useId();
+  const label = t(kind === "key" ? "producer.key" : "producer.value");
   return (
     <div className="payload-field">
       <div className="toolbar">
         <label htmlFor={`${id}-text`}>{label}</label>
         <label htmlFor={`${id}-format`} className="muted">
-          Формат {label === "Ключ" ? "ключа" : "значения"}
+          {t(kind === "key" ? "producer.keyFormat" : "producer.valueFormat")}
         </label>
         <select id={`${id}-format`} value={value.format} onChange={(e) => onChange({ ...value, format: e.target.value as PayloadFormat })}>
           {FORMATS.map((f) => (
@@ -34,7 +37,7 @@ function PayloadField({ label, value, onChange }: { label: string; value: Payloa
       </div>
       <textarea
         id={`${id}-text`}
-        rows={label === "Значение" ? 8 : 2}
+        rows={kind === "value" ? 8 : 2}
         disabled={value.format === "null"}
         value={value.text}
         onChange={(e) => onChange({ ...value, text: e.target.value })}
@@ -44,6 +47,7 @@ function PayloadField({ label, value, onChange }: { label: string; value: Payloa
 }
 
 export function ProducerPanel({ connectionId, prefill }: { connectionId: string; prefill?: ProducerPrefill }) {
+  const { t } = useTranslation();
   const connection = useConnection(connectionId);
   const queryClient = useQueryClient();
   const uid = useId();
@@ -119,7 +123,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
     }
   };
 
-  if (!connection) return <p className="empty">Загрузка…</p>;
+  if (!connection) return <p className="empty">{t("common.loading")}</p>;
   const readOnly = connection.readOnly;
 
   return (
@@ -127,28 +131,28 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
       <div className="toolbar">
         <h2>Producer</h2>
         <button type="button" onClick={() => replaceFormDetached(emptyProducerForm(form.topic))}>
-          Очистить форму
+          {t("producer.clearForm")}
         </button>
       </div>
       <TemplatesBar connectionId={connectionId} form={form} onLoad={replaceForm} resetKey={templateReset} />
-      {readOnly && <p className="warn" role="alert">Подключение открыто только для чтения — отправка недоступна.</p>}
+      {readOnly && <p className="warn" role="alert">{t("producer.readOnly")}</p>}
       <div className="form">
-        <label htmlFor={`${uid}-topic`}>Топик</label>
+        <label htmlFor={`${uid}-topic`}>{t("producer.topic")}</label>
         <input id={`${uid}-topic`} list={`${uid}-topics`} value={form.topic} onChange={(e) => set({ topic: e.target.value })} />
         <datalist id={`${uid}-topics`}>
-          {topics.data?.filter((t) => !t.internal).map((t) => <option key={t.name} value={t.name} />)}
+          {topics.data?.filter((x) => !x.internal).map((x) => <option key={x.name} value={x.name} />)}
         </datalist>
-        <label htmlFor={`${uid}-partition`}>Партиция</label>
-        <input id={`${uid}-partition`} placeholder="авто" value={form.partition} onChange={(e) => set({ partition: e.target.value })} />
+        <label htmlFor={`${uid}-partition`}>{t("producer.partition")}</label>
+        <input id={`${uid}-partition`} placeholder={t("producer.partitionAuto")} value={form.partition} onChange={(e) => set({ partition: e.target.value })} />
       </div>
-      <PayloadField label="Ключ" value={form.key} onChange={(key) => set({ key })} />
-      <PayloadField label="Значение" value={form.value} onChange={(value) => set({ value })} />
+      <PayloadField kind="key" value={form.key} onChange={(key) => set({ key })} />
+      <PayloadField kind="value" value={form.value} onChange={(value) => set({ value })} />
       <HeadersEditor headers={form.headers} onChange={(headers) => set({ headers })} />
       <p className="muted">
-        Плейсхолдеры: {"{{uuid}} {{now}} {{nowMillis}} {{seq}} {{randomInt 1 100}} {{randomString 8}} {{env NAME}}"}
+        {t("producer.placeholders", { list: "{{uuid}} {{now}} {{nowMillis}} {{seq}} {{randomInt 1 100}} {{randomString 8}} {{env NAME}}" })}
       </p>
       <fieldset className="toolbar">
-        <legend>Параметры продюсера</legend>
+        <legend>{t("producer.settings.legend")}</legend>
         <label>
           acks{" "}
           <select value={form.settings.acks} onChange={(e) => setSettings({ acks: e.target.value as ProducerSettings["acks"] })}>
@@ -158,7 +162,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
           </select>
         </label>
         <label>
-          сжатие{" "}
+          {t("producer.settings.compression")}{" "}
           <select value={form.settings.compression} onChange={(e) => setSettings({ compression: e.target.value as ProducerSettings["compression"] })}>
             {["none", "gzip", "snappy", "lz4", "zstd"].map((c) => (
               <option key={c} value={c}>
@@ -168,28 +172,29 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
           </select>
         </label>
         <label>
-          <input type="checkbox" checked={form.settings.idempotence} onChange={(e) => setSettings({ idempotence: e.target.checked })} /> идемпотентность
+          <input type="checkbox" checked={form.settings.idempotence} onChange={(e) => setSettings({ idempotence: e.target.checked })} /> {t("producer.settings.idempotence")}
         </label>
       </fieldset>
       {formError && <p className="warn">{formError}</p>}
       {send.error && <ErrorBanner error={send.error} />}
       {send.data && !send.isPending && (
         <p role="status">
-          Отправлено: партиция {send.data.partition}, offset{" "}
-          {send.data.offset === null ? (
-            <span title="Брокер не вернул offset (например, при acks=0)">—</span>
-          ) : (
-            send.data.offset
-          )}
-          , {formatTimestamp(send.data.timestamp)}
+          <Trans
+            i18nKey="producer.sent"
+            values={{ partition: send.data.partition, time: formatTimestamp(send.data.timestamp) }}
+            components={{
+              offset:
+                send.data.offset === null ? <span title={t("producer.noOffsetHint")}>—</span> : <>{send.data.offset}</>,
+            }}
+          />
         </p>
       )}
       {!readOnly &&
         (confirming ? (
           <ConfirmDialog
             connection={connection}
-            title={`Отправить сообщение в «${form.topic.trim()}»?`}
-            confirmLabel="Отправить в prod"
+            title={t("producer.confirmTitle", { topic: form.topic.trim() })}
+            confirmLabel={t("producer.confirmLabel")}
             busy={send.isPending}
             onConfirm={(c) => submit(c.confirm)}
             onCancel={() => setConfirming(false)}
@@ -202,12 +207,12 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
               disabled={send.isPending}
               onClick={requestSend}
             >
-              Отправить
+              {t("producer.send")}
             </button>
           </div>
         ))}
       {!readOnly && <BatchPanel connection={connection} form={form} />}
-      <h3>История (последние 100)</h3>
+      <h3>{t("producer.history.title")}</h3>
       <HistoryList connectionId={connectionId} onRepeat={replaceFormDetached} />
     </div>
   );

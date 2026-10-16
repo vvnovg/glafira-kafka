@@ -16,14 +16,16 @@ services:
       KAFKA_LISTENERS: INTERNAL://:19092,CONTROLLER://:9093,EXTERNAL://:9092,SASL_EXT://:9094,MTLS_EXT://:9095
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://localhost:9092,SASL_EXT://localhost:9094,MTLS_EXT://localhost:9095
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,SASL_EXT:SASL_PLAINTEXT,MTLS_EXT:SSL
-      # mTLS: файлы из dev/certs/out (см. dev/certs/README.md)
-      KAFKA_SSL_KEYSTORE_FILENAME: broker.p12
+      # mTLS: файлы из dev/certs/out (см. dev/certs/README.md). Пути и пароли заданы явно:
+      # образ cp-kafka переводит *_FILENAME/*_CREDENTIALS в ssl.*.location/password, только если
+      # в advertised listeners есть «SSL://», а листенер называется MTLS_EXT.
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/broker.p12
       KAFKA_SSL_KEYSTORE_TYPE: PKCS12
-      KAFKA_SSL_KEYSTORE_CREDENTIALS: broker_creds
-      KAFKA_SSL_KEY_CREDENTIALS: broker_creds
-      KAFKA_SSL_TRUSTSTORE_FILENAME: truststore.p12
+      KAFKA_SSL_KEYSTORE_PASSWORD: storepass
+      KAFKA_SSL_KEY_PASSWORD: storepass
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/truststore.p12
       KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
-      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker_creds
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: storepass
       KAFKA_SSL_CLIENT_AUTH: required
       KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER

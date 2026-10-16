@@ -56,11 +56,11 @@
     rm -f /tmp/ke-policy.plist && plutil -create xml1 /tmp/ke-policy.plist
     plutil -insert licenseKey -string "$KEY" /tmp/ke-policy.plist && plutil -insert updatesEnabled -bool NO /tmp/ke-policy.plist
     sudo mkdir -p "/Library/Managed Preferences"
-    sudo cp /tmp/ke-policy.plist "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"
-    sudo chmod 644 "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"
-    plutil -p "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"   # licenseKey — длинная строка, updatesEnabled => false
+    sudo cp /tmp/ke-policy.plist "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"
+    sudo chmod 644 "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"
+    plutil -p "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"   # licenseKey — длинная строка, updatesEnabled => false
     ```
     Перезапуск `pnpm tauri dev` → в логе `политика managed=true updates=false`; «Лицензия»: «Лицензия управляется вашей организацией.»,
     владелец ACME Corp, тип «организации», до 2027-03-31; поля ключа и «Удалить ключ» нет; блок «Политика организации» с путём.
-12. `sudo rm "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"`, перезапуск → блок политики исчез, лицензия снова
+12. `sudo rm "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"`, перезапуск → блок политики исчез, лицензия снова
     «Free» (или личная, если ключ из п. 8 не удалён).

@@ -5,8 +5,8 @@
 
 ## Один раз: пара ключей
 ```bash
-cargo run --manifest-path tools/issue-license/Cargo.toml -- keygen --out ~/.kafka-explorer-license
-cp ~/.kafka-explorer-license/license-public.key src-tauri/license-public.key
+cargo run --manifest-path tools/issue-license/Cargo.toml -- keygen --out ~/.glafira-kafka-license
+cp ~/.glafira-kafka-license/license-public.key src-tauri/license-public.key
 ```
 `license-signing.key` — секрет. Держите вне репозитория (менеджер паролей, зашифрованный диск) и сделайте резервную копию:
 без него нельзя выдать новые ключи, а ключи, подписанные потерянным ключом, нельзя отозвать.
@@ -19,10 +19,10 @@ cp ~/.kafka-explorer-license/license-public.key src-tauri/license-public.key
 ## Выдать ключ
 ```bash
 # организации (раздаётся через политику licenseKey)
-cargo run --manifest-path tools/issue-license/Cargo.toml -- issue --key ~/.kafka-explorer-license/license-signing.key \
+cargo run --manifest-path tools/issue-license/Cargo.toml -- issue --key ~/.glafira-kafka-license/license-signing.key \
   --kind organization --licensee "ACME Corp" --expires 2027-03-31 --seats 500
 # человеку
-cargo run --manifest-path tools/issue-license/Cargo.toml -- issue --key ~/.kafka-explorer-license/license-signing.key \
+cargo run --manifest-path tools/issue-license/Cargo.toml -- issue --key ~/.glafira-kafka-license/license-signing.key \
   --kind personal --licensee user@example.com --expires 2027-03-31
 ```
 `--expires` — последний день действия (включительно), дата в прошлом отклоняется. Без него ключ бессрочный.
@@ -38,8 +38,8 @@ cargo run --manifest-path tools/issue-license/Cargo.toml -- verify --public src-
 
 ## Раздача через политику
 Ключ организации задаётся параметром `licenseKey` политики администратора (вместе с `updatesEnabled`). Расположение:
-- macOS: `/Library/Managed Preferences/dev.kafkaexplorer.app.plist`
-- Windows: реестр `HKLM\Software\Policies\KafkaExplorer\KafkaExplorer`
-- Linux: `/etc/dev.kafkaexplorer.app/policy.json`
+- macOS: `/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist`
+- Windows: реестр `HKLM\Software\Policies\Glafira\Kafka`
+- Linux: `/etc/io.github.vvnovg.glafira.kafka/policy.json`
 
 Лицензия из политики имеет приоритет над введённой вручную и не меняется из интерфейса.

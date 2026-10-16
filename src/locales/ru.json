@@ -35,10 +35,30 @@
       "none": "Обновлений нет"
     },
     "browse": {
-      "threadFailed": "Не удалось запустить поток чтения: {{error}}"
+      "threadFailed": "Не удалось запустить поток чтения: {{error}}",
+      "badRegex": "Некорректное регулярное выражение «{{pattern}}»: {{error}}",
+      "badJsonPath": "Некорректный JSONPath «{{path}}»: {{error}}",
+      "invalidJson": "Невалидный JSON: {{error}}",
+      "topicMissing": "Не указан топик",
+      "limitRange": "Лимит должен быть от 1 до {{max}}",
+      "latestRange": "Количество последних сообщений должно быть от 1 до {{max}}",
+      "minutesRange": "Количество минут должно быть от 1 до {{max}}",
+      "timestampNegative": "Метка времени не может быть отрицательной",
+      "boundsFailed": "Не удалось получить оффсеты партиции {{partition}}",
+      "timestampOffsetFailed": "Не удалось найти оффсет по времени для партиции {{partition}}"
     },
     "consume": {
-      "threadFailed": "Не удалось запустить поток consumer-сессии: {{error}}"
+      "threadFailed": "Не удалось запустить поток consumer-сессии: {{error}}",
+      "sessionGone": "Consumer-сессия не найдена или уже завершена",
+      "sessionTimeout": "Consumer-сессия не ответила вовремя",
+      "noPartitions": "Не выбраны партиции",
+      "notAssigned": "Партиции не назначены этой сессии: {{partitions}}",
+      "badOffset": "Некорректный offset сообщения",
+      "nothingToCommit": "Нет прочитанных сообщений для коммита",
+      "groupIdMissing": "Укажите group.id",
+      "badRegex": "Некорректное регулярное выражение: {{error}}",
+      "noTopics": "Укажите топики или регулярное выражение",
+      "topicsAndRegex": "Укажите либо список топиков, либо регулярное выражение"
     },
     "app": {
       "taskPanicked": "Фоновая задача завершилась аварийно: {{error}}"
@@ -49,7 +69,13 @@
       "sendFailed": "Не удалось отправить сообщение",
       "deliveryTimeout": "Сообщение не доставлено за время таймаута",
       "topicOrPartitionNotFound": "Топик или партиция не найдены",
-      "messageTooLarge": "Сообщение слишком большое для брокера"
+      "messageTooLarge": "Сообщение слишком большое для брокера",
+      "encodeKey": "Не удалось закодировать ключ: невалидный {{format}}: {{error}}",
+      "encodeValue": "Не удалось закодировать значение: невалидный {{format}}: {{error}}",
+      "topicMissing": "Не указан топик",
+      "partitionNegative": "Номер партиции не может быть отрицательным",
+      "headerNameEmpty": "Пустое имя заголовка",
+      "headerHex": "Заголовок «{{name}}»: невалидный hex: {{error}}"
     },
     "topics": {
       "internalPurge": "Внутренний топик «{{topic}}» нельзя очищать",
@@ -72,7 +98,8 @@
       "deleteFailed": "Не удалось удалить топик",
       "noConfigChanges": "Нет изменений конфигурации",
       "configDuplicate": "Параметр «{{name}}» изменяется дважды",
-      "alterConfigFailed": "Не удалось изменить конфигурацию топика"
+      "alterConfigFailed": "Не удалось изменить конфигурацию топика",
+      "noOffset": "Брокер не вернул оффсет партиции"
     },
     "license": {
       "malformed": "Ключ недействителен: ключ повреждён",
@@ -224,7 +251,47 @@
       "jksKeyReadFailed": "Хранилище JKS: не удалось прочитать ключ"
     },
     "io": "Ошибка ввода-вывода: {{error}}",
-    "json": "Ошибка JSON: {{error}}"
+    "json": "Ошибка JSON: {{error}}",
+    "internal": "Внутренняя ошибка",
+    "batch": {
+      "copiesRange": "Количество копий — от 1 до {{max}}",
+      "fileAndTopic": "Укажите файл и топик",
+      "unconfirmedCancelled": "{{lost}} сообщений не подтверждены брокером к моменту отмены",
+      "unconfirmedCancelledCause": "{{lost}} сообщений не подтверждены брокером к моменту отмены: {{cause}}",
+      "unconfirmedTimeout": "{{lost}} сообщений не подтверждены брокером до таймаута",
+      "unconfirmedTimeoutCause": "{{lost}} сообщений не подтверждены брокером до таймаута: {{cause}}"
+    },
+    "source": {
+      "invalidJson": "невалидный JSON: {{error}}",
+      "partitionNegative": "partition {{partition}} — отрицательный номер",
+      "objectExpected": "невалидный JSON: ожидался объект",
+      "lineTooLong": "Строка {{line}} длиннее 16 МиБ",
+      "readFailed": "ошибка чтения: {{error}}",
+      "notUtf8": "строка не в кодировке UTF-8",
+      "csvNoValue": "CSV: нет обязательной колонки value",
+      "csvDuplicateColumn": "CSV: колонка {{column}} указана более одного раза",
+      "csvEmptyHeader": "CSV: пустое имя заголовка в колонке header.",
+      "csvDuplicateHeader": "CSV: заголовок header.{{name}} указан более одного раза",
+      "partitionNotNumber": "partition «{{value}}» — не число",
+      "csv": "CSV: {{error}}",
+      "openFailed": "Не удалось открыть {{path}}: {{error}}"
+    },
+    "template": {
+      "arity": "{{placeholder}}: ожидается аргументов — {{count}}",
+      "headerArity": "Заголовок «{{header}}»: {{placeholder}}: ожидается аргументов — {{count}}",
+      "notInteger": "{{placeholder}}: «{{value}}» — не целое число",
+      "headerNotInteger": "Заголовок «{{header}}»: {{placeholder}}: «{{value}}» — не целое число",
+      "minGreaterThanMax": "{{placeholder}}: min больше max",
+      "headerMinGreaterThanMax": "Заголовок «{{header}}»: {{placeholder}}: min больше max",
+      "stringLength": "{{placeholder}}: длина — число от 0 до {{max}}",
+      "headerStringLength": "Заголовок «{{header}}»: {{placeholder}}: длина — число от 0 до {{max}}",
+      "envMissing": "Переменная окружения {{name}} не задана",
+      "headerEnvMissing": "Заголовок «{{header}}»: переменная окружения {{name}} не задана",
+      "unknown": "Неизвестный плейсхолдер «{{placeholder}}» (чтобы отправить «{{open}}» буквально, пишите «{{escaped}}»)",
+      "headerUnknown": "Заголовок «{{header}}»: неизвестный плейсхолдер «{{placeholder}}» (чтобы отправить «{{open}}» буквально, пишите «{{escaped}}»)",
+      "unclosed": "Незакрытый плейсхолдер: нет «}}» (чтобы отправить «{{open}}» буквально, пишите «{{escaped}}»)",
+      "headerUnclosed": "Заголовок «{{header}}»: незакрытый плейсхолдер: нет «}}» (чтобы отправить «{{open}}» буквально, пишите «{{escaped}}»)"
+    }
   },
   "messages": {
     "connectionTest": {

@@ -1,4 +1,4 @@
-import type { AppError, BrowsedMessage, ConsumeEvent, OffsetTarget, RebalanceRecord, TopicPartitionRef } from "../../api/types";
+import type { AppError, BrowsedMessage, ConsumeEvent, LocalizedText, OffsetTarget, RebalanceRecord, TopicPartitionRef } from "../../api/types";
 import { appendMessages } from "../browse/state";
 
 export const partitionKey = (p: TopicPartitionRef) => `${p.topic}:${p.partition}`;
@@ -17,7 +17,7 @@ export interface ConsumerState {
   log: RebalanceRecord[];
   /** Последний подтверждённый сессией коммит (событие committed). */
   lastCommit: OffsetTarget[] | null;
-  reconnecting: string | null;
+  reconnecting: LocalizedText | null;
   error: AppError | null;
   limit: number;
 }

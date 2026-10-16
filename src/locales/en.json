@@ -35,10 +35,30 @@
       "none": "No updates available"
     },
     "browse": {
-      "threadFailed": "Failed to start the browse thread: {{error}}"
+      "threadFailed": "Failed to start the browse thread: {{error}}",
+      "badRegex": "Invalid regular expression “{{pattern}}”: {{error}}",
+      "badJsonPath": "Invalid JSONPath “{{path}}”: {{error}}",
+      "invalidJson": "Invalid JSON: {{error}}",
+      "topicMissing": "No topic specified",
+      "limitRange": "The limit must be between 1 and {{max}}",
+      "latestRange": "The number of latest messages must be between 1 and {{max}}",
+      "minutesRange": "The number of minutes must be between 1 and {{max}}",
+      "timestampNegative": "Timestamp cannot be negative",
+      "boundsFailed": "Failed to get the offsets of partition {{partition}}",
+      "timestampOffsetFailed": "Failed to find the offset by time for partition {{partition}}"
     },
     "consume": {
-      "threadFailed": "Failed to start the consumer session thread: {{error}}"
+      "threadFailed": "Failed to start the consumer session thread: {{error}}",
+      "sessionGone": "The consumer session was not found or has already ended",
+      "sessionTimeout": "The consumer session did not respond in time",
+      "noPartitions": "No partitions selected",
+      "notAssigned": "Partitions not assigned to this session: {{partitions}}",
+      "badOffset": "Invalid message offset",
+      "nothingToCommit": "No consumed messages to commit",
+      "groupIdMissing": "Specify group.id",
+      "badRegex": "Invalid regular expression: {{error}}",
+      "noTopics": "Specify topics or a regular expression",
+      "topicsAndRegex": "Specify either a list of topics or a regular expression"
     },
     "app": {
       "taskPanicked": "Background task failed: {{error}}"
@@ -49,7 +69,13 @@
       "sendFailed": "Failed to send the message",
       "deliveryTimeout": "The message was not delivered within the timeout",
       "topicOrPartitionNotFound": "Topic or partition not found",
-      "messageTooLarge": "The message is too large for the broker"
+      "messageTooLarge": "The message is too large for the broker",
+      "encodeKey": "Failed to encode the key: invalid {{format}}: {{error}}",
+      "encodeValue": "Failed to encode the value: invalid {{format}}: {{error}}",
+      "topicMissing": "No topic specified",
+      "partitionNegative": "The partition number cannot be negative",
+      "headerNameEmpty": "Empty header name",
+      "headerHex": "Header “{{name}}”: invalid hex: {{error}}"
     },
     "topics": {
       "internalPurge": "Internal topic “{{topic}}” cannot be purged",
@@ -72,7 +98,8 @@
       "deleteFailed": "Failed to delete the topic",
       "noConfigChanges": "No configuration changes",
       "configDuplicate": "Parameter “{{name}}” is changed twice",
-      "alterConfigFailed": "Failed to change the topic configuration"
+      "alterConfigFailed": "Failed to change the topic configuration",
+      "noOffset": "The broker did not return the partition offset"
     },
     "license": {
       "malformed": "Invalid key: the key is corrupted",
@@ -224,7 +251,47 @@
       "jksKeyReadFailed": "JKS store: could not read the key"
     },
     "io": "I/O error: {{error}}",
-    "json": "JSON error: {{error}}"
+    "json": "JSON error: {{error}}",
+    "internal": "Internal error",
+    "batch": {
+      "copiesRange": "The number of copies must be between 1 and {{max}}",
+      "fileAndTopic": "Specify a file and a topic",
+      "unconfirmedCancelled": "{{lost}} messages were not confirmed by the broker by the time of cancellation",
+      "unconfirmedCancelledCause": "{{lost}} messages were not confirmed by the broker by the time of cancellation: {{cause}}",
+      "unconfirmedTimeout": "{{lost}} messages were not confirmed by the broker before the timeout",
+      "unconfirmedTimeoutCause": "{{lost}} messages were not confirmed by the broker before the timeout: {{cause}}"
+    },
+    "source": {
+      "invalidJson": "invalid JSON: {{error}}",
+      "partitionNegative": "partition {{partition}} is a negative number",
+      "objectExpected": "invalid JSON: an object was expected",
+      "lineTooLong": "Line {{line}} is longer than 16 MiB",
+      "readFailed": "read error: {{error}}",
+      "notUtf8": "the line is not UTF-8 encoded",
+      "csvNoValue": "CSV: the required value column is missing",
+      "csvDuplicateColumn": "CSV: column {{column}} is specified more than once",
+      "csvEmptyHeader": "CSV: empty header name in the header. column",
+      "csvDuplicateHeader": "CSV: header header.{{name}} is specified more than once",
+      "partitionNotNumber": "partition “{{value}}” is not a number",
+      "csv": "CSV: {{error}}",
+      "openFailed": "Failed to open {{path}}: {{error}}"
+    },
+    "template": {
+      "arity": "{{placeholder}}: expected number of arguments — {{count}}",
+      "headerArity": "Header “{{header}}”: {{placeholder}}: expected number of arguments — {{count}}",
+      "notInteger": "{{placeholder}}: “{{value}}” is not an integer",
+      "headerNotInteger": "Header “{{header}}”: {{placeholder}}: “{{value}}” is not an integer",
+      "minGreaterThanMax": "{{placeholder}}: min is greater than max",
+      "headerMinGreaterThanMax": "Header “{{header}}”: {{placeholder}}: min is greater than max",
+      "stringLength": "{{placeholder}}: the length must be a number from 0 to {{max}}",
+      "headerStringLength": "Header “{{header}}”: {{placeholder}}: the length must be a number from 0 to {{max}}",
+      "envMissing": "Environment variable {{name}} is not set",
+      "headerEnvMissing": "Header “{{header}}”: environment variable {{name}} is not set",
+      "unknown": "Unknown placeholder “{{placeholder}}” (to send “{{open}}” literally, write “{{escaped}}”)",
+      "headerUnknown": "Header “{{header}}”: unknown placeholder “{{placeholder}}” (to send “{{open}}” literally, write “{{escaped}}”)",
+      "unclosed": "Unclosed placeholder: “}}” is missing (to send “{{open}}” literally, write “{{escaped}}”)",
+      "headerUnclosed": "Header “{{header}}”: unclosed placeholder: “}}” is missing (to send “{{open}}” literally, write “{{escaped}}”)"
+    }
   },
   "messages": {
     "connectionTest": {

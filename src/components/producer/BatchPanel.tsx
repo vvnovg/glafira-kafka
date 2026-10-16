@@ -3,6 +3,7 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api, toAppError } from "../../api/client";
 import type { BatchSource, ConnectionProfile } from "../../api/types";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
+import { tr } from "../../i18n/text";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { batchReducer, fileFormatOf, initialBatchState } from "./batch";
 import { formToMessage, type ProducerForm } from "./form";
@@ -193,7 +194,7 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
             {state.errors.map((e, i) => (
               <li key={i}>
                 {e.line === null ? "без строки: " : `строка ${e.line}: `}
-                {e.message}
+                {tr(e.message)}
               </li>
             ))}
           </ul>

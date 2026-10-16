@@ -229,10 +229,10 @@ mod tests {
             Ok(None)
         }
         fn set(&self, _: &str, _: &str) -> AppResult<()> {
-            Err(AppError::internal("keychain недоступен"))
+            Err(AppError::internal_with("keychain unavailable"))
         }
         fn delete(&self, _: &str) -> AppResult<()> {
-            Err(AppError::internal("keychain недоступен"))
+            Err(AppError::internal_with("keychain unavailable"))
         }
     }
 

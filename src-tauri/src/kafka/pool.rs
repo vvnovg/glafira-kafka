@@ -206,9 +206,9 @@ mod tests {
     fn creation_errors_are_not_cached() {
         let pool = KeyedPool::<u32>::default();
         let e = pool
-            .get_or_create("c", || Err(AppError::internal("нет")))
+            .get_or_create("c", || Err(AppError::internal_with("no")))
             .unwrap_err();
-        assert_eq!(e.message, "нет");
+        assert_eq!(e.details.as_deref(), Some("no"));
         assert_eq!(*pool.get_or_create("c", || Ok(5)).unwrap(), 5);
     }
 

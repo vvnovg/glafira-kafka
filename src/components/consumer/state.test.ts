@@ -48,7 +48,7 @@ describe("consumerReducer", () => {
     s = consumerReducer(s, { type: "started", sessionId: "sid" });
     s = consumerReducer(s, { type: "event", event: { type: "rebalance", record: { kind: "assigned", partitions: [tp(0)], at: 1 } } });
     s = consumerReducer(s, { type: "event", event: { type: "paused", partitions: [tp(0)] } });
-    s = consumerReducer(s, { type: "event", event: { type: "reconnecting", message: "нет связи" } });
+    s = consumerReducer(s, { type: "event", event: { type: "reconnecting", message: { key: "errors.generic", params: { message: "нет связи" }, text: "нет связи" } } });
     s = consumerReducer(s, { type: "stopped" });
     expect(s).toMatchObject({ status: "finished", assignment: [], paused: [], reconnecting: null });
     expect(consumerReducer(s, { type: "stopped" })).toBe(s);

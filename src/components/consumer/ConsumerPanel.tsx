@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { BrowsedMessage, CommitTarget, ConsumerParams, DataFormat, OffsetTarget, TopicPartitionRef } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
@@ -266,7 +267,7 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
           <span className="muted">
             прочитано {formatCount(state.consumed)} · найдено {formatCount(state.matched)} · в таблице {state.messages.length}
             {running && !state.sessionId && " · подключение…"}
-            {running && state.sessionId && (state.reconnecting ? ` · переподключение: ${state.reconnecting}…` : " · в группе")}
+            {running && state.sessionId && (state.reconnecting ? ` · переподключение: ${tr(state.reconnecting)}…` : " · в группе")}
             {state.status === "finished" && " · отключено"}
           </span>
         </div>

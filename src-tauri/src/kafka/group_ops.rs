@@ -335,7 +335,7 @@ pub fn preview_reset(h: &KafkaHandles, req: &ResetRequest) -> AppResult<Vec<Rese
             current: committed.get(k).and_then(|c| c.clone().ok().flatten()),
             bounds: match b.get(k) {
                 Some(Ok(v)) => Ok(*v),
-                Some(Err(e)) => Err(LocalizedText::raw(e)),
+                Some(Err(e)) => Err(e.text()),
                 None => Err(ltext!(
                     "errors.groups.noBrokerAnswer",
                     "no response from the broker"

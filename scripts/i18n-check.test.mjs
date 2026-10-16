@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkDictionaries, checkRustKeys, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { checkDictionaries, checkRustKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -148,4 +151,19 @@ test("кириллица в литералах Rust: код — находка, 
   ].join("\n");
   assert.deepEqual(findRustCyrillic({ "x.rs": src }), ["x.rs:3", "x.rs:5", "x.rs:7", "x.rs:14"]);
   assert.deepEqual(findRustCyrillic({ "y.rs": 'let s = "multi\nстрока";' }), ["y.rs:1"]);
+});
+
+test("--rust-cyrillic: каталог раскрывается во все .rs рекурсивно, файл — как есть", () => {
+  const dir = mkdtempSync(join(tmpdir(), "i18n-check-"));
+  try {
+    mkdirSync(join(dir, "sub"));
+    writeFileSync(join(dir, "a.rs"), "");
+    writeFileSync(join(dir, "sub", "b.rs"), "");
+    writeFileSync(join(dir, "sub", "c.txt"), "");
+    const single = join(dir, "sub", "c.txt");
+    assert.deepEqual(expandRustPaths([dir]).sort(), [join(dir, "a.rs"), join(dir, "sub", "b.rs")]);
+    assert.deepEqual(expandRustPaths([single]), [single]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

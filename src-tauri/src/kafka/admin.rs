@@ -238,7 +238,7 @@ pub async fn purge_topic(
     let mut tpl = TopicPartitionList::with_capacity(partitions.len());
     for p in partitions {
         tpl.add_partition_offset(topic, *p, Offset::End)
-            .map_err(|e| AppError::internal(e.to_string()))?;
+            .map_err(|e| AppError::internal_with(e.to_string()))?;
     }
     let started = Instant::now();
     let res = match h.admin.delete_records(&tpl, &admin_opts(h)).await {

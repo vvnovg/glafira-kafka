@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { PRO_HINT, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
@@ -132,7 +133,7 @@ function PartitionsTable({ topic }: { topic: TopicDetailsDto }) {
             <td className={p.underReplicated ? "warn" : ""}>{p.isr.join(", ")}</td>
             <td>{p.low ?? "—"}</td>
             <td>{p.high ?? "—"}</td>
-            <td className={p.offsetsError ? "warn" : ""} title={p.offsetsError}>
+            <td className={p.offsetsError ? "warn" : ""} title={p.offsetsError && tr(p.offsetsError)}>
               {formatCount(p.messageCount)}
             </td>
           </tr>

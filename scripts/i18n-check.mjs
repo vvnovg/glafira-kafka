@@ -330,6 +330,11 @@ function walk(dir, exts, out = []) {
   return out;
 }
 
+/** Аргументы `--rust-cyrillic`: файлы как есть, каталоги — все `.rs` внутри (рекурсивно). */
+export function expandRustPaths(paths) {
+  return paths.flatMap((p) => (statSync(p).isDirectory() ? walk(p, [".rs"]) : [p]));
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = process.cwd();
   const locales = join(root, "src/locales");
@@ -353,7 +358,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const rcIdx = process.argv.indexOf("--rust-cyrillic");
   if (rcIdx >= 0) {
     const paths = process.argv.slice(rcIdx + 1).filter((a) => !a.startsWith("--"));
-    const expanded = paths.flatMap((p) => (statSync(p).isDirectory() ? walk(p, [".rs"]) : [p]));
+    const expanded = expandRustPaths(paths);
     const files = Object.fromEntries(expanded.map((p) => [p, readFileSync(p, "utf8")]));
     for (const hit of findRustCyrillic(files)) problems.push(`кириллица в Rust: ${hit}`);
   }

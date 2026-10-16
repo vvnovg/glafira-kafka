@@ -4,7 +4,7 @@ use serde_json::Value;
 use serde_json_path::JsonPath;
 
 use crate::browse::types::{BrowsedMessage, HeaderView};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -77,10 +77,13 @@ impl Matcher {
                 .case_insensitive(!m.case_sensitive)
                 .build()
                 .map_err(|e| {
-                    AppError::invalid(format!(
-                        "Некорректное регулярное выражение «{}»: {e}",
-                        m.pattern
-                    ))
+                    app_err!(
+                        ErrorCode::InvalidInput,
+                        "errors.browse.badRegex",
+                        "Invalid regular expression “{{pattern}}”: {{error}}",
+                        pattern = m.pattern,
+                        error = e
+                    )
                 })?;
             return Ok(Some(Matcher::Regex(re)));
         }
@@ -135,8 +138,15 @@ impl JsonCondition {
                 });
             }
         }
-        let path = JsonPath::parse(s)
-            .map_err(|e| AppError::invalid(format!("Некорректный JSONPath «{s}»: {e}")))?;
+        let path = JsonPath::parse(s).map_err(|e| {
+            app_err!(
+                ErrorCode::InvalidInput,
+                "errors.browse.badJsonPath",
+                "Invalid JSONPath “{{path}}”: {{error}}",
+                path = s,
+                error = e
+            )
+        })?;
         Ok(Self { path, cmp: None })
     }
 
@@ -328,10 +338,10 @@ mod tests {
             }),
             ..Default::default()
         };
-        assert_eq!(
-            CompiledFilter::compile(&spec).err().unwrap().code,
-            ErrorCode::InvalidInput
-        );
+        let e = CompiledFilter::compile(&spec).err().unwrap();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert_eq!(e.key, "errors.browse.badRegex");
+        assert_eq!(e.params["pattern"], "(");
     }
 
     #[test]
@@ -414,7 +424,10 @@ mod tests {
             json_path: Some("$$$".into()),
             ..Default::default()
         });
-        assert_eq!(bad.err().unwrap().code, ErrorCode::InvalidInput);
+        let e = bad.err().unwrap();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert_eq!(e.key, "errors.browse.badJsonPath");
+        assert_eq!(e.params["path"], "$$$");
     }
 
     #[test]

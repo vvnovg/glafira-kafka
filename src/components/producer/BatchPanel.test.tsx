@@ -67,11 +67,11 @@ describe("BatchPanel", () => {
     act(() => onEvent({ type: "progress", sent: 3, failed: 25, total: null }));
     expect(screen.getByRole("status")).toHaveTextContent("отправлено 3 из — · ошибок 25");
     expect(screen.getByTitle(/неизвестно/)).toHaveTextContent("—");
-    act(() => onEvent({ type: "errors", errors: [{ line: null, message: "сводка" }, { line: 2, message: "плохо" }] }));
+    act(() => onEvent({ type: "errors", errors: [{ line: null, message: { key: "errors.generic", params: { message: "сводка" }, text: "сводка" } }, { line: 2, message: { key: "errors.source.lineTooLong", params: { line: "2" }, text: "Line 2 is longer than 16 MiB" } }] }));
     act(() => onEvent({ type: "finished", sent: 3, failed: 25, notSent: 7, cancelled: true }));
     expect(screen.getByText(/отменено до отправки: 7/)).toBeInTheDocument();
     expect(screen.getByText(/без строки: сводка/)).toBeInTheDocument();
-    expect(screen.getByText(/строка 2: плохо/)).toBeInTheDocument();
+    expect(screen.getByText(/строка 2: Строка 2 длиннее 16 МиБ/)).toBeInTheDocument();
     expect(screen.getByText(/показаны 2 из 25/)).toBeInTheDocument();
   });
 

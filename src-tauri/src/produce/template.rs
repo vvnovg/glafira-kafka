@@ -1,10 +1,12 @@
 use chrono::{DateTime, SecondsFormat, Utc};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::produce::payload::{PayloadFormat, ProduceMessage};
 
-const ESCAPE_HINT: &str = "}}» (чтобы отправить «{{» буквально, пишите «\\{{»)";
 const MAX_RANDOM_STRING: usize = 100_000;
+/// Подставляются параметрами, чтобы `{{` не путался с плейсхолдерами словаря.
+const OPEN: &str = "{{";
+const ESCAPED: &str = "\\{{";
 
 pub struct RenderContext<'a> {
     /// Номер сообщения в пакете (0 для одиночной отправки).
@@ -18,21 +20,129 @@ pub fn system_env(name: &str) -> Option<String> {
     std::env::var(name).ok()
 }
 
-fn invalid(msg: String) -> AppError {
-    AppError::invalid(msg)
+/// Ошибка шаблона; текст для интерфейса — `to_app_error` (с именем заголовка или без).
+#[derive(Debug, Clone, PartialEq)]
+enum TemplateError {
+    Arity { placeholder: String, count: usize },
+    NotInteger { placeholder: String, value: String },
+    MinGreaterThanMax { placeholder: String },
+    StringLength { placeholder: String },
+    EnvMissing { name: String },
+    Unknown { placeholder: String },
+    Unclosed,
 }
 
-fn eval(expr: &str, ctx: &mut RenderContext) -> AppResult<String> {
+impl TemplateError {
+    fn to_app_error(&self, header: Option<&str>) -> AppError {
+        use TemplateError as E;
+        let text = match (self, header) {
+            (E::Arity { placeholder, count }, None) => ltext!(
+                "errors.template.arity",
+                "{{placeholder}}: expected number of arguments — {{count}}",
+                placeholder = placeholder,
+                count = count
+            ),
+            (E::Arity { placeholder, count }, Some(h)) => ltext!(
+                "errors.template.headerArity",
+                "Header “{{header}}”: {{placeholder}}: expected number of arguments — {{count}}",
+                header = h,
+                placeholder = placeholder,
+                count = count
+            ),
+            (E::NotInteger { placeholder, value }, None) => ltext!(
+                "errors.template.notInteger",
+                "{{placeholder}}: “{{value}}” is not an integer",
+                placeholder = placeholder,
+                value = value
+            ),
+            (E::NotInteger { placeholder, value }, Some(h)) => ltext!(
+                "errors.template.headerNotInteger",
+                "Header “{{header}}”: {{placeholder}}: “{{value}}” is not an integer",
+                header = h,
+                placeholder = placeholder,
+                value = value
+            ),
+            (E::MinGreaterThanMax { placeholder }, None) => ltext!(
+                "errors.template.minGreaterThanMax",
+                "{{placeholder}}: min is greater than max",
+                placeholder = placeholder
+            ),
+            (E::MinGreaterThanMax { placeholder }, Some(h)) => ltext!(
+                "errors.template.headerMinGreaterThanMax",
+                "Header “{{header}}”: {{placeholder}}: min is greater than max",
+                header = h,
+                placeholder = placeholder
+            ),
+            (E::StringLength { placeholder }, None) => ltext!(
+                "errors.template.stringLength",
+                "{{placeholder}}: the length must be a number from 0 to {{max}}",
+                placeholder = placeholder,
+                max = MAX_RANDOM_STRING
+            ),
+            (E::StringLength { placeholder }, Some(h)) => ltext!(
+                "errors.template.headerStringLength",
+                "Header “{{header}}”: {{placeholder}}: the length must be a number from 0 to {{max}}",
+                header = h,
+                placeholder = placeholder,
+                max = MAX_RANDOM_STRING
+            ),
+            (E::EnvMissing { name }, None) => ltext!(
+                "errors.template.envMissing",
+                "Environment variable {{name}} is not set",
+                name = name
+            ),
+            (E::EnvMissing { name }, Some(h)) => ltext!(
+                "errors.template.headerEnvMissing",
+                "Header “{{header}}”: environment variable {{name}} is not set",
+                header = h,
+                name = name
+            ),
+            (E::Unknown { placeholder }, None) => ltext!(
+                "errors.template.unknown",
+                "Unknown placeholder “{{placeholder}}” (to send “{{open}}” literally, write “{{escaped}}”)",
+                placeholder = placeholder,
+                open = OPEN,
+                escaped = ESCAPED
+            ),
+            (E::Unknown { placeholder }, Some(h)) => ltext!(
+                "errors.template.headerUnknown",
+                "Header “{{header}}”: unknown placeholder “{{placeholder}}” (to send “{{open}}” literally, write “{{escaped}}”)",
+                header = h,
+                placeholder = placeholder,
+                open = OPEN,
+                escaped = ESCAPED
+            ),
+            (E::Unclosed, None) => ltext!(
+                "errors.template.unclosed",
+                "Unclosed placeholder: “}}” is missing (to send “{{open}}” literally, write “{{escaped}}”)",
+                open = OPEN,
+                escaped = ESCAPED
+            ),
+            (E::Unclosed, Some(h)) => ltext!(
+                "errors.template.headerUnclosed",
+                "Header “{{header}}”: unclosed placeholder: “}}” is missing (to send “{{open}}” literally, write “{{escaped}}”)",
+                header = h,
+                open = OPEN,
+                escaped = ESCAPED
+            ),
+        };
+        AppError::localized(ErrorCode::InvalidInput, text)
+    }
+}
+
+fn eval(expr: &str, ctx: &mut RenderContext) -> Result<String, TemplateError> {
     let mut parts = expr.split_whitespace();
     let name = parts.next().unwrap_or("");
     let args: Vec<&str> = parts.collect();
-    let arity = |n: usize| -> AppResult<()> {
+    let placeholder = || format!("{OPEN}{expr}}}}}");
+    let arity = |n: usize| -> Result<(), TemplateError> {
         if args.len() == n {
             Ok(())
         } else {
-            Err(invalid(format!(
-                "{{{{{expr}}}}}: ожидается аргументов — {n}"
-            )))
+            Err(TemplateError::Arity {
+                placeholder: placeholder(),
+                count: n,
+            })
         }
     };
     match name {
@@ -59,12 +169,16 @@ fn eval(expr: &str, ctx: &mut RenderContext) -> AppResult<String> {
         "randomInt" => {
             arity(2)?;
             let parse = |s: &str| {
-                s.parse::<i64>()
-                    .map_err(|_| invalid(format!("{{{{{expr}}}}}: «{s}» — не целое число")))
+                s.parse::<i64>().map_err(|_| TemplateError::NotInteger {
+                    placeholder: placeholder(),
+                    value: s.to_string(),
+                })
             };
             let (min, max) = (parse(args[0])?, parse(args[1])?);
             if min > max {
-                return Err(invalid(format!("{{{{{expr}}}}}: min больше max")));
+                return Err(TemplateError::MinGreaterThanMax {
+                    placeholder: placeholder(),
+                });
             }
             Ok(ctx.rng.i64(min..=max).to_string())
         }
@@ -74,27 +188,30 @@ fn eval(expr: &str, ctx: &mut RenderContext) -> AppResult<String> {
                 .parse()
                 .ok()
                 .filter(|n| *n <= MAX_RANDOM_STRING)
-                .ok_or_else(|| {
-                    invalid(format!(
-                        "{{{{{expr}}}}}: длина — число от 0 до {MAX_RANDOM_STRING}"
-                    ))
+                .ok_or_else(|| TemplateError::StringLength {
+                    placeholder: placeholder(),
                 })?;
             Ok((0..n).map(|_| ctx.rng.alphanumeric()).collect())
         }
         "env" => {
             arity(1)?;
-            (ctx.env)(args[0])
-                .ok_or_else(|| invalid(format!("Переменная окружения {} не задана", args[0])))
+            (ctx.env)(args[0]).ok_or_else(|| TemplateError::EnvMissing {
+                name: args[0].to_string(),
+            })
         }
-        _ => Err(invalid(format!(
-            "Неизвестный плейсхолдер «{{{{{expr}}}}}» (чтобы отправить «{{{{» буквально, пишите «\\{{{{»)"
-        ))),
+        _ => Err(TemplateError::Unknown {
+            placeholder: placeholder(),
+        }),
     }
 }
 
 /// Подставляет плейсхолдеры `{{…}}`.
 /// Экранирование: `\{{` выводится как литерал `{{` и не разбирается как плейсхолдер.
 pub fn render(template: &str, ctx: &mut RenderContext) -> AppResult<String> {
+    render_inner(template, ctx).map_err(|e| e.to_app_error(None))
+}
+
+fn render_inner(template: &str, ctx: &mut RenderContext) -> Result<String, TemplateError> {
     let mut out = String::with_capacity(template.len());
     let mut rest = template;
     while let Some(start) = rest.find("{{") {
@@ -106,9 +223,7 @@ pub fn render(template: &str, ctx: &mut RenderContext) -> AppResult<String> {
         }
         out.push_str(&rest[..start]);
         let after = &rest[start + 2..];
-        let end = after
-            .find("}}")
-            .ok_or_else(|| invalid(format!("Незакрытый плейсхолдер: нет «{ESCAPE_HINT}")))?;
+        let end = after.find("}}").ok_or(TemplateError::Unclosed)?;
         out.push_str(&eval(after[..end].trim(), ctx)?);
         rest = &after[end + 2..];
     }
@@ -125,8 +240,7 @@ pub fn render_message(m: &ProduceMessage, ctx: &mut RenderContext) -> AppResult<
         r.value.text = render(&m.value.text, ctx)?;
     }
     for h in &mut r.headers {
-        h.value = render(&h.value, ctx)
-            .map_err(|e| AppError::invalid(format!("Заголовок «{}»: {}", h.name, e.message)))?;
+        h.value = render_inner(&h.value, ctx).map_err(|e| e.to_app_error(Some(&h.name)))?;
     }
     Ok(r)
 }
@@ -189,19 +303,20 @@ mod tests {
 
     #[test]
     fn errors_are_invalid_input() {
-        for bad in [
-            "{{unknown}}",
-            "{{randomInt 5}}",
-            "{{randomInt 9 1}}",
-            "{{randomInt a b}}",
-            "{{randomString}}",
-            "{{randomString 100001}}",
-            "{{env}}",
-            "{{env MISSING_VAR}}",
-            "{{seq",
+        for (bad, key) in [
+            ("{{unknown}}", "errors.template.unknown"),
+            ("{{randomInt 5}}", "errors.template.arity"),
+            ("{{randomInt 9 1}}", "errors.template.minGreaterThanMax"),
+            ("{{randomInt a b}}", "errors.template.notInteger"),
+            ("{{randomString}}", "errors.template.arity"),
+            ("{{randomString 100001}}", "errors.template.stringLength"),
+            ("{{env}}", "errors.template.arity"),
+            ("{{env MISSING_VAR}}", "errors.template.envMissing"),
+            ("{{seq", "errors.template.unclosed"),
         ] {
             let e = with_ctx(0, |c| render(bad, c)).unwrap_err();
             assert_eq!(e.code, ErrorCode::InvalidInput, "{bad}");
+            assert_eq!(e.key, key, "{bad}");
         }
     }
 
@@ -268,8 +383,11 @@ mod tests {
     #[test]
     fn error_mentions_escape() {
         let e = with_ctx(0, |c| render("{{x}}", c)).unwrap_err();
+        assert_eq!(e.key, "errors.template.unknown");
+        assert_eq!(e.params["placeholder"], "{{x}}");
         assert!(e.message.contains(r"\{{"), "{}", e.message);
         let e = with_ctx(0, |c| render("{{seq", c)).unwrap_err();
+        assert_eq!(e.key, "errors.template.unclosed");
         assert!(e.message.contains(r"\{{"), "{}", e.message);
     }
 
@@ -317,7 +435,9 @@ mod tests {
         };
         let e = with_ctx(0, |c| render_message(&m, c)).unwrap_err();
         assert_eq!(e.code, ErrorCode::InvalidInput);
-        assert!(e.message.contains("trace"), "{}", e.message);
+        assert_eq!(e.key, "errors.template.headerUnknown");
+        assert_eq!(e.params["header"], "trace");
+        assert_eq!(e.params["placeholder"], "{{nope}}");
     }
 
     /// Контракт с UI (`literalText` в fromMessage.ts): замена каждого `{{` на `\{{` даёт текст,

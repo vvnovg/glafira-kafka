@@ -58,26 +58,39 @@ const MAX_LAST_MINUTES: i64 = 5_256_000; // 10 лет
 
 pub fn validate(params: &BrowseParams) -> AppResult<()> {
     if params.topic.trim().is_empty() {
-        return Err(AppError::invalid("Не указан топик"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.browse.topicMissing",
+            "No topic specified"
+        ));
     }
     if params.limit == 0 || params.limit > MAX_LIMIT {
-        return Err(AppError::invalid(format!(
-            "Лимит должен быть от 1 до {MAX_LIMIT}"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.browse.limitRange",
+            "The limit must be between 1 and {{max}}",
+            max = MAX_LIMIT
+        ));
     }
     match params.start {
-        StartPosition::Latest { count } if count <= 0 || count > MAX_LIMIT as i64 => {
-            Err(AppError::invalid(format!(
-                "Количество последних сообщений должно быть от 1 до {MAX_LIMIT}"
-            )))
-        }
+        StartPosition::Latest { count } if count <= 0 || count > MAX_LIMIT as i64 => Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.browse.latestRange",
+            "The number of latest messages must be between 1 and {{max}}",
+            max = MAX_LIMIT
+        )),
         StartPosition::LastMinutes { minutes } if !(1..=MAX_LAST_MINUTES).contains(&minutes) => {
-            Err(AppError::invalid(format!(
-                "Количество минут должно быть от 1 до {MAX_LAST_MINUTES}"
-            )))
+            Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.browse.minutesRange",
+                "The number of minutes must be between 1 and {{max}}",
+                max = MAX_LAST_MINUTES
+            ))
         }
-        StartPosition::Timestamp { timestamp_ms } if timestamp_ms < 0 => Err(AppError::invalid(
-            "Метка времени не может быть отрицательной",
+        StartPosition::Timestamp { timestamp_ms } if timestamp_ms < 0 => Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.browse.timestampNegative",
+            "Timestamp cannot be negative"
         )),
         _ => Ok(()),
     }
@@ -154,8 +167,8 @@ fn run_inner(
                 tracker.mark_done(p);
             }
             Some(Err(e)) if is_transient(&e) => {
-                tracing::warn!("временная ошибка консьюмера, librdkafka переподключается: {e}");
-                let message = from_kafka(&e, ctx.last_error_since(polled_at).as_deref()).message;
+                tracing::warn!("transient consumer error, librdkafka is reconnecting: {e}");
+                let message = from_kafka(&e, ctx.last_error_since(polled_at).as_deref()).text();
                 if recovery.on_transient(Instant::now(), e) {
                     out.flush();
                     out.emit(BrowseEvent::Reconnecting { message });
@@ -229,12 +242,17 @@ fn load_bounds(
     let topic = topics
         .into_iter()
         .find(|t| t.name == params.topic && !t.partitions.is_empty())
-        .ok_or_else(|| AppError::not_found(format!("Топик «{}» не найден", params.topic)))?;
+        .ok_or_else(|| crate::kafka::admin::topic_not_found(&params.topic))?;
     let all: Vec<i32> = topic.partitions.iter().map(|p| p.id).collect();
     let selected = match &params.partitions {
         Some(list) if !list.is_empty() => {
             if let Some(bad) = list.iter().find(|p| !all.contains(p)) {
-                return Err(AppError::invalid(format!("В топике нет партиции {bad}")));
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.topics.noSuchPartition",
+                    "The topic has no partition {{partition}}",
+                    partition = bad
+                ));
             }
             list.clone()
         }
@@ -255,13 +273,15 @@ fn load_bounds(
             }),
             other => {
                 let reason = match other {
-                    Some(Err(e)) => e.clone(),
-                    _ => "нет ответа брокера".to_string(),
+                    Some(Err(e)) => e.detail(),
+                    _ => "no response from the broker",
                 };
-                let code = crate::error::classify_message(&reason).unwrap_or(ErrorCode::Internal);
-                return Err(AppError::new(
+                let code = crate::error::classify_message(reason).unwrap_or(ErrorCode::Internal);
+                return Err(app_err!(
                     code,
-                    format!("Не удалось получить оффсеты партиции {p}"),
+                    "errors.browse.boundsFailed",
+                    "Failed to get the offsets of partition {{partition}}",
+                    partition = p
                 )
                 .with_details(reason));
             }
@@ -324,9 +344,11 @@ fn offsets_for_timestamp(
         if let Err(err) = e.error() {
             let text = err.to_string();
             let code = crate::error::classify_message(&text).unwrap_or(ErrorCode::Internal);
-            return Err(AppError::new(
+            return Err(app_err!(
                 code,
-                format!("Не удалось найти оффсет по времени для партиции {p}"),
+                "errors.browse.timestampOffsetFailed",
+                "Failed to find the offset by time for partition {{partition}}",
+                partition = p
             )
             .with_details(text));
         }

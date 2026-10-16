@@ -55,7 +55,11 @@ pub struct ConsumerControls {
 }
 
 fn session_gone() -> AppError {
-    AppError::not_found("Consumer-сессия не найдена или уже завершена")
+    app_err!(
+        ErrorCode::NotFound,
+        "errors.consume.sessionGone",
+        "The consumer session was not found or has already ended"
+    )
 }
 
 impl ConsumerControls {
@@ -94,9 +98,10 @@ pub fn request<T>(
         .map_err(|_| session_gone())?;
     match rx.recv_timeout(timeout) {
         Ok(r) => r,
-        Err(RecvTimeoutError::Timeout) => Err(AppError::new(
+        Err(RecvTimeoutError::Timeout) => Err(app_err!(
             ErrorCode::Timeout,
-            "Consumer-сессия не ответила вовремя",
+            "errors.consume.sessionTimeout",
+            "The consumer session did not respond in time"
         )),
         Err(RecvTimeoutError::Disconnected) => Err(session_gone()),
     }
@@ -134,7 +139,9 @@ mod tests {
                 deadline,
             }
         });
-        assert_eq!(slow.unwrap_err().code, ErrorCode::Timeout);
+        let e = slow.unwrap_err();
+        assert_eq!(e.code, ErrorCode::Timeout);
+        assert_eq!(e.key, "errors.consume.sessionTimeout");
         worker.join().unwrap();
         let closed = request(&tx, Duration::from_millis(100), |reply, deadline| {
             ConsumerCommand::Resume {
@@ -143,7 +150,9 @@ mod tests {
                 deadline,
             }
         });
-        assert_eq!(closed.unwrap_err().code, ErrorCode::NotFound);
+        let e = closed.unwrap_err();
+        assert_eq!(e.code, ErrorCode::NotFound);
+        assert_eq!(e.key, "errors.consume.sessionGone");
     }
 
     #[test]

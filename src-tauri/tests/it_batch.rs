@@ -46,9 +46,12 @@ impl VecSink {
             .iter()
             .rev()
             .find_map(|e| match e {
-                BatchEvent::Errors { errors } => {
-                    Some(errors.iter().map(|x| (x.line, x.message.clone())).collect())
-                }
+                BatchEvent::Errors { errors } => Some(
+                    errors
+                        .iter()
+                        .map(|x| (x.line, x.message.text.clone()))
+                        .collect(),
+                ),
                 _ => None,
             })
             .unwrap_or_default()

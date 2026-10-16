@@ -1,7 +1,7 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -65,47 +65,86 @@ fn decode_hex(text: &str) -> Result<Vec<u8>, String> {
     hex::decode(&compact).map_err(|e| e.to_string())
 }
 
-pub fn encode_payload(p: &PayloadInput, what: &str) -> AppResult<Option<Vec<u8>>> {
-    let bad = |e: String| AppError::invalid(format!("Не удалось закодировать {what}: {e}"));
+/// Какая часть сообщения кодируется (для текста ошибки).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Part {
+    Key,
+    Value,
+}
+
+fn encode_error(part: Part, format: &str, error: String) -> AppError {
+    match part {
+        Part::Key => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.produce.encodeKey",
+            "Failed to encode the key: invalid {{format}}: {{error}}",
+            format = format,
+            error = error
+        ),
+        Part::Value => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.produce.encodeValue",
+            "Failed to encode the value: invalid {{format}}: {{error}}",
+            format = format,
+            error = error
+        ),
+    }
+}
+
+pub fn encode_payload(p: &PayloadInput, part: Part) -> AppResult<Option<Vec<u8>>> {
     Ok(match p.format {
         PayloadFormat::Null => None,
         PayloadFormat::String => Some(p.text.as_bytes().to_vec()),
         PayloadFormat::Json => {
             serde_json::from_str::<serde::de::IgnoredAny>(&p.text)
-                .map_err(|e| bad(format!("невалидный JSON: {e}")))?;
+                .map_err(|e| encode_error(part, "JSON", e.to_string()))?;
             Some(p.text.as_bytes().to_vec())
         }
-        PayloadFormat::Hex => {
-            Some(decode_hex(&p.text).map_err(|e| bad(format!("невалидный hex: {e}")))?)
-        }
+        PayloadFormat::Hex => Some(decode_hex(&p.text).map_err(|e| encode_error(part, "hex", e))?),
         PayloadFormat::Base64 => Some(
             base64::engine::general_purpose::STANDARD
                 .decode(p.text.trim())
-                .map_err(|e| bad(format!("невалидный base64: {e}")))?,
+                .map_err(|e| encode_error(part, "base64", e.to_string()))?,
         ),
     })
 }
 
 pub fn encode_message(m: &ProduceMessage) -> AppResult<EncodedMessage> {
     if m.topic.trim().is_empty() {
-        return Err(AppError::invalid("Не указан топик"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.produce.topicMissing",
+            "No topic specified"
+        ));
     }
     if let Some(p) = m.partition
         && p < 0
     {
-        return Err(AppError::invalid(
-            "Номер партиции не может быть отрицательным",
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.produce.partitionNegative",
+            "The partition number cannot be negative"
         ));
     }
     let mut headers = Vec::with_capacity(m.headers.len());
     for h in &m.headers {
         if h.name.trim().is_empty() {
-            return Err(AppError::invalid("Пустое имя заголовка"));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.produce.headerNameEmpty",
+                "Empty header name"
+            ));
         }
         let value = match h.format {
             HeaderFormat::String => h.value.as_bytes().to_vec(),
             HeaderFormat::Hex => decode_hex(&h.value).map_err(|e| {
-                AppError::invalid(format!("Заголовок «{}»: невалидный hex: {e}", h.name))
+                app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.produce.headerHex",
+                    "Header “{{name}}”: invalid hex: {{error}}",
+                    name = h.name,
+                    error = e
+                )
             })?,
         };
         headers.push((h.name.clone(), value));
@@ -113,8 +152,8 @@ pub fn encode_message(m: &ProduceMessage) -> AppResult<EncodedMessage> {
     Ok(EncodedMessage {
         topic: m.topic.trim().to_string(),
         partition: m.partition,
-        key: encode_payload(&m.key, "ключ")?,
-        value: encode_payload(&m.value, "значение")?,
+        key: encode_payload(&m.key, Part::Key)?,
+        value: encode_payload(&m.value, Part::Value)?,
         headers,
     })
 }
@@ -134,27 +173,27 @@ mod tests {
     #[test]
     fn encodes_each_format() {
         assert_eq!(
-            encode_payload(&p(PayloadFormat::String, "привет"), "значение").unwrap(),
+            encode_payload(&p(PayloadFormat::String, "привет"), Part::Value).unwrap(),
             Some("привет".as_bytes().to_vec())
         );
         assert_eq!(
-            encode_payload(&p(PayloadFormat::Json, " {\"a\": 1} "), "значение").unwrap(),
+            encode_payload(&p(PayloadFormat::Json, " {\"a\": 1} "), Part::Value).unwrap(),
             Some(b" {\"a\": 1} ".to_vec())
         );
         assert_eq!(
-            encode_payload(&p(PayloadFormat::Hex, "de ad\nBE EF"), "ключ").unwrap(),
+            encode_payload(&p(PayloadFormat::Hex, "de ad\nBE EF"), Part::Key).unwrap(),
             Some(vec![0xde, 0xad, 0xbe, 0xef])
         );
         assert_eq!(
-            encode_payload(&p(PayloadFormat::Base64, " QUI= "), "ключ").unwrap(),
+            encode_payload(&p(PayloadFormat::Base64, " QUI= "), Part::Key).unwrap(),
             Some(b"AB".to_vec())
         );
         assert_eq!(
-            encode_payload(&p(PayloadFormat::Null, "ignored"), "ключ").unwrap(),
+            encode_payload(&p(PayloadFormat::Null, "ignored"), Part::Key).unwrap(),
             None
         );
         assert_eq!(
-            encode_payload(&p(PayloadFormat::String, ""), "ключ").unwrap(),
+            encode_payload(&p(PayloadFormat::String, ""), Part::Key).unwrap(),
             Some(vec![])
         );
     }
@@ -167,9 +206,9 @@ mod tests {
             (PayloadFormat::Hex, "zz"),
             (PayloadFormat::Base64, "%%%"),
         ] {
-            let e = encode_payload(&p(f, t), "значение").unwrap_err();
+            let e = encode_payload(&p(f, t), Part::Value).unwrap_err();
             assert_eq!(e.code, ErrorCode::InvalidInput, "{f:?} {t}");
-            assert!(e.message.contains("значение"), "{}", e.message);
+            assert_eq!(e.key, "errors.produce.encodeValue", "{f:?} {t}");
         }
     }
 
@@ -210,23 +249,25 @@ mod tests {
     #[test]
     fn message_validation() {
         let mut m = msg();
+        let invalid = |m: &ProduceMessage, key: &str| {
+            let e = encode_message(m).unwrap_err();
+            assert_eq!(e.code, ErrorCode::InvalidInput);
+            assert_eq!(e.key, key);
+        };
         m.topic = " ".into();
-        assert_eq!(
-            encode_message(&m).unwrap_err().code,
-            ErrorCode::InvalidInput
-        );
+        invalid(&m, "errors.produce.topicMissing");
         let mut m = msg();
         m.partition = Some(-1);
-        assert_eq!(
-            encode_message(&m).unwrap_err().code,
-            ErrorCode::InvalidInput
-        );
+        invalid(&m, "errors.produce.partitionNegative");
         let mut m = msg();
         m.headers[0].name = "".into();
-        assert_eq!(
-            encode_message(&m).unwrap_err().code,
-            ErrorCode::InvalidInput
-        );
+        invalid(&m, "errors.produce.headerNameEmpty");
+        let mut m = msg();
+        m.headers[1].value = "zz".into();
+        invalid(&m, "errors.produce.headerHex");
+        let mut m = msg();
+        m.key = p(PayloadFormat::Base64, "%%%");
+        invalid(&m, "errors.produce.encodeKey");
     }
 
     #[test]

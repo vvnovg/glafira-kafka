@@ -1,4 +1,4 @@
-import type { AppError, BrowseEvent, BrowsedMessage, FinishReason } from "../../api/types";
+import type { AppError, BrowseEvent, BrowsedMessage, FinishReason, LocalizedText } from "../../api/types";
 
 export interface BrowseState {
   status: "idle" | "running" | "finished" | "error";
@@ -11,7 +11,7 @@ export interface BrowseState {
   error: AppError | null;
   limit: number;
   /** Связь с брокером временно потеряна (идёт переподключение): причина, иначе null. */
-  reconnecting: string | null;
+  reconnecting: LocalizedText | null;
 }
 
 export const initialBrowseState: BrowseState = {

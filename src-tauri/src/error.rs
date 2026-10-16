@@ -41,21 +41,6 @@ pub struct AppError {
 pub type AppResult<T> = Result<T, AppError>;
 
 impl AppError {
-    /// Старый конструктор (до переноса на ключи): текст показывается как есть через `errors.generic`.
-    pub fn new(code: ErrorCode, message: impl Into<String>) -> Self {
-        let message = message.into();
-        let mut params = BTreeMap::new();
-        params.insert("message".to_string(), message.clone());
-        Self {
-            code,
-            key: "errors.generic".to_string(),
-            params,
-            message,
-            details: None,
-            retryable: Self::retryable_code(code),
-        }
-    }
-
     pub fn localized(code: ErrorCode, text: crate::i18n::LocalizedText) -> Self {
         Self {
             code,
@@ -85,16 +70,10 @@ impl AppError {
         self
     }
 
-    pub fn invalid(message: impl Into<String>) -> Self {
-        Self::new(ErrorCode::InvalidInput, message)
-    }
-
-    pub fn not_found(message: impl Into<String>) -> Self {
-        Self::new(ErrorCode::NotFound, message)
-    }
-
-    pub fn internal(message: impl Into<String>) -> Self {
-        Self::new(ErrorCode::Internal, message)
+    /// Неожиданная внутренняя ошибка: общий текст «Internal error», подробности — в `details`
+    /// (технический текст, не переводится).
+    pub fn internal_with(details: impl Into<String>) -> Self {
+        app_err!(ErrorCode::Internal, "errors.internal", "Internal error").with_details(details)
     }
 }
 
@@ -302,14 +281,31 @@ mod tests {
 
     #[test]
     fn serializes_for_frontend() {
-        let json = serde_json::to_value(AppError::invalid("плохо")).unwrap();
+        let json = serde_json::to_value(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.notFound",
+            "Topic “{{topic}}” not found",
+            topic = "t"
+        ))
+        .unwrap();
         assert_eq!(
             json,
             serde_json::json!({
                 "code": "INVALID_INPUT",
-                "key": "errors.generic",
-                "params": {"message": "плохо"},
-                "message": "плохо",
+                "key": "errors.topics.notFound",
+                "params": {"topic": "t"},
+                "message": "Topic “t” not found",
+                "retryable": false
+            })
+        );
+        let json = serde_json::to_value(AppError::internal_with("boom")).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "code": "INTERNAL",
+                "key": "errors.internal",
+                "message": "Internal error",
+                "details": "boom",
                 "retryable": false
             })
         );
@@ -324,7 +320,7 @@ mod tests {
             (ErrorCode::ProRequired, "PRO_REQUIRED"),
         ] {
             assert_eq!(serde_json::to_value(code).unwrap(), name);
-            assert!(!AppError::new(code, "x").retryable);
+            assert!(!AppError::localized(code, LocalizedText::raw("x")).retryable);
         }
     }
 }

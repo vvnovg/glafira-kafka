@@ -78,8 +78,9 @@ macro_rules! app_err {
 }
 
 impl LocalizedText {
-    /// Технический текст как есть (сообщение брокера/librdkafka): не переводится, показывается
-    /// через `errors.generic`.
+    /// Технический текст как есть (сообщение брокера/librdkafka, ошибка парсера и т. п.):
+    /// не переводится, показывается через `errors.generic` (`{{message}}`). Только для текста,
+    /// который нельзя перевести; фразы приложения — всегда через `ltext!` / `app_err!` с ключом.
     pub fn raw(text: impl Into<String>) -> Self {
         ltext!("errors.generic", "{{message}}", message = text.into())
     }
@@ -140,13 +141,5 @@ mod tests {
         assert_eq!(t.key, "errors.topics.notFound");
         assert_eq!(t.params["topic"], "t");
         assert_eq!(t.text, e.message);
-    }
-
-    #[test]
-    fn legacy_constructors_use_generic_key() {
-        let e = crate::error::AppError::invalid("как было");
-        assert_eq!(e.key, "errors.generic");
-        assert_eq!(e.params["message"], "как было");
-        assert_eq!(e.message, "как было");
     }
 }

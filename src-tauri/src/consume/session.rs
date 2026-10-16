@@ -17,7 +17,7 @@ use crate::consume::control::{ConsumerCommand, socket_timeout_ms};
 use crate::consume::types::{
     CommitTarget, ConsumeEvent, ConsumerParams, IsolationLevel, OffsetReset, subscription, validate,
 };
-use crate::error::{AppError, AppResult, from_kafka};
+use crate::error::{AppError, AppResult, ErrorCode, from_kafka};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::errors::op_error;
@@ -101,7 +101,7 @@ pub fn run_consumer(
         Ok(Ok(())) => return,
         Ok(Err(error)) => error,
         // Паника не должна оставлять UI без терминального события.
-        Err(_) => AppError::internal("Внутренняя ошибка consumer-сессии"),
+        Err(_) => AppError::internal_with("consumer session panicked"),
     };
     sink.send(ConsumeEvent::Error { error });
 }
@@ -154,7 +154,11 @@ fn tpl_of(partitions: &[TopicPartitionRef]) -> AppResult<TopicPartitionList> {
         tpl.add_partition(&p.topic, p.partition);
     }
     if tpl.count() == 0 {
-        return Err(AppError::invalid("Не выбраны партиции"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.consume.noPartitions",
+            "No partitions selected"
+        ));
     }
     Ok(tpl)
 }
@@ -175,10 +179,12 @@ fn assigned_tpl(
         .map(|p| format!("{}[{}]", p.topic, p.partition))
         .collect();
     if !missing.is_empty() {
-        return Err(AppError::invalid(format!(
-            "Партиции не назначены этой сессии: {}",
-            missing.join(", ")
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.consume.notAssigned",
+            "Partitions not assigned to this session: {{partitions}}",
+            partitions = missing.join(", ")
+        ));
     }
     Ok(tpl)
 }
@@ -201,7 +207,11 @@ fn commit(
             offset,
         } => {
             if offset < 0 {
-                return Err(AppError::invalid("Некорректный offset сообщения"));
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.consume.badOffset",
+                    "Invalid message offset"
+                ));
             }
             vec![OffsetTarget {
                 topic,
@@ -225,7 +235,11 @@ fn commit(
             .collect(),
     };
     if offsets.is_empty() {
-        return Err(AppError::invalid("Нет прочитанных сообщений для коммита"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.consume.nothingToCommit",
+            "No consumed messages to commit"
+        ));
     }
     let mut tpl = TopicPartitionList::new();
     for o in &offsets {
@@ -345,7 +359,7 @@ fn run_inner(
             // Конец партиции — штатное событие, не ошибка.
             Some(Err(KafkaError::PartitionEOF(_))) => {}
             Some(Err(e)) if is_transient(&e) => {
-                let message = from_kafka(&e, ctx.last_error_since(polled_at).as_deref()).message;
+                let message = from_kafka(&e, ctx.last_error_since(polled_at).as_deref()).text();
                 if recovery.on_transient(Instant::now(), e) {
                     out.flush();
                     out.emit(ConsumeEvent::Reconnecting { message });
@@ -427,7 +441,7 @@ mod tests {
         let events = sink.1.lock().unwrap();
         match events.last() {
             Some(ConsumeEvent::Error { error }) => {
-                assert_eq!(error.message, "Внутренняя ошибка consumer-сессии")
+                assert_eq!(error.key, "errors.internal")
             }
             other => panic!("ожидали Error, получили {other:?}"),
         }

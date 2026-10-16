@@ -130,6 +130,7 @@ impl AppState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::i18n::LocalizedText;
     use crate::secrets::MemoryStore;
     use crate::storage::connections::sample_profile;
 
@@ -152,8 +153,12 @@ mod tests {
         state.connections.upsert(sample_profile("a")).unwrap();
         let h1 = state.handles("a").unwrap();
 
-        let r: AppResult<()> =
-            state.with_handles("a", |_| Err(AppError::new(ErrorCode::Timeout, "t")));
+        let r: AppResult<()> = state.with_handles("a", |_| {
+            Err(AppError::localized(
+                ErrorCode::Timeout,
+                LocalizedText::raw("t"),
+            ))
+        });
         assert!(r.is_err());
         assert!(
             Arc::ptr_eq(&h1, &state.handles("a").unwrap()),
@@ -162,7 +167,9 @@ mod tests {
 
         for code in [ErrorCode::AuthFailed, ErrorCode::TlsError] {
             let before = state.handles("a").unwrap();
-            let r: AppResult<()> = state.with_handles("a", |_| Err(AppError::new(code, "x")));
+            let r: AppResult<()> = state.with_handles("a", |_| {
+                Err(AppError::localized(code, LocalizedText::raw("x")))
+            });
             assert_eq!(r.unwrap_err().code, code);
             assert!(
                 !Arc::ptr_eq(&before, &state.handles("a").unwrap()),
@@ -179,12 +186,18 @@ mod tests {
         let p = state.profile("a").unwrap();
         let s = crate::kafka::producer::ProducerSettings::default();
         let h1 = state.producers.get(&p, state.secrets.as_ref(), &s).unwrap();
-        assert!(!state.evict_if_client_broken("a", &AppError::new(ErrorCode::Timeout, "t")));
+        assert!(!state.evict_if_client_broken(
+            "a",
+            &AppError::localized(ErrorCode::Timeout, LocalizedText::raw("t"))
+        ));
         assert!(Arc::ptr_eq(
             &h1,
             &state.producers.get(&p, state.secrets.as_ref(), &s).unwrap()
         ));
-        assert!(state.evict_if_client_broken("a", &AppError::new(ErrorCode::AuthFailed, "x")));
+        assert!(state.evict_if_client_broken(
+            "a",
+            &AppError::localized(ErrorCode::AuthFailed, LocalizedText::raw("x"))
+        ));
         assert!(!Arc::ptr_eq(
             &h1,
             &state.producers.get(&p, state.secrets.as_ref(), &s).unwrap()

@@ -53,7 +53,7 @@ describe("browsedToMessage", () => {
     expect(() => browsedToMessage({ ...base, value: d("string", "a\uFFFDb") })).toThrow("с потерями");
     expect(() => browsedToMessage({ ...base, key: d("json", "\uFFFD") })).toThrow("с потерями");
     expect(browsedToMessage({ ...base, value: d("hex", "\uFFFD".length ? "ff" : "") }).value.format).toBe("hex");
-    const bad = { ...d("json", "{oops"), error: "Невалидный JSON" };
+    const bad = { ...d("json", "{oops"), error: { key: "errors.browse.invalidJson", params: { error: "x" }, text: "Invalid JSON: x" } };
     expect(browsedToMessage({ ...base, value: bad }).value).toEqual({ format: "string", text: "{oops" });
   });
 

@@ -282,7 +282,7 @@ mod tests {
         struct Failing;
         impl SecretStore for Failing {
             fn get(&self, _: &str) -> crate::error::AppResult<Option<String>> {
-                Err(crate::error::AppError::internal("нет доступа"))
+                Err(crate::error::AppError::internal_with("no access"))
             }
             fn set(&self, _: &str, _: &str) -> crate::error::AppResult<()> {
                 unreachable!()

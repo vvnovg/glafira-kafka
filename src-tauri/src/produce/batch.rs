@@ -13,7 +13,8 @@ use rdkafka::producer::{
 use rdkafka::types::RDKafkaErrorCode;
 use serde::{Deserialize, Serialize};
 
-use crate::error::{AppError, AppResult, from_kafka};
+use crate::error::{AppError, AppResult, ErrorCode, from_kafka};
+use crate::i18n::LocalizedText;
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::producer::{ProducerSettings, owned_headers};
@@ -70,7 +71,7 @@ pub struct BatchParams {
 pub struct BatchError {
     /// Номер строки файла / копии (1-based); None — сводная ошибка, не относящаяся к строке.
     pub line: Option<u64>,
-    pub message: String,
+    pub message: LocalizedText,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -111,9 +112,12 @@ pub trait BatchSink: Send + 'static {
 pub fn validate(p: &BatchParams) -> AppResult<()> {
     p.settings.validate()?;
     match &p.source {
-        BatchSource::Copies { count, .. } if *count == 0 || *count > MAX_COPIES => Err(
-            AppError::invalid(format!("Количество копий — от 1 до {MAX_COPIES}")),
-        ),
+        BatchSource::Copies { count, .. } if *count == 0 || *count > MAX_COPIES => Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.batch.copiesRange",
+            "The number of copies must be between 1 and {{max}}",
+            max = MAX_COPIES
+        )),
         // Шаблон проверяется заранее на первой копии: иначе ошибка плейсхолдера повторилась бы N раз.
         BatchSource::Copies { message, .. } => {
             let mut rng = fastrand::Rng::new();
@@ -131,7 +135,11 @@ pub fn validate(p: &BatchParams) -> AppResult<()> {
         BatchSource::File { path, topic, .. }
             if path.trim().is_empty() || topic.trim().is_empty() =>
         {
-            Err(AppError::invalid("Укажите файл и топик"))
+            Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.batch.fileAndTopic",
+                "Specify a file and a topic"
+            ))
         }
         BatchSource::File { .. } => Ok(()),
     }
@@ -154,14 +162,14 @@ fn copies_iter(count: u64, message: ProduceMessage) -> impl Iterator<Item = Sour
             line: seq + 1,
             message: rendered
                 .and_then(|m| encode_message(&m))
-                .map_err(|e| e.message),
+                .map_err(|e| e.text()),
         }
     })
 }
 
 enum Outcome {
     Sent,
-    Failed(String),
+    Failed(LocalizedText),
     /// Сообщение вынуто из локальной очереди при отмене (PurgeQueue) — в сеть не уходило.
     NotSent,
 }
@@ -188,7 +196,7 @@ impl ProducerContext for BatchContext {
             Err((e, _)) if e.rdkafka_error_code() == Some(RDKafkaErrorCode::PurgeQueue) => {
                 Outcome::NotSent
             }
-            Err((e, _)) => Outcome::Failed(e.to_string()),
+            Err((e, _)) => Outcome::Failed(LocalizedText::raw(e.to_string())),
         };
         let _ = self.deliveries.lock_safe().send((*line, r));
     }
@@ -208,7 +216,7 @@ struct Stats<'a> {
 }
 
 impl Stats<'_> {
-    fn fail(&mut self, line: Option<u64>, message: String) {
+    fn fail(&mut self, line: Option<u64>, message: LocalizedText) {
         self.failed += 1;
         if self.errors.len() < MAX_REPORTED_ERRORS {
             self.errors.push(BatchError { line, message });
@@ -266,7 +274,7 @@ pub fn run_batch(
         Ok(Ok(())) => return,
         Ok(Err(error)) => error,
         // Паника не должна оставлять UI в «идёт отправка» без терминального события.
-        Err(_) => AppError::internal("Внутренняя ошибка пакетной отправки"),
+        Err(_) => AppError::internal_with("batch send panicked"),
     };
     sink.send(BatchEvent::Error { error });
 }
@@ -387,7 +395,7 @@ fn run_inner(
                     }
                 }
                 Err((e, _)) => {
-                    stats.fail(Some(item.line), e.to_string());
+                    stats.fail(Some(item.line), LocalizedText::raw(e.to_string()));
                     break;
                 }
             }
@@ -422,14 +430,30 @@ fn run_inner(
         stats.in_flight = 0;
         stats.failed += lost;
         if stats.errors.len() < MAX_REPORTED_ERRORS {
-            let mut message = if cancelled {
-                format!("{lost} сообщений не подтверждены брокером к моменту отмены")
-            } else {
-                format!("{lost} сообщений не подтверждены брокером до таймаута")
+            let message = match (cancelled, capture.last_error()) {
+                (true, None) => ltext!(
+                    "errors.batch.unconfirmedCancelled",
+                    "{{lost}} messages were not confirmed by the broker by the time of cancellation",
+                    lost = lost
+                ),
+                (true, Some(cause)) => ltext!(
+                    "errors.batch.unconfirmedCancelledCause",
+                    "{{lost}} messages were not confirmed by the broker by the time of cancellation: {{cause}}",
+                    lost = lost,
+                    cause = cause
+                ),
+                (false, None) => ltext!(
+                    "errors.batch.unconfirmedTimeout",
+                    "{{lost}} messages were not confirmed by the broker before the timeout",
+                    lost = lost
+                ),
+                (false, Some(cause)) => ltext!(
+                    "errors.batch.unconfirmedTimeoutCause",
+                    "{{lost}} messages were not confirmed by the broker before the timeout: {{cause}}",
+                    lost = lost,
+                    cause = cause
+                ),
             };
-            if let Some(cause) = capture.last_error() {
-                message.push_str(&format!(": {cause}"));
-            }
             stats.errors.push(BatchError {
                 line: None,
                 message,
@@ -483,16 +507,17 @@ mod tests {
         assert!(validate(&copies(1)).is_ok());
         assert!(validate(&copies(MAX_COPIES)).is_ok());
         for bad in [copies(0), copies(MAX_COPIES + 1)] {
-            assert_eq!(validate(&bad).unwrap_err().code, ErrorCode::InvalidInput);
+            let e = validate(&bad).unwrap_err();
+            assert_eq!(e.code, ErrorCode::InvalidInput);
+            assert_eq!(e.key, "errors.batch.copiesRange");
         }
         let mut bad_template = copies(1);
         if let BatchSource::Copies { message, .. } = &mut bad_template.source {
             message.value.text = "{{nope}}".into();
         }
-        assert_eq!(
-            validate(&bad_template).unwrap_err().code,
-            ErrorCode::InvalidInput
-        );
+        let e = validate(&bad_template).unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert_eq!(e.key, "errors.template.unknown");
         let file = BatchParams {
             source: BatchSource::File {
                 path: " ".into(),
@@ -501,7 +526,9 @@ mod tests {
             },
             ..copies(1)
         };
-        assert_eq!(validate(&file).unwrap_err().code, ErrorCode::InvalidInput);
+        let e = validate(&file).unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert_eq!(e.key, "errors.batch.fileAndTopic");
     }
 
     #[test]
@@ -535,13 +562,16 @@ mod tests {
         let v = serde_json::to_value(BatchEvent::Errors {
             errors: vec![BatchError {
                 line: None,
-                message: "m".into(),
+                message: LocalizedText::raw("m"),
             }],
         })
         .unwrap();
         assert_eq!(
             v,
-            serde_json::json!({"type": "errors", "errors": [{"line": null, "message": "m"}]})
+            serde_json::json!({"type": "errors", "errors": [{
+                "line": null,
+                "message": {"key": "errors.generic", "params": {"message": "m"}, "text": "m"}
+            }]})
         );
     }
 
@@ -645,7 +675,7 @@ mod tests {
         let events = sink.1.lock_safe();
         match events.last() {
             Some(BatchEvent::Error { error }) => {
-                assert_eq!(error.message, "Внутренняя ошибка пакетной отправки")
+                assert_eq!(error.key, "errors.internal")
             }
             other => panic!("ожидали Error, получили {other:?}"),
         }

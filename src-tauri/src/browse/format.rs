@@ -1,6 +1,8 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 
+use crate::i18n::LocalizedText;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DataFormat {
@@ -21,7 +23,7 @@ pub struct DecodedData {
     pub size: usize,
     pub truncated: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub error: Option<LocalizedText>,
 }
 
 pub const MAX_TEXT_BYTES: usize = 1_048_576;
@@ -41,7 +43,13 @@ pub fn decode(bytes: &[u8], format: DataFormat) -> DecodedData {
             // Валидность — по всему входу (без копирования), в text — только видимая часть.
             let error = serde_json::from_slice::<serde::de::IgnoredAny>(bytes)
                 .err()
-                .map(|e| format!("Невалидный JSON: {e}"));
+                .map(|e| {
+                    ltext!(
+                        "errors.browse.invalidJson",
+                        "Invalid JSON: {{error}}",
+                        error = e
+                    )
+                });
             let (t, cut) = text_prefix(bytes, MAX_TEXT_BYTES);
             (t, cut, error)
         }
@@ -57,7 +65,7 @@ pub fn decode(bytes: &[u8], format: DataFormat) -> DecodedData {
                 None,
             )
         }
-        DataFormat::Auto => unreachable!("detect никогда не возвращает Auto"),
+        DataFormat::Auto => unreachable!("detect never returns Auto"),
     };
     DecodedData {
         format: resolved,
@@ -150,7 +158,7 @@ mod tests {
         let d = decode(b"oops", DataFormat::Json);
         assert_eq!(d.format, DataFormat::Json);
         assert_eq!(d.text, "oops");
-        assert!(d.error.unwrap().starts_with("Невалидный JSON"));
+        assert_eq!(d.error.unwrap().key, "errors.browse.invalidJson");
     }
 
     #[test]

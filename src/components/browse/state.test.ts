@@ -49,11 +49,11 @@ describe("browseReducer", () => {
   });
 
   it("reconnecting/recovered и сброс статуса переподключения", () => {
-    const reconnect = { type: "event" as const, event: { type: "reconnecting" as const, message: "нет связи" } };
+    const reconnect = { type: "event" as const, event: { type: "reconnecting" as const, message: { key: "errors.generic", params: { message: "нет связи" }, text: "нет связи" } } };
     let s = browseReducer(initialBrowseState, { type: "start", limit: 10 });
     expect(s.reconnecting).toBeNull();
     s = browseReducer(s, reconnect);
-    expect(s.reconnecting).toBe("нет связи");
+    expect(s.reconnecting?.text).toBe("нет связи");
     expect(s.status).toBe("running");
     s = browseReducer(s, { type: "event", event: { type: "recovered" } });
     expect(s.reconnecting).toBeNull();

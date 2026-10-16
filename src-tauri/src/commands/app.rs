@@ -54,7 +54,7 @@ pub async fn export_diagnostics(
     let log_dir = app
         .path()
         .app_log_dir()
-        .map_err(|e| AppError::internal(e.to_string()))?;
+        .map_err(|e| AppError::internal_with(e.to_string()))?;
     blocking(move || {
         write_archive(
             std::path::Path::new(&path),

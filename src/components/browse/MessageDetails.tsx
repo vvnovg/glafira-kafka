@@ -34,7 +34,7 @@ function DataBlock({ title, data }: { title: string; data: DecodedData | null })
           </button>
         )}
       </h4>
-      {data?.error && <p className="warn">{data.error}</p>}
+      {data?.error && <p className="warn">{tr(data.error)}</p>}
       {data?.truncated && <p className="warn">Показан первый 1 МБ значения.</p>}
       <pre>{data ? prettyText(data) : <span className="muted">null</span>}</pre>
     </section>

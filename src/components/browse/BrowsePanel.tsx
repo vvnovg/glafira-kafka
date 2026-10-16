@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { BrowsedMessage } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { BrowseForm } from "./BrowseForm";
@@ -46,7 +47,7 @@ export function BrowsePanel({ connectionId, topic }: { connectionId: string; top
           просмотрено {formatCount(state.scanned)} · найдено {formatCount(state.matched)} · в таблице {state.messages.length}
           {running &&
             (state.reconnecting
-              ? ` · переподключение: ${state.reconnecting}…`
+              ? ` · переподключение: ${tr(state.reconnecting)}…`
               : state.reachedEnd
                 ? " · ждём новые сообщения…"
                 : " · читаем…")}

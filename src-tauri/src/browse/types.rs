@@ -2,6 +2,7 @@ use serde::Serialize;
 
 use crate::browse::format::DecodedData;
 use crate::error::AppError;
+use crate::i18n::LocalizedText;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,7 +50,7 @@ pub enum BrowseEvent {
     ReachedEnd,
     /// Временная потеря связи с брокером: librdkafka переподключается (спец. §8).
     Reconnecting {
-        message: String,
+        message: LocalizedText,
     },
     /// Связь восстановлена после Reconnecting.
     Recovered,
@@ -85,10 +86,13 @@ mod tests {
         );
         assert_eq!(
             serde_json::to_value(BrowseEvent::Reconnecting {
-                message: "нет связи".into()
+                message: LocalizedText::raw("down")
             })
             .unwrap(),
-            serde_json::json!({"type": "reconnecting", "message": "нет связи"})
+            serde_json::json!({
+                "type": "reconnecting",
+                "message": {"key": "errors.generic", "params": {"message": "down"}, "text": "down"}
+            })
         );
         assert_eq!(
             serde_json::to_value(BrowseEvent::Recovered).unwrap(),

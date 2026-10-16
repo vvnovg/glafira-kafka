@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::browse::filter::FilterSpec;
 use crate::browse::format::DataFormat;
 use crate::browse::types::BrowsedMessage;
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::kafka::context::RebalanceRecord;
 use crate::kafka::groups::{OffsetTarget, TopicPartitionRef};
 
@@ -43,7 +44,11 @@ pub struct ConsumerParams {
 
 pub fn validate(p: &ConsumerParams) -> AppResult<()> {
     if p.group_id.trim().is_empty() {
-        return Err(AppError::invalid("Укажите group.id"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.consume.groupIdMissing",
+            "Specify group.id"
+        ));
     }
     let has_topics = p.topics.iter().any(|t| !t.trim().is_empty());
     let pattern = p
@@ -53,12 +58,23 @@ pub fn validate(p: &ConsumerParams) -> AppResult<()> {
         .filter(|s| !s.is_empty());
     match (has_topics, pattern) {
         (true, None) => Ok(()),
-        (false, Some(re)) => Regex::new(re)
-            .map(|_| ())
-            .map_err(|e| AppError::invalid(format!("Некорректное регулярное выражение: {e}"))),
-        (false, None) => Err(AppError::invalid("Укажите топики или регулярное выражение")),
-        (true, Some(_)) => Err(AppError::invalid(
-            "Укажите либо список топиков, либо регулярное выражение",
+        (false, Some(re)) => Regex::new(re).map(|_| ()).map_err(|e| {
+            app_err!(
+                ErrorCode::InvalidInput,
+                "errors.consume.badRegex",
+                "Invalid regular expression: {{error}}",
+                error = e
+            )
+        }),
+        (false, None) => Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.consume.noTopics",
+            "Specify topics or a regular expression"
+        )),
+        (true, Some(_)) => Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.consume.topicsAndRegex",
+            "Specify either a list of topics or a regular expression"
         )),
     }
 }
@@ -147,7 +163,7 @@ pub enum ConsumeEvent {
     },
     /// Временная потеря связи с брокером: librdkafka переподключается.
     Reconnecting {
-        message: String,
+        message: LocalizedText,
     },
     /// Связь восстановлена после Reconnecting.
     Recovered,
@@ -195,19 +211,21 @@ mod tests {
         let mut bad = vec![];
         let mut p1 = params();
         p1.group_id = " ".into();
-        bad.push(p1);
+        bad.push((p1, "errors.consume.groupIdMissing"));
         let mut p2 = params();
         p2.topics.clear();
-        bad.push(p2);
+        bad.push((p2, "errors.consume.noTopics"));
         let mut p3 = params();
         p3.topic_pattern = Some("x".into());
-        bad.push(p3); // и список, и regex
+        bad.push((p3, "errors.consume.topicsAndRegex")); // и список, и regex
         let mut p4 = params();
         p4.topics.clear();
         p4.topic_pattern = Some("(".into());
-        bad.push(p4);
-        for p in bad {
-            assert_eq!(validate(&p).unwrap_err().code, ErrorCode::InvalidInput);
+        bad.push((p4, "errors.consume.badRegex"));
+        for (p, key) in bad {
+            let e = validate(&p).unwrap_err();
+            assert_eq!(e.code, ErrorCode::InvalidInput);
+            assert_eq!(e.key, key);
         }
     }
 

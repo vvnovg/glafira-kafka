@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::i18n::LocalizedText;
 use crate::kafka::admin_ext::{GroupDescriptionRaw, RawPartition};
-use crate::kafka::topics::PartitionBoundsMap;
+use crate::kafka::topics::{BoundsError, PartitionBoundsMap};
 use rdkafka::types::RDKafkaErrorCode;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -243,8 +243,8 @@ pub fn build_partition_offsets(
             // Some(None) — брокер не вернул границы партиции.
             let (log_end, bounds_err) = match bounds.get(k) {
                 Some(Ok((_, high))) => (Some(*high), None),
-                Some(Err(e)) => (None, Some(Some(e))),
-                None => (None, Some(None)),
+                Some(Err(BoundsError::Broker(e))) => (None, Some(Some(e))),
+                Some(Err(BoundsError::Missing)) | None => (None, Some(None)),
             };
             let error = partition_error(commit_err, bounds_err);
             GroupPartitionOffset {
@@ -578,7 +578,10 @@ mod tests {
         let bounds: PartitionBoundsMap = HashMap::from([
             (key("t", 0), Ok((0, 10))),
             (key("t", 1), Ok((0, 4))),
-            (key("t", 2), Err("leader not available".to_string())),
+            (
+                key("t", 2),
+                Err(BoundsError::Broker("leader not available".to_string())),
+            ),
         ]);
         let rows = build_partition_offsets(&committed, &assigned, &bounds);
         assert_eq!(rows.len(), 3);

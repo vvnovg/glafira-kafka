@@ -226,8 +226,8 @@ mod tests {
     impl SecretStore for StrictStore {
         fn get(&self, key: &str) -> AppResult<Option<String>> {
             if !self.allowed.iter().any(|k| k == key) {
-                return Err(crate::error::AppError::internal(format!(
-                    "неожиданное чтение секрета {key}"
+                return Err(crate::error::AppError::internal_with(format!(
+                    "unexpected secret read {key}"
                 )));
             }
             self.inner.get(key)

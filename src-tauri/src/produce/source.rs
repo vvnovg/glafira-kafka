@@ -6,7 +6,8 @@ use std::path::Path;
 use serde::Deserialize;
 use serde_json::value::RawValue;
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::produce::payload::EncodedMessage;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -19,7 +20,7 @@ pub enum FileFormat {
 #[derive(Debug)]
 pub struct SourceItem {
     pub line: u64,
-    pub message: Result<EncodedMessage, String>,
+    pub message: Result<EncodedMessage, LocalizedText>,
 }
 
 /// Максимальный размер одной строки/записи входного файла.
@@ -38,31 +39,46 @@ struct JsonlRecord {
 }
 
 /// Строка — её содержимое; `null`/нет поля — ничего; остальное — исходный текст из файла как есть.
-fn json_bytes(v: Option<Box<RawValue>>) -> Result<Option<Vec<u8>>, String> {
+fn invalid_json(error: impl std::fmt::Display) -> LocalizedText {
+    ltext!(
+        "errors.source.invalidJson",
+        "invalid JSON: {{error}}",
+        error = error
+    )
+}
+
+fn json_bytes(v: Option<Box<RawValue>>) -> Result<Option<Vec<u8>>, LocalizedText> {
     let Some(raw) = v else { return Ok(None) };
     let text = raw.get();
     if text == "null" {
         Ok(None)
     } else if text.starts_with('"') {
-        let s: String = serde_json::from_str(text).map_err(|e| format!("невалидный JSON: {e}"))?;
+        let s: String = serde_json::from_str(text).map_err(invalid_json)?;
         Ok(Some(s.into_bytes()))
     } else {
         Ok(Some(text.as_bytes().to_vec()))
     }
 }
 
-fn check_partition(p: Option<i32>) -> Result<Option<i32>, String> {
+fn check_partition(p: Option<i32>) -> Result<Option<i32>, LocalizedText> {
     match p {
-        Some(n) if n < 0 => Err(format!("partition {n} — отрицательный номер")),
+        Some(n) if n < 0 => Err(ltext!(
+            "errors.source.partitionNegative",
+            "partition {{partition}} is a negative number",
+            partition = n
+        )),
         other => Ok(other),
     }
 }
 
-pub fn parse_jsonl_line(line: &str, topic: &str) -> Result<EncodedMessage, String> {
+pub fn parse_jsonl_line(line: &str, topic: &str) -> Result<EncodedMessage, LocalizedText> {
     if !line.trim_start().starts_with('{') {
-        return Err("невалидный JSON: ожидался объект".to_string());
+        return Err(ltext!(
+            "errors.source.objectExpected",
+            "invalid JSON: an object was expected"
+        ));
     }
-    let r: JsonlRecord = serde_json::from_str(line).map_err(|e| format!("невалидный JSON: {e}"))?;
+    let r: JsonlRecord = serde_json::from_str(line).map_err(invalid_json)?;
     Ok(EncodedMessage {
         topic: topic.to_string(),
         partition: check_partition(r.partition)?,
@@ -121,8 +137,12 @@ fn read_line_capped<R: BufRead>(r: &mut R, cap: usize) -> std::io::Result<Option
     Ok(Some(RawLine::Line(buf)))
 }
 
-fn too_long_msg(line: u64) -> String {
-    format!("Строка {line} длиннее 16 МиБ")
+fn too_long_msg(line: u64) -> LocalizedText {
+    ltext!(
+        "errors.source.lineTooLong",
+        "Line {{line}} is longer than 16 MiB",
+        line = line
+    )
 }
 
 pub fn read_jsonl<R: BufRead + Send + 'static>(
@@ -149,7 +169,11 @@ fn read_jsonl_capped<R: BufRead + Send + 'static>(
                 Ok(None) => return None,
                 Err(e) => {
                     failed = true;
-                    Err(format!("ошибка чтения: {e}"))
+                    Err(ltext!(
+                        "errors.source.readFailed",
+                        "read error: {{error}}",
+                        error = e
+                    ))
                 }
                 Ok(Some(RawLine::TooLong)) => Err(too_long_msg(line_no)),
                 Ok(Some(RawLine::Line(mut bytes))) => {
@@ -159,7 +183,10 @@ fn read_jsonl_capped<R: BufRead + Send + 'static>(
                     match std::str::from_utf8(&bytes) {
                         Ok(l) if l.trim().is_empty() => continue,
                         Ok(l) => parse_jsonl_line(l, &topic),
-                        Err(_) => Err("строка не в кодировке UTF-8".to_string()),
+                        Err(_) => Err(ltext!(
+                            "errors.source.notUtf8",
+                            "the line is not UTF-8 encoded"
+                        )),
                     }
                 }
             };
@@ -176,15 +203,23 @@ fn read_jsonl_capped<R: BufRead + Send + 'static>(
 pub fn read_csv<R: Read + Send + 'static>(
     reader: R,
     topic: String,
-) -> Result<impl Iterator<Item = SourceItem> + Send, String> {
+) -> Result<impl Iterator<Item = SourceItem> + Send, LocalizedText> {
     let mut rdr = csv::ReaderBuilder::new().flexible(true).from_reader(reader);
-    let headers = rdr.headers().map_err(|e| format!("CSV: {e}"))?.clone();
+    let headers = rdr.headers().map_err(csv_error)?.clone();
     let col = |name: &str| headers.iter().position(|h| h.trim() == name);
-    let value_col =
-        col("value").ok_or_else(|| "CSV: нет обязательной колонки value".to_string())?;
+    let value_col = col("value").ok_or_else(|| {
+        ltext!(
+            "errors.source.csvNoValue",
+            "CSV: the required value column is missing"
+        )
+    })?;
     for name in ["key", "value", "partition"] {
         if headers.iter().filter(|h| h.trim() == name).count() > 1 {
-            return Err(format!("CSV: колонка {name} указана более одного раза"));
+            return Err(ltext!(
+                "errors.source.csvDuplicateColumn",
+                "CSV: column {{column}} is specified more than once",
+                column = name
+            ));
         }
     }
     let key_col = col("key");
@@ -193,11 +228,16 @@ pub fn read_csv<R: Read + Send + 'static>(
     for (i, h) in headers.iter().enumerate() {
         if let Some(n) = h.trim().strip_prefix("header.") {
             if n.is_empty() {
-                return Err("CSV: пустое имя заголовка в колонке header.".to_string());
+                return Err(ltext!(
+                    "errors.source.csvEmptyHeader",
+                    "CSV: empty header name in the header. column"
+                ));
             }
             if header_cols.iter().any(|(_, x)| x == n) {
-                return Err(format!(
-                    "CSV: заголовок header.{n} указан более одного раза"
+                return Err(ltext!(
+                    "errors.source.csvDuplicateHeader",
+                    "CSV: header header.{{name}} is specified more than once",
+                    name = n
                 ));
             }
             header_cols.push((i, n.to_string()));
@@ -224,7 +264,7 @@ pub fn read_csv<R: Read + Send + 'static>(
                 let line = e.position().map_or(0, |p| p.line());
                 return Some(SourceItem {
                     line,
-                    message: Err(format!("CSV: {e}")),
+                    message: Err(csv_error(e)),
                 });
             }
         };
@@ -233,10 +273,13 @@ pub fn read_csv<R: Read + Send + 'static>(
         let message = (|| {
             let partition = match partition_col.map(field).map(str::trim) {
                 None | Some("") => None,
-                Some(s) => Some(
-                    s.parse::<i32>()
-                        .map_err(|_| format!("partition «{s}» — не число"))?,
-                ),
+                Some(s) => Some(s.parse::<i32>().map_err(|_| {
+                    ltext!(
+                        "errors.source.partitionNotNumber",
+                        "partition “{{value}}” is not a number",
+                        value = s
+                    )
+                })?),
             };
             Ok(EncodedMessage {
                 topic: topic.clone(),
@@ -257,18 +300,30 @@ pub fn read_csv<R: Read + Send + 'static>(
     }))
 }
 
+fn csv_error(e: csv::Error) -> LocalizedText {
+    ltext!("errors.source.csv", "CSV: {{error}}", error = e)
+}
+
 pub fn open_file(
     path: &Path,
     format: FileFormat,
     topic: &str,
 ) -> AppResult<Box<dyn Iterator<Item = SourceItem> + Send>> {
-    let file = File::open(path)
-        .map_err(|e| AppError::invalid(format!("Не удалось открыть {}: {e}", path.display())))?;
+    let file = File::open(path).map_err(|e| {
+        app_err!(
+            ErrorCode::InvalidInput,
+            "errors.source.openFailed",
+            "Failed to open {{path}}: {{error}}",
+            path = path.display(),
+            error = e
+        )
+    })?;
     Ok(match format {
         FileFormat::Jsonl => Box::new(read_jsonl(BufReader::new(file), topic.to_string())),
-        FileFormat::Csv => {
-            Box::new(read_csv(BufReader::new(file), topic.to_string()).map_err(AppError::invalid)?)
-        }
+        FileFormat::Csv => Box::new(
+            read_csv(BufReader::new(file), topic.to_string())
+                .map_err(|t| AppError::localized(ErrorCode::InvalidInput, t))?,
+        ),
     })
 }
 
@@ -296,9 +351,20 @@ mod tests {
         );
         let m = parse_jsonl_line(r#"{"key":null,"value":42}"#, "t").unwrap();
         assert_eq!(m.value.as_deref(), Some(&b"42"[..]));
-        assert!(parse_jsonl_line("{oops", "t").unwrap_err().contains("JSON"));
-        assert!(parse_jsonl_line(r#"{"value":"v","partition":-1}"#, "t").is_err());
-        assert!(parse_jsonl_line(r#"[1,2]"#, "t").is_err());
+        assert_eq!(
+            parse_jsonl_line("{oops", "t").unwrap_err().key,
+            "errors.source.invalidJson"
+        );
+        assert_eq!(
+            parse_jsonl_line(r#"{"value":"v","partition":-1}"#, "t")
+                .unwrap_err()
+                .key,
+            "errors.source.partitionNegative"
+        );
+        assert_eq!(
+            parse_jsonl_line(r#"[1,2]"#, "t").unwrap_err().key,
+            "errors.source.objectExpected"
+        );
     }
 
     #[test]
@@ -357,7 +423,10 @@ mod tests {
         let p = dir.path().join("a.jsonl");
         std::fs::write(&p, "{\"value\":\"a\"}\n").unwrap();
         assert_eq!(open_file(&p, FileFormat::Jsonl, "t").unwrap().count(), 1);
-        assert!(open_file(&dir.path().join("none"), FileFormat::Csv, "t").is_err());
+        let e = open_file(&dir.path().join("none"), FileFormat::Csv, "t")
+            .err()
+            .unwrap();
+        assert_eq!(e.key, "errors.source.openFailed");
     }
 
     struct ErrReader;
@@ -399,7 +468,9 @@ mod tests {
         let items: Vec<SourceItem> =
             read_jsonl_capped(Cursor::new(text.to_string()), "t".into(), 16).collect();
         assert_eq!(items.len(), 2);
-        assert!(items[0].message.as_ref().unwrap_err().contains("16 МиБ"));
+        let e = items[0].message.as_ref().unwrap_err();
+        assert_eq!(e.key, "errors.source.lineTooLong");
+        assert_eq!(e.params["line"], "1");
         assert!(items[1].message.is_ok());
         assert_eq!(items[1].line, 2);
     }
@@ -411,20 +482,28 @@ mod tests {
                 .err()
                 .unwrap()
         };
-        assert!(e("value,value\n").contains("value"));
-        assert!(e("key,value,key\n").contains("key"));
-        assert!(e("value,partition,partition\n").contains("partition"));
-        assert!(e("value,header.a,header.a\n").contains("header.a"));
-        assert!(e("value,header.\n").contains("пустое"));
+        let dup = |t: &str, column: &str| {
+            let e = e(t);
+            assert_eq!(e.key, "errors.source.csvDuplicateColumn", "{t}");
+            assert_eq!(e.params["column"], column, "{t}");
+        };
+        dup("value,value\n", "value");
+        dup("key,value,key\n", "key");
+        dup("value,partition,partition\n", "partition");
+        let h = e("value,header.a,header.a\n");
+        assert_eq!(h.key, "errors.source.csvDuplicateHeader");
+        assert_eq!(h.params["name"], "a");
+        assert_eq!(e("value,header.\n").key, "errors.source.csvEmptyHeader");
     }
 
     #[test]
     fn csv_errors() {
-        assert!(
+        assert_eq!(
             read_csv(Cursor::new("key\nk".to_string()), "t".into())
                 .err()
                 .unwrap()
-                .contains("value")
+                .key,
+            "errors.source.csvNoValue"
         );
         let items: Vec<SourceItem> = read_csv(
             Cursor::new("value,partition\nv,abc\n".to_string()),
@@ -432,6 +511,8 @@ mod tests {
         )
         .unwrap()
         .collect();
-        assert!(items[0].message.as_ref().unwrap_err().contains("partition"));
+        let e = items[0].message.as_ref().unwrap_err();
+        assert_eq!(e.key, "errors.source.partitionNotNumber");
+        assert_eq!(e.params["value"], "abc");
     }
 }

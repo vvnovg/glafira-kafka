@@ -68,7 +68,7 @@ impl LicenseStatus {
 }
 
 /// Ошибки `license-format` (текст крейта — для логов) → ключи интерфейса.
-/// Подробность `Malformed` техническая и в интерфейс не попадает.
+/// Подробность `Malformed` техническая: в текст не попадает, `set_user_key` кладёт её в `details`.
 fn license_error_text(e: &LicenseError) -> LocalizedText {
     match e {
         LicenseError::Malformed(_) => ltext!(
@@ -211,7 +211,12 @@ impl LicenseManager {
                 let text = st.error.unwrap_or_else(|| {
                     ltext!("errors.license.empty", "Invalid key: the key is empty")
                 });
-                return Err(AppError::localized(ErrorCode::InvalidInput, text));
+                let err = AppError::localized(ErrorCode::InvalidInput, text);
+                // Подробность повреждения — техническая: в `details`, не в текст ошибки.
+                return Err(match license_format::verify(token.trim(), &self.key) {
+                    Err(LicenseError::Malformed(detail)) => err.with_details(detail),
+                    _ => err,
+                });
             }
             LicenseState::Expired => {
                 return Err(app_err!(
@@ -355,6 +360,7 @@ mod tests {
         assert_eq!(e.params["date"], "2020-01-01");
         let e = m.set_user_key("garbage").unwrap_err();
         assert_eq!(e.key, "errors.license.malformed");
+        assert!(e.details.is_some_and(|d| !d.is_empty()));
         let e = m.set_user_key("  ").unwrap_err();
         assert_eq!(e.key, "errors.license.empty");
         assert!(!dir.path().join("license.json").exists());

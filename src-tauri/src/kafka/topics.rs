@@ -7,6 +7,7 @@ use rdkafka::{Offset, TopicPartitionList};
 use serde::Serialize;
 
 use crate::error::AppResult;
+use crate::i18n::LocalizedText;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::errors::{fetch_metadata_fast_fail, retry_transient};
 use crate::kafka::metadata::{TopicMeta, convert};
@@ -41,7 +42,7 @@ pub struct PartitionDetails {
     pub high: Option<i64>,
     pub message_count: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub offsets_error: Option<String>,
+    pub offsets_error: Option<LocalizedText>,
     pub under_replicated: bool,
 }
 
@@ -82,10 +83,37 @@ pub fn message_count(low: i64, high: i64) -> i64 {
     (high - low).max(0)
 }
 
-/// Результат ListOffsets по партиции: (low, high) или технический текст ошибки (не переводится).
-pub type PartitionBoundsMap = HashMap<(String, i32), Result<(i64, i64), String>>;
+/// Ошибка границ партиции.
+#[derive(Debug, Clone, PartialEq)]
+pub enum BoundsError {
+    /// Технический текст ошибки брокера (не переводится).
+    Broker(String),
+    /// Брокер не вернул оффсет партиции.
+    Missing,
+}
 
-const NO_OFFSET: &str = "The broker did not return the partition offset";
+impl BoundsError {
+    pub fn text(&self) -> LocalizedText {
+        match self {
+            BoundsError::Broker(e) => LocalizedText::raw(e.clone()),
+            BoundsError::Missing => ltext!(
+                "errors.topics.noOffset",
+                "The broker did not return the partition offset"
+            ),
+        }
+    }
+
+    /// Технический текст для `details` и классификации ошибки.
+    pub fn detail(&self) -> &str {
+        match self {
+            BoundsError::Broker(e) => e,
+            BoundsError::Missing => "no offset returned by the broker",
+        }
+    }
+}
+
+/// Результат ListOffsets по партиции: (low, high) или ошибка.
+pub type PartitionBoundsMap = HashMap<(String, i32), Result<(i64, i64), BoundsError>>;
 
 /// (low, high) watermark по каждой партиции двумя пакетными ListOffsets-запросами
 /// (offsets_for_times со спецзначениями -2 = earliest, -1 = latest).
@@ -113,11 +141,11 @@ pub fn fetch_bounds(
 fn combine(
     low: Option<&Result<i64, String>>,
     high: Option<&Result<i64, String>>,
-) -> Result<(i64, i64), String> {
+) -> Result<(i64, i64), BoundsError> {
     match (low, high) {
         (Some(Ok(l)), Some(Ok(h))) => Ok((*l, *h)),
-        (Some(Err(e)), _) | (_, Some(Err(e))) => Err(e.clone()),
-        _ => Err(NO_OFFSET.to_string()),
+        (Some(Err(e)), _) | (_, Some(Err(e))) => Err(BoundsError::Broker(e.clone())),
+        _ => Err(BoundsError::Missing),
     }
 }
 
@@ -202,10 +230,10 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
             let b = bounds
                 .get(&(t.name.clone(), p.id))
                 .cloned()
-                .unwrap_or_else(|| Err(NO_OFFSET.to_string()));
+                .unwrap_or(Err(BoundsError::Missing));
             let (low, high, offsets_error) = match b {
                 Ok((l, hi)) => (Some(l), Some(hi), None),
-                Err(e) => (None, None, Some(e)),
+                Err(e) => (None, None, Some(e.text())),
             };
             PartitionDetails {
                 id: p.id,
@@ -288,13 +316,18 @@ mod tests {
         assert_eq!(combine(Some(&ok(3)), Some(&ok(9))), Ok((3, 9)));
         assert_eq!(
             combine(Some(&ok(3)), Some(&err("leader not available"))),
-            Err("leader not available".to_string())
+            Err(BoundsError::Broker("leader not available".to_string()))
         );
         assert_eq!(
             combine(Some(&err("denied")), Some(&ok(9))),
-            Err("denied".to_string())
+            Err(BoundsError::Broker("denied".to_string()))
         );
-        assert_eq!(combine(Some(&ok(3)), None), Err(NO_OFFSET.to_string()));
+        assert_eq!(combine(Some(&ok(3)), None), Err(BoundsError::Missing));
+        assert_eq!(BoundsError::Missing.text().key, "errors.topics.noOffset");
+        assert_eq!(
+            BoundsError::Broker("denied".into()).text().key,
+            "errors.generic"
+        );
     }
 
     #[test]

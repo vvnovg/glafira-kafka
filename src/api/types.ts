@@ -21,10 +21,10 @@ export interface LocalizedText {
 
 export interface AppError {
   code: ErrorCode;
-  /** Ключ словаря; у старых ошибок — `errors.generic` с `params.message`. */
+  /** Ключ словаря; у технического текста без перевода — `errors.generic` с `params.message`. */
   key?: string;
   params?: Record<string, string>;
-  /** Английский текст (или исходный текст у старых ошибок). */
+  /** Английский текст (запасной вариант перевода). */
   message: string;
   details?: string;
   retryable: boolean;
@@ -141,7 +141,7 @@ export interface PartitionDetails {
   low: number | null;
   high: number | null;
   messageCount: number | null;
-  offsetsError?: string;
+  offsetsError?: LocalizedText;
   underReplicated: boolean;
 }
 
@@ -161,7 +161,7 @@ export interface DecodedData {
   text: string;
   size: number;
   truncated: boolean;
-  error?: string;
+  error?: LocalizedText;
 }
 
 export interface HeaderView {
@@ -220,7 +220,7 @@ export type BrowseEvent =
   | { type: "messages"; messages: BrowsedMessage[] }
   | { type: "progress"; scanned: number; matched: number }
   | { type: "reachedEnd" }
-  | { type: "reconnecting"; message: string }
+  | { type: "reconnecting"; message: LocalizedText }
   | { type: "recovered" }
   | { type: "finished"; scanned: number; matched: number; reason: FinishReason }
   | { type: "error"; error: AppError };
@@ -428,7 +428,7 @@ export interface BatchParams {
 export interface BatchError {
   /** null — сводная ошибка, не относящаяся к строке */
   line: number | null;
-  message: string;
+  message: LocalizedText;
 }
 
 export type BatchEvent =
@@ -466,7 +466,7 @@ export type ConsumeEvent =
   | { type: "committed"; offsets: OffsetTarget[] }
   | { type: "paused"; partitions: TopicPartitionRef[] }
   | { type: "resumed"; partitions: TopicPartitionRef[] }
-  | { type: "reconnecting"; message: string }
+  | { type: "reconnecting"; message: LocalizedText }
   | { type: "recovered" }
   | { type: "finished"; consumed: number; matched: number }
   | { type: "error"; error: AppError };

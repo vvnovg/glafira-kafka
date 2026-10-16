@@ -54,12 +54,12 @@ describe("TopicDetails: недоступные оффсеты", () => {
       replicationFactor: 1,
       messageCount: null,
       partitions: [
-        { id: 0, leader: 1, replicas: [1], isr: [1], low: null, high: null, messageCount: null, underReplicated: false, offsetsError: "timeout fetching offsets" },
+        { id: 0, leader: 1, replicas: [1], isr: [1], low: null, high: null, messageCount: null, underReplicated: false, offsetsError: { key: "errors.topics.noOffset", params: {}, text: "The broker did not return the partition offset" } },
       ],
     });
     renderWithClient(<TopicDetails connectionId="c2" topic="broken" />);
     await user.click(await screen.findByRole("button", { name: "Партиции" }));
-    const cell = document.querySelector('td[title="timeout fetching offsets"]');
+    const cell = document.querySelector('td[title="Брокер не вернул оффсет партиции"]');
     expect(cell).not.toBeNull();
     expect(cell).toHaveTextContent("—");
   });

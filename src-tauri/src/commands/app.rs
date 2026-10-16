@@ -100,7 +100,9 @@ fn pubkey_configured(pubkey: Option<&str>) -> bool {
     pubkey.is_some_and(|k| !k.trim().is_empty() && k.trim() != PUBKEY_PLACEHOLDER)
 }
 
-fn updater(app: &AppHandle, url: Option<String>) -> AppResult<tauri_plugin_updater::Updater> {
+const NOT_CONFIGURED: &str = "Обновления не настроены в этой сборке";
+
+fn app_pubkey_configured(app: &AppHandle) -> bool {
     let pubkey = app
         .config()
         .plugins
@@ -108,8 +110,12 @@ fn updater(app: &AppHandle, url: Option<String>) -> AppResult<tauri_plugin_updat
         .get("updater")
         .and_then(|c| c.get("pubkey"))
         .and_then(|k| k.as_str());
-    if !pubkey_configured(pubkey) {
-        return Err(AppError::invalid("Обновления не настроены в этой сборке"));
+    pubkey_configured(pubkey)
+}
+
+fn updater(app: &AppHandle, url: Option<String>) -> AppResult<tauri_plugin_updater::Updater> {
+    if !app_pubkey_configured(app) {
+        return Err(AppError::invalid(NOT_CONFIGURED));
     }
     // На Windows `download_and_install` запускает установщик и вызывает `process::exit(0)`,
     // минуя `RunEvent::Exit`: без хука consumer не выйдут из группы, а пакеты оборвутся.
@@ -148,6 +154,12 @@ pub async fn check_update(app: AppHandle, state: State<'_, AppState>) -> AppResu
         UpdatePlan::Disabled(reason) => return Ok(UpdateCheck::Disabled { reason }),
         UpdatePlan::Check(url) => url,
     };
+    // Сборка без ключа updater (dev, dry-run) — штатное состояние, а не ошибка.
+    if !app_pubkey_configured(&app) {
+        return Ok(UpdateCheck::Disabled {
+            reason: NOT_CONFIGURED.into(),
+        });
+    }
     match updater(&app, url)?.check().await.map_err(net_err)? {
         None => Ok(UpdateCheck::UpToDate),
         Some(u) => Ok(UpdateCheck::Available {

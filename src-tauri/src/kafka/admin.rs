@@ -257,7 +257,11 @@ pub async fn purge_topic(
             (Ok(()), other) => PurgedPartition {
                 partition: e.partition(),
                 low_watermark: None,
-                error: Some(LocalizedText::raw(format!("Unexpected offset {other:?}"))),
+                error: Some(ltext!(
+                    "errors.topics.unexpectedOffset",
+                    "Unexpected offset {{offset}}",
+                    offset = format!("{other:?}")
+                )),
             },
             (Err(err), _) => PurgedPartition {
                 partition: e.partition(),

@@ -38,7 +38,7 @@ export function DeleteTopicsPanel({ connection, topics, onDone, onCancel }: Prop
       {!del.data && (
         <ConfirmDialog
           connection={connection}
-          title={single ? t("topics.delete.titleOne", { name: topics[0] }) : t("topics.delete.titleMany", { n: topics.length })}
+          title={single ? t("topics.delete.titleOne", { name: topics[0] }) : t("topics.delete.titleMany", { count: topics.length })}
           objectName={single ? topics[0] : String(topics.length)}
           objectLabel={single ? t("topics.delete.objectOne") : t("topics.delete.objectMany")}
           confirmLabel={t("topics.delete.confirm")}

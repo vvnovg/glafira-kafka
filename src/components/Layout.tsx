@@ -41,11 +41,11 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
 }
 
 export function Layout() {
-  const { t: tx } = useTranslation(); // перерисовка заголовков вкладок при смене языка
+  const { t } = useTranslation(); // заодно перерисовывает заголовки вкладок при смене языка
   const { tabs, activeId, activate, close } = useWorkspace();
   const { data: connections = [] } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const byId = new Map(connections.map((c) => [c.id, c]));
-  const active = tabs.find((t) => t.id === activeId);
+  const active = tabs.find((x) => x.id === activeId);
   const activeConnId = active && "connectionId" in active ? active.connectionId : null;
   const activeConn = activeConnId ? byId.get(activeConnId) : undefined;
 
@@ -57,23 +57,23 @@ export function Layout() {
         <LicenseNotice />
         <UpdateNotice />
         <nav className="tabbar" role="tablist">
-          {tabs.map((t) => {
-            const tConnId = "connectionId" in t ? t.connectionId : null;
+          {tabs.map((tab) => {
+            const tConnId = "connectionId" in tab ? tab.connectionId : null;
             const conn = tConnId ? byId.get(tConnId) : undefined;
-            const isActive = t.id === activeId;
+            const isActive = tab.id === activeId;
             return (
-              <div key={t.id} className={isActive ? "tab active" : "tab"}>
+              <div key={tab.id} className={isActive ? "tab active" : "tab"}>
                 {conn && <EnvBadge environment={conn.environment} readOnly={conn.readOnly} />}
-                <button type="button" role="tab" aria-selected={isActive} onClick={() => activate(t.id)}>
-                  {tabTitle(t, byId)}
+                <button type="button" role="tab" aria-selected={isActive} onClick={() => activate(tab.id)}>
+                  {tabTitle(tab, byId)}
                 </button>
                 <button
                   type="button"
                   className="icon"
-                  aria-label={tx("layout.closeTab")}
+                  aria-label={t("layout.closeTab")}
                   onClick={(e) => {
                     e.stopPropagation();
-                    close(t.id);
+                    close(tab.id);
                   }}
                 >
                   ×
@@ -82,11 +82,11 @@ export function Layout() {
             );
           })}
         </nav>
-        {tabs.length === 0 && <p className="empty">{tx("layout.empty")}</p>}
+        {tabs.length === 0 && <p className="empty">{t("layout.empty")}</p>}
         {/* Неактивные вкладки скрыты, но не размонтированы — browse-сессии и состояние форм сохраняются. */}
-        {tabs.map((t) => (
-          <section key={t.id} className="tab-content" hidden={t.id !== activeId}>
-            <TabContent tab={t} />
+        {tabs.map((tab) => (
+          <section key={tab.id} className="tab-content" hidden={tab.id !== activeId}>
+            <TabContent tab={tab} />
           </section>
         ))}
       </main>

@@ -34,7 +34,7 @@ export function MessageTable({ messages, selectedKey, onSelect, utc }: Props) {
         <span>{utc ? t("browse.table.colTimeUtc") : t("browse.table.colTime")}</span>
         <span>{t("browse.table.colKey")}</span>
         <span>{t("browse.table.colValue")}</span>
-        <span>Hdr</span>
+        <span>{t("browse.table.colHeaders")}</span>
         <span>{t("browse.table.colSize")}</span>
       </div>
       <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>

@@ -122,6 +122,7 @@
       "addPartitionsFailed": "Не удалось добавить партиции",
       "noPartitionsSelected": "Не выбраны партиции",
       "noSuchPartition": "В топике нет партиции {{partition}}",
+      "unexpectedOffset": "Неожиданный оффсет {{offset}}",
       "purgeForbidden": "Брокер запретил удаление записей: у топика cleanup.policy без delete",
       "deleteFailed": "Не удалось удалить топик",
       "noConfigChanges": "Нет изменений конфигурации",
@@ -493,7 +494,10 @@
     },
     "delete": {
       "titleOne": "Удалить топик «{{name}}»?",
-      "titleMany": "Удалить {{n}} топиков?",
+      "titleMany_one": "Удалить {{count}} топик?",
+      "titleMany_few": "Удалить {{count}} топика?",
+      "titleMany_many": "Удалить {{count}} топиков?",
+      "titleMany_other": "Удалить {{count}} топика?",
       "objectOne": "имя топика",
       "objectMany": "число топиков",
       "confirm": "Удалить",
@@ -698,6 +702,7 @@
       "colTimeUtc": "Время (UTC)",
       "colKey": "Ключ",
       "colValue": "Значение",
+      "colHeaders": "Заголовки",
       "colSize": "Размер"
     },
     "details": {
@@ -900,6 +905,7 @@
     "kindOrganization": "организации",
     "expires": "Действует до",
     "perpetual": "бессрочно",
+    "expiringUnknown": "Лицензия скоро истекает: осталось дней — ({{date}}).",
     "expiring_one": "Лицензия истекает через {{count}} дн. ({{date}}).",
     "expiring_few": "Лицензия истекает через {{count}} дн. ({{date}}).",
     "expiring_many": "Лицензия истекает через {{count}} дн. ({{date}}).",
@@ -918,6 +924,7 @@
     "policyTitle": "Политика организации",
     "policySource": "Источник: {{source}}",
     "notice": {
+      "expiringUnknown": "Лицензия Pro скоро истекает: осталось дней —.",
       "expiring_one": "Лицензия Pro истекает через {{count}} дн.",
       "expiring_few": "Лицензия Pro истекает через {{count}} дн.",
       "expiring_many": "Лицензия Pro истекает через {{count}} дн.",

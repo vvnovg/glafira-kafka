@@ -67,7 +67,7 @@ describe("TopicList", () => {
     expect(screen.getByRole("button", { name: "Отменить выбор" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Создать топик" })).toBeDisabled();
     expect(screen.getByText("a, b")).toBeInTheDocument();
-    expect(screen.getByText("Удалить 2 топиков?")).toBeInTheDocument();
+    expect(screen.getByText("Удалить 2 топика?")).toBeInTheDocument();
   });
 
   it("ошибка загрузки политики: «—» с причиной в title", async () => {

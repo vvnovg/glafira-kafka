@@ -122,6 +122,7 @@
       "addPartitionsFailed": "Failed to add partitions",
       "noPartitionsSelected": "No partitions selected",
       "noSuchPartition": "The topic has no partition {{partition}}",
+      "unexpectedOffset": "Unexpected offset {{offset}}",
       "purgeForbidden": "The broker refused to delete records: the topic cleanup.policy has no delete",
       "deleteFailed": "Failed to delete the topic",
       "noConfigChanges": "No configuration changes",
@@ -409,12 +410,12 @@
       "pick": "Browse…",
       "pickAria": "Choose file: {{label}}",
       "noPassword": "no password",
-      "clear": "delete saved",
-      "clearAria": "Delete saved: {{label}}",
-      "ca": "Trusted CA",
+      "clear": "remove saved password",
+      "clearAria": "Remove saved password: {{label}}",
+      "ca": "Trusted CA certificate",
       "caPlaceholder": "empty — system root certificates",
       "caFormat": "CA format",
-      "truststorePassword": "CA store password",
+      "truststorePassword": "Truststore password",
       "verifyHostname": "Verify hostname",
       "mtls": "Client certificate (mTLS)",
       "cert": "Client certificate",
@@ -422,7 +423,7 @@
       "key": "Client key",
       "alias": "Key alias",
       "aliasPlaceholder": "if there are several keys",
-      "keystorePassword": "Client store password",
+      "keystorePassword": "Keystore password",
       "keyPasswordJks": "Key password (if different)",
       "keyPasswordPem": "Key password (if encrypted)"
     }
@@ -493,7 +494,8 @@
     },
     "delete": {
       "titleOne": "Delete topic “{{name}}”?",
-      "titleMany": "Delete {{n}} topics?",
+      "titleMany_one": "Delete {{count}} topic?",
+      "titleMany_other": "Delete {{count}} topics?",
       "objectOne": "topic name",
       "objectMany": "number of topics",
       "confirm": "Delete",
@@ -637,7 +639,7 @@
       "targetUnknown": "target offset not computed",
       "boundUnknown": "partition bounds unknown",
       "noTarget": "No target offset — will not be applied",
-      "result": "Result",
+      "result": "Reset result",
       "resultError": "error: {{error}}",
       "resultSet": "offset {{offset}} set",
       "confirmTitle_one": "Reset offsets of {{count}} partition of group “{{groupId}}”?",
@@ -696,6 +698,7 @@
       "colTimeUtc": "Time (UTC)",
       "colKey": "Key",
       "colValue": "Value",
+      "colHeaders": "Headers",
       "colSize": "Size"
     },
     "details": {
@@ -774,7 +777,7 @@
       "colTime": "Time",
       "colTopic": "Topic",
       "colKey": "Key",
-      "repeat": "Repeat",
+      "repeat": "Resend",
       "truncatedHint": "The value is longer than 64 KB and was stored incompletely — it cannot be repeated"
     },
     "templates": {
@@ -898,6 +901,7 @@
     "kindOrganization": "organization",
     "expires": "Valid until",
     "perpetual": "perpetual",
+    "expiringUnknown": "License expires soon: days left — ({{date}}).",
     "expiring_one": "The license expires in {{count}} day ({{date}}).",
     "expiring_other": "The license expires in {{count}} days ({{date}}).",
     "expired": "The license expired on {{date}}: Pro features are disabled, your data is kept.",
@@ -914,6 +918,7 @@
     "policyTitle": "Organization policy",
     "policySource": "Source: {{source}}",
     "notice": {
+      "expiringUnknown": "The Pro license expires soon: days left —.",
       "expiring_one": "The Pro license expires in {{count}} day.",
       "expiring_other": "The Pro license expires in {{count}} days.",
       "expired": "The Pro license expired on {{date}}: Pro features are disabled.",

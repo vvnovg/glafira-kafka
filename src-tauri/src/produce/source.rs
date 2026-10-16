@@ -230,7 +230,7 @@ pub fn read_csv<R: Read + Send + 'static>(
             if n.is_empty() {
                 return Err(ltext!(
                     "errors.source.csvEmptyHeader",
-                    "CSV: empty header name in the header. column"
+                    "CSV: empty header name in a “header.” column"
                 ));
             }
             if header_cols.iter().any(|(_, x)| x == n) {

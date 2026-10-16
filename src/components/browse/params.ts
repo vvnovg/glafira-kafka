@@ -48,9 +48,9 @@ export const defaultBrowseForm: BrowseFormState = {
 const MAX_LIMIT = 100_000;
 const MAX_MINUTES = 5_256_000;
 
-function parseLocalTime(value: string, what: string): number {
+function parseLocalTime(value: string, message: string): number {
   const ms = new Date(value).getTime();
-  if (!value || Number.isNaN(ms)) throw new Error(i18n.t("browse.errors.invalidTime", { what }));
+  if (!value || Number.isNaN(ms)) throw new Error(message);
   return ms;
 }
 
@@ -86,8 +86,8 @@ export function buildFilterSpec(f: FilterFields): FilterSpec {
     filter.header = hv ? { name: f.headerName.trim(), value: hv } : { name: f.headerName.trim() };
   }
   if (f.jsonPath.trim()) filter.jsonPath = f.jsonPath.trim();
-  if (f.fromTime) filter.fromTimestamp = parseLocalTime(f.fromTime, i18n.t("browse.errors.filterFrom"));
-  if (f.toTime) filter.toTimestamp = parseLocalTime(f.toTime, i18n.t("browse.errors.filterTo"));
+  if (f.fromTime) filter.fromTimestamp = parseLocalTime(f.fromTime, i18n.t("browse.errors.invalidFrom"));
+  if (f.toTime) filter.toTimestamp = parseLocalTime(f.toTime, i18n.t("browse.errors.invalidTo"));
   if (filter.fromTimestamp !== undefined && filter.toTimestamp !== undefined && filter.fromTimestamp > filter.toTimestamp) {
     throw new Error(i18n.t("browse.errors.timeOrder"));
   }
@@ -114,7 +114,7 @@ export function buildBrowseParams(f: BrowseFormState, connectionId: string, topi
       start = { type: "offset", offset: f.offset };
       break;
     case "timestamp":
-      start = { type: "timestamp", timestampMs: parseLocalTime(f.timestamp, i18n.t("browse.errors.startTime")) };
+      start = { type: "timestamp", timestampMs: parseLocalTime(f.timestamp, i18n.t("browse.errors.invalidStart")) };
       break;
     case "lastMinutes":
       if (!Number.isInteger(f.minutes) || f.minutes < 1 || f.minutes > MAX_MINUTES) {

@@ -138,7 +138,7 @@
       "empty": "Invalid key: the key is empty",
       "keyExpired": "The key expired on {{date}}",
       "proExpired": "Pro license expired on {{date}} — this feature requires Pro",
-      "proRequired": "This feature requires Pro — activate a license on the License screen"
+      "proRequired": "This feature requires Pro — activate a license on the “License” screen"
     },
     "policy": {
       "invalidBool": "{{key}}: invalid boolean {{value}}",
@@ -304,7 +304,7 @@
       "notUtf8": "the line is not UTF-8 encoded",
       "csvNoValue": "CSV: the required value column is missing",
       "csvDuplicateColumn": "CSV: column {{column}} is specified more than once",
-      "csvEmptyHeader": "CSV: empty header name in the header. column",
+      "csvEmptyHeader": "CSV: empty header name in a “header.” column",
       "csvDuplicateHeader": "CSV: header header.{{name}} is specified more than once",
       "partitionNotNumber": "partition “{{value}}” is not a number",
       "csv": "CSV: {{error}}",
@@ -410,7 +410,7 @@
       "pick": "Browse…",
       "pickAria": "Choose file: {{label}}",
       "noPassword": "no password",
-      "clear": "remove saved password",
+      "clear": "Remove saved password",
       "clearAria": "Remove saved password: {{label}}",
       "ca": "Trusted CA certificate",
       "caPlaceholder": "empty — system root certificates",
@@ -658,7 +658,7 @@
       "from": "From",
       "startPosition": "Start position",
       "startLatest": "Latest N",
-      "startEarliest": "From beginning",
+      "startEarliest": "From the beginning",
       "startOffset": "From offset",
       "startTimestamp": "From time",
       "startLastMinutes": "Last X minutes",
@@ -706,12 +706,12 @@
       "key": "Key",
       "copyKeyAria": "Copy key",
       "copyValueAria": "Copy value",
-      "copy": "copy",
-      "truncated": "Showing the first 1 MB of the value.",
+      "copy": "Copy",
+      "truncated": "Showing the first 1 MiB of the value.",
       "select": "Select a message",
       "meta": "Partition {{partition}} · offset {{offset}} · {{time}}",
       "copyJsonAria": "Copy message as JSON",
-      "copyJson": "copy all as JSON",
+      "copyJson": "Copy all as JSON",
       "resend": "Resend",
       "resetHere": "Reset group here…",
       "incompleteGroups": "The group list may be incomplete: {{errors}}",
@@ -724,15 +724,14 @@
       "headers": "Headers ({{count}})"
     },
     "errors": {
-      "invalidTime": "Enter a valid time: {{what}}",
+      "invalidFrom": "Enter a valid “from” time",
+      "invalidTo": "Enter a valid “to” time",
+      "invalidStart": "Enter a valid start time",
       "badPartition": "Partitions: “{{part}}” is not a partition number",
-      "filterFrom": "“from” filter",
-      "filterTo": "“to” filter",
       "timeOrder": "Time filter: “from” cannot be later than “to”",
-      "limit": "Limit must be between 1 and {{max}}",
+      "limit": "The limit must be between 1 and {{max}}",
       "count": "Message count must be an integer between 1 and {{max}}",
       "offset": "Offset must be an integer ≥ 0",
-      "startTime": "start time",
       "minutes": "Minutes must be an integer between 1 and {{max}}",
       "unknownStart": "Unknown start position: {{value}}"
     }
@@ -778,13 +777,13 @@
       "colTopic": "Topic",
       "colKey": "Key",
       "repeat": "Resend",
-      "truncatedHint": "The value is longer than 64 KB and was stored incompletely — it cannot be repeated"
+      "truncatedHint": "The value is longer than 64 KiB and was stored incompletely — it cannot be repeated"
     },
     "templates": {
       "label": "Template",
       "allSuffix": "(all connections)",
       "deleteConfirm": "Delete template “{{name}}”?",
-      "delete": "delete template",
+      "delete": "Delete template",
       "nameLabel": "Template name",
       "global": "For all connections",
       "saveAs": "Save as template"
@@ -794,7 +793,7 @@
       "errPartition": "Partition must be an integer ≥ 0"
     },
     "resend": {
-      "truncated": "The value is larger than 1 MB and was shown incompletely — it cannot be resent",
+      "truncated": "The value is larger than 1 MiB and was shown incompletely — it cannot be resent",
       "lossy": "The value was decoded lossily (not UTF-8) — switch the format to hex/base64 to send an exact copy"
     },
     "batch": {
@@ -842,7 +841,7 @@
       "patternLabel": "Topic regular expression",
       "topicsLabel": "Topics",
       "resetLatest": "from the end (latest)",
-      "resetEarliest": "from the start (earliest)",
+      "resetEarliest": "from the beginning (earliest)",
       "autoCommit": "auto-commit",
       "formatLegend": "Format",
       "keyFormat": "Key format",
@@ -850,7 +849,7 @@
       "buffer": "Buffer, messages"
     },
     "dialog": {
-      "startTitle": "Join group \"{{group}}\"?",
+      "startTitle": "Join group “{{group}}”?",
       "commitTitle": "Commit offsets?",
       "confirm": "Confirm"
     },
@@ -881,8 +880,8 @@
       "title": "Assignment ({{count}})",
       "none": "No partitions assigned.",
       "paused": "paused",
-      "pause": "pause",
-      "resume": "resume",
+      "pause": "Pause",
+      "resume": "Resume",
       "pauseAria": "Pause {{partition}}",
       "resumeAria": "Resume {{partition}}",
       "logTitle": "Rebalance log",
@@ -901,7 +900,7 @@
     "kindOrganization": "organization",
     "expires": "Valid until",
     "perpetual": "perpetual",
-    "expiringUnknown": "License expires soon: days left — ({{date}}).",
+    "expiringUnknown": "The license expires soon ({{date}}).",
     "expiring_one": "The license expires in {{count}} day ({{date}}).",
     "expiring_other": "The license expires in {{count}} days ({{date}}).",
     "expired": "The license expired on {{date}}: Pro features are disabled, your data is kept.",
@@ -918,7 +917,7 @@
     "policyTitle": "Organization policy",
     "policySource": "Source: {{source}}",
     "notice": {
-      "expiringUnknown": "The Pro license expires soon: days left —.",
+      "expiringUnknown": "The Pro license expires soon.",
       "expiring_one": "The Pro license expires in {{count}} day.",
       "expiring_other": "The Pro license expires in {{count}} days.",
       "expired": "The Pro license expired on {{date}}: Pro features are disabled.",

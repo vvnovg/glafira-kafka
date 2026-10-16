@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkDictionaries, checkRustKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
+import { checkDictionaries, checkFrontendKeys, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -166,4 +166,25 @@ test("--rust-cyrillic: каталог раскрывается во все .rs �
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("ключи фронтенда: статические проверяются, динамические и тесты пропускаются", () => {
+  const files = {
+    "src/a.tsx": [
+      'const a = t("ok.key"); const b = i18n.t("typo.key", { x: 1 });',
+      "const c = t(`dyn.${name}`); const d = tt('plural.stem');",
+      '{ labelKey: "tabs.missing" }, <Trans i18nKey="trans.key" />',
+      'const e = t("concat." + x);',
+    ].join("\n"),
+    "src/a.test.tsx": 't("only.in.test")',
+  };
+  const keys = frontendKeys(files);
+  assert.deepEqual(
+    keys.map((k) => k.key),
+    ["ok.key", "typo.key", "plural.stem", "tabs.missing", "trans.key"],
+  );
+  const en = new Map([["ok.key", "x"], ["plural.stem_one", "a"], ["plural.stem_other", "b"], ["trans.key", "t"]]);
+  const p = checkFrontendKeys(keys, en);
+  assert.deepEqual(p.map((x) => x.split(" ")[3]), ["typo.key", "tabs.missing"]);
+  assert.ok(p[0].includes("src/a.tsx:1"), p[0]);
 });

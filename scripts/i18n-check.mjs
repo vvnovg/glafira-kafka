@@ -77,6 +77,30 @@ export function findCyrillic(files) {
   return hits;
 }
 
+/**
+ * files: { path: content }. Статические ключи фронтенда: t("…"), tt("…"), i18n.t("…"), i18nKey="…", labelKey: "…".
+ * Динамические (шаблонные строки, конкатенация) пропускаются. Возвращает [{ key, where }].
+ */
+export function frontendKeys(files) {
+  const out = [];
+  const re = /(?:\b(?:t|tt|i18n\.t)\(\s*|\bi18nKey=\{?\s*|\blabelKey:\s*)(["'])([\w.]+)\1(?=\s*[,)}]|\s*\/?>)/g;
+  for (const [path, content] of Object.entries(files)) {
+    if (/\.test\.[tj]sx?$/.test(path) || path.includes("/test/")) continue;
+    for (const m of content.matchAll(re)) {
+      out.push({ key: m[2], where: `${path}:${content.slice(0, m.index).split("\n").length}` });
+    }
+  }
+  return out;
+}
+
+/** Каждый статический ключ фронтенда есть в en.json (точно или как основа плюральных форм). */
+export function checkFrontendKeys(keys, enFlat) {
+  const stems = new Set([...enFlat.keys()].map((k) => k.replace(PLURAL, "")));
+  return keys
+    .filter(({ key }) => !enFlat.has(key) && !stems.has(key))
+    .map(({ key, where }) => `en: нет ключа ${key} (используется во фронтенде, ${where})`);
+}
+
 /** Код Rust без строк-комментариев и без модуля тестов в конце файла (там бывают тестовые ключи).
  * Строки-комментарии заменяются пустыми, чтобы номера строк в сообщениях совпадали с файлом. */
 function rustCode(content) {
@@ -349,10 +373,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   );
   const rust = rustKeys(rustFiles);
   problems.push(...rust.problems, ...checkRustKeys(rust.calls, flatten(dicts.en)));
+  const srcFiles = Object.fromEntries(
+    walk(join(root, "src"), [".ts", ".tsx"]).map((p) => [relative(root, p), readFileSync(p, "utf8")]),
+  );
+  problems.push(...checkFrontendKeys(frontendKeys(srcFiles), flatten(dicts.en)));
   if (!process.argv.includes("--no-cyrillic-scan")) {
-    const files = Object.fromEntries(
-      walk(join(root, "src"), [".ts", ".tsx"]).map((p) => [relative(root, p), readFileSync(p, "utf8")]),
-    );
+    const files = srcFiles;
     for (const hit of findCyrillic(files)) problems.push(`кириллица в коде: ${hit}`);
   }
   const rcIdx = process.argv.indexOf("--rust-cyrillic");

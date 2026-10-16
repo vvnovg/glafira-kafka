@@ -267,7 +267,7 @@ impl LicenseManager {
             _ => app_err!(
                 ErrorCode::ProRequired,
                 "errors.license.proRequired",
-                "This feature requires Pro — activate a license on the License screen"
+                "This feature requires Pro — activate a license on the “License” screen"
             ),
         })
     }

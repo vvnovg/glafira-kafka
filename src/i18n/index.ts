@@ -41,9 +41,16 @@ if (import.meta.env.DEV) {
 
 export const i18n = i18next;
 
+/** Язык документа следует за действующим языком интерфейса (скринридеры, орфография, переносы). */
+function syncDocumentLang(): void {
+  if (typeof document !== "undefined") document.documentElement.lang = currentLocale();
+}
+syncDocumentLang();
+
 export async function setLanguage(code: string): Promise<void> {
   const known = LANGUAGES.some((l) => l.code === code) || (import.meta.env.DEV && code === PSEUDO);
   await i18next.changeLanguage(known ? code : "en");
+  syncDocumentLang();
 }
 
 export function currentLocale(): string {

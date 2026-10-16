@@ -26,9 +26,11 @@ pnpm tauri dev
 ```bash
 pnpm test                                              # фронтенд
 cargo test --manifest-path src-tauri/Cargo.toml --lib  # Rust unit
-KE_IT_BOOTSTRAP=localhost:9092 KE_IT_SASL_BOOTSTRAP=localhost:9094 \
+KE_IT_BOOTSTRAP=localhost:9092 KE_IT_SASL_BOOTSTRAP=localhost:9094 KE_IT_MTLS_BOOTSTRAP=localhost:9095 \
   cargo test --manifest-path src-tauri/Cargo.toml --tests   # Rust интеграционные (нужен docker compose)
 ```
+Без переменной `KE_IT_*` соответствующий интеграционный тест пропускается.
+Windows: если падает `librdkafka_is_built_with_every_compression_codec` (snappy), librdkafka собрана до подключения `src-tauri/cmake/rdkafka-windows.cmake` — выполните `cargo clean -p rdkafka-sys --manifest-path src-tauri/Cargo.toml` и пересоберите.
 
 ## Поведение
 - Просмотр сообщений переживает перезапуск брокера: временные ошибки терпятся, сессия завершается ошибкой, если связь не восстановилась за 60 с.
@@ -80,6 +82,6 @@ kubectl get secret kafka-client -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/ce
 
 ## Free и Pro
 - **Free:** просмотр, топики и группы, Producer, все виды подключений (включая mTLS), «только чтение».
-- **Pro:** consumer-сессии и режим prod (подтверждение именем подключения для любых изменений).
+- **Pro:** consumer-сессии и режим prod: создание и перевод подключений в prod (с подтверждением именем подключения на любое изменение). Free сохраняет подтверждения на уже существующих prod-подключениях и маркировку остальных окружений.
 - Лицензия вводится на экране «Лицензия» (ссылка внизу дерева подключений) или раздаётся администратором через политику (`licenseKey`). Проверка офлайн.
 - Выдача ключей — `docs/licensing.md`.

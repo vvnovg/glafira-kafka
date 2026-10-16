@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import { LANGUAGES } from "../../i18n/languages";
-import { setLanguage } from "../../i18n";
+import { i18n, setLanguage } from "../../i18n";
 import { ErrorBanner } from "../common/ErrorBanner";
 
 export function SettingsPanel() {
@@ -27,6 +27,8 @@ export function SettingsPanel() {
   const systemName = s.systemMatch ? byCode.get(s.systemMatch as never)?.nativeName : undefined;
   const isFree = tier !== "pro";
   const byPolicy = s.policy !== null;
+  // Псевдоязык — только dev-сборка, без сохранения: выбор не уходит в бэкенд.
+  const pseudoOn = import.meta.env.DEV && i18n.language === "x-pseudo";
 
   return (
     <div className="page">
@@ -39,9 +41,9 @@ export function SettingsPanel() {
           <label htmlFor="settings-language">{t("settings.language.label")}</label>
           <select
             id="settings-language"
-            value={byPolicy ? s.policy ?? "" : s.chosen ?? ""}
+            value={pseudoOn ? "x-pseudo" : byPolicy ? s.policy ?? "" : s.chosen ?? ""}
             disabled={byPolicy || change.isPending}
-            onChange={(e) => change.mutate(e.target.value)}
+            onChange={(e) => (e.target.value === "x-pseudo" ? void setLanguage("x-pseudo") : change.mutate(e.target.value))}
           >
             <option value="">
               {systemName ? t("settings.language.system", { name: systemName }) : t("settings.language.systemUnknown")}
@@ -54,6 +56,7 @@ export function SettingsPanel() {
                 </option>
               );
             })}
+            {import.meta.env.DEV && <option value="x-pseudo">Pseudo (dev)</option>}
           </select>
         </div>
         {byPolicy && <p className="hint">{t("settings.language.policy")}</p>}

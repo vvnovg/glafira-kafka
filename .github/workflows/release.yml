@@ -29,8 +29,10 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       tag: ${{ steps.v.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
       - run: node --test "scripts/*.test.mjs"
@@ -83,20 +85,22 @@ jobs:
       BUNDLE: src-tauri/target/${{ matrix.target }}/release/bundle
       VERSION: ${{ needs.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 11
-      - uses: actions/setup-node@v4
+      # Без кэшей (ни pnpm, ни rust-cache): в этом job есть ключ подписи updater и секреты Apple,
+      # а кэш, записанный другим запуском (ci.yml на main), мог бы подменить зависимости или
+      # артефакты сборки. Релиз собирается с нуля — дольше, но только из lock-файлов.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: pnpm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # ветка stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
       - name: Системные зависимости (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -108,9 +112,11 @@ jobs:
       - name: Пробный прогон — разрешить dev-ключ лицензий
         if: github.event_name == 'workflow_dispatch'
         run: echo "KE_ALLOW_DEV_LICENSE_KEY=1" >> "$GITHUB_ENV"
-      # Пустые APPLE_* в окружении ломают сборку (bundler пытается импортировать пустой сертификат),
-      # поэтому переменные выставляются только когда секреты заданы.
-      - name: Подпись Apple (если заданы секреты)
+      # Секреты Apple — только в env шага tauri-action (не в GITHUB_ENV: иначе их видели бы все
+      # следующие шаги). Пустые APPLE_* ломают сборку (bundler импортирует пустой сертификат),
+      # поэтому шагов два: с подписью — когда заданы все секреты, без подписи — когда не задан ни один.
+      - name: Подпись Apple задана?
+        id: apple
         if: runner.os == 'macOS'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -120,18 +126,35 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          if [ -z "$APPLE_CERTIFICATE" ]; then
-            echo "::warning::macOS-сборка без подписи и нотаризации"
-            exit 0
-          fi
+          set=0; missing=""
           for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
-            value="${!name}"
-            if [ -n "$value" ]; then
-              delim="EOF_$(openssl rand -hex 8)"
-              printf '%s<<%s\n%s\n%s\n' "$name" "$delim" "$value" "$delim" >> "$GITHUB_ENV"
-            fi
+            if [ -n "${!name}" ]; then set=$((set + 1)); else missing="$missing $name"; fi
           done
-      - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # action-v0.6.2
+          if [ "$set" -eq 0 ]; then
+            echo "::warning::macOS-сборка без подписи и нотаризации"
+            echo "signing=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$missing" ]; then
+            echo "::error::секреты Apple заданы не все, нет:$missing"; exit 1
+          else
+            echo "signing=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Сборка (с подписью Apple)
+        if: steps.apple.outputs.signing == 'true'
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # action-v0.6.2
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          args: --target ${{ matrix.target }}
+      - name: Сборка
+        if: steps.apple.outputs.signing != 'true'
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # action-v0.6.2
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -172,7 +195,7 @@ jobs:
           $msi = Get-ChildItem "$env:BUNDLE/msi/*.msi" | Select-Object -First 1
           $p = Start-Process msiexec -ArgumentList "/i `"$($msi.FullName)`" /qn /l*v install.log" -Wait -PassThru
           if ($p.ExitCode -ne 0) { Get-Content install.log -Tail 50; exit 1 }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: bundle-${{ matrix.target }}
           path: |
@@ -183,7 +206,9 @@ jobs:
             ${{ env.BUNDLE }}/msi/*.msi
             ${{ env.BUNDLE }}/msi/*.msi.sig
             ${{ env.BUNDLE }}/deb/*.deb
+            ${{ env.BUNDLE }}/deb/*.deb.sig
             ${{ env.BUNDLE }}/rpm/*.rpm
+            ${{ env.BUNDLE }}/rpm/*.rpm.sig
             ${{ env.BUNDLE }}/appimage/*.AppImage
             ${{ env.BUNDLE }}/appimage/*.AppImage.sig
           if-no-files-found: error
@@ -195,11 +220,13 @@ jobs:
       VERSION: ${{ needs.check.outputs.version }}
       TAG: ${{ needs.check.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: bundle-*
           path: release/assets
@@ -220,12 +247,12 @@ jobs:
           awk -v v="## $VERSION" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > release/notes.md
           if [ ! -s release/notes.md ]; then echo "::error::пустой раздел CHANGELOG для $VERSION"; exit 1; fi
           node scripts/make-latest-json.mjs --version "$VERSION" --notes-file release/notes.md \
-            --base-url "https://github.com/${RELEASES_REPO}/releases/download/${TAG}" --dir release/assets > latest.json
-          node -e 'const p = Object.keys(JSON.parse(require("fs").readFileSync("latest.json","utf8")).platforms).sort().join(","); if (p !== "darwin-aarch64,darwin-x86_64,linux-x86_64,windows-x86_64") { console.error("::error::в latest.json не все платформы: " + p); process.exit(1); }'
+            --base-url "https://github.com/${RELEASES_REPO}/releases/download/${TAG}" --dir release/assets \
+            --require-all > latest.json
           mv latest.json release/assets/latest.json
           cat release/assets/latest.json
       # И для пробного прогона, и для публикации: готовый набор ассетов + описание.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-${{ needs.check.outputs.tag }}
           path: release
@@ -244,7 +271,7 @@ jobs:
           RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           if [ -z "$RELEASES_TOKEN" ]; then echo "::error::нет секрета RELEASES_TOKEN"; exit 1; fi
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release-${{ needs.check.outputs.tag }}
           path: release

@@ -6,7 +6,7 @@ import { renderWithClient } from "../../test/render";
 
 const FREE: LicenseStatus = { tier: "free", state: "none", source: null, licensee: null, kind: null, expires: null, daysLeft: null, error: null };
 const PRO: LicenseStatus = { ...FREE, tier: "pro", state: "valid", source: "user", licensee: "a@b", kind: "personal", expires: "2027-03-31", daysLeft: 166 };
-const UNMANAGED: PolicyStatus = { managed: false, source: null, updatesEnabled: true, updateUrl: null, hasLicenseKey: false, errors: [] };
+const UNMANAGED: PolicyStatus = { managed: false, source: null, updatesEnabled: true, updateUrl: null, hasLicenseKey: false, language: null, errors: [] };
 
 vi.mock("../../api/client", async (importOriginal) => {
   const orig = await importOriginal<typeof import("../../api/client")>();

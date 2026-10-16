@@ -6,6 +6,7 @@ pub mod consume;
 pub mod groups;
 pub mod license;
 pub mod produce;
+pub mod settings;
 pub mod topic_ops;
 pub mod topics;
 

@@ -14,6 +14,7 @@ pub mod policy;
 pub mod produce;
 pub mod product;
 pub mod secrets;
+pub mod settings;
 pub mod state;
 pub mod storage;
 pub mod sync;
@@ -126,6 +127,8 @@ pub fn run() {
             commands::license::get_license_status,
             commands::license::set_license_key,
             commands::license::remove_license_key,
+            commands::settings::get_language_settings,
+            commands::settings::set_language,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -210,6 +210,7 @@ mod tests {
         assert!(!p.status.updates_enabled);
         assert!(p.status.update_url.is_some());
         assert!(p.status.has_license_key);
+        assert_eq!(p.status.language.as_deref(), Some("en"));
 
         // Профиль MDM: содержимое PayloadContent[0] попадает в Managed Preferences как есть.
         let profile = plist::Value::from_file(format!("{base}/policy.mobileconfig")).unwrap();
@@ -224,7 +225,7 @@ mod tests {
             content.get("PayloadType").and_then(|v| v.as_string()),
             Some(crate::product::IDENTIFIER)
         );
-        for key in ["updatesEnabled", "updateUrl", "licenseKey"] {
+        for key in ["updatesEnabled", "updateUrl", "licenseKey", "language"] {
             assert!(content.contains_key(key), "{key}");
         }
 

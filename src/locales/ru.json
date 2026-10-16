@@ -117,7 +117,12 @@
       "invalidString": "{{key}}: недопустимое строка «{{value}}»",
       "invalidType": "{{key}}: недопустимое значение типа {{kind}}",
       "unreadable": "Политика не читается: {{reason}}",
-      "httpsRequired": "{{key}}: нужен адрес https:// — обновления по http не загружаются"
+      "httpsRequired": "{{key}}: нужен адрес https:// — обновления по http не загружаются",
+      "badLanguage": "{{key}}: неизвестный язык «{{value}}»"
+    },
+    "settings": {
+      "unknownLanguage": "Неизвестный язык «{{code}}»",
+      "languageByPolicy": "Язык задан вашей организацией"
     },
     "secrets": {
       "keychain": "Ошибка доступа к системному хранилищу секретов",

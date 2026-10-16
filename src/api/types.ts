@@ -490,6 +490,7 @@ export interface PolicyStatus {
   updatesEnabled: boolean;
   updateUrl: string | null;
   hasLicenseKey: boolean;
+  language: string | null;
   errors: LocalizedText[];
 }
 

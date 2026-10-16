@@ -19,6 +19,7 @@ pub struct AppState {
     pub templates: Arc<crate::storage::templates::TemplateStore>,
     pub policy: Arc<crate::policy::Policy>,
     pub license: Arc<crate::license::LicenseManager>,
+    pub settings: Arc<crate::settings::SettingsStore>,
 }
 
 impl AppState {
@@ -37,6 +38,7 @@ impl AppState {
                 data_dir,
                 crate::license::LicenseManager::embedded_key(),
             )),
+            settings: Arc::new(crate::settings::SettingsStore::open(data_dir)),
         })
     }
 

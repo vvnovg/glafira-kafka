@@ -117,7 +117,12 @@
       "invalidString": "{{key}}: invalid string “{{value}}”",
       "invalidType": "{{key}}: invalid value of type {{kind}}",
       "unreadable": "Policy cannot be read: {{reason}}",
-      "httpsRequired": "{{key}}: an https:// address is required — updates are not downloaded over http"
+      "httpsRequired": "{{key}}: an https:// address is required — updates are not downloaded over http",
+      "badLanguage": "{{key}}: unknown language “{{value}}”"
+    },
+    "settings": {
+      "unknownLanguage": "Unknown language “{{code}}”",
+      "languageByPolicy": "The language is set by your organization"
     },
     "secrets": {
       "keychain": "Cannot access the system secret store",

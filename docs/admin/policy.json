@@ -1,5 +1,6 @@
 {
   "updatesEnabled": false,
   "updateUrl": "https://mirror.example.corp/glafira-kafka/latest.json",
-  "licenseKey": "<ключ организации>"
+  "licenseKey": "<ключ организации>",
+  "language": "en"
 }

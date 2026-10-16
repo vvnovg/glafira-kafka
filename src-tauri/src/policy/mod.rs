@@ -11,6 +11,7 @@ use crate::i18n::LocalizedText;
 pub const KEY_UPDATES_ENABLED: &str = "updatesEnabled";
 pub const KEY_UPDATE_URL: &str = "updateUrl";
 pub const KEY_LICENSE_KEY: &str = "licenseKey";
+pub const KEY_LANGUAGE: &str = "language";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PolicyValue {
@@ -68,6 +69,8 @@ pub struct PolicyStatus {
     pub updates_enabled: bool,
     pub update_url: Option<String>,
     pub has_license_key: bool,
+    /// Язык интерфейса, заданный администратором.
+    pub language: Option<String>,
     pub errors: Vec<LocalizedText>,
 }
 
@@ -79,6 +82,7 @@ impl Default for PolicyStatus {
             updates_enabled: true,
             update_url: None,
             has_license_key: false,
+            language: None,
             errors: Vec::new(),
         }
     }
@@ -140,6 +144,21 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                 license_key = Some(s.trim().to_string());
                 status.has_license_key = true;
             }
+            (KEY_LANGUAGE, PolicyValue::Str(s))
+                if crate::settings::LANGUAGES
+                    .iter()
+                    .any(|(c, _)| *c == s.trim()) =>
+            {
+                status.language = Some(s.trim().to_string());
+            }
+            // Неверный язык не отключает обновления: это не ограничение, а только настройка вида.
+            (KEY_LANGUAGE, PolicyValue::Str(s)) => status.errors.push(ltext!(
+                "errors.policy.badLanguage",
+                "{{key}}: unknown language “{{value}}”",
+                key = key,
+                value = s
+            )),
+            (KEY_LANGUAGE, other) => status.errors.push(other.invalid(&key)),
             (KEY_UPDATES_ENABLED | KEY_UPDATE_URL | KEY_LICENSE_KEY, other) => {
                 broken = true;
                 status.errors.push(other.invalid(&key));
@@ -200,6 +219,33 @@ mod tests {
         assert!(p.status.has_license_key);
         assert_eq!(p.license_key.as_deref(), Some("abc.def"));
         assert!(p.status.errors.is_empty());
+    }
+
+    #[test]
+    fn language_policy() {
+        let p = resolve(
+            "src",
+            values(&[("language", PolicyValue::Str("de".into()))]),
+        );
+        assert_eq!(p.status.language.as_deref(), Some("de"));
+        assert!(p.status.errors.is_empty());
+
+        let p = resolve(
+            "src",
+            values(&[("language", PolicyValue::Str("xx".into()))]),
+        );
+        assert_eq!(p.status.language, None);
+        assert!(
+            p.status.updates_enabled,
+            "неизвестный язык не выключает обновления"
+        );
+        assert_eq!(p.status.errors[0].key, "errors.policy.badLanguage");
+        assert_eq!(p.status.errors[0].params["value"], "xx");
+
+        let p = resolve("src", values(&[("language", PolicyValue::Bool(true))]));
+        assert_eq!(p.status.language, None);
+        assert!(p.status.updates_enabled);
+        assert_eq!(p.status.errors[0].key, "errors.policy.invalidBool");
     }
 
     #[test]

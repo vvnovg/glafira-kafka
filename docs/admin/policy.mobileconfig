@@ -12,6 +12,7 @@
       <key>updatesEnabled</key><false/>
       <key>updateUrl</key><string>https://mirror.example.corp/glafira-kafka/latest.json</string>
       <key>licenseKey</key><string>&lt;ключ организации&gt;</string>
+      <key>language</key><string>en</string>
     </dict>
   </array>
   <key>PayloadDisplayName</key><string>Glafira for Apache Kafka policy</string>

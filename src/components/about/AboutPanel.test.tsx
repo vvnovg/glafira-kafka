@@ -83,4 +83,18 @@ describe("AboutPanel", () => {
     await user.click(screen.getByRole("button", { name: "Повторить" }));
     expect(await screen.findByText("Установлена последняя версия")).toBeInTheDocument();
   });
+
+  it("ошибки политики видны в «О программе»", async () => {
+    vi.mocked(api.getPolicyStatus).mockResolvedValueOnce({
+      managed: true,
+      source: "/etc/x/policy.json",
+      updatesEnabled: false,
+      updateUrl: null,
+      hasLicenseKey: false,
+      errors: ["updateUrl: нужен адрес https:// — обновления по http не загружаются"],
+    });
+    renderWithClient(<AboutPanel />);
+    expect(await screen.findByText(/нужен адрес https/)).toBeInTheDocument();
+    expect(screen.getByText("задана")).toBeInTheDocument();
+  });
 });

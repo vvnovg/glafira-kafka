@@ -38,6 +38,11 @@ export function AboutPanel() {
         <div><dt>Тариф</dt><dd>{license.data ? (license.data.tier === "pro" ? "Pro" : "Free") : "…"}</dd></div>
         <div><dt>Политика организации</dt><dd>{policy.data ? (policy.data.managed ? "задана" : "нет") : "…"}</dd></div>
       </dl>
+      {policy.data?.errors.map((e) => (
+        <p key={e} className="warn">
+          Политика организации: {e}
+        </p>
+      ))}
       <p className="muted">Данные: <code>{i.dataDir}</code></p>
       <p className="muted">Логи: <code>{i.logDir}</code></p>
       <UpdatesSection />

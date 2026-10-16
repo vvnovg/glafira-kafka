@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { useTranslation } from "react-i18next";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import type { CertFormat, ClientCert, TlsConfig } from "../../api/types";
 import { formatFromPath, newClientCert } from "./profile";
@@ -26,13 +27,14 @@ async function pickFile(onPath: (p: string) => void) {
 }
 
 function PathRow(props: { id: string; label: string; value: string; placeholder?: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation();
   return (
     <>
       <label htmlFor={props.id}>{props.label}</label>
       <div className="path-field">
         <input id={props.id} placeholder={props.placeholder} value={props.value} onChange={(e) => props.onChange(e.target.value)} />
-        <button type="button" aria-label={`Выбрать файл: ${props.label}`} onClick={() => void pickFile(props.onChange)}>
-          Выбрать…
+        <button type="button" aria-label={t("connections.tls.pickAria", { label: props.label })} onClick={() => void pickFile(props.onChange)}>
+          {t("connections.tls.pick")}
         </button>
       </div>
     </>
@@ -55,6 +57,7 @@ function FormatRow(props: { id: string; label: string; value: CertFormat; onChan
 }
 
 function PasswordRow(props: { id: string; label: string; value: SecretField; isNew: boolean; onChange: (v: SecretField) => void }) {
+  const { t } = useTranslation();
   return (
     <>
       <label htmlFor={props.id}>{props.label}</label>
@@ -63,7 +66,7 @@ function PasswordRow(props: { id: string; label: string; value: SecretField; isN
           id={props.id}
           type="password"
           autoComplete="off"
-          placeholder={props.isNew ? "без пароля" : "оставьте пустым, чтобы не менять"}
+          placeholder={props.isNew ? t("connections.tls.noPassword") : t("connections.form.passwordKeep")}
           disabled={props.value.clear}
           value={props.value.text}
           onChange={(e) => props.onChange({ text: e.target.value, clear: false })}
@@ -72,11 +75,11 @@ function PasswordRow(props: { id: string; label: string; value: SecretField; isN
           <label className="inline">
             <input
               type="checkbox"
-              aria-label={`Удалить сохранённый: ${props.label}`}
+              aria-label={t("connections.tls.clearAria", { label: props.label })}
               checked={props.value.clear}
               onChange={(e) => props.onChange({ text: "", clear: e.target.checked })}
             />{" "}
-            удалить сохранённый
+            {t("connections.tls.clear")}
           </label>
         )}
       </div>
@@ -94,6 +97,7 @@ interface Props {
 
 /** Строки сетки `.form`: доверенный CA и клиентский сертификат (mTLS). */
 export function TlsSection({ tls, onChange, secrets, onSecrets, isNew }: Props) {
+  const { t } = useTranslation();
   const uid = useId();
   const set = (patch: Partial<TlsConfig>) => onChange({ ...tls, ...patch });
   const cc = tls.clientCert;
@@ -104,23 +108,23 @@ export function TlsSection({ tls, onChange, secrets, onSecrets, isNew }: Props) 
     <>
       <PathRow
         id={`${uid}-ca`}
-        label="Доверенный CA"
-        placeholder="пусто — системные корневые сертификаты"
+        label={t("connections.tls.ca")}
+        placeholder={t("connections.tls.caPlaceholder")}
         value={tls.caLocation ?? ""}
         onChange={(v) => set({ caLocation: v || null, caFormat: formatFromPath(v) ?? tls.caFormat })}
       />
       {tls.caLocation && (
         <>
-          <FormatRow id={`${uid}-caf`} label="Формат CA" value={tls.caFormat} onChange={(caFormat) => set({ caFormat })} />
+          <FormatRow id={`${uid}-caf`} label={t("connections.tls.caFormat")} value={tls.caFormat} onChange={(caFormat) => set({ caFormat })} />
           {tls.caFormat !== "pem" && (
-            <PasswordRow id={`${uid}-tsp`} label="Пароль хранилища CA" value={secrets.truststore} isNew={isNew} onChange={setSecret("truststore")} />
+            <PasswordRow id={`${uid}-tsp`} label={t("connections.tls.truststorePassword")} value={secrets.truststore} isNew={isNew} onChange={setSecret("truststore")} />
           )}
         </>
       )}
-      <label htmlFor={`${uid}-verify`}>Проверять hostname</label>
+      <label htmlFor={`${uid}-verify`}>{t("connections.tls.verifyHostname")}</label>
       <input id={`${uid}-verify`} type="checkbox" checked={tls.verifyHostname} onChange={(e) => set({ verifyHostname: e.target.checked })} />
 
-      <label htmlFor={`${uid}-mtls`}>Клиентский сертификат (mTLS)</label>
+      <label htmlFor={`${uid}-mtls`}>{t("connections.tls.mtls")}</label>
       <input
         id={`${uid}-mtls`}
         type="checkbox"
@@ -131,28 +135,28 @@ export function TlsSection({ tls, onChange, secrets, onSecrets, isNew }: Props) 
         <>
           <PathRow
             id={`${uid}-cert`}
-            label="Сертификат клиента"
+            label={t("connections.tls.cert")}
             placeholder={cc.format === "pem" ? "tls.crt, client.pem" : "client.p12, keystore.jks"}
             value={cc.certificatePath}
             onChange={(v) => setCc({ certificatePath: v, format: formatFromPath(v) ?? cc.format })}
           />
-          <FormatRow id={`${uid}-certf`} label="Формат клиентского сертификата" value={cc.format} onChange={(format) => setCc({ format })} />
+          <FormatRow id={`${uid}-certf`} label={t("connections.tls.certFormat")} value={cc.format} onChange={(format) => setCc({ format })} />
           {cc.format === "pem" && (
-            <PathRow id={`${uid}-key`} label="Ключ клиента" placeholder="tls.key, client.key" value={cc.keyPath ?? ""} onChange={(v) => setCc({ keyPath: v })} />
+            <PathRow id={`${uid}-key`} label={t("connections.tls.key")} placeholder="tls.key, client.key" value={cc.keyPath ?? ""} onChange={(v) => setCc({ keyPath: v })} />
           )}
           {cc.format === "jks" && (
             <>
-              <label htmlFor={`${uid}-alias`}>Alias ключа</label>
-              <input id={`${uid}-alias`} placeholder="если ключей несколько" value={cc.alias ?? ""} onChange={(e) => setCc({ alias: e.target.value || null })} />
+              <label htmlFor={`${uid}-alias`}>{t("connections.tls.alias")}</label>
+              <input id={`${uid}-alias`} placeholder={t("connections.tls.aliasPlaceholder")} value={cc.alias ?? ""} onChange={(e) => setCc({ alias: e.target.value || null })} />
             </>
           )}
           {cc.format !== "pem" && (
-            <PasswordRow id={`${uid}-ksp`} label="Пароль хранилища клиента" value={secrets.keystore} isNew={isNew} onChange={setSecret("keystore")} />
+            <PasswordRow id={`${uid}-ksp`} label={t("connections.tls.keystorePassword")} value={secrets.keystore} isNew={isNew} onChange={setSecret("keystore")} />
           )}
           {cc.format !== "pkcs12" && (
             <PasswordRow
               id={`${uid}-kp`}
-              label={cc.format === "jks" ? "Пароль ключа (если отличается)" : "Пароль ключа (если зашифрован)"}
+              label={cc.format === "jks" ? t("connections.tls.keyPasswordJks") : t("connections.tls.keyPasswordPem")}
               value={secrets.key}
               isNew={isNew}
               onChange={setSecret("key")}

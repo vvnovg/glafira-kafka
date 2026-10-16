@@ -374,5 +374,57 @@
   "layout": {
     "closeTab": "Close tab",
     "empty": "Select a connection on the left or add a new one."
+  },
+  "connections": {
+    "form": {
+      "titleNew": "New connection",
+      "titleEdit": "Connection “{{name}}”",
+      "name": "Name",
+      "environment": "Environment",
+      "prodPro": "prod (Pro)",
+      "color": "Color",
+      "bootstrap": "Bootstrap servers",
+      "protocol": "Protocol",
+      "saslMechanism": "SASL mechanism",
+      "username": "Username",
+      "password": "Password",
+      "passwordKeep": "leave empty to keep unchanged",
+      "timeout": "Request timeout, ms",
+      "props": "Extra librdkafka properties",
+      "propsPlaceholder": "one key=value per line",
+      "propsLineError": "Line {{line}}: expected key=value",
+      "test": "Test connection",
+      "deleteGroup": "Delete confirmation",
+      "deleteConfirm": "Delete connection “{{name}}”?",
+      "deleteYes": "Yes, delete",
+      "busy": "Working…",
+      "deleted": "The connection was deleted.",
+      "step": {
+        "config": "Configuration",
+        "tcp": "DNS / TCP",
+        "kafka": "Kafka (TLS, SASL, metadata)"
+      }
+    },
+    "tls": {
+      "pick": "Browse…",
+      "pickAria": "Choose file: {{label}}",
+      "noPassword": "no password",
+      "clear": "delete saved",
+      "clearAria": "Delete saved: {{label}}",
+      "ca": "Trusted CA",
+      "caPlaceholder": "empty — system root certificates",
+      "caFormat": "CA format",
+      "truststorePassword": "CA store password",
+      "verifyHostname": "Verify hostname",
+      "mtls": "Client certificate (mTLS)",
+      "cert": "Client certificate",
+      "certFormat": "Client certificate format",
+      "key": "Client key",
+      "alias": "Key alias",
+      "aliasPlaceholder": "if there are several keys",
+      "keystorePassword": "Client store password",
+      "keyPasswordJks": "Key password (if different)",
+      "keyPasswordPem": "Key password (if encrypted)"
+    }
   }
 }

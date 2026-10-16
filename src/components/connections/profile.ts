@@ -1,3 +1,4 @@
+import { i18n } from "../../i18n";
 import type { CertFormat, ClientCert, ConnectionProfile, Protocol, SaslConfig, SecurityConfig, TlsConfig } from "../../api/types";
 
 export function newProfile(): ConnectionProfile {
@@ -52,7 +53,7 @@ export function parseProps(text: string): Record<string, string> {
     const line = raw.trim();
     if (!line || line.startsWith("#")) return;
     const eq = line.indexOf("=");
-    if (eq <= 0) throw new Error(`Строка ${i + 1}: ожидается key=value`);
+    if (eq <= 0) throw new Error(i18n.t("connections.form.propsLineError", { line: i + 1 }));
     out[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
   });
   return out;

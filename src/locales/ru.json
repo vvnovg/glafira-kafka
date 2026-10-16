@@ -374,5 +374,57 @@
   "layout": {
     "closeTab": "Закрыть вкладку",
     "empty": "Выберите подключение слева или добавьте новое."
+  },
+  "connections": {
+    "form": {
+      "titleNew": "Новое подключение",
+      "titleEdit": "Подключение «{{name}}»",
+      "name": "Имя",
+      "environment": "Окружение",
+      "prodPro": "prod (Pro)",
+      "color": "Цвет",
+      "bootstrap": "Bootstrap-серверы",
+      "protocol": "Протокол",
+      "saslMechanism": "Механизм SASL",
+      "username": "Пользователь",
+      "password": "Пароль",
+      "passwordKeep": "оставьте пустым, чтобы не менять",
+      "timeout": "Таймаут запроса, мс",
+      "props": "Доп. свойства librdkafka",
+      "propsPlaceholder": "key=value на строку",
+      "propsLineError": "Строка {{line}}: ожидается key=value",
+      "test": "Проверить подключение",
+      "deleteGroup": "Подтверждение удаления",
+      "deleteConfirm": "Удалить подключение «{{name}}»?",
+      "deleteYes": "Да, удалить",
+      "busy": "Выполняется…",
+      "deleted": "Подключение удалено.",
+      "step": {
+        "config": "Конфигурация",
+        "tcp": "DNS / TCP",
+        "kafka": "Kafka (TLS, SASL, метаданные)"
+      }
+    },
+    "tls": {
+      "pick": "Выбрать…",
+      "pickAria": "Выбрать файл: {{label}}",
+      "noPassword": "без пароля",
+      "clear": "удалить сохранённый",
+      "clearAria": "Удалить сохранённый: {{label}}",
+      "ca": "Доверенный CA",
+      "caPlaceholder": "пусто — системные корневые сертификаты",
+      "caFormat": "Формат CA",
+      "truststorePassword": "Пароль хранилища CA",
+      "verifyHostname": "Проверять hostname",
+      "mtls": "Клиентский сертификат (mTLS)",
+      "cert": "Сертификат клиента",
+      "certFormat": "Формат клиентского сертификата",
+      "key": "Ключ клиента",
+      "alias": "Alias ключа",
+      "aliasPlaceholder": "если ключей несколько",
+      "keystorePassword": "Пароль хранилища клиента",
+      "keyPasswordJks": "Пароль ключа (если отличается)",
+      "keyPasswordPem": "Пароль ключа (если зашифрован)"
+    }
   }
 }

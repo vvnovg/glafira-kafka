@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
@@ -12,9 +13,9 @@ import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./Tls
 const ENVIRONMENTS: Environment[] = ["local", "dev", "test", "stage", "prod"];
 const PROTOCOLS: Protocol[] = ["PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL"];
 const MECHANISMS: SaslMechanism[] = ["PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"];
-const STEP_LABELS = { config: "Конфигурация", tcp: "DNS / TCP", kafka: "Kafka (TLS, SASL, метаданные)" } as const;
 
 export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile; tabId: string }) {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(initial);
   const [password, setPassword] = useState("");
   const [tlsSecrets, setTlsSecrets] = useState<TlsSecrets>(emptyTlsSecrets);
@@ -85,13 +86,13 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   return (
     <div className="page">
       <div className="toolbar">
-        <h2>{isNew ? "Новое подключение" : `Подключение «${initial.name}»`}</h2>
+        <h2>{isNew ? t("connections.form.titleNew") : t("connections.form.titleEdit", { name: initial.name })}</h2>
       </div>
       <div className="form">
-        <label htmlFor="cf-name">Имя</label>
+        <label htmlFor="cf-name">{t("connections.form.name")}</label>
         <input id="cf-name" value={profile.name} onChange={(e) => update({ name: e.target.value })} />
 
-        <label htmlFor="cf-env">Окружение</label>
+        <label htmlFor="cf-env">{t("connections.form.environment")}</label>
         <select
           id="cf-env"
           value={profile.environment}
@@ -104,19 +105,19 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
             const proOnly = env === "prod" && locked && initial.environment !== "prod";
             return (
               <option key={env} value={env} disabled={proOnly}>
-                {proOnly ? "prod (Pro)" : env}
+                {proOnly ? t("connections.form.prodPro") : env}
               </option>
             );
           })}
         </select>
 
-        <label htmlFor="cf-ro">Только чтение</label>
+        <label htmlFor="cf-ro">{t("common.readOnly")}</label>
         <input id="cf-ro" type="checkbox" checked={profile.readOnly} onChange={(e) => update({ readOnly: e.target.checked })} />
 
-        <label htmlFor="cf-color">Цвет</label>
+        <label htmlFor="cf-color">{t("connections.form.color")}</label>
         <input id="cf-color" type="color" value={profile.color} onChange={(e) => update({ color: e.target.value })} />
 
-        <label htmlFor="cf-bootstrap">Bootstrap-серверы</label>
+        <label htmlFor="cf-bootstrap">{t("connections.form.bootstrap")}</label>
         <input
           id="cf-bootstrap"
           placeholder="host1:9092,host2:9092"
@@ -124,7 +125,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           onChange={(e) => update({ bootstrapServers: e.target.value })}
         />
 
-        <label htmlFor="cf-protocol">Протокол</label>
+        <label htmlFor="cf-protocol">{t("connections.form.protocol")}</label>
         <select id="cf-protocol" value={sec.protocol} onChange={(e) => update({ security: withProtocol(sec, e.target.value as Protocol) })}>
           {PROTOCOLS.map((p) => (
             <option key={p} value={p}>
@@ -145,7 +146,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
 
         {"sasl" in sec && (
           <>
-            <label htmlFor="cf-mech">Механизм SASL</label>
+            <label htmlFor="cf-mech">{t("connections.form.saslMechanism")}</label>
             <select
               id="cf-mech"
               value={sec.sasl.mechanism}
@@ -157,25 +158,25 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
                 </option>
               ))}
             </select>
-            <label htmlFor="cf-user">Пользователь</label>
+            <label htmlFor="cf-user">{t("connections.form.username")}</label>
             <input
               id="cf-user"
               value={sec.sasl.username}
               onChange={(e) => update({ security: { ...sec, sasl: { ...sec.sasl, username: e.target.value } } })}
             />
-            <label htmlFor="cf-pass">Пароль</label>
+            <label htmlFor="cf-pass">{t("connections.form.password")}</label>
             <input
               id="cf-pass"
               type="password"
               autoComplete="off"
-              placeholder={isNew ? "" : "оставьте пустым, чтобы не менять"}
+              placeholder={isNew ? "" : t("connections.form.passwordKeep")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </>
         )}
 
-        <label htmlFor="cf-timeout">Таймаут запроса, мс</label>
+        <label htmlFor="cf-timeout">{t("connections.form.timeout")}</label>
         <input
           id="cf-timeout"
           type="number"
@@ -185,35 +186,35 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           onChange={(e) => update({ requestTimeoutMs: Number(e.target.value) })}
         />
 
-        <label htmlFor="cf-props">Доп. свойства librdkafka</label>
-        <textarea id="cf-props" rows={4} placeholder="key=value на строку" value={propsText} onChange={(e) => setPropsText(e.target.value)} />
+        <label htmlFor="cf-props">{t("connections.form.props")}</label>
+        <textarea id="cf-props" rows={4} placeholder={t("connections.form.propsPlaceholder")} value={propsText} onChange={(e) => setPropsText(e.target.value)} />
       </div>
 
       <div className="toolbar">
         <button type="button" disabled={busy} onClick={onTest}>
-          Проверить подключение
+          {t("connections.form.test")}
         </button>
         <button type="button" className="primary" disabled={busy} onClick={onSave}>
-          Сохранить
+          {t("common.save")}
         </button>
         {!isNew && (
           confirmingDelete ? (
-            <span role="group" aria-label="Подтверждение удаления">
-              <strong>Удалить подключение «{profile.name}»?</strong>{" "}
+            <span role="group" aria-label={t("connections.form.deleteGroup")}>
+              <strong>{t("connections.form.deleteConfirm", { name: profile.name })}</strong>{" "}
               <button type="button" className="danger" disabled={busy} onClick={onDelete}>
-                Да, удалить
+                {t("connections.form.deleteYes")}
               </button>{" "}
               <button type="button" disabled={busy} onClick={() => setConfirmingDelete(false)}>
-                Отмена
+                {t("common.cancel")}
               </button>
             </span>
           ) : (
             <button type="button" className="danger" disabled={busy} onClick={() => setConfirmingDelete(true)}>
-              Удалить
+              {t("common.delete")}
             </button>
           )
         )}
-        {busy && <span className="muted">Выполняется…</span>}
+        {busy && <span className="muted">{t("connections.form.busy")}</span>}
       </div>
 
       {error && <ErrorBanner error={error} />}
@@ -222,7 +223,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         <ul className="steps">
           {report.steps.map((s) => (
             <li key={s.name}>
-              {s.ok ? "✅" : "❌"} <strong>{STEP_LABELS[s.name]}:</strong> <span>{tr(s.message)}</span>
+              {s.ok ? "✅" : "❌"} <strong>{t(`connections.form.step.${s.name}`)}:</strong> <span>{tr(s.message)}</span>
               {s.error?.details && <pre className="muted">{s.error.details}</pre>}
             </li>
           ))}

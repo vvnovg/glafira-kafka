@@ -5,6 +5,7 @@ pub mod error;
 pub mod guard;
 pub mod kafka;
 pub mod license;
+pub mod migrate;
 pub mod policy;
 pub mod produce;
 pub mod product;
@@ -39,13 +40,32 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
+            // Каталог данных Tauri — `<базовый каталог>/<identifier>`: прежние лежат рядом.
+            if let Some(parent) = dir.parent() {
+                let report = crate::migrate::migrate(
+                    &dir,
+                    &crate::migrate::legacy_sources(parent),
+                    &KeyringStore::default(),
+                );
+                if let Some(from) = &report.from {
+                    tracing::info!(
+                        from,
+                        files = report.files.len(),
+                        secrets = report.secrets,
+                        "миграция данных"
+                    );
+                }
+                for e in &report.errors {
+                    tracing::warn!("миграция: {e}");
+                }
+            }
             let policy = crate::policy::sources::load();
             tracing::info!(
                 managed = policy.status.managed,
                 updates = policy.status.updates_enabled,
                 "политика"
             );
-            let st = AppState::new(&dir, Arc::new(KeyringStore))?.with_policy(policy);
+            let st = AppState::new(&dir, Arc::new(KeyringStore::default()))?.with_policy(policy);
             tracing::info!(tier = ?st.license.status().tier, "лицензия");
             app.manage(st);
             Ok(())

@@ -32,12 +32,23 @@ jobs:
       - name: Системные зависимости Tauri
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake libcurl4-openssl-dev libsasl2-dev
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm build
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      - name: Лицензии (формат и утилита)
+        run: |
+          cargo test --manifest-path crates/license-format/Cargo.toml --all-features
+          cargo test --manifest-path tools/issue-license/Cargo.toml
+          cargo clippy --manifest-path crates/license-format/Cargo.toml --all-features -- -D warnings
+          cargo clippy --manifest-path tools/issue-license/Cargo.toml -- -D warnings
+      - name: Закрытые ключи лицензий не в репозитории
+        run: |
+          if git ls-files | grep -E '(^|/)license-signing\.key$'; then
+            echo "::error::в репозитории закрытый ключ лицензий"; exit 1
+          fi
       - name: Kafka
         run: |
           docker compose -f dev/docker-compose.yml up -d
@@ -47,6 +58,7 @@ jobs:
         env:
           KE_IT_BOOTSTRAP: localhost:9092
           KE_IT_SASL_BOOTSTRAP: localhost:9094
+          KE_IT_MTLS_BOOTSTRAP: localhost:9095
 
   platforms:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')

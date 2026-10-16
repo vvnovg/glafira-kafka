@@ -4,11 +4,15 @@ pub mod consume;
 pub mod error;
 pub mod guard;
 pub mod kafka;
+pub mod license;
+pub mod policy;
 pub mod produce;
+pub mod product;
 pub mod secrets;
 pub mod state;
 pub mod storage;
 pub mod sync;
+pub mod tls;
 
 use std::sync::Arc;
 
@@ -35,7 +39,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
-            app.manage(AppState::new(&dir, Arc::new(KeyringStore))?);
+            let policy = crate::policy::sources::load();
+            tracing::info!(
+                managed = policy.status.managed,
+                updates = policy.status.updates_enabled,
+                "политика"
+            );
+            let st = AppState::new(&dir, Arc::new(KeyringStore))?.with_policy(policy);
+            tracing::info!(tier = ?st.license.status().tier, "лицензия");
+            app.manage(st);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -77,6 +89,10 @@ pub fn run() {
             commands::consume::pause_partitions,
             commands::consume::resume_partitions,
             commands::consume::suggest_group_id,
+            commands::license::get_policy_status,
+            commands::license::get_license_status,
+            commands::license::set_license_key,
+            commands::license::remove_license_key,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

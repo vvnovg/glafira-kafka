@@ -1,0 +1,7 @@
+# librdkafka (rdkafka-sys, cmake-build) on Windows is built without snappy unless
+# the CMake variable WITH_SNAPPY is set; the cmake crate reads
+# CMAKE_TOOLCHAIN_FILE_<target> and passes it to CMake. See the .cmake file.
+# Only rdkafka-sys uses the cmake crate in this workspace.
+[env]
+CMAKE_TOOLCHAIN_FILE_x86_64_pc_windows_msvc = { value = "src-tauri/cmake/rdkafka-windows.cmake", relative = true }
+CMAKE_TOOLCHAIN_FILE_aarch64_pc_windows_msvc = { value = "src-tauri/cmake/rdkafka-windows.cmake", relative = true }

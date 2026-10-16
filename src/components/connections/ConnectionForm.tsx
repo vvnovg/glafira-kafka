@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
-import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport } from "../../api/types";
+import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
+import { useLicense } from "../../lib/useLicense";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { formatProps, parseProps, withProtocol } from "./profile";
+import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./TlsSection";
 
 const ENVIRONMENTS: Environment[] = ["local", "dev", "test", "stage", "prod"];
 const PROTOCOLS: Protocol[] = ["PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL"];
@@ -14,6 +16,7 @@ const STEP_LABELS = { config: "Конфигурация", tcp: "DNS / TCP", kafk
 export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile; tabId: string }) {
   const [profile, setProfile] = useState(initial);
   const [password, setPassword] = useState("");
+  const [tlsSecrets, setTlsSecrets] = useState<TlsSecrets>(emptyTlsSecrets);
   const [propsText, setPropsText] = useState(formatProps(initial.extraProperties));
   const [report, setReport] = useState<TestReport | null>(null);
   const [error, setError] = useState<AppError | null>(null);
@@ -25,10 +28,20 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const close = useWorkspace((s) => s.close);
   const closeForConnection = useWorkspace((s) => s.closeForConnection);
   const isNew = initial.id === "";
+  const { locked } = useLicense();
   const sec = profile.security;
 
   const update = (patch: Partial<ConnectionProfile>) => setProfile((p) => ({ ...p, ...patch }));
   const current = (): ConnectionProfile => ({ ...profile, extraProperties: parseProps(propsText) });
+
+  const tlsPasswords = (): TlsPasswordsInput | undefined =>
+    "tls" in profile.security
+      ? {
+          keyPassword: secretValue(tlsSecrets.key),
+          keystorePassword: secretValue(tlsSecrets.keystore),
+          truststorePassword: secretValue(tlsSecrets.truststore),
+        }
+      : undefined;
 
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -45,12 +58,12 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const onTest = () =>
     run(async () => {
       setReport(null);
-      setReport(await api.testConnection(current(), password || undefined));
+      setReport(await api.testConnection(current(), password || undefined, tlsPasswords()));
     });
 
   const onSave = () =>
     run(async () => {
-      const saved = await api.saveConnection(current(), password || undefined);
+      const saved = await api.saveConnection(current(), password || undefined, tlsPasswords());
       await queryClient.invalidateQueries({ queryKey: ["connections"] });
       queryClient.removeQueries({ predicate: (q) => q.queryKey[1] === saved.id });
       close(tabId);
@@ -86,11 +99,14 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
             update({ environment, readOnly: isNew && environment === "prod" ? true : profile.readOnly });
           }}
         >
-          {ENVIRONMENTS.map((env) => (
-            <option key={env} value={env}>
-              {env}
-            </option>
-          ))}
+          {ENVIRONMENTS.map((env) => {
+            const proOnly = env === "prod" && locked && initial.environment !== "prod";
+            return (
+              <option key={env} value={env} disabled={proOnly}>
+                {proOnly ? "prod (Pro)" : env}
+              </option>
+            );
+          })}
         </select>
 
         <label htmlFor="cf-ro">Только чтение</label>
@@ -117,22 +133,13 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         </select>
 
         {"tls" in sec && (
-          <>
-            <label htmlFor="cf-ca">CA-сертификат (путь к PEM)</label>
-            <input
-              id="cf-ca"
-              placeholder="пусто — системное хранилище"
-              value={sec.tls.caLocation ?? ""}
-              onChange={(e) => update({ security: { ...sec, tls: { ...sec.tls, caLocation: e.target.value || null } } })}
-            />
-            <label htmlFor="cf-verify">Проверять hostname</label>
-            <input
-              id="cf-verify"
-              type="checkbox"
-              checked={sec.tls.verifyHostname}
-              onChange={(e) => update({ security: { ...sec, tls: { ...sec.tls, verifyHostname: e.target.checked } } })}
-            />
-          </>
+          <TlsSection
+            tls={sec.tls}
+            onChange={(tls) => update({ security: { ...sec, tls } })}
+            secrets={tlsSecrets}
+            onSecrets={setTlsSecrets}
+            isNew={isNew}
+          />
         )}
 
         {"sasl" in sec && (

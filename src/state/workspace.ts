@@ -14,7 +14,8 @@ export type TabSpec =
   | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill }
   | { kind: "producer"; connectionId: string; prefill?: ProducerPrefill }
   | { kind: "consumer"; connectionId: string; key: string; topic?: string; groupId?: string }
-  | { kind: "connection-form"; connectionId: string | null };
+  | { kind: "connection-form"; connectionId: string | null }
+  | { kind: "license" };
 
 export type Tab = TabSpec & { id: string };
 
@@ -28,6 +29,8 @@ export function tabId(spec: TabSpec): string {
       return `consumer:${spec.connectionId}:${spec.key}`;
     case "connection-form":
       return `connection-form:${spec.connectionId ?? "new"}`;
+    case "license":
+      return "license";
     default:
       return `${spec.kind}:${spec.connectionId}`;
   }
@@ -67,9 +70,9 @@ export const useWorkspace = create<WorkspaceState>((set) => ({
     }),
   closeForConnection: (connectionId) =>
     set((s) => {
-      const firstIdx = s.tabs.findIndex((t) => t.connectionId === connectionId);
+      const firstIdx = s.tabs.findIndex((t) => ("connectionId" in t ? t.connectionId : null) === connectionId);
       if (firstIdx < 0) return s;
-      const tabs = s.tabs.filter((t) => t.connectionId !== connectionId);
+      const tabs = s.tabs.filter((t) => ("connectionId" in t ? t.connectionId : null) !== connectionId);
       const activeId = tabs.some((t) => t.id === s.activeId)
         ? s.activeId
         : (tabs[firstIdx] ?? tabs[tabs.length - 1])?.id ?? null;

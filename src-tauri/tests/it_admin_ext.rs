@@ -6,10 +6,8 @@ use kafka_explorer_lib::kafka::admin_ext::{
     alter_consumer_group_offsets, describe_consumer_groups, incremental_alter_topic_configs,
     list_consumer_group_offsets, list_consumer_groups,
 };
-use kafka_explorer_lib::kafka::configs::describe_configs;
 use kafka_explorer_lib::kafka::pool::KafkaHandles;
 use kafka_explorer_lib::secrets::MemoryStore;
-use rdkafka::admin::ResourceSpecifier;
 use rdkafka::consumer::Consumer;
 use rdkafka::types::RDKafkaErrorCode;
 
@@ -29,14 +27,6 @@ fn alter(
     incremental_alter_topic_configs(&h.admin, h.timeout, topic, &changes)
         .expect("запрос выполнен")
         .map_err(|e| e.code)
-}
-
-async fn config(h: &Arc<KafkaHandles>, topic: &str, name: &str) -> (Option<String>, bool) {
-    let entries = describe_configs(h, ResourceSpecifier::Topic(topic))
-        .await
-        .unwrap();
-    let e = entries.iter().find(|e| e.name == name).unwrap();
-    (e.value.clone(), e.is_default)
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -61,12 +51,17 @@ async fn incremental_alter_sets_and_deletes_without_touching_other_configs() {
     })
     .await
     .unwrap();
+    let expected = (Some("123456".to_string()), false);
     assert_eq!(
-        config(&h, &topic, "retention.ms").await,
-        (Some("123456".into()), false)
+        common::topic_config_eventually(&h, &topic, "retention.ms", |v| *v == expected).await,
+        expected
     );
     assert_eq!(
-        config(&h, &topic, "cleanup.policy").await.0.as_deref(),
+        common::topic_config_eventually(&h, &topic, "cleanup.policy", |v| v.0.as_deref()
+            == Some("compact"))
+        .await
+        .0
+        .as_deref(),
         Some("compact")
     );
 
@@ -76,11 +71,16 @@ async fn incremental_alter_sets_and_deletes_without_touching_other_configs() {
         .await
         .unwrap();
     assert!(
-        config(&h, &topic, "retention.ms").await.1,
+        common::topic_config_eventually(&h, &topic, "retention.ms", |v| v.1)
+            .await
+            .1,
         "retention.ms снова default"
     );
     assert_eq!(
-        config(&h, &topic, "cleanup.policy").await.0.as_deref(),
+        common::topic_config(&h, &topic, "cleanup.policy")
+            .await
+            .0
+            .as_deref(),
         Some("compact")
     );
 }

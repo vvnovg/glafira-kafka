@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Закрытые ключи лицензий (кроме тестовых dev-ключей)
+license-signing.key
+tools/issue-license/target
+crates/license-format/target

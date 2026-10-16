@@ -1216,10 +1216,12 @@ productbuild "${ARGS[@]}" "$OUT"
 
 - [ ] **Step 3: Локальная сборка (macOS)**
 
-Run: `pnpm tauri build --bundles app,dmg && scripts/make-pkg.sh "src-tauri/target/release/bundle/macos/<NAME>.app" /tmp/test.pkg && pkgutil --payload-files /tmp/test.pkg | head -3`
+Run: `KE_ALLOW_DEV_LICENSE_KEY=1 pnpm tauri build --bundles app,dmg && scripts/make-pkg.sh "src-tauri/target/release/bundle/macos/<NAME>.app" /tmp/test.pkg && pkgutil --payload-files /tmp/test.pkg | head -3`
 Expected:
 - `.dmg` и `.app` собраны;
 - `pkgutil` показывает `./<NAME>.app/...`.
+
+`KE_ALLOW_DEV_LICENSE_KEY=1` нужен, пока в `src-tauri/license-public.key` лежит dev-ключ: `build.rs` (M3a) блокирует с ним release-сборку. CI релиза эту переменную не задаёт.
 
 Подпись updater: без `TAURI_SIGNING_PRIVATE_KEY` Tauri предупредит или упадёт на `createUpdaterArtifacts`. Для локальной проверки задайте `TAURI_SIGNING_PRIVATE_KEY` из `~/.tauri/<SLUG>-updater.key` (с согласия пользователя: файл его) или временно соберите с `--config '{"bundle":{"createUpdaterArtifacts":false}}'`. Опишите в отчёте, какой вариант использован.
 
@@ -1517,7 +1519,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake rpm
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake libcurl4-openssl-dev libsasl2-dev rpm
       - run: pnpm install --frozen-lockfile
       - name: Подпись Apple (если заданы секреты)
         if: runner.os == 'macOS'

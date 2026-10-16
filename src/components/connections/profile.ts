@@ -1,4 +1,4 @@
-import type { ConnectionProfile, Protocol, SaslConfig, SecurityConfig, TlsConfig } from "../../api/types";
+import type { CertFormat, ClientCert, ConnectionProfile, Protocol, SaslConfig, SecurityConfig, TlsConfig } from "../../api/types";
 
 export function newProfile(): ConnectionProfile {
   return {
@@ -14,7 +14,20 @@ export function newProfile(): ConnectionProfile {
   };
 }
 
-const DEFAULT_TLS: TlsConfig = { caLocation: null, verifyHostname: true };
+const DEFAULT_TLS: TlsConfig = { caLocation: null, caFormat: "pem", verifyHostname: true, clientCert: null };
+
+export function newClientCert(): ClientCert {
+  return { format: "pem", certificatePath: "", keyPath: "", alias: null };
+}
+
+/** Формат по расширению файла; null — не угадали, пользователь выбирает сам. */
+export function formatFromPath(path: string): CertFormat | null {
+  const ext = path.toLowerCase().split(/[\\/]/).pop()?.split(".").pop() ?? "";
+  if (ext === "p12" || ext === "pfx") return "pkcs12";
+  if (ext === "jks" || ext === "keystore" || ext === "truststore") return "jks";
+  if (ext === "pem" || ext === "crt" || ext === "cer" || ext === "key") return "pem";
+  return null;
+}
 const DEFAULT_SASL: SaslConfig = { mechanism: "PLAIN", username: "" };
 
 export function withProtocol(sec: SecurityConfig, protocol: Protocol): SecurityConfig {

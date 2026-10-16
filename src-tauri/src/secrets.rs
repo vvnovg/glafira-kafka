@@ -1,16 +1,25 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use crate::error::{AppError, AppResult};
+use crate::kafka::config::{
+    SASL_PASSWORD, SSL_KEY_PASSWORD, SSL_KEYSTORE_PASSWORD, SSL_TRUSTSTORE_PASSWORD,
+};
 use crate::sync::MutexExt;
-
-const SERVICE: &str = "kafka-explorer";
 
 pub trait SecretStore: Send + Sync {
     fn get(&self, key: &str) -> AppResult<Option<String>>;
     fn set(&self, key: &str, value: &str) -> AppResult<()>;
     fn delete(&self, key: &str) -> AppResult<()>;
 }
+
+/// Все секреты подключения в keychain (для удаления и миграции).
+pub const CONNECTION_SECRET_FIELDS: [&str; 4] = [
+    SASL_PASSWORD,
+    SSL_KEY_PASSWORD,
+    SSL_KEYSTORE_PASSWORD,
+    SSL_TRUSTSTORE_PASSWORD,
+];
 
 pub fn secret_key(connection_id: &str, field: &str) -> String {
     format!("{connection_id}/{field}")
@@ -25,7 +34,8 @@ fn keyring_err(e: keyring::Error) -> AppError {
 
 impl SecretStore for KeyringStore {
     fn get(&self, key: &str) -> AppResult<Option<String>> {
-        let entry = keyring::Entry::new(SERVICE, key).map_err(keyring_err)?;
+        let entry =
+            keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key).map_err(keyring_err)?;
         match entry.get_password() {
             Ok(v) => Ok(Some(v)),
             Err(keyring::Error::NoEntry) => Ok(None),
@@ -34,13 +44,14 @@ impl SecretStore for KeyringStore {
     }
 
     fn set(&self, key: &str, value: &str) -> AppResult<()> {
-        keyring::Entry::new(SERVICE, key)
+        keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key)
             .and_then(|e| e.set_password(value))
             .map_err(keyring_err)
     }
 
     fn delete(&self, key: &str) -> AppResult<()> {
-        let entry = keyring::Entry::new(SERVICE, key).map_err(keyring_err)?;
+        let entry =
+            keyring::Entry::new(crate::product::KEYCHAIN_SERVICE, key).map_err(keyring_err)?;
         match entry.delete_credential() {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(e) => Err(keyring_err(e)),
@@ -71,6 +82,31 @@ impl SecretStore for MemoryStore {
     }
 }
 
+/// Несохранённые значения из формы поверх keychain (проверка подключения до сохранения).
+/// `Some("")` в `overrides` — «пароль удалён».
+pub struct OverlayStore {
+    pub base: Arc<dyn SecretStore>,
+    pub overrides: HashMap<String, String>,
+}
+
+impl SecretStore for OverlayStore {
+    fn get(&self, key: &str) -> AppResult<Option<String>> {
+        match self.overrides.get(key) {
+            Some(v) if v.is_empty() => Ok(None),
+            Some(v) => Ok(Some(v.clone())),
+            None => self.base.get(key),
+        }
+    }
+
+    fn set(&self, _: &str, _: &str) -> AppResult<()> {
+        Err(AppError::internal("OverlayStore только для чтения"))
+    }
+
+    fn delete(&self, _: &str) -> AppResult<()> {
+        Err(AppError::internal("OverlayStore только для чтения"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -89,5 +125,23 @@ mod tests {
     #[test]
     fn key_format() {
         assert_eq!(secret_key("c1", "sasl.password"), "c1/sasl.password");
+    }
+
+    #[test]
+    fn overlay_prefers_overrides_and_empty_means_absent() {
+        let base = Arc::new(MemoryStore::default());
+        base.set("c/a", "base-a").unwrap();
+        base.set("c/b", "base-b").unwrap();
+        let mut overrides = HashMap::new();
+        overrides.insert("c/a".to_string(), "new-a".to_string());
+        overrides.insert("c/b".to_string(), String::new());
+        let o = OverlayStore { base, overrides };
+        assert_eq!(o.get("c/a").unwrap().as_deref(), Some("new-a"));
+        assert_eq!(
+            o.get("c/b").unwrap(),
+            None,
+            "пустое значение — пароль удалён"
+        );
+        assert_eq!(o.get("c/x").unwrap(), None);
     }
 }

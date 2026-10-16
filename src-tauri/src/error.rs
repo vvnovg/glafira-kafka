@@ -14,6 +14,7 @@ pub enum ErrorCode {
     ReadOnly,
     ConfirmationRequired,
     GroupNotEmpty,
+    ProRequired,
     Internal,
 }
 
@@ -100,6 +101,27 @@ pub fn classify_message(text: &str) -> Option<ErrorCode> {
     }
 }
 
+/// Уточнение TLS-ошибки по тексту librdkafka/OpenSSL. Имя хоста проверяется раньше общего
+/// «certificate verify failed», в который оно вложено.
+fn tls_message(text: &str) -> &'static str {
+    let t = text.to_lowercase();
+    if t.contains("plaintext broker listener") {
+        "На этом адресе брокер принимает соединения без TLS — проверьте порт или выберите протокол без SSL"
+    } else if t.contains("hostname mismatch") || t.contains("ip address mismatch") {
+        "Имя хоста брокера не совпадает с его сертификатом"
+    } else if t.contains("certificate verify failed") {
+        "Сертификат брокера не подписан доверенным CA — проверьте «Доверенный CA»"
+    } else if t.contains("certificate required")
+        || t.contains("bad certificate")
+        || t.contains("unknown ca")
+        || t.contains("certificate unknown")
+    {
+        "Брокер не принял клиентский сертификат"
+    } else {
+        "Ошибка TLS-соединения"
+    }
+}
+
 /// `client_error` — последняя ошибка из `ClientContext::error`. Она точнее
 /// ошибки операции: при проблеме с TLS сама операция падает просто по таймауту.
 pub fn from_kafka(err: &KafkaError, client_error: Option<&str>) -> AppError {
@@ -108,17 +130,17 @@ pub fn from_kafka(err: &KafkaError, client_error: Option<&str>) -> AppError {
         .and_then(classify_message)
         .or_else(|| classify_message(&op))
         .unwrap_or(ErrorCode::Internal);
+    let details = match client_error {
+        Some(c) => format!("{op}\n{c}"),
+        None => op,
+    };
     let message = match code {
         ErrorCode::ConnectionFailed => "Не удалось подключиться к брокерам",
-        ErrorCode::TlsError => "Ошибка TLS-соединения",
+        ErrorCode::TlsError => tls_message(&details),
         ErrorCode::AuthFailed => "Ошибка аутентификации",
         ErrorCode::NotAuthorized => "Недостаточно прав для операции",
         ErrorCode::Timeout => "Операция не уложилась в таймаут",
         _ => "Ошибка Kafka",
-    };
-    let details = match client_error {
-        Some(c) => format!("{op}\n{c}"),
-        None => op,
     };
     AppError::new(code, message).with_details(details)
 }
@@ -178,6 +200,41 @@ mod tests {
     }
 
     #[test]
+    fn tls_errors_get_specific_messages() {
+        let err = KafkaError::MetadataFetch(RDKafkaErrorCode::OperationTimedOut);
+        for (client, expected) in [
+            (
+                "ssl://localhost:9092/bootstrap: SSL handshake failed: Disconnected: SSL connection closed by peer: connecting to a PLAINTEXT broker listener? (after 17ms in state SSL_HANDSHAKE)",
+                "без TLS",
+            ),
+            (
+                "ssl://h:9095/bootstrap: SSL handshake failed: error:0A000086:SSL routines::certificate verify failed: broker certificate could not be verified",
+                "не подписан доверенным CA",
+            ),
+            (
+                "ssl://h:9095/bootstrap: SSL handshake failed: certificate verify failed: Hostname mismatch",
+                "Имя хоста",
+            ),
+            (
+                "ssl://h:9095/bootstrap: SSL handshake failed: error:0A00045C:SSL routines::tlsv13 alert certificate required",
+                "не принял клиентский сертификат",
+            ),
+            (
+                "ssl://h:9095/bootstrap: SSL handshake failed: sslv3 alert bad certificate",
+                "не принял клиентский сертификат",
+            ),
+            (
+                "ssl://h:9095/bootstrap: SSL handshake failed: something new",
+                "Ошибка TLS-соединения",
+            ),
+        ] {
+            let app = from_kafka(&err, Some(client));
+            assert_eq!(app.code, ErrorCode::TlsError, "{client}");
+            assert!(app.message.contains(expected), "{client} → {}", app.message);
+        }
+    }
+
+    #[test]
     fn serializes_for_frontend() {
         let json = serde_json::to_value(AppError::invalid("плохо")).unwrap();
         assert_eq!(
@@ -192,6 +249,7 @@ mod tests {
             (ErrorCode::ReadOnly, "READ_ONLY"),
             (ErrorCode::ConfirmationRequired, "CONFIRMATION_REQUIRED"),
             (ErrorCode::GroupNotEmpty, "GROUP_NOT_EMPTY"),
+            (ErrorCode::ProRequired, "PRO_REQUIRED"),
         ] {
             assert_eq!(serde_json::to_value(code).unwrap(), name);
             assert!(!AppError::new(code, "x").retryable);

@@ -3,9 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
 import { formatCount } from "../../lib/format";
+import { PRO_HINT, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
 import { newConsumerKey, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
+import { ProLock } from "../common/ProLock";
 import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -27,6 +29,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const readOnly = connection?.readOnly === true;
+  const { locked } = useLicense();
   const queryClient = useQueryClient();
   const closeTab = useWorkspace((s) => s.close);
   const open = useWorkspace((s) => s.open);
@@ -65,11 +68,17 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         </button>
         <button
           type="button"
-          disabled={readOnly}
-          title={readOnly ? "Подключение только для чтения: вход в группу меняет её состояние" : undefined}
+          disabled={readOnly || locked}
+          title={readOnly ? "Подключение только для чтения: вход в группу меняет её состояние" : locked ? PRO_HINT : undefined}
           onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}
         >
           Читать как группа
+          {locked && (
+            <>
+              {" "}
+              <ProLock />
+            </>
+          )}
         </button>
       </div>
       {canMutate && connection && !t.internal && (

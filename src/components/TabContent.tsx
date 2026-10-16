@@ -6,10 +6,13 @@ import { TopicList } from "./topics/TopicList";
 import { GroupList } from "./groups/GroupList";
 import { GroupDetails } from "./groups/GroupDetails";
 import { ProducerPanel } from "./producer/ProducerPanel";
+import { LicensePanel } from "./license/LicensePanel";
 import { TopicDetails } from "./topics/TopicDetails";
 
 export function TabContent({ tab }: { tab: Tab }) {
   switch (tab.kind) {
+    case "license":
+      return <LicensePanel />;
     case "connection-form":
       return <ConnectionFormTab connectionId={tab.connectionId} tabId={tab.id} />;
     case "cluster":

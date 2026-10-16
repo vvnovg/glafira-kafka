@@ -9,6 +9,7 @@ export type ErrorCode =
   | "READ_ONLY"
   | "CONFIRMATION_REQUIRED"
   | "GROUP_NOT_EMPTY"
+  | "PRO_REQUIRED"
   | "INTERNAL";
 
 export interface AppError {
@@ -21,9 +22,27 @@ export interface AppError {
 export type Environment = "local" | "dev" | "test" | "stage" | "prod";
 export type SaslMechanism = "PLAIN" | "SCRAM-SHA-256" | "SCRAM-SHA-512";
 
+export type CertFormat = "pem" | "pkcs12" | "jks";
+
+export interface ClientCert {
+  format: CertFormat;
+  certificatePath: string;
+  keyPath: string | null;
+  alias: string | null;
+}
+
 export interface TlsConfig {
   caLocation: string | null;
+  caFormat: CertFormat;
   verifyHostname: boolean;
+  clientCert: ClientCert | null;
+}
+
+/** null — не менять сохранённый пароль, "" — удалить, иначе — новый пароль. */
+export interface TlsPasswordsInput {
+  keyPassword: string | null;
+  keystorePassword: string | null;
+  truststorePassword: string | null;
 }
 
 export interface SaslConfig {
@@ -440,3 +459,24 @@ export type ConsumeEvent =
   | { type: "recovered" }
   | { type: "finished"; consumed: number; matched: number }
   | { type: "error"; error: AppError };
+
+export type Tier = "free" | "pro";
+export type LicenseState = "none" | "valid" | "expiring" | "expired" | "invalid";
+export interface LicenseStatus {
+  tier: Tier;
+  state: LicenseState;
+  source: "policy" | "user" | null;
+  licensee: string | null;
+  kind: "personal" | "organization" | null;
+  expires: string | null;
+  daysLeft: number | null;
+  error: string | null;
+}
+export interface PolicyStatus {
+  managed: boolean;
+  source: string | null;
+  updatesEnabled: boolean;
+  updateUrl: string | null;
+  hasLicenseKey: boolean;
+  errors: string[];
+}

@@ -51,6 +51,7 @@ pub fn start_consumer_impl<S: ConsumeSink>(
     sink: S,
     confirm: Option<String>,
 ) -> AppResult<String> {
+    st.license.require_pro()?;
     let profile = st.guarded(&params.connection_id, confirm.as_deref())?;
     validate(&params)?;
     let secrets = st.secrets.clone();
@@ -98,6 +99,7 @@ pub async fn commit_offsets_impl(
     target: CommitTarget,
     confirm: Option<String>,
 ) -> AppResult<Vec<OffsetTarget>> {
+    st.license.require_pro()?;
     let (connection_id, tx) = st.consumers.get(&session_id)?;
     st.guarded(&connection_id, confirm.as_deref())?;
     let timeout = session_timeout(st, &connection_id)?;
@@ -117,6 +119,7 @@ pub async fn pause_partitions(
     session_id: String,
     partitions: Vec<TopicPartitionRef>,
 ) -> AppResult<()> {
+    state.license.require_pro()?;
     let (connection_id, tx) = state.consumers.get(&session_id)?;
     let timeout = session_timeout(state.inner(), &connection_id)?;
     blocking(move || {
@@ -135,6 +138,7 @@ pub async fn resume_partitions(
     session_id: String,
     partitions: Vec<TopicPartitionRef>,
 ) -> AppResult<()> {
+    state.license.require_pro()?;
     let (connection_id, tx) = state.consumers.get(&session_id)?;
     let timeout = session_timeout(state.inner(), &connection_id)?;
     blocking(move || {
@@ -176,7 +180,8 @@ mod tests {
 
     fn state() -> (tempfile::TempDir, AppState) {
         let dir = tempfile::tempdir().unwrap();
-        let st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        let mut st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        st.license = Arc::new(crate::license::pro_for_tests(dir.path()));
         for (id, env, ro) in [
             ("ro", Environment::Dev, true),
             ("prod", Environment::Prod, false),
@@ -246,5 +251,15 @@ mod tests {
             );
             std::thread::sleep(Duration::from_millis(50));
         }
+    }
+
+    #[test]
+    fn consumer_sessions_require_pro() {
+        let dir = tempfile::tempdir().unwrap();
+        let st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        st.connections.upsert(sample_profile("dev")).unwrap();
+        let e = start_consumer_impl(&st, params("dev", "g"), NullSink, None).unwrap_err();
+        assert_eq!(e.code, ErrorCode::ProRequired);
+        assert!(st.sessions.is_empty(), "сессия не зарегистрирована");
     }
 }

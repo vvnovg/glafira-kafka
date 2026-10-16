@@ -10,22 +10,12 @@ use kafka_explorer_lib::kafka::admin::{
     ConfigChange, NewTopicSpec, add_partitions, alter_topic_configs, create_topic, delete_topics,
     purge_topic, topic_partition_ids,
 };
-use kafka_explorer_lib::kafka::configs::describe_configs;
 use kafka_explorer_lib::kafka::pool::KafkaHandles;
 use kafka_explorer_lib::kafka::topics::topic_details;
 use kafka_explorer_lib::secrets::MemoryStore;
-use rdkafka::admin::ResourceSpecifier;
 
 fn handles(bs: &str) -> Arc<KafkaHandles> {
     Arc::new(KafkaHandles::create(&common::plaintext_profile(bs), &MemoryStore::default()).unwrap())
-}
-
-async fn config_value(h: &Arc<KafkaHandles>, topic: &str, name: &str) -> (Option<String>, bool) {
-    let entries = describe_configs(h, ResourceSpecifier::Topic(topic))
-        .await
-        .unwrap();
-    let e = entries.iter().find(|e| e.name == name).unwrap();
-    (e.value.clone(), e.is_default)
 }
 
 async fn wait_topic(bs: &str, name: &str, partitions: usize) {
@@ -58,7 +48,10 @@ async fn topic_lifecycle() {
         ErrorCode::InvalidInput
     );
     assert_eq!(
-        config_value(&h, &name, "retention.ms").await.0.as_deref(),
+        common::topic_config(&h, &name, "retention.ms")
+            .await
+            .0
+            .as_deref(),
         Some("600000")
     );
 
@@ -96,10 +89,18 @@ async fn topic_lifecycle() {
     .await
     .unwrap();
     assert_eq!(
-        config_value(&h, &name, "cleanup.policy").await.0.as_deref(),
+        common::topic_config_eventually(&h, &name, "cleanup.policy", |v| v.0.as_deref()
+            == Some("compact,delete"))
+        .await
+        .0
+        .as_deref(),
         Some("compact,delete")
     );
-    assert!(config_value(&h, &name, "retention.ms").await.1);
+    assert!(
+        common::topic_config_eventually(&h, &name, "retention.ms", |v| v.1)
+            .await
+            .1
+    );
 
     // add partitions 1 → 3
     add_partitions(&h, &name, 3).await.unwrap();
@@ -187,12 +188,16 @@ async fn cleanup_policies_in_one_request() {
     .await
     .unwrap()
     .unwrap();
-    let policies = kafka_explorer_lib::kafka::configs::describe_topic_policies(
-        &h,
-        &[a.to_string(), b.to_string()],
+    let names = [a.to_string(), b.to_string()];
+    let policies = common::eventually(
+        || async {
+            kafka_explorer_lib::kafka::configs::describe_topic_policies(&h, &names)
+                .await
+                .unwrap()
+        },
+        |p| p[1].cleanup_policy.as_deref() == Some("compact"),
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(policies[0].cleanup_policy.as_deref(), Some("delete"));
     assert_eq!(policies[1].cleanup_policy.as_deref(), Some("compact"));
 }

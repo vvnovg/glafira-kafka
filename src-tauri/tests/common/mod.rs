@@ -3,10 +3,13 @@
 use std::collections::BTreeMap;
 use std::future::Future;
 use std::ops::Deref;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use kafka_explorer_lib::kafka::configs::describe_configs;
+use kafka_explorer_lib::kafka::pool::KafkaHandles;
 use kafka_explorer_lib::storage::connections::{ConnectionProfile, Environment, SecurityConfig};
-use rdkafka::admin::{AdminClient, AdminOptions, NewTopic, TopicReplication};
+use rdkafka::admin::{AdminClient, AdminOptions, NewTopic, ResourceSpecifier, TopicReplication};
 use rdkafka::client::DefaultClientContext;
 use rdkafka::consumer::{BaseConsumer, CommitMode, Consumer};
 use rdkafka::message::{Header, OwnedHeaders};
@@ -276,4 +279,45 @@ pub fn join_group(bs: &str, group: &str, topic: &str) -> BaseConsumer {
         let _ = c.poll(Duration::from_millis(100));
     }
     c
+}
+
+/// Брокер применяет изменения конфигурации асинхронно: чтение сразу после alter
+/// может вернуть старое значение. Повторяет `read` (шаг 200 мс, до 10 с), пока
+/// `done` не вернёт true, и отдаёт последнее прочитанное — проверку делает вызывающий.
+pub async fn eventually<T, F, Fut>(mut read: F, done: impl Fn(&T) -> bool) -> T
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = T>,
+{
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let v = read().await;
+        if done(&v) || Instant::now() >= deadline {
+            return v;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+}
+
+/// Значение и признак default для параметра топика.
+pub async fn topic_config(
+    h: &Arc<KafkaHandles>,
+    topic: &str,
+    name: &str,
+) -> (Option<String>, bool) {
+    let entries = describe_configs(h, ResourceSpecifier::Topic(topic))
+        .await
+        .unwrap();
+    let e = entries.iter().find(|e| e.name == name).unwrap();
+    (e.value.clone(), e.is_default)
+}
+
+/// `topic_config`, дождавшись (до 10 с) значения, для которого `done` истинно.
+pub async fn topic_config_eventually(
+    h: &Arc<KafkaHandles>,
+    topic: &str,
+    name: &str,
+    done: impl Fn(&(Option<String>, bool)) -> bool,
+) -> (Option<String>, bool) {
+    eventually(|| topic_config(h, topic, name), done).await
 }

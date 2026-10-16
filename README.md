@@ -5,6 +5,16 @@ Desktop-приложение (Tauri 2 + Rust + React) для интеракти�
 Apache Kafka is a trademark of the Apache Software Foundation; this project is not affiliated with the ASF.
 Спецификация: `docs/superpowers/specs/2026-10-14-kafka-explorer-design.md`.
 
+## Установка
+Установщики (macOS `.dmg`/`.pkg`, Windows `.msi`, Linux `.deb`/`.rpm`/`.AppImage`) — в разделе релизов:
+https://github.com/vvnovg/glafira-kafka-releases/releases
+
+Бета-сборки могут быть неподписанными. Чтобы открыть:
+- **macOS:** правый клик по приложению → «Открыть» → «Открыть», либо «Системные настройки» → «Конфиденциальность и безопасность» → «Все равно открыть».
+- **Windows:** SmartScreen → «Подробнее» → «Выполнить в любом случае».
+
+Для администраторов (тихая установка, политика, зеркало обновлений): `docs/admin.md`. Лицензии: `docs/licensing.md`.
+
 ## Требования
 - Rust stable (`rustup`), cmake, Xcode Command Line Tools (macOS)
 - Node 22+, pnpm

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildLatest } from "./make-latest-json.mjs";
+import { buildLatest, REQUIRED_PLATFORMS } from "./make-latest-json.mjs";
 
 test("платформы по именам файлов", () => {
   const files = {
@@ -8,10 +8,20 @@ test("платформы по именам файлов", () => {
     "App_x64.app.tar.gz": "SIG-X",
     "App_0.2.0_x64_en-US.msi": "SIG-W",
     "app_0.2.0_amd64.AppImage": "SIG-L",
+    "app_0.2.0_amd64.deb": "SIG-D",
+    "app-0.2.0-1.x86_64.rpm": "SIG-R",
   };
   const latest = buildLatest({ version: "0.2.0", notes: "n", baseUrl: "https://g/r/releases/download/v0.2.0", files, pubDate: "2026-11-01T00:00:00Z" });
   assert.equal(latest.version, "0.2.0");
-  assert.deepEqual(Object.keys(latest.platforms).sort(), ["darwin-aarch64", "darwin-x86_64", "linux-x86_64", "windows-x86_64"]);
+  assert.deepEqual(Object.keys(latest.platforms).sort(), [
+    "darwin-aarch64",
+    "darwin-x86_64",
+    "linux-x86_64",
+    "linux-x86_64-appimage",
+    "linux-x86_64-deb",
+    "linux-x86_64-rpm",
+    "windows-x86_64",
+  ]);
   assert.equal(latest.platforms["windows-x86_64"].url, "https://g/r/releases/download/v0.2.0/App_0.2.0_x64_en-US.msi");
   assert.equal(latest.platforms["darwin-aarch64"].signature, "SIG-A");
   assert.equal(latest.platforms["darwin-x86_64"].signature, "SIG-X");
@@ -35,4 +45,33 @@ test("две сборки на одну платформу — ошибка", ()
     () => buildLatest({ version: "1", notes: "", baseUrl: "u", files: { "a_x64.msi": "S", "b_x64.msi": "S" }, pubDate: "d" }),
     /windows-x86_64/,
   );
+});
+
+test("Linux: отдельная запись на каждый тип установки, linux-x86_64 — AppImage", () => {
+  // tauri-plugin-updater ищет «{os}-{arch}-{установщик}», затем «{os}-{arch}»: установка из .deb,
+  // получив AppImage по общему ключу, падала бы с InvalidUpdaterFormat.
+  const files = { "a_1_amd64.AppImage": "L", "a_1_amd64.deb": "D", "a-1-1.x86_64.rpm": "R" };
+  const { platforms } = buildLatest({ version: "1", notes: "", baseUrl: "https://x", files, pubDate: "d" });
+  assert.equal(platforms["linux-x86_64"].url, "https://x/a_1_amd64.AppImage");
+  assert.equal(platforms["linux-x86_64-appimage"].url, "https://x/a_1_amd64.AppImage");
+  assert.equal(platforms["linux-x86_64-deb"].url, "https://x/a_1_amd64.deb");
+  assert.equal(platforms["linux-x86_64-deb"].signature, "D");
+  assert.equal(platforms["linux-x86_64-rpm"].url, "https://x/a-1-1.x86_64.rpm");
+  assert.equal(platforms["linux-x86_64-rpm"].signature, "R");
+});
+
+test("REQUIRED_PLATFORMS — полный набор записей релиза", () => {
+  assert.deepEqual([...REQUIRED_PLATFORMS].sort(), [
+    "darwin-aarch64",
+    "darwin-x86_64",
+    "linux-x86_64",
+    "linux-x86_64-appimage",
+    "linux-x86_64-deb",
+    "linux-x86_64-rpm",
+    "windows-x86_64",
+  ]);
+});
+
+test(".deb без подписи — ошибка", () => {
+  assert.throws(() => buildLatest({ version: "1", notes: "", baseUrl: "u", files: { "a.deb": "" }, pubDate: "d" }), /подпис/);
 });

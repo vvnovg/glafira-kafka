@@ -47,6 +47,7 @@ jobs:
         env:
           KE_IT_BOOTSTRAP: localhost:9092
           KE_IT_SASL_BOOTSTRAP: localhost:9094
+          KE_IT_MTLS_BOOTSTRAP: localhost:9095
 
   platforms:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')

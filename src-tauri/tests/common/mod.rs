@@ -30,6 +30,19 @@ pub fn sasl_bootstrap() -> Option<String> {
     v
 }
 
+pub fn mtls_bootstrap() -> Option<String> {
+    let v = std::env::var("KE_IT_MTLS_BOOTSTRAP").ok();
+    if v.is_none() {
+        eprintln!("skip: KE_IT_MTLS_BOOTSTRAP не задан");
+    }
+    v
+}
+
+/// Абсолютный путь к тестовому сертификату из dev/certs/out.
+pub fn cert_path(name: &str) -> String {
+    format!("{}/../dev/certs/out/{name}", env!("CARGO_MANIFEST_DIR"))
+}
+
 pub fn plaintext_profile(bs: &str) -> ConnectionProfile {
     ConnectionProfile {
         id: "it".into(),

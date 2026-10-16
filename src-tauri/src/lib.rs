@@ -33,6 +33,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             crate::logging::init(&app.path().app_log_dir()?);
             tracing::info!(version = env!("CARGO_PKG_VERSION"), "запуск");
@@ -108,6 +109,8 @@ pub fn run() {
             commands::consume::suggest_group_id,
             commands::app::get_app_info,
             commands::app::export_diagnostics,
+            commands::app::check_update,
+            commands::app::install_update,
             commands::license::get_policy_status,
             commands::license::get_license_status,
             commands::license::set_license_key,

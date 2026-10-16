@@ -14,6 +14,7 @@ vi.mock("../../api/client", async (importOriginal) => {
       getPolicyStatus: vi.fn().mockResolvedValue({ managed: false, source: null, updatesEnabled: true, updateUrl: null, hasLicenseKey: false, errors: [] }),
       exportDiagnostics: vi.fn().mockResolvedValue(undefined),
       checkUpdate: vi.fn().mockResolvedValue({ status: "upToDate" }),
+      installUpdate: vi.fn(),
     },
   };
 });
@@ -43,5 +44,43 @@ describe("AboutPanel", () => {
     expect(api.exportDiagnostics).not.toHaveBeenCalled();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText(/Архив сохранён/)).not.toBeInTheDocument();
+  });
+
+  it("обновление доступно; при активных сессиях — подтверждение", async () => {
+    vi.mocked(api.checkUpdate).mockResolvedValue({ status: "available", version: "0.3.0", notes: "Исправления", date: null });
+    vi.mocked(api.installUpdate)
+      .mockRejectedValueOnce({ code: "CONFIRMATION_REQUIRED", message: "Идёт сессий: 1 …", retryable: false })
+      .mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    renderWithClient(<AboutPanel />);
+    await user.click(await screen.findByRole("button", { name: "Проверить обновления" }));
+    expect(await screen.findByText("Доступна версия 0.3.0")).toBeInTheDocument();
+    expect(screen.getByText("Исправления")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Установить и перезапустить" }));
+    expect(api.installUpdate).toHaveBeenLastCalledWith(false);
+    expect(await screen.findByText(/Идёт сессий: 1/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Остановить сессии и обновить" }));
+    expect(api.installUpdate).toHaveBeenLastCalledWith(true);
+  });
+
+  it("политика выключила обновления", async () => {
+    vi.mocked(api.checkUpdate).mockResolvedValue({ status: "disabled", reason: "Обновления управляются вашей организацией" });
+    const user = userEvent.setup();
+    renderWithClient(<AboutPanel />);
+    await user.click(await screen.findByRole("button", { name: "Проверить обновления" }));
+    expect(await screen.findByText("Обновления управляются вашей организацией")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Установить и перезапустить" })).not.toBeInTheDocument();
+  });
+
+  it("последняя версия; ошибка сети — баннер с повтором", async () => {
+    vi.mocked(api.checkUpdate)
+      .mockRejectedValueOnce({ code: "CONNECTION_FAILED", message: "Не удалось проверить обновления", retryable: true })
+      .mockResolvedValueOnce({ status: "upToDate" });
+    const user = userEvent.setup();
+    renderWithClient(<AboutPanel />);
+    await user.click(await screen.findByRole("button", { name: "Проверить обновления" }));
+    expect(await screen.findByText("Не удалось проверить обновления")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Повторить" }));
+    expect(await screen.findByText("Установлена последняя версия")).toBeInTheDocument();
   });
 });

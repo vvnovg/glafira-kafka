@@ -490,3 +490,8 @@ export interface AppInfo {
   dataDir: string;
   logDir: string;
 }
+
+export type UpdateCheck =
+  | { status: "disabled"; reason: string }
+  | { status: "upToDate" }
+  | { status: "available"; version: string; notes: string | null; date: string | null };

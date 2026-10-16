@@ -5,6 +5,7 @@ import { ENV_COLORS } from "../lib/env";
 import { type Tab, useWorkspace } from "../state/workspace";
 import { EnvBadge } from "./common/EnvBadge";
 import { LicenseNotice } from "./license/LicenseNotice";
+import { UpdateNotice } from "./about/UpdateNotice";
 import { Sidebar } from "./Sidebar";
 import { TabContent } from "./TabContent";
 
@@ -49,6 +50,7 @@ export function Layout() {
       <main className="workspace">
         <div className="env-stripe" style={{ background: activeConn ? ENV_COLORS[activeConn.environment] : "transparent" }} />
         <LicenseNotice />
+        <UpdateNotice />
         <nav className="tabbar" role="tablist">
           {tabs.map((t) => {
             const tConnId = "connectionId" in t ? t.connectionId : null;

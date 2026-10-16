@@ -8,6 +8,7 @@ import type {
   ConsumerParams,
   HistoryEntry,
   AppInfo,
+  UpdateCheck,
   LicenseStatus,
   PolicyStatus,
   ProduceMessage,
@@ -63,6 +64,8 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 export const api = {
   getAppInfo: () => call<AppInfo>("get_app_info"),
   exportDiagnostics: (path: string) => call<void>("export_diagnostics", { path }),
+  checkUpdate: () => call<UpdateCheck>("check_update"),
+  installUpdate: (force: boolean) => call<void>("install_update", { force }),
   getLicenseStatus: () => call<LicenseStatus>("get_license_status"),
   setLicenseKey: (key: string) => call<LicenseStatus>("set_license_key", { key }),
   removeLicenseKey: () => call<LicenseStatus>("remove_license_key"),

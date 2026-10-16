@@ -27,3 +27,4 @@ dist-ssr
 license-signing.key
 tools/issue-license/target
 crates/license-format/target
+dist-e2e

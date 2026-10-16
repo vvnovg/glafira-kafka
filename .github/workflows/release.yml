@@ -231,6 +231,18 @@ jobs:
           pattern: bundle-*
           path: release/assets
           merge-multiple: true
+      # upload-artifact сохраняет подкаталоги бандла (dmg/, macos/, msi/…): складываем всё в один каталог.
+      - name: Плоский набор артефактов
+        run: |
+          before=$(find release/assets -type f | wc -l)
+          find release/assets -mindepth 2 -type f -print0 | while IFS= read -r -d '' f; do
+            dst="release/assets/$(basename "$f")"
+            if [ -e "$dst" ]; then echo "::error::конфликт имён артефактов: $(basename "$f")"; exit 1; fi
+            mv "$f" "$dst"
+          done
+          find release/assets -mindepth 1 -type d -empty -delete
+          after=$(find release/assets -maxdepth 1 -type f | wc -l)
+          if [ "$before" -ne "$after" ]; then echo "::error::после выравнивания $after файлов из $before"; exit 1; fi
       # GitHub сам заменяет пробелы в именах ассетов, и URL в latest.json перестали бы совпадать
       # с реальными. Переименовываем заранее (подпись .sig от имени файла не зависит).
       - name: Имена артефактов без пробелов

@@ -51,19 +51,33 @@ enum Command {
     },
 }
 
+/// Создаёт файл атомарно (create_new) и сразу с правами 0600 на unix.
+fn create_private(path: &Path, content: &str) -> std::io::Result<()> {
+    use std::io::Write;
+    let mut opts = std::fs::OpenOptions::new();
+    opts.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+    opts.open(path)?.write_all(content.as_bytes())
+}
+
 fn keygen(out: &Path) -> Result<String, String> {
     let signing = out.join("license-signing.key");
     let public = out.join("license-public.key");
-    if signing.exists() || public.exists() {
-        return Err(format!("{} уже содержит ключи — не перезаписываю", out.display()));
-    }
     std::fs::create_dir_all(out).map_err(|e| e.to_string())?;
     let key = SigningKey::generate(&mut rand::rngs::OsRng);
-    std::fs::write(&signing, encode_signing_key(&key) + "\n").map_err(|e| e.to_string())?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&signing, std::fs::Permissions::from_mode(0o600)).map_err(|e| e.to_string())?;
+    create_private(&signing, &(encode_signing_key(&key) + "\n")).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::AlreadyExists {
+            format!("{} уже содержит ключи — не перезаписываю", out.display())
+        } else {
+            e.to_string()
+        }
+    })?;
+    if public.exists() {
+        return Err(format!("{} уже содержит ключи — не перезаписываю", out.display()));
     }
     std::fs::write(&public, encode_verifying_key(&key.verifying_key()) + "\n").map_err(|e| e.to_string())?;
     Ok(format!(
@@ -107,9 +121,12 @@ fn verify_cmd(public: &Path, token: &str) -> Result<String, String> {
 
 fn describe(p: &Payload) -> String {
     format!(
-        "id: {}\nтариф: pro\nтип: {:?}\nвладелец: {}\nвыдан: {}\nдействует до: {}\nмест: {}",
+        "id: {}\nтариф: pro\nтип: {}\nвладелец: {}\nвыдан: {}\nдействует до: {}\nмест: {}",
         p.id,
-        p.kind,
+        match p.kind {
+            Kind::Personal => "личная",
+            Kind::Organization => "организации",
+        },
         p.licensee,
         p.issued,
         p.expires.map_or("бессрочно".to_string(), |d| d.to_string()),
@@ -154,6 +171,7 @@ mod tests {
         )
         .unwrap();
         let out = verify_cmd(&dir.path().join("license-public.key"), &token).unwrap();
+        assert!(out.contains("организации"), "{out}");
         assert!(out.contains("ACME") && out.contains("2027-03-31") && out.contains("500"), "{out}");
     }
 

@@ -4,7 +4,7 @@
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64;
 pub use chrono::NaiveDate;
-use ed25519_dalek::{Signature, Signer, Verifier};
+use ed25519_dalek::{Signature, Signer};
 pub use ed25519_dalek::{SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 
@@ -71,11 +71,12 @@ pub fn verify(token: &str, key: &VerifyingKey) -> Result<Payload, LicenseError> 
     let json = B64.decode(p).map_err(|_| malformed("данные не в base64url"))?;
     let sig = B64.decode(s).map_err(|_| malformed("подпись не в base64url"))?;
     let sig = Signature::from_slice(&sig).map_err(|_| malformed("подпись неверной длины"))?;
-    key.verify(&json, &sig).map_err(|_| LicenseError::BadSignature)?;
+    key.verify_strict(&json, &sig).map_err(|_| LicenseError::BadSignature)?;
     let value: serde_json::Value = serde_json::from_slice(&json).map_err(|_| malformed("данные не JSON"))?;
     let v = value.get("v").and_then(serde_json::Value::as_u64).ok_or_else(|| malformed("нет версии"))?;
-    if v != u64::from(FORMAT_VERSION) {
-        return Err(LicenseError::UnsupportedVersion(v as u32));
+    let v = u32::try_from(v).map_err(|_| malformed("версия вне диапазона"))?;
+    if v != FORMAT_VERSION {
+        return Err(LicenseError::UnsupportedVersion(v));
     }
     serde_json::from_value(value).map_err(|e| LicenseError::Malformed(e.to_string()))
 }
@@ -211,5 +212,61 @@ mod tests {
         assert_eq!(v["tier"], "pro");
         assert_eq!(v["kind"], "organization");
         assert_eq!(v["expires"], "2027-03-31");
+    }
+
+    fn signed(k: &SigningKey, body: &[u8]) -> String {
+        format!("{}.{}", B64.encode(body), B64.encode(k.sign(body).to_bytes()))
+    }
+
+    #[test]
+    fn padded_token_is_malformed() {
+        let k = key(1);
+        let token = sign(&payload(), &k);
+        let (p, s) = token.split_once('.').unwrap();
+        let padded = format!("{p}{}.{s}", "=".repeat(2));
+        assert!(matches!(verify(&padded, &k.verifying_key()), Err(LicenseError::Malformed(_))));
+        let padded_sig = format!("{p}.{s}==");
+        assert!(matches!(verify(&padded_sig, &k.verifying_key()), Err(LicenseError::Malformed(_))));
+    }
+
+    #[test]
+    fn wrong_signature_length_is_malformed() {
+        let k = key(1);
+        let token = format!("{}.{}", B64.encode(b"{}"), B64.encode([0u8; 10]));
+        assert!(matches!(verify(&token, &k.verifying_key()), Err(LicenseError::Malformed(_))));
+    }
+
+    #[test]
+    fn signed_non_json_is_malformed() {
+        let k = key(1);
+        let token = signed(&k, b"not json");
+        assert!(matches!(verify(&token, &k.verifying_key()), Err(LicenseError::Malformed(_))));
+    }
+
+    #[test]
+    fn signed_json_without_version_is_malformed() {
+        let k = key(1);
+        let token = signed(&k, br#"{"id":"x"}"#);
+        assert!(matches!(verify(&token, &k.verifying_key()), Err(LicenseError::Malformed(_))));
+    }
+
+    #[test]
+    fn huge_version_is_malformed() {
+        let k = key(1);
+        let token = signed(&k, br#"{"v":4294967297}"#);
+        assert!(matches!(verify(&token, &k.verifying_key()), Err(LicenseError::Malformed(_))));
+    }
+
+    #[test]
+    fn signature_is_checked_before_payload() {
+        let token = signed(&key(2), b"not json");
+        assert_eq!(verify(&token, &key(1).verifying_key()), Err(LicenseError::BadSignature));
+    }
+
+    #[cfg(feature = "dev-keys")]
+    #[test]
+    fn dev_token_verifies_with_dev_key() {
+        let t = dev::pro_token("me", None);
+        assert_eq!(verify(&t, &dev::verifying_key()).unwrap().licensee, "me");
     }
 }

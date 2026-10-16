@@ -26,7 +26,16 @@ use crate::state::AppState;
 
 /// Сколько ждать завершения сессий при выходе из приложения (в сумме, не на сессию).
 /// Пакет при отмене ждёт подтверждений до 2 с, выход consumer из группы — доли секунды.
-const EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
+pub(crate) const EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// Завершает сессии перед выходом процесса: consumer выходят из группы (иначе участник
+/// висит до session.timeout.ms), пакеты дожидаются подтверждений. Вызывается из
+/// `RunEvent::Exit` и из хука updater перед `process::exit` на Windows.
+pub(crate) fn shutdown_sessions<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    if !app.state::<AppState>().sessions.shutdown(EXIT_GRACE) {
+        tracing::warn!("сессии не завершились за {EXIT_GRACE:?}: выходим без ожидания");
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -120,11 +129,8 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
-                // Процесс завершится сразу после колбэка: даём сессиям выйти из группы
-                // (иначе участник висит до session.timeout.ms) и завершить пакеты.
-                if !app.state::<AppState>().sessions.shutdown(EXIT_GRACE) {
-                    tracing::warn!("сессии не завершились за {EXIT_GRACE:?}: выходим без ожидания");
-                }
+                // Процесс завершится сразу после колбэка: даём сессиям завершиться.
+                shutdown_sessions(app);
             }
         });
 }

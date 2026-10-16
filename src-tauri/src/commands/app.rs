@@ -111,7 +111,15 @@ fn updater(app: &AppHandle, url: Option<String>) -> AppResult<tauri_plugin_updat
     if !pubkey_configured(pubkey) {
         return Err(AppError::invalid("Обновления не настроены в этой сборке"));
     }
-    let mut b = app.updater_builder();
+    // На Windows `download_and_install` запускает установщик и вызывает `process::exit(0)`,
+    // минуя `RunEvent::Exit`: без хука consumer не выйдут из группы, а пакеты оборвутся.
+    // Хук заменяет стандартный хук плагина, поэтому `cleanup_before_exit` вызываем сами.
+    // На macOS/Linux хук не используется: там после установки `app.restart()` проходит Exit.
+    let handle = app.clone();
+    let mut b = app.updater_builder().on_before_exit(move || {
+        crate::shutdown_sessions(&handle);
+        handle.cleanup_before_exit();
+    });
     if let Some(u) = url {
         let parsed = u
             .parse()
@@ -150,6 +158,19 @@ pub async fn check_update(app: AppHandle, state: State<'_, AppState>) -> AppResu
     }
 }
 
+/// Без `force` при активных сессиях установка требует подтверждения.
+fn confirm_sessions(active: usize, force: bool) -> AppResult<()> {
+    if active > 0 && !force {
+        return Err(AppError::new(
+            ErrorCode::ConfirmationRequired,
+            format!(
+                "Идёт сессий: {active} (чтение, consumer или пакетная отправка). Обновление их остановит."
+            ),
+        ));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn install_update(
     app: AppHandle,
@@ -160,18 +181,12 @@ pub async fn install_update(
         UpdatePlan::Disabled(reason) => return Err(AppError::invalid(reason)),
         UpdatePlan::Check(url) => url,
     };
-    let active = state.sessions.len();
-    if active > 0 && !force {
-        return Err(AppError::new(
-            ErrorCode::ConfirmationRequired,
-            format!(
-                "Идёт сессий: {active} (чтение, consumer или пакетная отправка). Обновление их остановит."
-            ),
-        ));
-    }
+    confirm_sessions(state.sessions.len(), force)?;
     let Some(update) = updater(&app, url)?.check().await.map_err(net_err)? else {
         return Err(AppError::invalid("Обновлений нет"));
     };
+    // Пока шла проверка по сети, пользователь мог запустить сессию: спрашиваем снова.
+    confirm_sessions(state.sessions.len(), force)?;
     tracing::info!(version = %update.version, "установка обновления");
     update
         .download_and_install(|_, _| {}, || {})
@@ -235,6 +250,15 @@ mod tests {
         let d = serde_json::to_value(UpdateCheck::Disabled { reason: "r".into() }).unwrap();
         assert_eq!(d["status"], "disabled");
         assert_eq!(d["reason"], "r");
+    }
+
+    #[test]
+    fn active_sessions_require_confirmation_unless_forced() {
+        assert!(confirm_sessions(0, false).is_ok());
+        assert!(confirm_sessions(2, true).is_ok());
+        let e = confirm_sessions(1, false).unwrap_err();
+        assert_eq!(e.code, ErrorCode::ConfirmationRequired);
+        assert!(e.message.contains("Идёт сессий: 1"));
     }
 
     #[test]

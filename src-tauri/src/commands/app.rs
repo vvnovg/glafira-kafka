@@ -161,7 +161,7 @@ fn net_err(e: UpdErr) -> AppError {
     match classify_check_error(&e) {
         CheckErrorKind::NoRelease => AppError::new(
             ErrorCode::NotFound,
-            "На сервере обновлений пока нет опубликованных версий",
+            "На сервере обновлений нет опубликованных версий (или он временно недоступен)",
         ),
         CheckErrorKind::Network => AppError::new(
             ErrorCode::ConnectionFailed,
@@ -395,7 +395,7 @@ mod tests {
         );
         let e = net_err(UpdErr::ReleaseNotFound);
         assert_eq!(e.code, ErrorCode::NotFound);
-        assert!(e.message.contains("пока нет опубликованных версий"));
+        assert!(e.message.contains("нет опубликованных версий"));
         assert_eq!(
             net_err(UpdErr::Network("x".into())).code,
             ErrorCode::ConnectionFailed

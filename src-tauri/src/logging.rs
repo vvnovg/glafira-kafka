@@ -13,7 +13,6 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 pub const MAX_FILE_BYTES: u64 = 5 * 1024 * 1024;
 pub const MAX_FILES: usize = 5;
-pub const LOG_FILE: &str = "app.log";
 pub const LOG_BASE: &str = "app";
 
 pub struct RotatingWriter {

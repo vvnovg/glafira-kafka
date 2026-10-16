@@ -1,4 +1,5 @@
 import type { OffsetTarget, ResetPreviewRow, ResetRequest, ResetScope, ResetStrategy } from "../../api/types";
+import { i18n } from "../../i18n";
 import type { ResetPrefill } from "../../state/workspace";
 
 export interface ResetForm {
@@ -24,14 +25,14 @@ function parseStrategy(form: ResetForm): ResetStrategy {
     case "latest":
       return { type: form.strategy };
     case "offset":
-      if (form.value.trim() === "" || !Number.isSafeInteger(n) || n < 0) throw new Error("Оффсет — целое число ≥ 0");
+      if (form.value.trim() === "" || !Number.isSafeInteger(n) || n < 0) throw new Error(i18n.t("groups.reset.errOffset"));
       return { type: "offset", offset: n };
     case "shift":
-      if (!Number.isSafeInteger(n) || n === 0) throw new Error("Сдвиг — ненулевое целое число");
+      if (!Number.isSafeInteger(n) || n === 0) throw new Error(i18n.t("groups.reset.errShift"));
       return { type: "shift", delta: n };
     case "timestamp": {
       const ms = new Date(form.value).getTime();
-      if (!form.value || Number.isNaN(ms)) throw new Error("Укажите дату и время");
+      if (!form.value || Number.isNaN(ms)) throw new Error(i18n.t("groups.reset.errTimestamp"));
       return { type: "timestamp", timestampMs: ms };
     }
   }
@@ -43,17 +44,17 @@ function parseScope(form: ResetForm): ResetScope {
       return { type: "all" };
     case "topics": {
       const topics = tokens(form.scopeText);
-      if (topics.length === 0) throw new Error("Укажите хотя бы один топик");
+      if (topics.length === 0) throw new Error(i18n.t("groups.reset.errNoTopic"));
       return { type: "topics", topics };
     }
     case "partitions": {
       const partitions = tokens(form.scopeText).map((t) => {
         const i = t.lastIndexOf(":");
         const p = Number(t.slice(i + 1));
-        if (i <= 0 || !Number.isInteger(p) || p < 0 || t.slice(i + 1) === "") throw new Error(`«${t}»: ожидается топик:партиция`);
+        if (i <= 0 || !Number.isInteger(p) || p < 0 || t.slice(i + 1) === "") throw new Error(i18n.t("groups.reset.errPartitionFormat", { token: t }));
         return { topic: t.slice(0, i), partition: p };
       });
-      if (partitions.length === 0) throw new Error("Укажите хотя бы одну партицию");
+      if (partitions.length === 0) throw new Error(i18n.t("groups.reset.errNoPartition"));
       return { type: "partitions", partitions };
     }
   }

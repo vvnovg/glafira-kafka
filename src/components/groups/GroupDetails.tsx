@@ -1,7 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { Confirmation, GroupDescription, GroupPartitionOffset } from "../../api/types";
+import { i18n } from "../../i18n";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { proHint, useLicense } from "../../lib/useLicense";
@@ -14,10 +16,10 @@ import { groupTotalLag } from "./groupLag";
 import { ResetOffsetsPanel } from "./ResetOffsetsPanel";
 
 const REFRESH_OPTIONS = [
-  { label: "Автообновление: выкл.", value: 0 },
-  { label: "каждые 5 с", value: 5_000 },
-  { label: "каждые 10 с", value: 10_000 },
-];
+  { labelKey: "groups.details.refreshOff", value: 0 },
+  { labelKey: "groups.details.refresh5", value: 5_000 },
+  { labelKey: "groups.details.refresh10", value: 10_000 },
+] as const;
 
 type Panel = "reset" | "delete" | null;
 
@@ -28,6 +30,7 @@ interface Props {
 }
 
 export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
+  const { t } = useTranslation();
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const readOnly = connection?.readOnly === true;
@@ -47,7 +50,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
     queryKey: ["group", connectionId, groupId],
     queryFn: async (): Promise<GroupDescription> => {
       const d = (await api.describeGroups(connectionId, [groupId]))[0];
-      if (!d) throw new Error("Брокер не вернул описание группы");
+      if (!d) throw new Error(i18n.t("groups.details.noDescription"));
       return d;
     },
     refetchInterval: refreshMs || false,
@@ -77,7 +80,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
   const resetBlock =
     d?.state === "Empty" || d?.state === "Dead"
       ? null
-      : `Сброс возможен только для группы без участников (сейчас: ${d?.state ?? "неизвестно"})`;
+      : t("groups.details.resetBlocked", { state: d?.state ?? t("groups.details.stateUnknown") });
   const rows = offsets.data ?? [];
 
   return (
@@ -86,29 +89,29 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         <h2>{groupId}</h2>
         {d && (
           <span className="muted">
-            {d.state} · участников: {d.members.length} · assignor: {d.assignor || "—"}
+            {t("groups.details.summary", { state: d.state, count: d.members.length, assignor: d.assignor || "—" })}
           </span>
         )}
-        <select aria-label="Автообновление" value={refreshMs} onChange={(e) => setRefreshMs(Number(e.target.value))}>
+        <select aria-label={t("groups.details.autoRefresh")} value={refreshMs} onChange={(e) => setRefreshMs(Number(e.target.value))}>
           {REFRESH_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.labelKey)}
             </option>
           ))}
         </select>
         <button type="button" disabled={desc.isFetching || offsets.isFetching} onClick={refresh}>
-          Обновить
+          {t("groups.details.refresh")}
         </button>
         <button
           type="button"
           disabled={readOnly || locked || offsets.isPending}
           title={
             readOnly
-              ? "Подключение только для чтения: вход в группу меняет её состояние"
+              ? t("groups.details.joinReadOnly")
               : locked
                 ? proHint()
                 : offsets.isPending
-                ? "Загружаются топики группы"
+                ? t("groups.details.joinLoading")
                 : undefined
           }
           onClick={() =>
@@ -122,7 +125,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
             })
           }
         >
-          Читать как участник
+          {t("groups.details.join")}
           {locked && (
             <>
               {" "}
@@ -134,19 +137,19 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
       {canMutate && (
         <div className="toolbar">
           <button type="button" disabled={resetBlock !== null} title={resetBlock ?? undefined} onClick={() => setPanel("reset")}>
-            Сбросить оффсеты
+            {t("groups.details.resetOffsets")}
           </button>
           <button
             type="button"
             className="danger"
             disabled={d?.state !== "Empty"}
-            title={d?.state !== "Empty" ? "Удалить можно только группу без участников (Empty)" : undefined}
+            title={d?.state !== "Empty" ? t("groups.details.deleteOnlyEmpty") : undefined}
             onClick={() => {
               remove.reset();
               setPanel("delete");
             }}
           >
-            Удалить группу
+            {t("groups.details.deleteGroup")}
           </button>
         </div>
       )}
@@ -157,10 +160,10 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           {remove.error && <ErrorBanner error={remove.error} />}
           <ConfirmDialog
             connection={connection}
-            title={`Удалить группу «${groupId}»?`}
+            title={t("groups.details.deleteTitle", { groupId })}
             objectName={groupId}
-            objectLabel="id группы"
-            confirmLabel="Удалить"
+            objectLabel={t("groups.details.deleteObject")}
+            confirmLabel={t("common.delete")}
             danger
             busy={remove.isPending}
             onConfirm={(c) => remove.mutate(c)}
@@ -169,7 +172,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
               setPanel(null);
             }}
           >
-            <p className="muted">Будут удалены все закоммиченные оффсеты группы.</p>
+            <p className="muted">{t("groups.details.deleteNote")}</p>
           </ConfirmDialog>
         </>
       )}
@@ -185,7 +188,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         />
       )}
 
-      <h3>Партиции</h3>
+      <h3>{t("groups.details.partitions")}</h3>
       {offsets.error && <ErrorBanner error={offsets.error} onRetry={refresh} />}
       {offsets.data && (
         <p
@@ -193,26 +196,26 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           title={
             groupTotalLag(rows) === null
               ? rows.every((r) => r.committed === null)
-                ? "нет коммитов"
-                : "лаг неизвестен: ошибка оффсетов партиций"
+                ? t("groups.lag.noCommits")
+                : t("groups.lag.unknown")
               : undefined
           }
         >
-          Суммарный лаг: {formatCount(groupTotalLag(rows))}
+          {t("groups.details.totalLag", { value: formatCount(groupTotalLag(rows)) })}
         </p>
       )}
       <OffsetsTable rows={rows} />
 
-      <h3>Участники</h3>
-      {d && d.members.length === 0 && <p className="muted">Нет активных участников.</p>}
+      <h3>{t("groups.details.members")}</h3>
+      {d && d.members.length === 0 && <p className="muted">{t("groups.details.noMembers")}</p>}
       {d && d.members.length > 0 && (
         <table>
           <thead>
             <tr>
               <th>Client ID</th>
-              <th>Хост</th>
+              <th>{t("groups.details.colHost")}</th>
               <th>Member ID</th>
-              <th>Назначение</th>
+              <th>{t("groups.details.colAssignment")}</th>
             </tr>
           </thead>
           <tbody>
@@ -232,16 +235,17 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
 }
 
 function OffsetsTable({ rows }: { rows: GroupPartitionOffset[] }) {
+  const { t } = useTranslation();
   return (
     <table>
       <thead>
         <tr>
-          <th>Топик</th>
-          <th>Партиция</th>
+          <th>{t("groups.details.colTopic")}</th>
+          <th>{t("groups.details.colPartition")}</th>
           <th>Committed</th>
           <th>Log end</th>
-          <th>Лаг</th>
-          <th>Участник</th>
+          <th>{t("groups.details.colLag")}</th>
+          <th>{t("groups.details.colMember")}</th>
         </tr>
       </thead>
       <tbody>
@@ -252,10 +256,10 @@ function OffsetsTable({ rows }: { rows: GroupPartitionOffset[] }) {
               <td>{r.topic}</td>
               <td>{r.partition}</td>
               <td className={error ? "warn" : ""} title={error}>
-                {r.committed !== null ? r.committed : error ? "—" : <span className="muted">нет коммита</span>}
+                {r.committed !== null ? r.committed : error ? "—" : <span className="muted">{t("groups.lag.noCommit")}</span>}
               </td>
-              <td title={r.logEnd === null ? (error ?? "log end неизвестен") : undefined}>{r.logEnd ?? "—"}</td>
-              <td title={r.lag === null ? (error ?? (r.committed === null ? "нет коммита" : "log end неизвестен")) : undefined}>
+              <td title={r.logEnd === null ? (error ?? t("groups.lag.logEndUnknown")) : undefined}>{r.logEnd ?? "—"}</td>
+              <td title={r.lag === null ? (error ?? (r.committed === null ? t("groups.lag.noCommit") : t("groups.lag.logEndUnknown"))) : undefined}>
                 {formatCount(r.lag)}
               </td>
               <td>{r.memberClientId ?? "—"}</td>

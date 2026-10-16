@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
@@ -8,18 +9,18 @@ import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { buildResetRequest, defaultResetForm, type ResetForm, targetsFromPreview } from "./reset";
 
-const STRATEGIES: { id: ResetForm["strategy"]; label: string }[] = [
-  { id: "earliest", label: "С начала (earliest)" },
-  { id: "latest", label: "С конца (latest)" },
-  { id: "timestamp", label: "По времени" },
-  { id: "offset", label: "Конкретный оффсет" },
-  { id: "shift", label: "Сдвиг на ±N" },
-];
-const SCOPES: { id: ResetForm["scope"]; label: string }[] = [
-  { id: "all", label: "Вся группа" },
-  { id: "topics", label: "Топики" },
-  { id: "partitions", label: "Партиции" },
-];
+const STRATEGIES = [
+  { id: "earliest", labelKey: "groups.reset.strategyEarliest" },
+  { id: "latest", labelKey: "groups.reset.strategyLatest" },
+  { id: "timestamp", labelKey: "groups.reset.strategyTimestamp" },
+  { id: "offset", labelKey: "groups.reset.strategyOffset" },
+  { id: "shift", labelKey: "groups.reset.strategyShift" },
+] as const satisfies readonly { id: ResetForm["strategy"]; labelKey: string }[];
+const SCOPES = [
+  { id: "all", labelKey: "groups.reset.scopeAll" },
+  { id: "topics", labelKey: "groups.reset.scopeTopics" },
+  { id: "partitions", labelKey: "groups.reset.scopePartitions" },
+] as const satisfies readonly { id: ResetForm["scope"]; labelKey: string }[];
 
 interface Props {
   connection: ConnectionProfile;
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason = null, onApplied, onClose }: Props) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<ResetForm>(() => defaultResetForm(prefill));
   const [formError, setFormError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -77,40 +79,40 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
 
   return (
     <div className="panel">
-      <h3>Сброс оффсетов группы «{groupId}»</h3>
-      <p className="muted">Сброс возможен только для группы без активных участников (Empty).</p>
+      <h3>{t("groups.reset.title", { groupId })}</h3>
+      <p className="muted">{t("groups.reset.onlyEmpty")}</p>
       <fieldset className="form" disabled={apply.isPending} style={{ border: 0, padding: 0 }}>
-        <label htmlFor="rs-strategy">Стратегия</label>
+        <label htmlFor="rs-strategy">{t("groups.reset.strategy")}</label>
         <select id="rs-strategy" value={form.strategy} onChange={(e) => update({ strategy: e.target.value as ResetForm["strategy"], value: "" })}>
           {STRATEGIES.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.label}
+              {t(s.labelKey)}
             </option>
           ))}
         </select>
         {form.strategy === "timestamp" && (
           <>
-            <label htmlFor="rs-value">Дата и время (локальное)</label>
+            <label htmlFor="rs-value">{t("groups.reset.timestamp")}</label>
             <input id="rs-value" type="datetime-local" step={1} value={form.value} onChange={(e) => update({ value: e.target.value })} />
           </>
         )}
         {(form.strategy === "offset" || form.strategy === "shift") && (
           <>
-            <label htmlFor="rs-value">{form.strategy === "offset" ? "Оффсет" : "Сдвиг (±N)"}</label>
+            <label htmlFor="rs-value">{form.strategy === "offset" ? t("groups.reset.offset") : t("groups.reset.shift")}</label>
             <input id="rs-value" type="number" value={form.value} onChange={(e) => update({ value: e.target.value })} />
           </>
         )}
-        <label htmlFor="rs-scope">Область</label>
+        <label htmlFor="rs-scope">{t("groups.reset.scope")}</label>
         <select id="rs-scope" value={form.scope} onChange={(e) => update({ scope: e.target.value as ResetForm["scope"] })}>
           {SCOPES.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.label}
+              {t(s.labelKey)}
             </option>
           ))}
         </select>
         {form.scope !== "all" && (
           <>
-            <label htmlFor="rs-scope-text">{form.scope === "topics" ? "Топики" : "Партиции (топик:партиция)"}</label>
+            <label htmlFor="rs-scope-text">{form.scope === "topics" ? t("groups.reset.scopeTopics") : t("groups.reset.partitionsLabel")}</label>
             <textarea id="rs-scope-text" rows={2} value={form.scopeText} onChange={(e) => update({ scopeText: e.target.value })} />
           </>
         )}
@@ -118,23 +120,23 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
       {formError && <p className="warn">{formError}</p>}
       <div className="toolbar">
         <button type="button" className="primary" disabled={preview.isPending || apply.isPending} onClick={runPreview}>
-          Предпросмотр
+          {t("groups.reset.preview")}
         </button>
         <button type="button" disabled={apply.isPending} onClick={onClose}>
-          Закрыть
+          {t("common.close")}
         </button>
       </div>
       {preview.error && <ErrorBanner error={preview.error} />}
       {preview.data && (
         <>
-          {rows.length === 0 && <p className="muted">Нет партиций для сброса</p>}
+          {rows.length === 0 && <p className="muted">{t("groups.reset.noPartitions")}</p>}
           <table>
             <thead>
               <tr>
-                <th>Топик</th>
-                <th>Партиция</th>
-                <th>Текущий</th>
-                <th>Новый</th>
+                <th>{t("groups.reset.colTopic")}</th>
+                <th>{t("groups.reset.colPartition")}</th>
+                <th>{t("groups.reset.colCurrent")}</th>
+                <th>{t("groups.reset.colNew")}</th>
                 <th>Low / High</th>
                 <th />
               </tr>
@@ -144,13 +146,13 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
                 <tr key={`${r.topic}:${r.partition}`} className={r.error || r.target === null ? "warn" : undefined}>
                   <td>{r.topic}</td>
                   <td>{r.partition}</td>
-                  <td>{r.current ?? <span className="muted" title="нет закоммиченного оффсета">нет коммита</span>}</td>
-                  <td title={r.target === null ? (r.error ? tr(r.error) : "целевой оффсет не вычислен") : undefined}>{r.target ?? "—"}</td>
+                  <td>{r.current ?? <span className="muted" title={t("groups.reset.noCommittedOffset")}>{t("groups.lag.noCommit")}</span>}</td>
+                  <td title={r.target === null ? (r.error ? tr(r.error) : t("groups.reset.targetUnknown")) : undefined}>{r.target ?? "—"}</td>
                   <td className="muted">
-                    <span title={r.low === null ? "граница партиции неизвестна" : undefined}>{r.low ?? "—"}</span> /{" "}
-                    <span title={r.high === null ? "граница партиции неизвестна" : undefined}>{r.high ?? "—"}</span>
+                    <span title={r.low === null ? t("groups.reset.boundUnknown") : undefined}>{r.low ?? "—"}</span> /{" "}
+                    <span title={r.high === null ? t("groups.reset.boundUnknown") : undefined}>{r.high ?? "—"}</span>
                   </td>
-                  <td className="warn">{r.error ? tr(r.error) : r.target === null ? "Нет целевого оффсета — не будет применено" : ""}</td>
+                  <td className="warn">{r.error ? tr(r.error) : r.target === null ? t("groups.reset.noTarget") : ""}</td>
                 </tr>
               ))}
             </tbody>
@@ -158,11 +160,11 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
           {apply.error && <ErrorBanner error={apply.error} />}
           {apply.data && (
             <>
-              <h4>Результат применения</h4>
+              <h4>{t("groups.reset.result")}</h4>
               <ul>
                 {apply.data.map((r) => (
                   <li key={`${r.topic}:${r.partition}`} className={r.error ? "warn" : undefined}>
-                    {r.topic}:{r.partition} — {r.error ? `ошибка: ${tr(r.error)}` : `оффсет ${r.offset} установлен`}
+                    {r.topic}:{r.partition} — {r.error ? t("groups.reset.resultError", { error: tr(r.error) }) : t("groups.reset.resultSet", { offset: r.offset })}
                   </li>
                 ))}
               </ul>
@@ -171,8 +173,8 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
           {confirming ? (
             <ConfirmDialog
               connection={connection}
-              title={`Сбросить оффсеты ${targets.length} партиций группы «${groupId}»?`}
-              confirmLabel="Сбросить оффсеты"
+              title={t("groups.reset.confirmTitle", { count: targets.length, groupId })}
+              confirmLabel={t("groups.details.resetOffsets")}
               busy={apply.isPending}
               onConfirm={(c) => apply.mutate({ targets, confirm: c.confirm })}
               onCancel={() => setConfirming(false)}
@@ -187,7 +189,7 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
                 title={blockedReason ?? undefined}
                 onClick={() => (needsConfirmation(connection) ? setConfirming(true) : apply.mutate({ targets, confirm: null }))}
               >
-                Применить ({targets.length})
+                {t("groups.reset.apply", { count: targets.length })}
               </button>
             </>
           )}

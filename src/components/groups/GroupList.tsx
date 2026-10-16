@@ -1,8 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { api, toAppError } from "../../api/client";
 import type { GroupDescription, GroupLag, LocalizedText } from "../../api/types";
+import { i18n } from "../../i18n";
 import { tr } from "../../i18n/text";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
@@ -14,9 +16,9 @@ import { filterGroups, GROUP_CHUNK, groupStates } from "./groupFilter";
 
 const ROW_HEIGHT = 30;
 const EMPTY: never[] = [];
-const NO_DATA = "нет данных в ответе брокера";
 
 export function GroupList({ connectionId }: { connectionId: string }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [state, setState] = useState("all");
   const debounced = useDebouncedValue(query, 250);
@@ -58,23 +60,23 @@ export function GroupList({ connectionId }: { connectionId: string }) {
     const d = details[i];
     if (d?.isError && !d.data) for (const id of slice) descById.set(id, { error: tr(toAppError(d.error)) });
     d?.data?.forEach((x) => descById.set(x.groupId, x));
-    if (d?.isSuccess) for (const id of slice) if (!descById.has(id)) descById.set(id, { error: NO_DATA });
+    if (d?.isSuccess) for (const id of slice) if (!descById.has(id)) descById.set(id, { error: i18n.t("groups.list.noData") });
     const l = lags[i];
     if (l?.isError && !l.data) for (const id of slice) lagById.set(id, { error: tr(toAppError(l.error)) });
     l?.data?.forEach((x) => lagById.set(x.groupId, x));
-    if (l?.isSuccess) for (const id of slice) if (!lagById.has(id)) lagById.set(id, { error: NO_DATA });
+    if (l?.isSuccess) for (const id of slice) if (!lagById.has(id)) lagById.set(id, { error: i18n.t("groups.list.noData") });
   });
 
-  if (q.isPending) return <p className="empty">Загрузка групп…</p>;
+  if (q.isPending) return <p className="empty">{t("groups.list.loading")}</p>;
   if (q.error) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
 
   return (
     <div className="page">
       <div className="toolbar">
-        <h2>Consumer groups</h2>
-        <input aria-label="Поиск группы" placeholder="Поиск группы" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <select aria-label="Состояние" value={state} onChange={(e) => setState(e.target.value)}>
-          <option value="all">Все состояния</option>
+        <h2>{t("groups.list.title")}</h2>
+        <input aria-label={t("groups.list.search")} placeholder={t("groups.list.search")} value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select aria-label={t("groups.list.state")} value={state} onChange={(e) => setState(e.target.value)}>
+          <option value="all">{t("groups.list.allStates")}</option>
           {groupStates(all).map((s) => (
             <option key={s} value={s}>
               {s}
@@ -90,25 +92,25 @@ export function GroupList({ connectionId }: { connectionId: string }) {
             void queryClient.invalidateQueries({ queryKey: ["groupsLag", connectionId] });
           }}
         >
-          Обновить
+          {t("groups.list.refresh")}
         </button>
         <span className="muted">
-          {rows.length} из {all.length}
+          {t("groups.list.shownOf", { shown: rows.length, total: all.length })}
         </span>
       </div>
       {q.data.errors.length > 0 && (
         <p className="warn" role="alert" title={q.data.errors.map(tr).join("\n")}>
-          Список может быть неполным: часть брокеров не ответила ({q.data.errors.length}).
+          {t("groups.list.incomplete", { count: q.data.errors.length })}
         </p>
       )}
       <div className="vlist" ref={parentRef}>
         <div className="row header group-row" style={{ height: ROW_HEIGHT }}>
-          <span>Группа</span>
-          <span>Состояние</span>
-          <span>Участники</span>
+          <span>{t("groups.list.colGroup")}</span>
+          <span>{t("groups.list.colState")}</span>
+          <span>{t("groups.list.colMembers")}</span>
           <span>Assignor</span>
-          <span>Лаг</span>
-          <span>Топики</span>
+          <span>{t("groups.list.colLag")}</span>
+          <span>{t("groups.list.colTopics")}</span>
         </div>
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {items.map((item) => {
@@ -145,7 +147,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
 /** Подсказка для «—» в колонке лага без ошибки запроса. */
 function lagHint(l: GroupLag | undefined): string | undefined {
   if (!l || l.totalLag !== null) return undefined;
-  return l.topics.length === 0 ? "нет коммитов" : "лаг неизвестен: ошибка оффсетов партиций";
+  return l.topics.length === 0 ? i18n.t("groups.lag.noCommits") : i18n.t("groups.lag.unknown");
 }
 
 /** Ошибка лага: текст из Rust (`LocalizedText`) или уже готовая строка интерфейса. */

@@ -49,14 +49,18 @@
     Для проверки без UI: `cargo run --manifest-path tools/issue-license/Cargo.toml -- verify --public src-tauri/license-public.key '<ключ>'`.
 
 ## Политика (macOS)
-11. Если ключ из п. 8 под рукой — взять его, иначе выдать новый как в п. 8. Затем:
+11. Политика организации. `defaults write` в «Managed Preferences» на современных macOS файл не создаёт
+    (туда пишет только MDM), поэтому plist собирается и копируется вручную — всё в одной вкладке терминала:
     ```bash
+    KEY=$(cargo run -q --manifest-path tools/issue-license/Cargo.toml -- issue --key crates/license-format/testdata/dev-signing.key --kind organization --licensee "ACME Corp" --expires 2027-03-31)
+    rm -f /tmp/ke-policy.plist && plutil -create xml1 /tmp/ke-policy.plist
+    plutil -insert licenseKey -string "$KEY" /tmp/ke-policy.plist && plutil -insert updatesEnabled -bool NO /tmp/ke-policy.plist
     sudo mkdir -p "/Library/Managed Preferences"
-    sudo defaults write "/Library/Managed Preferences/dev.kafkaexplorer.app" licenseKey '<ключ>'
-    sudo defaults write "/Library/Managed Preferences/dev.kafkaexplorer.app" updatesEnabled -bool false
+    sudo cp /tmp/ke-policy.plist "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"
     sudo chmod 644 "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"
+    plutil -p "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"   # licenseKey — длинная строка, updatesEnabled => false
     ```
-    Перезапуск → «Лицензия»: «Лицензия управляется вашей организацией.», поле «Лицензионный ключ» скрыто, «Лицензия: Pro»,
-    блок «Политика организации» с «Источник: /Library/Managed Preferences/dev.kafkaexplorer.app.plist».
+    Перезапуск `pnpm tauri dev` → в логе `политика managed=true updates=false`; «Лицензия»: «Лицензия управляется вашей организацией.»,
+    владелец ACME Corp, тип «организации», до 2027-03-31; поля ключа и «Удалить ключ» нет; блок «Политика организации» с путём.
 12. `sudo rm "/Library/Managed Preferences/dev.kafkaexplorer.app.plist"`, перезапуск → блок политики исчез, лицензия снова
     «Free» (или личная, если ключ из п. 8 не удалён).

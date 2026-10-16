@@ -8,7 +8,35 @@
     "loading": "Loading…",
     "details": "Details",
     "openLicense": "Open “License”",
-    "proHint": "Available in Pro — activate a license on the “License” screen"
+    "proHint": "Available in Pro — activate a license on the “License” screen",
+    "readOnly": "Read-only",
+    "confirm": {
+      "typeObject": "To confirm, type the {{label}} <code>{{name}}</code>",
+      "prodNotice": "This is a prod connection. Type its name <code>{{name}}</code>",
+      "defaultLabel": "name",
+      "objectAria": "Confirmation: {{label}}",
+      "connectionAria": "Connection name"
+    },
+    "config": {
+      "searchParam": "Search parameter",
+      "onlyChanged": "Changed only",
+      "shownOf": "{{shown}} of {{total}}",
+      "colParam": "Parameter",
+      "colValue": "Value",
+      "colSource": "Source",
+      "reviewTitle": "Configuration changes for “{{topic}}”",
+      "defaultValue": "default",
+      "applyTitle": "Apply changes?",
+      "apply": "Apply",
+      "back": "Back",
+      "review": "Review changes",
+      "discard": "Discard edits",
+      "changesCount": "changes: {{count}}",
+      "valueAria": "Value of {{name}}",
+      "emptyValue": "empty value; use “reset to default”",
+      "resetAria": "Reset {{name}}",
+      "reset": "reset to default"
+    }
   },
   "errors": {
     "generic": "{{message}}",
@@ -306,10 +334,30 @@
     }
   },
   "sidebar": {
-    "settings": "Settings"
+    "settings": "Settings",
+    "connections": "Connections",
+    "newConnection": "New connection",
+    "editConnection": "Edit connection",
+    "emptyHint": "Add your first connection. For a local Kafka: <code>docker compose -f dev/docker-compose.yml up -d</code> and bootstrap <code>localhost:9092</code>.",
+    "cluster": "Cluster overview",
+    "topics": "Topics",
+    "groups": "Consumer groups",
+    "producer": "Producer",
+    "consumer": "Consumer session",
+    "license": "License: {{tier}}",
+    "about": "About"
   },
   "tabs": {
-    "settings": "Settings"
+    "settings": "Settings",
+    "license": "License",
+    "about": "About",
+    "connection": "Connection: {{name}}",
+    "newConnection": "New connection",
+    "cluster": "{{conn}} · Overview",
+    "topics": "{{conn}} · Topics",
+    "groups": "{{conn}} · Groups",
+    "producer": "{{conn}} · Producer",
+    "consumer": "{{conn}} · Session {{target}}"
   },
   "settings": {
     "title": "Settings",
@@ -322,5 +370,9 @@
       "policy": "The language is set by your organization",
       "proRequired": "The selected language is available in Pro — the interface is currently in English"
     }
+  },
+  "layout": {
+    "closeTab": "Close tab",
+    "empty": "Select a connection on the left or add a new one."
   }
 }

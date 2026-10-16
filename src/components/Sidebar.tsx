@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { newConsumerKey, useWorkspace } from "../state/workspace";
-import { PRO_HINT, useLicense } from "../lib/useLicense";
+import { proHint, useLicense } from "../lib/useLicense";
 import { ProLock } from "./common/ProLock";
 import { ErrorBanner } from "./common/ErrorBanner";
 import { EnvBadge } from "./common/EnvBadge";
@@ -16,16 +16,15 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <span>Подключения</span>
-        <button type="button" title="Новое подключение" onClick={() => open({ kind: "connection-form", connectionId: null })}>
+        <span>{t("sidebar.connections")}</span>
+        <button type="button" title={t("sidebar.newConnection")} onClick={() => open({ kind: "connection-form", connectionId: null })}>
           +
         </button>
       </div>
       {error && <ErrorBanner error={error} />}
       {isSuccess && connections.length === 0 && (
         <p className="empty">
-          Добавьте первое подключение. Для локальной Kafka: <code>docker compose -f dev/docker-compose.yml up -d</code> и
-          bootstrap <code>localhost:9092</code>.
+          <Trans i18nKey="sidebar.emptyHint" components={{ code: <code /> }} />
         </p>
       )}
       <ul className="tree">
@@ -35,29 +34,29 @@ export function Sidebar() {
               <span className="dot" style={{ background: c.color }} />
               <span className="tree-name">{c.name}</span>
               <EnvBadge environment={c.environment} readOnly={c.readOnly} />
-              <button type="button" className="icon" title="Изменить подключение" onClick={() => open({ kind: "connection-form", connectionId: c.id })}>
+              <button type="button" className="icon" title={t("sidebar.editConnection")} onClick={() => open({ kind: "connection-form", connectionId: c.id })}>
                 ✎
               </button>
             </div>
             <ul>
               <li>
                 <button type="button" className="link" onClick={() => open({ kind: "cluster", connectionId: c.id })}>
-                  Обзор кластера
+                  {t("sidebar.cluster")}
                 </button>
               </li>
               <li>
                 <button type="button" className="link" onClick={() => open({ kind: "topics", connectionId: c.id })}>
-                  Топики
+                  {t("sidebar.topics")}
                 </button>
               </li>
               <li>
                 <button type="button" className="link" onClick={() => open({ kind: "groups", connectionId: c.id })}>
-                  Consumer groups
+                  {t("sidebar.groups")}
                 </button>
               </li>
               <li>
                 <button type="button" className="link" onClick={() => open({ kind: "producer", connectionId: c.id })}>
-                  Producer
+                  {t("sidebar.producer")}
                 </button>
               </li>
               <li>
@@ -65,10 +64,10 @@ export function Sidebar() {
                   type="button"
                   className="link"
                   disabled={locked}
-                  title={locked ? PRO_HINT : undefined}
+                  title={locked ? proHint() : undefined}
                   onClick={() => open({ kind: "consumer", connectionId: c.id, key: newConsumerKey() })}
                 >
-                  Consumer-сессия
+                  {t("sidebar.consumer")}
                   {locked && (
                     <>
                       {" "}
@@ -86,10 +85,10 @@ export function Sidebar() {
           {t("sidebar.settings")}
         </button>
         <button type="button" className="link" onClick={() => open({ kind: "license" })}>
-          Лицензия: {status ? (status.tier === "pro" ? "Pro" : "Free") : "…"}
+          {t("sidebar.license", { tier: status ? (status.tier === "pro" ? "Pro" : "Free") : "…" })}
         </button>
         <button type="button" className="link" onClick={() => open({ kind: "about" })}>
-          О программе
+          {t("sidebar.about")}
         </button>
       </div>
     </aside>

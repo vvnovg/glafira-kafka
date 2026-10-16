@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
-import { PRO_HINT, useLicense } from "../../lib/useLicense";
+import { proHint, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
 import { newConsumerKey, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
@@ -70,7 +70,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         <button
           type="button"
           disabled={readOnly || locked}
-          title={readOnly ? "Подключение только для чтения: вход в группу меняет её состояние" : locked ? PRO_HINT : undefined}
+          title={readOnly ? "Подключение только для чтения: вход в группу меняет её состояние" : locked ? proHint() : undefined}
           onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}
         >
           Читать как группа

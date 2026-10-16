@@ -1,4 +1,5 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import type { Confirmation, ConnectionProfile } from "../../api/types";
 
 /** Нужен ли диалог: prod-подключение или операция с вводом имени объекта (удаление, purge). */
@@ -30,13 +31,15 @@ export function ConfirmDialog({
   title,
   confirmLabel,
   objectName,
-  objectLabel = "имя",
+  objectLabel,
   danger,
   busy,
   children,
   onConfirm,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
+  const label = objectLabel ?? t("common.confirm.defaultLabel");
   const [connName, setConnName] = useState("");
   const [typed, setTyped] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -70,14 +73,14 @@ export function ConfirmDialog({
       {children}
       {objectName !== undefined && (
         <label>
-          Для подтверждения введите {objectLabel} <code>{objectName}</code>
-          <input aria-label={`Подтверждение: ${objectLabel}`} value={typed} disabled={busy} onChange={(e) => setTyped(e.target.value)} />
+          <Trans i18nKey="common.confirm.typeObject" values={{ label, name: objectName }} components={{ code: <code /> }} />
+          <input aria-label={t("common.confirm.objectAria", { label })} value={typed} disabled={busy} onChange={(e) => setTyped(e.target.value)} />
         </label>
       )}
       {isProd && (
         <label>
-          Это prod-подключение. Введите его имя <code>{connection.name}</code>
-          <input aria-label="Имя подключения" value={connName} disabled={busy} onChange={(e) => setConnName(e.target.value)} />
+          <Trans i18nKey="common.confirm.prodNotice" values={{ name: connection.name }} components={{ code: <code /> }} />
+          <input aria-label={t("common.confirm.connectionAria")} value={connName} disabled={busy} onChange={(e) => setConnName(e.target.value)} />
         </label>
       )}
       <div className="toolbar">
@@ -90,7 +93,7 @@ export function ConfirmDialog({
           {confirmLabel}
         </button>
         <button type="button" disabled={busy} onClick={onCancel}>
-          Отмена
+          {t("common.cancel")}
         </button>
       </div>
     </div>

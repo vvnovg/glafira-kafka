@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import type { Confirmation, GroupDescription, GroupPartitionOffset } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
-import { PRO_HINT, useLicense } from "../../lib/useLicense";
+import { proHint, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
 import { newConsumerKey, type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
 import { ProLock } from "../common/ProLock";
@@ -106,7 +106,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
             readOnly
               ? "Подключение только для чтения: вход в группу меняет её состояние"
               : locked
-                ? PRO_HINT
+                ? proHint()
                 : offsets.isPending
                 ? "Загружаются топики группы"
                 : undefined

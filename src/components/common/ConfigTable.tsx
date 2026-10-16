@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ConfigEntry } from "../../api/types";
 
 export function filterConfigs(entries: ConfigEntry[], query: string, onlyChanged: boolean): ConfigEntry[] {
@@ -7,26 +8,27 @@ export function filterConfigs(entries: ConfigEntry[], query: string, onlyChanged
 }
 
 export function ConfigTable({ entries }: { entries: ConfigEntry[] }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [onlyChanged, setOnlyChanged] = useState(false);
   const rows = filterConfigs(entries, query, onlyChanged);
   return (
     <div>
       <div className="toolbar">
-        <input aria-label="Поиск параметра" placeholder="Поиск параметра" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input aria-label={t("common.config.searchParam")} placeholder={t("common.config.searchParam")} value={query} onChange={(e) => setQuery(e.target.value)} />
         <label>
-          <input type="checkbox" checked={onlyChanged} onChange={(e) => setOnlyChanged(e.target.checked)} /> Только изменённые
+          <input type="checkbox" checked={onlyChanged} onChange={(e) => setOnlyChanged(e.target.checked)} /> {t("common.config.onlyChanged")}
         </label>
         <span className="muted">
-          {rows.length} из {entries.length}
+          {t("common.config.shownOf", { shown: rows.length, total: entries.length })}
         </span>
       </div>
       <table>
         <thead>
           <tr>
-            <th>Параметр</th>
-            <th>Значение</th>
-            <th>Источник</th>
+            <th>{t("common.config.colParam")}</th>
+            <th>{t("common.config.colValue")}</th>
+            <th>{t("common.config.colSource")}</th>
           </tr>
         </thead>
         <tbody>
@@ -34,7 +36,7 @@ export function ConfigTable({ entries }: { entries: ConfigEntry[] }) {
             <tr key={e.name}>
               <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>
                 {e.name}
-                {e.isReadOnly && <span className="muted" role="img" aria-label="Только чтение" title="Только чтение"> 🔒</span>}
+                {e.isReadOnly && <span className="muted" role="img" aria-label={t("common.readOnly")} title={t("common.readOnly")}> 🔒</span>}
               </td>
               <td>
                 <code>{e.isSensitive ? "••••••" : (e.value ?? "—")}</code>

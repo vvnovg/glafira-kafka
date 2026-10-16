@@ -18,30 +18,30 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
     case "settings":
       return i18n.t("tabs.settings");
     case "license":
-      return "Лицензия";
+      return i18n.t("tabs.license");
     case "about":
-      return "О программе";
+      return i18n.t("tabs.about");
     case "connection-form":
-      return tab.connectionId ? `Подключение: ${conn}` : "Новое подключение";
+      return tab.connectionId ? i18n.t("tabs.connection", { name: conn }) : i18n.t("tabs.newConnection");
     case "cluster":
-      return `${conn} · Обзор`;
+      return i18n.t("tabs.cluster", { conn });
     case "topics":
-      return `${conn} · Топики`;
+      return i18n.t("tabs.topics", { conn });
     case "topic":
       return `${conn} · ${tab.topic}`;
     case "groups":
-      return `${conn} · Группы`;
+      return i18n.t("tabs.groups", { conn });
     case "group":
       return `${conn} · ${tab.groupId}`;
     case "producer":
-      return `${conn} · Producer`;
+      return i18n.t("tabs.producer", { conn });
     case "consumer":
-      return `${conn} · Сессия ${tab.groupId ?? tab.topic ?? ""}`.trim();
+      return i18n.t("tabs.consumer", { conn, target: tab.groupId ?? tab.topic ?? "" }).trim();
   }
 }
 
 export function Layout() {
-  useTranslation(); // перерисовка заголовков вкладок при смене языка
+  const { t: tx } = useTranslation(); // перерисовка заголовков вкладок при смене языка
   const { tabs, activeId, activate, close } = useWorkspace();
   const { data: connections = [] } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const byId = new Map(connections.map((c) => [c.id, c]));
@@ -70,7 +70,7 @@ export function Layout() {
                 <button
                   type="button"
                   className="icon"
-                  aria-label="Закрыть вкладку"
+                  aria-label={tx("layout.closeTab")}
                   onClick={(e) => {
                     e.stopPropagation();
                     close(t.id);
@@ -82,7 +82,7 @@ export function Layout() {
             );
           })}
         </nav>
-        {tabs.length === 0 && <p className="empty">Выберите подключение слева или добавьте новое.</p>}
+        {tabs.length === 0 && <p className="empty">{tx("layout.empty")}</p>}
         {/* Неактивные вкладки скрыты, но не размонтированы — browse-сессии и состояние форм сохраняются. */}
         {tabs.map((t) => (
           <section key={t.id} className="tab-content" hidden={t.id !== activeId}>

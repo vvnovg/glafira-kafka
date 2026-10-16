@@ -8,7 +8,35 @@
     "loading": "Загрузка…",
     "details": "Подробности",
     "openLicense": "Открыть «Лицензия»",
-    "proHint": "Доступно в Pro — активируйте лицензию на экране «Лицензия»"
+    "proHint": "Доступно в Pro — активируйте лицензию на экране «Лицензия»",
+    "readOnly": "Только чтение",
+    "confirm": {
+      "typeObject": "Для подтверждения введите {{label}} <code>{{name}}</code>",
+      "prodNotice": "Это prod-подключение. Введите его имя <code>{{name}}</code>",
+      "defaultLabel": "имя",
+      "objectAria": "Подтверждение: {{label}}",
+      "connectionAria": "Имя подключения"
+    },
+    "config": {
+      "searchParam": "Поиск параметра",
+      "onlyChanged": "Только изменённые",
+      "shownOf": "{{shown}} из {{total}}",
+      "colParam": "Параметр",
+      "colValue": "Значение",
+      "colSource": "Источник",
+      "reviewTitle": "Изменения конфигурации «{{topic}}»",
+      "defaultValue": "по умолчанию",
+      "applyTitle": "Применить изменения?",
+      "apply": "Применить",
+      "back": "Назад",
+      "review": "Проверить изменения",
+      "discard": "Отменить правки",
+      "changesCount": "изменений: {{count}}",
+      "valueAria": "Значение {{name}}",
+      "emptyValue": "пустое значение; используйте «к default»",
+      "resetAria": "Сбросить {{name}}",
+      "reset": "к default"
+    }
   },
   "errors": {
     "generic": "{{message}}",
@@ -306,10 +334,30 @@
     }
   },
   "sidebar": {
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "connections": "Подключения",
+    "newConnection": "Новое подключение",
+    "editConnection": "Изменить подключение",
+    "emptyHint": "Добавьте первое подключение. Для локальной Kafka: <code>docker compose -f dev/docker-compose.yml up -d</code> и bootstrap <code>localhost:9092</code>.",
+    "cluster": "Обзор кластера",
+    "topics": "Топики",
+    "groups": "Consumer groups",
+    "producer": "Producer",
+    "consumer": "Consumer-сессия",
+    "license": "Лицензия: {{tier}}",
+    "about": "О программе"
   },
   "tabs": {
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "license": "Лицензия",
+    "about": "О программе",
+    "connection": "Подключение: {{name}}",
+    "newConnection": "Новое подключение",
+    "cluster": "{{conn}} · Обзор",
+    "topics": "{{conn}} · Топики",
+    "groups": "{{conn}} · Группы",
+    "producer": "{{conn}} · Producer",
+    "consumer": "{{conn}} · Сессия {{target}}"
   },
   "settings": {
     "title": "Настройки",
@@ -322,5 +370,9 @@
       "policy": "Язык задан вашей организацией",
       "proRequired": "Выбранный язык доступен в Pro — сейчас интерфейс на английском"
     }
+  },
+  "layout": {
+    "closeTab": "Закрыть вкладку",
+    "empty": "Выберите подключение слева или добавьте новое."
   }
 }

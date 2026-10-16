@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { i18n } from "../i18n";
 
-export const PRO_HINT = "Доступно в Pro — активируйте лицензию на экране «Лицензия»";
+export const proHint = () => i18n.t("common.proHint");
 
 /** locked — статус известен и тариф не Pro. Пока статус не загружен, интерфейс не блокируется: проверку делает Rust. */
 export function useLicense() {

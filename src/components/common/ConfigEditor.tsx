@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange }: Props) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [edits, setEdits] = useState<Record<string, ConfigEdit>>({});
   // Снимок изменений на момент открытия проверки: дальше он не зависит от живых правок/обновления entries.
@@ -52,13 +54,13 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
   if (review) {
     return (
       <div className="panel">
-        <h3>Изменения конфигурации «{topic}»</h3>
+        <h3>{t("common.config.reviewTitle", { topic })}</h3>
         <ul>
           {review.rows.map((r) => (
             <li key={r.name}>
               <code>{r.name}</code>:{" "}
               <span>
-                {r.before ?? "—"} → {r.after ?? "по умолчанию"}
+                {r.before ?? "—"} → {r.after ?? t("common.config.defaultValue")}
               </span>
             </li>
           ))}
@@ -67,8 +69,8 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
         {needsConfirmation(connection) ? (
           <ConfirmDialog
             connection={connection}
-            title="Применить изменения?"
-            confirmLabel="Применить"
+            title={t("common.config.applyTitle")}
+            confirmLabel={t("common.config.apply")}
             busy={apply.isPending}
             onConfirm={(c) => apply.mutate({ changes: review.changes, confirm: c.confirm })}
             onCancel={() => setReview(null)}
@@ -81,10 +83,10 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
               disabled={apply.isPending}
               onClick={() => apply.mutate({ changes: review.changes, confirm: null })}
             >
-              Применить
+              {t("common.config.apply")}
             </button>
             <button type="button" disabled={apply.isPending} onClick={() => setReview(null)}>
-              Назад
+              {t("common.config.back")}
             </button>
           </div>
         )}
@@ -95,24 +97,24 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
   return (
     <div className="panel">
       <div className="toolbar">
-        <input aria-label="Поиск параметра" placeholder="Поиск параметра" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input aria-label={t("common.config.searchParam")} placeholder={t("common.config.searchParam")} value={query} onChange={(e) => setQuery(e.target.value)} />
         <button type="button" className="primary" disabled={changes.length === 0 || invalid.length > 0} onClick={() => {
           const { changes, rows } = diffConfigs(entries, edits);
           setReview({ changes, rows });
         }}>
-          Проверить изменения
+          {t("common.config.review")}
         </button>
         <button type="button" disabled={Object.keys(edits).length === 0} onClick={() => setEdits({})}>
-          Отменить правки
+          {t("common.config.discard")}
         </button>
-        <span className="muted">изменений: {changes.length}</span>
+        <span className="muted">{t("common.config.changesCount", { count: changes.length })}</span>
       </div>
       <table>
         <thead>
           <tr>
-            <th>Параметр</th>
-            <th>Значение</th>
-            <th>Источник</th>
+            <th>{t("common.config.colParam")}</th>
+            <th>{t("common.config.colValue")}</th>
+            <th>{t("common.config.colSource")}</th>
             <th />
           </tr>
         </thead>
@@ -122,14 +124,14 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
               <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>{e.name}</td>
               <td>
                 <input
-                  aria-label={`Значение ${e.name}`}
+                  aria-label={t("common.config.valueAria", { name: e.name })}
                   disabled={!isEditable(e)}
                   value={e.isSensitive ? "••••••" : valueOf(e)}
-                  placeholder={edits[e.name]?.kind === "reset" ? "по умолчанию" : undefined}
+                  placeholder={edits[e.name]?.kind === "reset" ? t("common.config.defaultValue") : undefined}
                   aria-invalid={invalidSet.has(e.name) || undefined}
                   onChange={(ev) => setEdits((s) => ({ ...s, [e.name]: { kind: "set", value: ev.target.value } }))}
                 />
-                {invalidSet.has(e.name) && <div className="warn">пустое значение; используйте «к default»</div>}
+                {invalidSet.has(e.name) && <div className="warn">{t("common.config.emptyValue")}</div>}
               </td>
               <td className="muted">{e.source}</td>
               <td>
@@ -137,10 +139,10 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
                   <button
                     type="button"
                     className="link"
-                    aria-label={`Сбросить ${e.name}`}
+                    aria-label={t("common.config.resetAria", { name: e.name })}
                     onClick={() => setEdits((s) => ({ ...s, [e.name]: { kind: "reset" } }))}
                   >
-                    к default
+                    {t("common.config.reset")}
                   </button>
                 )}
               </td>

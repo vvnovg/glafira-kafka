@@ -1,8 +1,8 @@
-import { PRO_HINT } from "../../lib/useLicense";
+import { proHint } from "../../lib/useLicense";
 
 export function ProLock() {
   return (
-    <span className="pro-lock" title={PRO_HINT}>
+    <span className="pro-lock" title={proHint()}>
       🔒 Pro
     </span>
   );

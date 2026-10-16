@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatProps, newProfile, parseProps, withProtocol } from "./profile";
+import { formatFromPath, formatProps, newClientCert, newProfile, parseProps, withProtocol } from "./profile";
 
 describe("profile helpers", () => {
   it("новый профиль — PLAINTEXT localhost", () => {
@@ -13,7 +13,7 @@ describe("profile helpers", () => {
     const sasl = withProtocol({ protocol: "PLAINTEXT" }, "SASL_SSL");
     expect(sasl).toEqual({
       protocol: "SASL_SSL",
-      tls: { caLocation: null, verifyHostname: true },
+      tls: { caLocation: null, caFormat: "pem", verifyHostname: true, clientCert: null },
       sasl: { mechanism: "PLAIN", username: "" },
     });
     const edited = { ...sasl, sasl: { mechanism: "SCRAM-SHA-512" as const, username: "bob" } };
@@ -26,5 +26,23 @@ describe("profile helpers", () => {
     expect(parseProps("a=1\n\n  b.c = x=y \n# коммент")).toEqual({ a: "1", "b.c": "x=y" });
     expect(formatProps({ a: "1", b: "2" })).toBe("a=1\nb=2");
     expect(() => parseProps("oops")).toThrow("Строка 1");
+  });
+});
+
+describe("сертификаты", () => {
+  it("формат по расширению", () => {
+    expect(formatFromPath("/a/client.P12")).toBe("pkcs12");
+    expect(formatFromPath("C:\\certs\\c.pfx")).toBe("pkcs12");
+    expect(formatFromPath("/a/keystore.jks")).toBe("jks");
+    expect(formatFromPath("/a/tls.crt")).toBe("pem");
+    expect(formatFromPath("/a/tls.key")).toBe("pem");
+    expect(formatFromPath("/a/ca.pem")).toBe("pem");
+    expect(formatFromPath("/a/cert")).toBeNull();
+  });
+
+  it("SSL по умолчанию — PEM без клиентского сертификата", () => {
+    const sec = withProtocol({ protocol: "PLAINTEXT" }, "SSL");
+    expect(sec).toEqual({ protocol: "SSL", tls: { caLocation: null, caFormat: "pem", verifyHostname: true, clientCert: null } });
+    expect(newClientCert()).toEqual({ format: "pem", certificatePath: "", keyPath: "", alias: null });
   });
 });

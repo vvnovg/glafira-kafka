@@ -33,6 +33,7 @@ import type {
   ConfigEntry,
   ConnectionProfile,
   TestReport,
+  TlsPasswordsInput,
   TopicDetails,
   TopicStats,
   TopicSummary,
@@ -58,11 +59,15 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 
 export const api = {
   listConnections: () => call<ConnectionProfile[]>("list_connections"),
-  saveConnection: (profile: ConnectionProfile, saslPassword?: string) =>
-    call<ConnectionProfile>("save_connection", { input: { profile, saslPassword: saslPassword ?? null } }),
+  saveConnection: (profile: ConnectionProfile, saslPassword?: string, tlsPasswords?: TlsPasswordsInput) =>
+    call<ConnectionProfile>("save_connection", {
+      input: { profile, saslPassword: saslPassword ?? null, tlsPasswords: tlsPasswords ?? null },
+    }),
   deleteConnection: (id: string) => call<void>("delete_connection", { id }),
-  testConnection: (profile: ConnectionProfile, saslPassword?: string) =>
-    call<TestReport>("test_connection", { input: { profile, saslPassword: saslPassword ?? null } }),
+  testConnection: (profile: ConnectionProfile, saslPassword?: string, tlsPasswords?: TlsPasswordsInput) =>
+    call<TestReport>("test_connection", {
+      input: { profile, saslPassword: saslPassword ?? null, tlsPasswords: tlsPasswords ?? null },
+    }),
 
   getClusterOverview: (connectionId: string) => call<ClusterOverview>("get_cluster_overview", { connectionId }),
   getBrokerConfig: (connectionId: string, brokerId: number) =>

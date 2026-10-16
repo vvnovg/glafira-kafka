@@ -9,13 +9,22 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { api, toAppError } from "./client";
-import type { BrowseParams, ConsumerParams, ProduceMessage } from "./types";
+import type { BrowseParams, ConnectionProfile, ConsumerParams, ProduceMessage } from "./types";
 
 beforeEach(() => {
   invoke.mockReset();
 });
 
 describe("api client", () => {
+  it("saveConnection передаёт пароли TLS", async () => {
+    invoke.mockResolvedValue({});
+    const tls = { keyPassword: null, keystorePassword: "s", truststorePassword: "" };
+    await api.saveConnection({ id: "a" } as ConnectionProfile, undefined, tls);
+    expect(invoke).toHaveBeenCalledWith("save_connection", {
+      input: { profile: { id: "a" }, saslPassword: null, tlsPasswords: tls },
+    });
+  });
+
   it("передаёт аргументы в camelCase", async () => {
     invoke.mockResolvedValue([]);
     await api.getTopicStats("c1", ["a", "b"]);
@@ -26,7 +35,7 @@ describe("api client", () => {
     invoke.mockResolvedValue({ ok: true, steps: [] });
     const profile = { id: "", name: "x" } as never;
     await api.testConnection(profile, "pw");
-    expect(invoke).toHaveBeenCalledWith("test_connection", { input: { profile, saslPassword: "pw" } });
+    expect(invoke).toHaveBeenCalledWith("test_connection", { input: { profile, saslPassword: "pw", tlsPasswords: null } });
   });
 
   it("пробрасывает AppError как есть", async () => {

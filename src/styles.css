@@ -102,3 +102,7 @@ tr.selected { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 .headers-captions span { width: 160px; }
 .assignment ul { list-style: none; padding: 0; margin: 0 0 8px; }
 .details-pane h4 button.link { margin-left: 8px; }
+
+.path-field { display: flex; gap: 6px; align-items: center; }
+.path-field > input:not([type="checkbox"]) { flex: 1; min-width: 0; }
+label.inline { display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; color: var(--muted); }

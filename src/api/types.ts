@@ -21,9 +21,27 @@ export interface AppError {
 export type Environment = "local" | "dev" | "test" | "stage" | "prod";
 export type SaslMechanism = "PLAIN" | "SCRAM-SHA-256" | "SCRAM-SHA-512";
 
+export type CertFormat = "pem" | "pkcs12" | "jks";
+
+export interface ClientCert {
+  format: CertFormat;
+  certificatePath: string;
+  keyPath: string | null;
+  alias: string | null;
+}
+
 export interface TlsConfig {
   caLocation: string | null;
+  caFormat: CertFormat;
   verifyHostname: boolean;
+  clientCert: ClientCert | null;
+}
+
+/** null — не менять сохранённый пароль, "" — удалить, иначе — новый пароль. */
+export interface TlsPasswordsInput {
+  keyPassword: string | null;
+  keystorePassword: string | null;
+  truststorePassword: string | null;
 }
 
 export interface SaslConfig {

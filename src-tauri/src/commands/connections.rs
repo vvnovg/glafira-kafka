@@ -12,7 +12,7 @@ use crate::kafka::config::{
 use crate::kafka::connectivity::{self, TestReport};
 use crate::secrets::{OverlayStore, SecretStore, secret_key};
 use crate::state::AppState;
-use crate::storage::connections::ConnectionProfile;
+use crate::storage::connections::{ConnectionProfile, Environment};
 
 /// Пароли TLS из формы. Для каждого: `null`/нет — оставить сохранённый, `""` — удалить, иное — сохранить.
 #[derive(Debug, Default, Deserialize)]
@@ -130,6 +130,12 @@ pub fn save_connection_blocking(
         profile.id = uuid::Uuid::new_v4().to_string();
     }
     let previous = st.connections.get(&profile.id).ok();
+    // Перевод в prod — функция Pro; уже существующие prod-профили остаются редактируемыми (и защищёнными guard).
+    let becomes_prod = profile.environment == Environment::Prod
+        && previous.as_ref().map(|p| p.environment) != Some(Environment::Prod);
+    if becomes_prod {
+        st.license.require_pro()?;
+    }
     // upsert валидирует профиль — секрет трогаем только после успешного сохранения.
     let saved = st.connections.upsert(profile)?;
     let ops = secret_ops(&saved, sasl_password.as_deref(), tls_passwords.as_ref());
@@ -412,5 +418,39 @@ mod tests {
             "сессия изменённого подключения отменена"
         );
         assert!(!b.load(Ordering::Relaxed), "чужие сессии не тронуты");
+    }
+
+    fn prod(mut p: ConnectionProfile) -> ConnectionProfile {
+        p.environment = Environment::Prod;
+        p
+    }
+
+    #[test]
+    fn prod_environment_requires_pro_but_existing_prod_stays_editable() {
+        let (_d, st) = state(Arc::new(MemoryStore::default()));
+        // Новый prod-профиль без лицензии — нельзя.
+        let e = save_connection_blocking(&st, input(prod(sample_profile("a")), None)).unwrap_err();
+        assert_eq!(e.code, ErrorCode::ProRequired);
+        assert!(st.connections.get("a").is_err());
+        // dev → prod — нельзя.
+        save_connection_blocking(&st, input(sample_profile("b"), None)).unwrap();
+        assert_eq!(
+            save_connection_blocking(&st, input(prod(sample_profile("b")), None))
+                .unwrap_err()
+                .code,
+            ErrorCode::ProRequired
+        );
+        // Существующий prod-профиль (создан раньше) остаётся редактируемым и защищённым.
+        st.connections.upsert(prod(sample_profile("c"))).unwrap();
+        let mut renamed = prod(sample_profile("c"));
+        renamed.name = "новое имя".into();
+        save_connection_blocking(&st, input(renamed, None)).unwrap();
+    }
+
+    #[test]
+    fn prod_environment_with_pro() {
+        let (d, mut st) = state(Arc::new(MemoryStore::default()));
+        st.license = Arc::new(crate::license::pro_for_tests(d.path()));
+        save_connection_blocking(&st, input(prod(sample_profile("a")), None)).unwrap();
     }
 }

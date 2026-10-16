@@ -36,7 +36,7 @@ base64 = "0.22"
 csv = "1"
 openssl = { version = "0.10", features = ["vendored"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "registry", "fmt"] }
 plist = "1"
 license-format = { path = "../crates/license-format" }
 

@@ -5,6 +5,7 @@ pub mod error;
 pub mod guard;
 pub mod kafka;
 pub mod license;
+pub mod logging;
 pub mod migrate;
 pub mod policy;
 pub mod produce;
@@ -18,7 +19,6 @@ pub mod tls;
 use std::sync::Arc;
 
 use tauri::Manager;
-use tracing_subscriber::EnvFilter;
 
 use crate::secrets::KeyringStore;
 use crate::state::AppState;
@@ -29,16 +29,12 @@ const EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .init();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            crate::logging::init(&app.path().app_log_dir()?);
+            tracing::info!(version = env!("CARGO_PKG_VERSION"), "запуск");
             let dir = app.path().app_data_dir()?;
             // Каталог данных Tauri — `<базовый каталог>/<identifier>`: прежние лежат рядом.
             if let Some(parent) = dir.parent() {

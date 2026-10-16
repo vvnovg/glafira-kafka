@@ -308,6 +308,8 @@ pub fn sample_profile(id: &str) -> ConnectionProfile {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::error::ErrorCode;
 
     #[test]
     fn old_tls_profiles_get_defaults() {
@@ -396,8 +398,6 @@ mod tests {
             );
         }
     }
-    use super::*;
-    use crate::error::ErrorCode;
 
     #[test]
     fn parse_bootstrap_variants() {

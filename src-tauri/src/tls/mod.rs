@@ -214,14 +214,18 @@ fn finish_identity(key: PKey<Private>, chain: Vec<X509>) -> AppResult<ClientIden
     }
     let now = Asn1Time::days_from_now(0)
         .map_err(|e| ssl_err("Не удалось получить текущее время".into(), e))?;
-    let cmp = |t: &openssl::asn1::Asn1TimeRef| t.compare(&now).unwrap_or(Ordering::Equal);
-    if cmp(leaf.not_before()) == Ordering::Greater {
+    // Ошибка сравнения — ошибка, а не «действителен».
+    let cmp = |t: &openssl::asn1::Asn1TimeRef| {
+        t.compare(&now)
+            .map_err(|e| ssl_err(format!("{CLIENT}: не удалось проверить срок действия"), e))
+    };
+    if cmp(leaf.not_before())? == Ordering::Greater {
         return Err(AppError::invalid(format!(
             "{CLIENT} ещё не действует (действует с {})",
             leaf.not_before()
         )));
     }
-    if cmp(leaf.not_after()) == Ordering::Less {
+    if cmp(leaf.not_after())? == Ordering::Less {
         return Err(AppError::invalid(format!(
             "Срок действия: {CLIENT} истёк {}",
             leaf.not_after()

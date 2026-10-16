@@ -1,13 +1,13 @@
 import { useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { LicenseStatus } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { ErrorBanner } from "../common/ErrorBanner";
 
-const KIND = { personal: "личная", organization: "организации" } as const;
-
 export function LicensePanel() {
+  const { t } = useTranslation();
   const uid = useId();
   const queryClient = useQueryClient();
   const license = useQuery({ queryKey: ["license"], queryFn: api.getLicenseStatus });
@@ -32,60 +32,60 @@ export function LicensePanel() {
 
   if (license.error) return <ErrorBanner error={license.error} onRetry={() => license.refetch()} />;
   const st = license.data;
-  if (!st) return <p className="empty">Загрузка…</p>;
+  if (!st) return <p className="empty">{t("common.loading")}</p>;
   const managed = st.source === "policy";
 
   return (
     <div className="page">
       <div className="toolbar">
-        <h2>Лицензия</h2>
+        <h2>{t("license.title")}</h2>
       </div>
       <dl className="stats">
         <div>
-          <dt>Тариф</dt>
+          <dt>{t("license.tier")}</dt>
           <dd>{st.tier === "pro" ? "Pro" : "Free"}</dd>
         </div>
         <div>
-          <dt>Владелец</dt>
+          <dt>{t("license.licensee")}</dt>
           <dd>{st.licensee ?? "—"}</dd>
         </div>
         <div>
-          <dt>Тип</dt>
-          <dd>{st.kind ? KIND[st.kind] : "—"}</dd>
+          <dt>{t("license.kind")}</dt>
+          <dd>{st.kind ? t(st.kind === "personal" ? "license.kindPersonal" : "license.kindOrganization") : "—"}</dd>
         </div>
         <div>
-          <dt>Действует до</dt>
-          <dd>{st.expires ?? (st.licensee ? "бессрочно" : "—")}</dd>
+          <dt>{t("license.expires")}</dt>
+          <dd>{st.expires ?? (st.licensee ? t("license.perpetual") : "—")}</dd>
         </div>
       </dl>
-      {st.state === "expiring" && <p className="warn">Лицензия истекает через {st.daysLeft} дн. ({st.expires}).</p>}
-      {st.state === "expired" && <p className="warn">Лицензия истекла {st.expires}: функции Pro отключены, данные сохранены.</p>}
+      {st.state === "expiring" && <p className="warn">{t("license.expiring", { count: st.daysLeft ?? 0, date: st.expires })}</p>}
+      {st.state === "expired" && <p className="warn">{t("license.expired", { date: st.expires })}</p>}
       {st.state === "invalid" && st.error && <p className="warn">{tr(st.error)}</p>}
 
       {managed ? (
-        <p className="muted">Лицензия управляется вашей организацией.</p>
+        <p className="muted">{t("license.managed")}</p>
       ) : (
         <div className="panel">
-          <label htmlFor={`${uid}-key`}>Лицензионный ключ</label>
+          <label htmlFor={`${uid}-key`}>{t("license.keyLabel")}</label>
           <textarea id={`${uid}-key`} rows={3} value={key} onChange={(e) => setKey(e.target.value)} />
           <div className="toolbar">
             <button type="button" className="primary" disabled={!key.trim() || activate.isPending} onClick={() => activate.mutate(key.trim())}>
-              Активировать
+              {t("license.activate")}
             </button>
             {st.source === "user" &&
               (confirmRemove ? (
-                <span role="group" aria-label="Подтверждение удаления ключа">
-                  Удалить ключ? Функции Pro отключатся.{" "}
+                <span role="group" aria-label={t("license.removeGroupAria")}>
+                  {t("license.removeQuestion")}{" "}
                   <button type="button" className="danger" disabled={remove.isPending} onClick={() => remove.mutate()}>
-                    Да, удалить
+                    {t("license.removeYes")}
                   </button>{" "}
                   <button type="button" onClick={() => setConfirmRemove(false)}>
-                    Отмена
+                    {t("common.cancel")}
                   </button>
                 </span>
               ) : (
                 <button type="button" className="danger" onClick={() => setConfirmRemove(true)}>
-                  Удалить ключ
+                  {t("license.removeKey")}
                 </button>
               ))}
           </div>
@@ -95,20 +95,17 @@ export function LicensePanel() {
       )}
 
       <section>
-        <h3>Что даёт Pro</h3>
+        <h3>{t("license.whatProGives")}</h3>
         <ul>
-          <li>Consumer-сессии: чтение как участник группы, коммит оффсетов, пауза партиций.</li>
-          <li>
-            Режим prod: создание и перевод подключений в prod (с подтверждением именем подключения на любое
-            изменение).
-          </li>
+          <li>{t("license.proConsumer")}</li>
+          <li>{t("license.proProd")}</li>
         </ul>
       </section>
 
       {policy.data?.managed && (
         <section>
-          <h3>Политика организации</h3>
-          <p className="muted">Источник: {policy.data.source}</p>
+          <h3>{t("license.policyTitle")}</h3>
+          <p className="muted">{t("license.policySource", { source: policy.data.source })}</p>
           {policy.data.errors.map((e, i) => (
             <p key={i} className="warn">
               {tr(e)}

@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLicense } from "../../lib/useLicense";
 import { useWorkspace } from "../../state/workspace";
 
 export function LicenseNotice() {
+  const { t } = useTranslation();
   const { status } = useLicense();
   const open = useWorkspace((s) => s.open);
   const [hidden, setHidden] = useState(false);
@@ -11,13 +13,13 @@ export function LicenseNotice() {
     <div className="notice" role="status">
       <span>
         {status.state === "expiring"
-          ? `Лицензия Pro истекает через ${status.daysLeft} дн.`
-          : `Лицензия Pro истекла ${status.expires}: функции Pro отключены.`}
+          ? t("license.notice.expiring", { count: status.daysLeft ?? 0 })
+          : t("license.notice.expired", { date: status.expires })}
       </span>
       <button type="button" className="link" onClick={() => open({ kind: "license" })}>
-        Подробнее
+        {t("license.notice.more")}
       </button>
-      <button type="button" className="icon" aria-label="Скрыть уведомление" onClick={() => setHidden(true)}>
+      <button type="button" className="icon" aria-label={t("license.notice.hideAria")} onClick={() => setHidden(true)}>
         ×
       </button>
     </div>

@@ -13,7 +13,8 @@ export function isEditable(e: ConfigEntry): boolean {
   return !e.isReadOnly && !e.isSensitive;
 }
 
-/** Правки → изменения для IncrementalAlterConfigs, строки diff «было → стало» (по имени параметра)
+/**
+ * Правки → изменения для IncrementalAlterConfigs, строки diff «было → стало» (по имени параметра)
  * и невалидные (пустые) правки, которые в изменения не входят. */
 export function diffConfigs(
   entries: ConfigEntry[],

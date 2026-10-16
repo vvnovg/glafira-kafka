@@ -826,5 +826,130 @@
       "start": "Start",
       "cancel": "Cancel"
     }
+  },
+  "consumer": {
+    "warn": "The session joins the group and affects the cluster: other group members will rebalance, and commits change the group's offsets.",
+    "proOnly": "Consumer sessions are available in Pro.",
+    "readOnlyBlocked": "Consumer sessions are unavailable for read-only connections: joining a group changes its state.",
+    "disconnect": "Disconnect",
+    "form": {
+      "groupTopics": "Group and topics",
+      "suggestingTitle": "Generating a group name",
+      "useRegex": "topics by regex",
+      "patternLabel": "Topic regular expression",
+      "topicsLabel": "Topics",
+      "resetLatest": "from the end (latest)",
+      "resetEarliest": "from the start (earliest)",
+      "autoCommit": "auto-commit",
+      "formatLegend": "Format",
+      "keyFormat": "Key format",
+      "valueFormat": "Value format",
+      "buffer": "Buffer, messages"
+    },
+    "dialog": {
+      "startTitle": "Join group \"{{group}}\"?",
+      "commitTitle": "Commit offsets?",
+      "confirm": "Confirm"
+    },
+    "actions": {
+      "connect": "Join group",
+      "commitSelected": "Commit up to selected",
+      "commitAll": "Commit everything read"
+    },
+    "status": {
+      "counters": "read {{consumed}} · matched {{matched}} · in table {{shown}}",
+      "connecting": "connecting…",
+      "reconnecting": "reconnecting: {{reason}}…",
+      "inGroup": "in group",
+      "disconnected": "disconnected"
+    },
+    "missingTopic": "Topic not found in the cluster. Check the names: {{topics}}.",
+    "missingTopicOrGroup": "Topic or group not found in the cluster.",
+    "commitTimeout": "It is unknown whether the commit was applied: the session did not respond in time, but the request may have gone through. Check the group's offsets.",
+    "committed": "Committed: {{offsets}}",
+    "validation": {
+      "groupId": "Specify group.id",
+      "buffer": "Buffer must be 1 to {{max}} messages",
+      "pattern": "Specify a regular expression for topics",
+      "patternInvalid": "Invalid regular expression for topics",
+      "topics": "Specify topics"
+    },
+    "assignment": {
+      "title": "Assignment ({{count}})",
+      "none": "No partitions assigned.",
+      "paused": "paused",
+      "pause": "pause",
+      "resume": "resume",
+      "pauseAria": "Pause {{partition}}",
+      "resumeAria": "Resume {{partition}}",
+      "logTitle": "Rebalance log",
+      "logEmpty": "No rebalances yet.",
+      "logAssigned": "{{time}} — assigned: {{partitions}}",
+      "logRevoked": "{{time}} — revoked: {{partitions}}",
+      "logError": "{{time}} — rebalance error: {{message}}"
+    }
+  },
+  "license": {
+    "title": "License",
+    "tier": "Plan",
+    "licensee": "Licensee",
+    "kind": "Type",
+    "kindPersonal": "personal",
+    "kindOrganization": "organization",
+    "expires": "Valid until",
+    "perpetual": "perpetual",
+    "expiring_one": "The license expires in {{count}} day ({{date}}).",
+    "expiring_other": "The license expires in {{count}} days ({{date}}).",
+    "expired": "The license expired on {{date}}: Pro features are disabled, your data is kept.",
+    "managed": "The license is managed by your organization.",
+    "keyLabel": "License key",
+    "activate": "Activate",
+    "removeGroupAria": "Confirm key removal",
+    "removeQuestion": "Remove the key? Pro features will be disabled.",
+    "removeYes": "Yes, remove",
+    "removeKey": "Remove key",
+    "whatProGives": "What Pro includes",
+    "proConsumer": "Consumer sessions: read as a group member, commit offsets, pause partitions.",
+    "proProd": "Prod mode: create connections and switch them to prod (any change is confirmed by typing the connection name).",
+    "policyTitle": "Organization policy",
+    "policySource": "Source: {{source}}",
+    "notice": {
+      "expiring_one": "The Pro license expires in {{count}} day.",
+      "expiring_other": "The Pro license expires in {{count}} days.",
+      "expired": "The Pro license expired on {{date}}: Pro features are disabled.",
+      "more": "Details",
+      "hideAria": "Dismiss notification"
+    }
+  },
+  "about": {
+    "version": "Version",
+    "build": "Build",
+    "system": "System",
+    "tier": "Plan",
+    "policy": "Organization policy",
+    "policySet": "set",
+    "policyNone": "none",
+    "policyError": "Organization policy: {{error}}",
+    "dataDir": "Data:",
+    "logDir": "Logs:",
+    "diagnostics": {
+      "title": "Diagnostics",
+      "hint": "An archive with logs, the version and connection profiles without passwords. Attach it to your support request — the app itself sends nothing.",
+      "collect": "Collect diagnostics",
+      "saved": "Archive saved: {{path}}"
+    },
+    "updates": {
+      "title": "Updates",
+      "check": "Check for updates",
+      "upToDate": "You have the latest version",
+      "available": "Version {{version}} is available",
+      "confirmAria": "Confirm update",
+      "stopAndUpdate": "Stop sessions and update",
+      "install": "Install and restart",
+      "installing": "Downloading and installing the update…"
+    },
+    "notice": {
+      "available": "Version {{version}} is available."
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { i18n } from "../../i18n";
 import type { ConsumerParams, DataFormat } from "../../api/types";
 import { buildFilterSpec, type FilterFields } from "../browse/params";
 
@@ -43,21 +44,21 @@ export function defaultConsumerForm(init: { topic?: string; groupId?: string } =
 const MAX_BUFFER = 100_000;
 
 export function buildConsumerParams(f: ConsumerFormState, connectionId: string): ConsumerParams {
-  if (!f.groupId.trim()) throw new Error("Укажите group.id");
-  if (!Number.isInteger(f.limit) || f.limit < 1 || f.limit > MAX_BUFFER) throw new Error(`Буфер — от 1 до ${MAX_BUFFER} сообщений`);
+  if (!f.groupId.trim()) throw new Error(i18n.t("consumer.validation.groupId"));
+  if (!Number.isInteger(f.limit) || f.limit < 1 || f.limit > MAX_BUFFER) throw new Error(i18n.t("consumer.validation.buffer", { max: MAX_BUFFER }));
   let topics: string[] = [];
   let topicPattern: string | null = null;
   if (f.useRegex) {
-    if (!f.pattern.trim()) throw new Error("Укажите регулярное выражение для топиков");
+    if (!f.pattern.trim()) throw new Error(i18n.t("consumer.validation.pattern"));
     try {
       new RegExp(f.pattern.trim());
     } catch {
-      throw new Error("Некорректное регулярное выражение для топиков");
+      throw new Error(i18n.t("consumer.validation.patternInvalid"));
     }
     topicPattern = f.pattern.trim();
   } else {
     topics = f.topics.split(/[\s,]+/).filter(Boolean);
-    if (topics.length === 0) throw new Error("Укажите топики");
+    if (topics.length === 0) throw new Error(i18n.t("consumer.validation.topics"));
   }
   return {
     connectionId,

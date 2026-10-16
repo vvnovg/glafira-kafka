@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api, toAppError } from "../../api/client";
 import type { BrowsedMessage, CommitTarget, ConsumerParams, DataFormat, OffsetTarget, TopicPartitionRef } from "../../api/types";
 import { tr } from "../../i18n/text";
@@ -25,6 +26,7 @@ type Pending = { kind: "start"; params: ConsumerParams } | { kind: "commit"; tar
 const formatOffsets = (offsets: OffsetTarget[]) => offsets.map((o) => `${partitionKey(o)} → ${o.offset}`).join(", ");
 
 export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: string; topic?: string; groupId?: string }) {
+  const { t } = useTranslation();
   const connection = useConnection(connectionId);
   const [form, setForm] = useState<ConsumerFormState>(() => defaultConsumerForm({ topic, groupId }));
   const [formError, setFormError] = useState<string | null>(null);
@@ -77,13 +79,13 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
     if (readOnly && running) void stop();
   }, [readOnly, running, stop]);
 
-  if (!connection) return <p className="empty">Загрузка…</p>;
+  if (!connection) return <p className="empty">{t("common.loading")}</p>;
   if (locked && !running) {
     return (
       <div className="page">
-        <p className="warn">Consumer-сессии доступны в Pro.</p>
+        <p className="warn">{t("consumer.proOnly")}</p>
         <button type="button" className="link" onClick={() => openTab({ kind: "license" })}>
-          Открыть «Лицензия»
+          {t("common.openLicense")}
         </button>
       </div>
     );
@@ -91,10 +93,10 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
   if (connection.readOnly) {
     return (
       <div className="page">
-        <p className="warn">Consumer-сессии недоступны для подключения только для чтения: вход в группу меняет её состояние.</p>
+        <p className="warn">{t("consumer.readOnlyBlocked")}</p>
         {running && (
           <button type="button" onClick={() => void stop()}>
-            Отключиться
+            {t("consumer.disconnect")}
           </button>
         )}
       </div>
@@ -140,30 +142,29 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
   return (
     <div className="page browse">
       <p className="warn">
-        Сессия вступает в группу и влияет на кластер: у других участников группы произойдёт ребаланс, коммиты меняют оффсеты
-        группы.
+        {t("consumer.warn")}
       </p>
       <div className="browse-form">
         <fieldset disabled={running}>
-          <legend>Группа и топики</legend>
+          <legend>{t("consumer.form.groupTopics")}</legend>
           <label className="field">
             <span>group.id</span>
             <input
               aria-label="group.id"
               placeholder={suggesting ? "…" : "my-group"}
-              title={suggesting ? "Генерируется имя группы" : undefined}
+              title={suggesting ? t("consumer.form.suggestingTitle") : undefined}
               value={form.groupId}
               onChange={(e) => set({ groupId: e.target.value })}
             />
           </label>
           <label>
-            <input type="checkbox" checked={form.useRegex} onChange={(e) => set({ useRegex: e.target.checked })} /> топики по regex
+            <input type="checkbox" checked={form.useRegex} onChange={(e) => set({ useRegex: e.target.checked })} /> {t("consumer.form.useRegex")}
           </label>
           {form.useRegex ? (
             <label className="field">
-              <span>Регулярное выражение топиков</span>
+              <span>{t("consumer.form.patternLabel")}</span>
               <input
-                aria-label="Регулярное выражение топиков"
+                aria-label={t("consumer.form.patternLabel")}
                 placeholder="orders\..*"
                 value={form.pattern}
                 onChange={(e) => set({ pattern: e.target.value })}
@@ -171,8 +172,8 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
             </label>
           ) : (
             <label className="field">
-              <span>Топики</span>
-              <input aria-label="Топики" placeholder="topic-a, topic-b" value={form.topics} onChange={(e) => set({ topics: e.target.value })} />
+              <span>{t("consumer.form.topicsLabel")}</span>
+              <input aria-label={t("consumer.form.topicsLabel")} placeholder="topic-a, topic-b" value={form.topics} onChange={(e) => set({ topics: e.target.value })} />
             </label>
           )}
           <label className="field">
@@ -182,12 +183,12 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
               value={form.autoOffsetReset}
               onChange={(e) => set({ autoOffsetReset: e.target.value as ConsumerFormState["autoOffsetReset"] })}
             >
-              <option value="latest">с конца (latest)</option>
-              <option value="earliest">с начала (earliest)</option>
+              <option value="latest">{t("consumer.form.resetLatest")}</option>
+              <option value="earliest">{t("consumer.form.resetEarliest")}</option>
             </select>
           </label>
           <label>
-            <input type="checkbox" checked={form.enableAutoCommit} onChange={(e) => set({ enableAutoCommit: e.target.checked })} /> автокоммит
+            <input type="checkbox" checked={form.enableAutoCommit} onChange={(e) => set({ enableAutoCommit: e.target.checked })} /> {t("consumer.form.autoCommit")}
           </label>
           <label className="field">
             <span>isolation.level</span>
@@ -202,27 +203,27 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
           </label>
         </fieldset>
         <fieldset disabled={running}>
-          <legend>Формат</legend>
+          <legend>{t("consumer.form.formatLegend")}</legend>
           <label className="field">
-            <span>Формат ключа</span>
-            <select aria-label="Формат ключа" value={form.keyFormat} onChange={(e) => set({ keyFormat: e.target.value as DataFormat })}>
+            <span>{t("consumer.form.keyFormat")}</span>
+            <select aria-label={t("consumer.form.keyFormat")} value={form.keyFormat} onChange={(e) => set({ keyFormat: e.target.value as DataFormat })}>
               {FORMATS.map((f) => (
                 <option key={f}>{f}</option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span>Формат значения</span>
-            <select aria-label="Формат значения" value={form.valueFormat} onChange={(e) => set({ valueFormat: e.target.value as DataFormat })}>
+            <span>{t("consumer.form.valueFormat")}</span>
+            <select aria-label={t("consumer.form.valueFormat")} value={form.valueFormat} onChange={(e) => set({ valueFormat: e.target.value as DataFormat })}>
               {FORMATS.map((f) => (
                 <option key={f}>{f}</option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span>Буфер, сообщений</span>
+            <span>{t("consumer.form.buffer")}</span>
             <input
-              aria-label="Буфер, сообщений"
+              aria-label={t("consumer.form.buffer")}
               type="number"
               min={1}
               max={100000}
@@ -237,8 +238,8 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
       {dialog ? (
         <ConfirmDialog
           connection={connection}
-          title={dialog.kind === "start" ? `Подключиться к группе «${dialog.params.groupId}»?` : "Закоммитить оффсеты?"}
-          confirmLabel="Подтвердить"
+          title={dialog.kind === "start" ? t("consumer.dialog.startTitle", { group: dialog.params.groupId }) : t("consumer.dialog.commitTitle")}
+          confirmLabel={t("consumer.dialog.confirm")}
           busy={commit.isPending}
           onConfirm={(c) => (dialog.kind === "start" ? launch(dialog.params, c.confirm) : doCommit(dialog.target, c.confirm))}
           onCancel={() => setPending(null)}
@@ -246,29 +247,31 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
       ) : (
         <div className="toolbar">
           <button type="button" className="primary" disabled={running} onClick={requestStart}>
-            Подключиться к группе
+            {t("consumer.actions.connect")}
           </button>
           <button type="button" disabled={!running} onClick={() => void stop()}>
-            Отключиться
+            {t("consumer.disconnect")}
           </button>
           <button
             type="button"
             disabled={!running || !selected || !state.sessionId || commit.isPending}
             onClick={() => selected && requestCommit({ type: "selected", topic: selected.topic, partition: selected.partition, offset: selected.offset })}
           >
-            Закоммитить до выбранного
+            {t("consumer.actions.commitSelected")}
           </button>
           <button type="button" disabled={!running || !state.sessionId || commit.isPending} onClick={() => requestCommit({ type: "allConsumed" })}>
-            Закоммитить всё прочитанное
+            {t("consumer.actions.commitAll")}
           </button>
           <label>
             <input type="checkbox" checked={utc} onChange={(e) => setUtc(e.target.checked)} /> UTC
           </label>
           <span className="muted">
-            прочитано {formatCount(state.consumed)} · найдено {formatCount(state.matched)} · в таблице {state.messages.length}
-            {running && !state.sessionId && " · подключение…"}
-            {running && state.sessionId && (state.reconnecting ? ` · переподключение: ${tr(state.reconnecting)}…` : " · в группе")}
-            {state.status === "finished" && " · отключено"}
+            {t("consumer.status.counters", { consumed: formatCount(state.consumed), matched: formatCount(state.matched), shown: state.messages.length })}
+            {running && !state.sessionId && ` · ${t("consumer.status.connecting")}`}
+            {running &&
+              state.sessionId &&
+              ` · ${state.reconnecting ? t("consumer.status.reconnecting", { reason: tr(state.reconnecting) }) : t("consumer.status.inGroup")}`}
+            {state.status === "finished" && ` · ${t("consumer.status.disconnected")}`}
           </span>
         </div>
       )}
@@ -277,16 +280,16 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
       {missingTopic && (
         <p className="warn">
           {launched.topics.length > 0
-            ? `Топик не найден в кластере. Проверьте имена: ${launched.topics.join(", ")}.`
-            : "Топик или группа не найдены в кластере."}
+            ? t("consumer.missingTopic", { topics: launched.topics.join(", ") })
+            : t("consumer.missingTopicOrGroup")}
         </p>
       )}
       {commitError && <ErrorBanner error={commitError} />}
       {commitError?.code === "TIMEOUT" && (
-        <p className="warn">Неизвестно, применён ли коммит: сессия не ответила вовремя, но запрос мог выполниться. Проверьте оффсеты группы.</p>
+        <p className="warn">{t("consumer.commitTimeout")}</p>
       )}
       {control.error && <ErrorBanner error={control.error} />}
-      {committed && <p role="status">Закоммичено: {formatOffsets(committed)}</p>}
+      {committed && <p role="status">{t("consumer.committed", { offsets: formatOffsets(committed) })}</p>}
       <div className="browse-body">
         <MessageTable messages={state.messages} selectedKey={selected ? messageKey(selected) : null} onSelect={setSelected} utc={utc} />
         <div className="details-pane">

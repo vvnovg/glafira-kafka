@@ -1,0 +1,197 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  RELEASES_REPO: vvnovg/glafira-kafka-releases
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test "scripts/*.test.mjs"
+      - run: node scripts/check-release.mjs "${GITHUB_REF_NAME}"
+      - id: v
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - name: Секреты подписи updater и публикации заданы
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          if [ -z "$KEY" ]; then echo "::error::нет секрета TAURI_SIGNING_PRIVATE_KEY"; exit 1; fi
+          if [ -z "$RELEASES_TOKEN" ]; then echo "::error::нет секрета RELEASES_TOKEN"; exit 1; fi
+
+  build:
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: aarch64-apple-darwin
+            arch: aarch64
+          # macos-13 выведен из эксплуатации; Intel-раннер — macos-15-intel.
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            arch: x64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            arch: amd64
+    runs-on: ${{ matrix.os }}
+    env:
+      BUNDLE: src-tauri/target/${{ matrix.target }}/release/bundle
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: Системные зависимости (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake libcurl4-openssl-dev libsasl2-dev rpm
+      - run: pnpm install --frozen-lockfile
+      # Пустые APPLE_* в окружении ломают сборку (bundler пытается импортировать пустой сертификат),
+      # поэтому переменные выставляются только когда секреты заданы.
+      - name: Подпись Apple (если заданы секреты)
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::warning::macOS-сборка без подписи и нотаризации"
+            exit 0
+          fi
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            value="${!name}"
+            if [ -n "$value" ]; then
+              delim="EOF_$(openssl rand -hex 8)"
+              printf '%s<<%s\n%s\n%s\n' "$name" "$delim" "$value" "$delim" >> "$GITHUB_ENV"
+            fi
+          done
+      # KE_ALLOW_DEV_LICENSE_KEY здесь не задаётся: build.rs не даст собрать релиз с dev-ключом лицензий.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          args: --target ${{ matrix.target }}
+      # Tauri называет архив updater «<productName>.app.tar.gz» без версии и архитектуры:
+      # обе macOS-сборки дали бы одно имя, а make-latest-json.mjs не смог бы различить платформы.
+      - name: Архив updater с архитектурой в имени (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          archives=("$BUNDLE"/macos/*.app.tar.gz)
+          if [ "${#archives[@]}" -ne 1 ]; then echo "::error::ожидался один .app.tar.gz, найдено ${#archives[@]}"; exit 1; fi
+          src="${archives[0]}"
+          name="$(basename "$src" .app.tar.gz)"
+          dst="$BUNDLE/macos/${name}_${VERSION}_${{ matrix.arch }}.app.tar.gz"
+          mv "$src" "$dst"
+          mv "$src.sig" "$dst.sig"
+      - name: .pkg (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          INSTALLER_IDENTITY: ${{ secrets.APPLE_INSTALLER_IDENTITY }}
+        run: |
+          shopt -s nullglob
+          apps=("$BUNDLE"/macos/*.app)
+          if [ "${#apps[@]}" -ne 1 ]; then echo "::error::ожидался один .app, найдено ${#apps[@]}"; exit 1; fi
+          app="${apps[0]}"
+          name="$(basename "$app" .app)"
+          scripts/make-pkg.sh "$app" "$BUNDLE/macos/${name}_${VERSION}_${{ matrix.arch }}.pkg" "$INSTALLER_IDENTITY"
+      - name: Тихая установка MSI (проверка)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem "$env:BUNDLE/msi/*.msi" | Select-Object -First 1
+          $p = Start-Process msiexec -ArgumentList "/i `"$($msi.FullName)`" /qn /l*v install.log" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Get-Content install.log -Tail 50; exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.target }}
+          path: |
+            ${{ env.BUNDLE }}/dmg/*.dmg
+            ${{ env.BUNDLE }}/macos/*.pkg
+            ${{ env.BUNDLE }}/macos/*.app.tar.gz
+            ${{ env.BUNDLE }}/macos/*.app.tar.gz.sig
+            ${{ env.BUNDLE }}/msi/*.msi
+            ${{ env.BUNDLE }}/msi/*.msi.sig
+            ${{ env.BUNDLE }}/deb/*.deb
+            ${{ env.BUNDLE }}/rpm/*.rpm
+            ${{ env.BUNDLE }}/appimage/*.AppImage
+            ${{ env.BUNDLE }}/appimage/*.AppImage.sig
+          if-no-files-found: error
+
+  publish:
+    needs: [check, build]
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist-release
+          merge-multiple: true
+      # GitHub сам заменяет пробелы в именах ассетов, и URL в latest.json перестали бы совпадать
+      # с реальными. Переименовываем заранее (подпись .sig от имени файла не зависит).
+      - name: Имена артефактов без пробелов
+        run: |
+          shopt -s nullglob
+          for f in dist-release/*; do
+            base="$(basename "$f")"
+            new="${base// /_}"
+            if [ "$base" != "$new" ]; then mv "$f" "dist-release/$new"; fi
+          done
+          ls -la dist-release
+      - name: Описание и latest.json
+        run: |
+          awk -v v="## $VERSION" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "::error::пустой раздел CHANGELOG для $VERSION"; exit 1; fi
+          node scripts/make-latest-json.mjs --version "$VERSION" --notes-file notes.md \
+            --base-url "https://github.com/${RELEASES_REPO}/releases/download/v${VERSION}" --dir dist-release > latest.json
+          node -e 'const p = Object.keys(JSON.parse(require("fs").readFileSync("latest.json","utf8")).platforms).sort().join(","); if (p !== "darwin-aarch64,darwin-x86_64,linux-x86_64,windows-x86_64") { console.error("::error::в latest.json не все платформы: " + p); process.exit(1); }'
+          mv latest.json dist-release/latest.json
+          cat dist-release/latest.json
+      - name: Публикация в репозиторий релизов
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          # Бета публикуется обычным релизом: updater берёт releases/latest, а предрелизы туда не попадают.
+          gh release create "v${VERSION}" dist-release/* --repo "$RELEASES_REPO" --title "v${VERSION}" --notes-file notes.md

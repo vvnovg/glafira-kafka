@@ -304,5 +304,23 @@
       "tcpOk": "TCP-соединение с {{address}} установлено",
       "kafkaOk": "Брокеров: {{brokers}}, топиков: {{topics}}"
     }
+  },
+  "sidebar": {
+    "settings": "Настройки"
+  },
+  "tabs": {
+    "settings": "Настройки"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": {
+      "section": "Язык",
+      "label": "Язык интерфейса",
+      "system": "Как в системе ({{name}})",
+      "systemUnknown": "Как в системе",
+      "proSuffix": "{{name}} — Pro",
+      "policy": "Язык задан вашей организацией",
+      "proRequired": "Выбранный язык доступен в Pro — сейчас интерфейс на английском"
+    }
   }
 }

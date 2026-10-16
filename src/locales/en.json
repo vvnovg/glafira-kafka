@@ -304,5 +304,23 @@
       "tcpOk": "TCP connection to {{address}} established",
       "kafkaOk": "Brokers: {{brokers}}, topics: {{topics}}"
     }
+  },
+  "sidebar": {
+    "settings": "Settings"
+  },
+  "tabs": {
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": {
+      "section": "Language",
+      "label": "Interface language",
+      "system": "System default ({{name}})",
+      "systemUnknown": "System default",
+      "proSuffix": "{{name}} — Pro",
+      "policy": "The language is set by your organization",
+      "proRequired": "The selected language is available in Pro — the interface is currently in English"
+    }
   }
 }

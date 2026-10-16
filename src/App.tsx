@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Layout } from "./components/Layout";
+import { useLanguageSync } from "./lib/useLanguageSync";
+
+function LanguageSync() {
+  useLanguageSync();
+  return null;
+}
 
 // Без автоповтора: backend сам ждёт до таймаута и быстро отказывает при недоступном кластере,
 // а повтор удваивал бы ожидание. Повторить можно кнопкой в баннере ошибки.
@@ -10,6 +16,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <LanguageSync />
       <Layout />
     </QueryClientProvider>
   );

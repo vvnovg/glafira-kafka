@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { newConsumerKey, useWorkspace } from "../state/workspace";
 import { PRO_HINT, useLicense } from "../lib/useLicense";
@@ -7,6 +8,7 @@ import { ErrorBanner } from "./common/ErrorBanner";
 import { EnvBadge } from "./common/EnvBadge";
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const { data: connections = [], error, isSuccess } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const open = useWorkspace((s) => s.open);
   const { status, locked } = useLicense();
@@ -80,6 +82,9 @@ export function Sidebar() {
         ))}
       </ul>
       <div className="sidebar-footer">
+        <button type="button" className="link" onClick={() => open({ kind: "settings" })}>
+          {t("sidebar.settings")}
+        </button>
         <button type="button" className="link" onClick={() => open({ kind: "license" })}>
           Лицензия: {status ? (status.tier === "pro" ? "Pro" : "Free") : "…"}
         </button>

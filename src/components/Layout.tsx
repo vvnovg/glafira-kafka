@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import type { ConnectionProfile } from "../api/types";
 import { ENV_COLORS } from "../lib/env";
@@ -7,12 +8,15 @@ import { EnvBadge } from "./common/EnvBadge";
 import { LicenseNotice } from "./license/LicenseNotice";
 import { UpdateNotice } from "./about/UpdateNotice";
 import { Sidebar } from "./Sidebar";
+import { i18n } from "../i18n";
 import { TabContent } from "./TabContent";
 
 function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
   const connId = "connectionId" in tab ? tab.connectionId : null;
   const conn = connId ? byId.get(connId)?.name ?? "?" : "";
   switch (tab.kind) {
+    case "settings":
+      return i18n.t("tabs.settings");
     case "license":
       return "Лицензия";
     case "about":
@@ -37,6 +41,7 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
 }
 
 export function Layout() {
+  useTranslation(); // перерисовка заголовков вкладок при смене языка
   const { tabs, activeId, activate, close } = useWorkspace();
   const { data: connections = [] } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const byId = new Map(connections.map((c) => [c.id, c]));

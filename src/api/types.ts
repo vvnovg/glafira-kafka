@@ -508,3 +508,15 @@ export type UpdateCheck =
   | { status: "disabled"; reason: LocalizedText }
   | { status: "upToDate" }
   | { status: "available"; version: string; notes: string | null; date: string | null };
+
+export type LanguageReason = "policy" | "user" | "system" | "default" | "proRequired";
+export interface LanguageSettings {
+  system: string | null;
+  systemMatch: string | null;
+  chosen: string | null;
+  policy: string | null;
+  effective: string;
+  reason: LanguageReason;
+  proLanguages: string[];
+  languages: string[];
+}

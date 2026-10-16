@@ -37,6 +37,7 @@ KE_IT_BOOTSTRAP=localhost:9092 KE_IT_SASL_BOOTSTRAP=localhost:9094 \
 - Профили подключений: `connections.json` в каталоге данных приложения (macOS: `~/Library/Application Support/dev.kafkaexplorer.app/`).
 - Пароли — в системном хранилище секретов (Keychain / Credential Manager / Secret Service), сервис `kafka-explorer`.
 - Шаблоны сообщений: `templates.json`; история отправки — `history/<id подключения>.json` (последние 100, значения до 64 КБ). История хранится открытым текстом и содержит уже отрисованные сообщения: значения, подставленные из `{{env NAME}}`, и значения заголовков (например, токены) записываются как есть. Файлы данных создаются с правами только для владельца (0600, каталог `history/` — 0700 на macOS/Linux). Если `templates.json` не читается (например, создан более новой версией), недоступны только шаблоны — ошибка показывается в панели шаблонов.
+- Лицензия: `license.json` (только если ключ введён вручную).
 - Логи: `RUST_LOG=debug pnpm tauri dev`.
 
 ## Защита от изменений
@@ -61,3 +62,24 @@ docker exec ke-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --d
 ```bash
 docker exec ke-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group <group>
 ```
+
+## Сертификаты (SSL и mTLS)
+- **Доверенный CA** — файл PEM, PKCS#12 или JKS (truststore). Пусто — системные корневые сертификаты.
+- **Клиентский сертификат (mTLS)** — PEM (сертификат + ключ), PKCS#12 (`.p12`, `.pfx`) или JKS. Пароли необязательны и хранятся в системном хранилище секретов.
+- Файлы читаются при каждом подключении: после ротации сертификата достаточно переподключиться.
+
+Пример для кластера в Kubernetes с Istio / cert-manager (секрет с `tls.crt`, `tls.key`, `ca.crt`):
+```bash
+kubectl get secret kafka-client -o jsonpath='{.data.tls\.crt}' | base64 -d > ~/certs/tls.crt
+kubectl get secret kafka-client -o jsonpath='{.data.tls\.key}' | base64 -d > ~/certs/tls.key
+kubectl get secret kafka-client -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/certs/ca.crt
+```
+Протокол `SSL`, доверенный CA — `ca.crt`, клиентский сертификат PEM — `tls.crt` и `tls.key`, пароли пустые.
+
+Локальный стенд слушает mTLS на `localhost:9095` (сертификаты — `dev/certs/out`, см. `dev/certs/README.md`).
+
+## Free и Pro
+- **Free:** просмотр, топики и группы, Producer, все виды подключений (включая mTLS), «только чтение».
+- **Pro:** consumer-сессии и режим prod (подтверждение именем подключения для любых изменений).
+- Лицензия вводится на экране «Лицензия» (ссылка внизу дерева подключений) или раздаётся администратором через политику (`licenseKey`). Проверка офлайн.
+- Выдача ключей — `docs/licensing.md`.

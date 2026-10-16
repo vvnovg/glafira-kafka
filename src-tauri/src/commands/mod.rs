@@ -15,7 +15,7 @@ use std::sync::Arc;
 use rdkafka::admin::ResourceSpecifier;
 
 use crate::browse::registry::SessionRegistry;
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::kafka::configs::{ConfigEntryDto, describe_configs};
 use crate::kafka::pool::KafkaHandles;
 use crate::state::AppState;
@@ -26,9 +26,14 @@ where
     T: Send + 'static,
     F: FnOnce() -> AppResult<T> + Send + 'static,
 {
-    tauri::async_runtime::spawn_blocking(f)
-        .await
-        .map_err(|e| AppError::internal(format!("Фоновая задача завершилась аварийно: {e}")))?
+    tauri::async_runtime::spawn_blocking(f).await.map_err(|e| {
+        app_err!(
+            ErrorCode::Internal,
+            "errors.app.taskPanicked",
+            "Background task failed: {{error}}",
+            error = e
+        )
+    })?
 }
 
 /// Async-операция на pooled-handles подключения: handles берутся (keychain, создание клиента) и

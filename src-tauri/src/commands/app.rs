@@ -6,6 +6,7 @@ use time::format_description::well_known::Rfc3339;
 use super::blocking;
 use crate::diagnostics::{AppInfo, write_archive};
 use crate::error::{AppError, AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::policy::PolicyStatus;
 use crate::state::AppState;
 
@@ -42,7 +43,11 @@ pub async fn export_diagnostics(
     path: String,
 ) -> AppResult<()> {
     if path.trim().is_empty() {
-        return Err(AppError::invalid("Не выбран файл для архива"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.diagnostics.noFile",
+            "No file selected for the archive"
+        ));
     }
     let st = state.inner().clone();
     let info = app_info(&app);
@@ -72,7 +77,7 @@ const PUBKEY_PLACEHOLDER: &str = "REPLACE_WITH_UPDATER_PUBKEY";
 #[serde(tag = "status", rename_all = "camelCase")]
 pub enum UpdateCheck {
     Disabled {
-        reason: String,
+        reason: LocalizedText,
     },
     UpToDate,
     Available {
@@ -84,14 +89,17 @@ pub enum UpdateCheck {
 
 #[derive(Debug)]
 enum UpdatePlan {
-    Disabled(String),
+    Disabled(LocalizedText),
     /// None — адрес из tauri.conf.json, Some — зеркало из политики.
     Check(Option<String>),
 }
 
 fn update_plan(policy: &PolicyStatus) -> UpdatePlan {
     if !policy.updates_enabled {
-        return UpdatePlan::Disabled("Обновления управляются вашей организацией".into());
+        return UpdatePlan::Disabled(ltext!(
+            "errors.updates.managed",
+            "Updates are managed by your organization"
+        ));
     }
     UpdatePlan::Check(policy.update_url.clone())
 }
@@ -100,7 +108,12 @@ fn pubkey_configured(pubkey: Option<&str>) -> bool {
     pubkey.is_some_and(|k| !k.trim().is_empty() && k.trim() != PUBKEY_PLACEHOLDER)
 }
 
-const NOT_CONFIGURED: &str = "Обновления не настроены в этой сборке";
+fn not_configured() -> LocalizedText {
+    ltext!(
+        "errors.updates.notConfigured",
+        "Updates are not configured in this build"
+    )
+}
 
 fn app_pubkey_configured(app: &AppHandle) -> bool {
     let pubkey = app
@@ -115,7 +128,10 @@ fn app_pubkey_configured(app: &AppHandle) -> bool {
 
 fn updater(app: &AppHandle, url: Option<String>) -> AppResult<tauri_plugin_updater::Updater> {
     if !app_pubkey_configured(app) {
-        return Err(AppError::invalid(NOT_CONFIGURED));
+        return Err(AppError::localized(
+            ErrorCode::InvalidInput,
+            not_configured(),
+        ));
     }
     // На Windows `download_and_install` запускает установщик и вызывает `process::exit(0)`,
     // минуя `RunEvent::Exit`: без хука consumer не выйдут из группы, а пакеты оборвутся.
@@ -127,16 +143,27 @@ fn updater(app: &AppHandle, url: Option<String>) -> AppResult<tauri_plugin_updat
         handle.cleanup_before_exit();
     });
     if let Some(u) = url {
-        let parsed = u
-            .parse()
-            .map_err(|_| AppError::invalid(format!("Неверный адрес обновлений в политике: {u}")))?;
-        b = b.endpoints(vec![parsed]).map_err(|e| {
-            AppError::invalid(format!("Неверный адрес обновлений в политике: {u}"))
-                .with_details(e.to_string())
-        })?;
+        let bad_url = || {
+            app_err!(
+                ErrorCode::InvalidInput,
+                "errors.updates.badPolicyUrl",
+                "Invalid update address in the policy: {{url}}",
+                url = u
+            )
+        };
+        let parsed = u.parse().map_err(|_| bad_url())?;
+        b = b
+            .endpoints(vec![parsed])
+            .map_err(|e| bad_url().with_details(e.to_string()))?;
     }
-    b.build()
-        .map_err(|e| AppError::internal("Обновления недоступны").with_details(e.to_string()))
+    b.build().map_err(|e| {
+        app_err!(
+            ErrorCode::Internal,
+            "errors.updates.unavailable",
+            "Updates are unavailable"
+        )
+        .with_details(e.to_string())
+    })
 }
 
 use tauri_plugin_updater::Error as UpdErr;
@@ -159,13 +186,15 @@ fn classify_check_error(e: &UpdErr) -> CheckErrorKind {
 fn net_err(e: UpdErr) -> AppError {
     let details = e.to_string();
     match classify_check_error(&e) {
-        CheckErrorKind::NoRelease => AppError::new(
+        CheckErrorKind::NoRelease => app_err!(
             ErrorCode::NotFound,
-            "На сервере обновлений нет опубликованных версий (или он временно недоступен)",
+            "errors.updates.noRelease",
+            "The update server has no published versions (or it is temporarily unavailable)"
         ),
-        CheckErrorKind::Network => AppError::new(
+        CheckErrorKind::Network => app_err!(
             ErrorCode::ConnectionFailed,
-            "Не удалось проверить обновления",
+            "errors.updates.checkFailed",
+            "Failed to check for updates"
         ),
     }
     .with_details(details)
@@ -200,20 +229,30 @@ fn backoff(attempt: u32) -> std::time::Duration {
 }
 
 fn download_failed(e: &UpdErr) -> AppError {
-    AppError::new(
+    app_err!(
         ErrorCode::ConnectionFailed,
-        "Загрузка обновления прервалась — проверьте сеть и повторите",
+        "errors.updates.downloadInterrupted",
+        "The update download was interrupted — check your network and try again"
     )
     .with_details(e.to_string())
 }
 
 fn signature_failed(e: &UpdErr) -> AppError {
-    AppError::internal("Подпись обновления не прошла проверку — обновление не установлено")
-        .with_details(e.to_string())
+    app_err!(
+        ErrorCode::Internal,
+        "errors.updates.badSignature",
+        "The update signature failed verification — the update was not installed"
+    )
+    .with_details(e.to_string())
 }
 
-fn install_failed(e: &UpdErr) -> AppError {
-    AppError::internal("Не удалось установить обновление").with_details(e.to_string())
+fn install_failed(e: &impl std::fmt::Display) -> AppError {
+    app_err!(
+        ErrorCode::Internal,
+        "errors.updates.installFailed",
+        "Failed to install the update"
+    )
+    .with_details(e.to_string())
 }
 
 /// Скачивает пакет с повторами; повторяется только сетевая ошибка.
@@ -229,7 +268,7 @@ async fn download_with_retry(update: &tauri_plugin_updater::Update) -> AppResult
                     return Err(download_failed(&e));
                 }
                 DownloadErrorKind::Transient => {
-                    tracing::warn!(attempt, "загрузка обновления не удалась, повтор");
+                    tracing::warn!(attempt, "update download failed, retrying");
                     let pause = backoff(attempt);
                     tauri::async_runtime::spawn_blocking(move || std::thread::sleep(pause))
                         .await
@@ -251,7 +290,7 @@ pub async fn check_update(app: AppHandle, state: State<'_, AppState>) -> AppResu
     // Сборка без ключа updater (dev, dry-run) — штатное состояние, а не ошибка.
     if !app_pubkey_configured(&app) {
         return Ok(UpdateCheck::Disabled {
-            reason: NOT_CONFIGURED.into(),
+            reason: not_configured(),
         });
     }
     match updater(&app, url)?.check().await.map_err(net_err)? {
@@ -267,11 +306,11 @@ pub async fn check_update(app: AppHandle, state: State<'_, AppState>) -> AppResu
 /// Без `force` при активных сессиях установка требует подтверждения.
 fn confirm_sessions(active: usize, force: bool) -> AppResult<()> {
     if active > 0 && !force {
-        return Err(AppError::new(
+        return Err(app_err!(
             ErrorCode::ConfirmationRequired,
-            format!(
-                "Идёт сессий: {active} (чтение, consumer или пакетная отправка). Обновление их остановит."
-            ),
+            "errors.updates.sessionsActive",
+            "Active sessions: {{active}} (browse, consumer or batch send). Updating will stop them.",
+            active = active
         ));
     }
     Ok(())
@@ -284,24 +323,28 @@ pub async fn install_update(
     force: bool,
 ) -> AppResult<()> {
     let url = match update_plan(&state.policy.status) {
-        UpdatePlan::Disabled(reason) => return Err(AppError::invalid(reason)),
+        UpdatePlan::Disabled(reason) => {
+            return Err(AppError::localized(ErrorCode::InvalidInput, reason));
+        }
         UpdatePlan::Check(url) => url,
     };
     confirm_sessions(state.sessions.len(), force)?;
     let Some(update) = updater(&app, url)?.check().await.map_err(net_err)? else {
-        return Err(AppError::invalid("Обновлений нет"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.updates.none",
+            "No updates available"
+        ));
     };
     // Пока шла проверка по сети, пользователь мог запустить сессию: спрашиваем снова.
     confirm_sessions(state.sessions.len(), force)?;
-    tracing::info!(version = %update.version, "установка обновления");
+    tracing::info!(version = %update.version, "installing update");
     let bytes = download_with_retry(&update).await?;
     // Установка синхронная (файлы, на Windows — запуск установщика): не блокируем рантайм.
     let installer = update.clone();
     tauri::async_runtime::spawn_blocking(move || installer.install(bytes))
         .await
-        .map_err(|e| {
-            AppError::internal("Не удалось установить обновление").with_details(e.to_string())
-        })?
+        .map_err(|e| install_failed(&e))?
         .map_err(|e| match classify_download_error(&e) {
             DownloadErrorKind::Signature => signature_failed(&e),
             _ => install_failed(&e),
@@ -322,7 +365,7 @@ mod tests {
             ..PolicyStatus::default()
         };
         match update_plan(&st) {
-            UpdatePlan::Disabled(reason) => assert!(reason.contains("организац")),
+            UpdatePlan::Disabled(reason) => assert_eq!(reason.key, "errors.updates.managed"),
             p => panic!("ожидалось Disabled, получено {p:?}"),
         }
     }
@@ -359,9 +402,16 @@ mod tests {
             serde_json::to_value(UpdateCheck::UpToDate).unwrap()["status"],
             "upToDate"
         );
-        let d = serde_json::to_value(UpdateCheck::Disabled { reason: "r".into() }).unwrap();
+        let d = serde_json::to_value(UpdateCheck::Disabled {
+            reason: not_configured(),
+        })
+        .unwrap();
         assert_eq!(d["status"], "disabled");
-        assert_eq!(d["reason"], "r");
+        assert_eq!(d["reason"]["key"], "errors.updates.notConfigured");
+        assert_eq!(
+            d["reason"]["text"],
+            "Updates are not configured in this build"
+        );
     }
 
     #[test]
@@ -370,7 +420,8 @@ mod tests {
         assert!(confirm_sessions(2, true).is_ok());
         let e = confirm_sessions(1, false).unwrap_err();
         assert_eq!(e.code, ErrorCode::ConfirmationRequired);
-        assert!(e.message.contains("Идёт сессий: 1"));
+        assert_eq!(e.key, "errors.updates.sessionsActive");
+        assert_eq!(e.params["active"], "1");
     }
 
     #[test]
@@ -395,7 +446,7 @@ mod tests {
         );
         let e = net_err(UpdErr::ReleaseNotFound);
         assert_eq!(e.code, ErrorCode::NotFound);
-        assert!(e.message.contains("нет опубликованных версий"));
+        assert_eq!(e.key, "errors.updates.noRelease");
         assert_eq!(
             net_err(UpdErr::Network("x".into())).code,
             ErrorCode::ConnectionFailed
@@ -424,10 +475,10 @@ mod tests {
         );
         let e = signature_failed(&UpdErr::MissingSignedVersion);
         assert_eq!(e.code, ErrorCode::Internal);
-        assert!(e.message.starts_with("Подпись обновления не прошла"));
+        assert_eq!(e.key, "errors.updates.badSignature");
         let e = download_failed(&UpdErr::Network("x".into()));
         assert_eq!(e.code, ErrorCode::ConnectionFailed);
-        assert!(e.message.starts_with("Загрузка обновления прервалась"));
+        assert_eq!(e.key, "errors.updates.downloadInterrupted");
         assert_eq!(backoff(1).as_secs(), 1);
         assert_eq!(backoff(2).as_secs(), 2);
     }

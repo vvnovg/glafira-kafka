@@ -4,7 +4,7 @@ use tauri::ipc::Channel;
 use super::RemoveOnDrop;
 use crate::browse::session::{BrowseParams, EventSink, run_browse};
 use crate::browse::types::BrowseEvent;
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::state::AppState;
 
 impl EventSink for Channel<BrowseEvent> {
@@ -33,7 +33,14 @@ pub fn start_browse(
             let _guard = guard;
             run_browse(&profile, secrets.as_ref(), params, cancel, &on_event);
         })
-        .map_err(|e| AppError::internal(format!("Не удалось запустить поток чтения: {e}")))?;
+        .map_err(|e| {
+            app_err!(
+                ErrorCode::Internal,
+                "errors.browse.threadFailed",
+                "Failed to start the browse thread: {{error}}",
+                error = e
+            )
+        })?;
     Ok(id)
 }
 

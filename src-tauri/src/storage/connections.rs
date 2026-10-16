@@ -4,7 +4,7 @@ use std::sync::RwLock;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::storage::fs::{read_json, write_json};
 use crate::sync::RwLockExt;
 
@@ -124,19 +124,38 @@ pub fn parse_bootstrap(s: &str) -> AppResult<Vec<(String, u16)>> {
     let mut out = Vec::new();
     for raw in s.split(',').map(str::trim).filter(|x| !x.is_empty()) {
         let (host, port) = raw.rsplit_once(':').ok_or_else(|| {
-            AppError::invalid(format!("Адрес «{raw}» должен быть в формате host:port"))
+            app_err!(
+                ErrorCode::InvalidInput,
+                "errors.connections.addressFormat",
+                "Address “{{address}}” must be in host:port format",
+                address = raw
+            )
         })?;
-        let port: u16 = port
-            .parse()
-            .map_err(|_| AppError::invalid(format!("Некорректный порт в адресе «{raw}»")))?;
+        let port: u16 = port.parse().map_err(|_| {
+            app_err!(
+                ErrorCode::InvalidInput,
+                "errors.connections.badPort",
+                "Invalid port in address “{{address}}”",
+                address = raw
+            )
+        })?;
         let host = host.trim_start_matches('[').trim_end_matches(']');
         if host.is_empty() {
-            return Err(AppError::invalid(format!("Пустой хост в адресе «{raw}»")));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.connections.emptyHost",
+                "Empty host in address “{{address}}”",
+                address = raw
+            ));
         }
         out.push((host.to_string(), port));
     }
     if out.is_empty() {
-        return Err(AppError::invalid("Укажите хотя бы один bootstrap-сервер"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.noBootstrap",
+            "Specify at least one bootstrap server"
+        ));
     }
     Ok(out)
 }
@@ -150,28 +169,83 @@ fn is_secret_property(key: &str) -> bool {
         || k == "ssl.keystore.key"
 }
 
-fn validate_path(path: &str, what: &str) -> AppResult<()> {
+/// Файл TLS, путь к которому проверяется: у каждого свои тексты ошибок.
+#[derive(Clone, Copy)]
+enum TlsFile {
+    Ca,
+    Certificate,
+    Key,
+}
+
+fn path_required(what: TlsFile) -> AppError {
+    match what {
+        TlsFile::Ca => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.caRequired",
+            "Specify a file: trusted CA"
+        ),
+        TlsFile::Certificate => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.certificateRequired",
+            "Specify a file: client certificate"
+        ),
+        TlsFile::Key => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.keyRequired",
+            "Specify a file: client key"
+        ),
+    }
+}
+
+fn path_not_absolute(what: TlsFile, path: &str) -> AppError {
+    match what {
+        TlsFile::Ca => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.caNotAbsolute",
+            "Trusted CA: specify an absolute path (currently “{{path}}”)",
+            path = path
+        ),
+        TlsFile::Certificate => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.certificateNotAbsolute",
+            "Client certificate: specify an absolute path (currently “{{path}}”)",
+            path = path
+        ),
+        TlsFile::Key => app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.keyNotAbsolute",
+            "Client key: specify an absolute path (currently “{{path}}”)",
+            path = path
+        ),
+    }
+}
+
+fn validate_path(path: &str, what: TlsFile) -> AppResult<()> {
     if path.trim().is_empty() {
-        return Err(AppError::invalid(format!("Укажите файл: {what}")));
+        return Err(path_required(what));
     }
     if !std::path::Path::new(path.trim()).is_absolute() {
-        return Err(AppError::invalid(format!(
-            "{what}: укажите абсолютный путь (сейчас «{path}»)"
-        )));
+        return Err(path_not_absolute(what, path));
     }
     Ok(())
 }
 
 fn validate_tls(tls: &TlsConfig) -> AppResult<()> {
     if let Some(ca) = tls.ca_location.as_deref().filter(|s| !s.trim().is_empty()) {
-        validate_path(ca, "доверенный CA")?;
+        validate_path(ca, TlsFile::Ca)?;
     }
     if let Some(cc) = &tls.client_cert {
-        validate_path(&cc.certificate_path, "клиентский сертификат")?;
+        validate_path(&cc.certificate_path, TlsFile::Certificate)?;
         if cc.format == CertFormat::Pem {
             match cc.key_path.as_deref() {
-                Some(k) if !k.trim().is_empty() => validate_path(k, "ключ клиента")?,
-                _ => return Err(AppError::invalid("Укажите файл: ключ клиента (PEM)")),
+                Some(k) if !k.trim().is_empty() => validate_path(k, TlsFile::Key)?,
+                _ => {
+                    return Err(app_err!(
+                        ErrorCode::InvalidInput,
+                        "errors.connections.pemKeyRequired",
+                        "Specify a file: client key (PEM)"
+                    ));
+                }
             }
         }
     }
@@ -180,33 +254,59 @@ fn validate_tls(tls: &TlsConfig) -> AppResult<()> {
 
 pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
     if p.id.trim().is_empty() {
-        return Err(AppError::invalid("У подключения нет идентификатора"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.noId",
+            "The connection has no ID"
+        ));
     }
     if p.name.trim().is_empty() {
-        return Err(AppError::invalid("Имя подключения не может быть пустым"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.emptyName",
+            "Connection name cannot be empty"
+        ));
     }
     parse_bootstrap(&p.bootstrap_servers)?;
     if let SecurityConfig::SaslPlaintext { sasl } | SecurityConfig::SaslSsl { sasl, .. } =
         &p.security
         && sasl.username.trim().is_empty()
     {
-        return Err(AppError::invalid("Укажите имя пользователя SASL"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.saslUsernameRequired",
+            "Specify the SASL username"
+        ));
     }
     if let SecurityConfig::Ssl { tls } | SecurityConfig::SaslSsl { tls, .. } = &p.security {
         validate_tls(tls)?;
     }
     // Секреты хранятся только в keychain: connections.json не должен их содержать.
     if let Some(key) = p.extra_properties.keys().find(|k| is_secret_property(k)) {
-        return Err(AppError::invalid(format!(
-            "Секреты нельзя хранить в доп. свойствах: {key}"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.secretInExtraProperties",
+            "Secrets cannot be stored in extra properties: {{key}}",
+            key = key
+        ));
     }
     if p.request_timeout_ms < 1_000 {
-        return Err(AppError::invalid(
-            "Таймаут запроса должен быть не меньше 1000 мс",
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.timeoutTooSmall",
+            "Request timeout must be at least 1000 ms"
         ));
     }
     Ok(())
+}
+
+fn connection_not_found(id: &str) -> AppError {
+    app_err!(
+        ErrorCode::NotFound,
+        "errors.connections.notFound",
+        "Connection {{id}} not found",
+        id = id
+    )
 }
 
 const CURRENT_SCHEMA_VERSION: u32 = 1;
@@ -229,10 +329,10 @@ impl ConnectionStore {
         let path = dir.join("connections.json");
         let connections = match read_json::<ConnectionsFile>(&path)? {
             Some(file) if file.schema_version > CURRENT_SCHEMA_VERSION => {
-                return Err(AppError::internal(format!(
-                    "connections.json создан более новой версией приложения (schemaVersion {})",
-                    file.schema_version
-                )));
+                return Err(crate::storage::fs::newer_schema_error(
+                    &path,
+                    file.schema_version,
+                ));
             }
             Some(file) => file.connections,
             None => Vec::new(),
@@ -253,7 +353,7 @@ impl ConnectionStore {
             .iter()
             .find(|c| c.id == id)
             .cloned()
-            .ok_or_else(|| AppError::not_found(format!("Подключение {id} не найдено")))
+            .ok_or_else(|| connection_not_found(id))
     }
 
     pub fn upsert(&self, profile: ConnectionProfile) -> AppResult<ConnectionProfile> {
@@ -272,7 +372,7 @@ impl ConnectionStore {
     pub fn delete(&self, id: &str) -> AppResult<()> {
         let mut cache = self.cache.write_safe();
         if !cache.iter().any(|c| c.id == id) {
-            return Err(AppError::not_found(format!("Подключение {id} не найдено")));
+            return Err(connection_not_found(id));
         }
         let next: Vec<_> = cache.iter().filter(|c| c.id != id).cloned().collect();
         self.persist(&next)?;
@@ -368,21 +468,25 @@ mod tests {
             "/c/c.pem"
         };
         assert!(validate_profile(&tls_profile(pem(abs, Some(abs)))).is_ok());
-        for (tls, needle) in [
-            (pem("", Some(abs)), "сертификат"),
-            (pem("rel/c.pem", Some(abs)), "абсолютный"),
-            (pem(abs, None), "ключ"),
+        for (tls, key) in [
+            (pem("", Some(abs)), "errors.connections.certificateRequired"),
+            (
+                pem("rel/c.pem", Some(abs)),
+                "errors.connections.certificateNotAbsolute",
+            ),
+            (pem(abs, None), "errors.connections.pemKeyRequired"),
+            (pem(abs, Some("k.pem")), "errors.connections.keyNotAbsolute"),
             (
                 TlsConfig {
                     ca_location: Some("ca.pem".into()),
                     ..base.clone()
                 },
-                "абсолютный",
+                "errors.connections.caNotAbsolute",
             ),
         ] {
             let e = validate_profile(&tls_profile(tls)).unwrap_err();
             assert_eq!(e.code, ErrorCode::InvalidInput);
-            assert!(e.message.to_lowercase().contains(needle), "{}", e.message);
+            assert_eq!(e.key, key, "{}", e.message);
         }
     }
 
@@ -482,7 +586,8 @@ mod tests {
             p.extra_properties.insert(key.into(), "x".into());
             let e = validate_profile(&p).unwrap_err();
             assert_eq!(e.code, ErrorCode::InvalidInput, "{key}");
-            assert!(e.message.contains(key), "{}", e.message);
+            assert_eq!(e.key, "errors.connections.secretInExtraProperties");
+            assert_eq!(e.params["key"], key);
         }
         let mut p = sample_profile("a");
         p.extra_properties

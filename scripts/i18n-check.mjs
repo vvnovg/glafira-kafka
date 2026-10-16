@@ -245,6 +245,82 @@ export function checkRustKeys(calls, enFlat) {
   return problems;
 }
 
+const CYR = /[А-Яа-яЁё]/;
+
+/** Индекс сразу после элемента, помеченного `#[cfg(test)]` (атрибут кончается в позиции pos):
+ * до `;` или до парной `}` первого блока на верхнем уровне. */
+function skipItem(src, pos) {
+  let depth = 0;
+  for (let i = pos; i < src.length; ) {
+    const lit = literalAt(src, i);
+    if (lit) {
+      i = lit.end;
+      continue;
+    }
+    const c = src[i];
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return i + 1;
+    } else if (c === ";" && depth === 0) return i + 1;
+    i++;
+  }
+  return src.length;
+}
+
+/** Литерал или комментарий Rust в позиции i: { end, text?, comment? } или null. */
+function literalAt(src, i) {
+  if (src.startsWith("//", i)) {
+    const nl = src.indexOf("\n", i);
+    return { end: nl < 0 ? src.length : nl, comment: true };
+  }
+  if (src.startsWith("/*", i)) {
+    const e = src.indexOf("*/", i + 2);
+    return { end: e < 0 ? src.length : e + 2, comment: true };
+  }
+  const raw = /^(?:[bc])?r(#*)"/.exec(src.slice(i, i + 64));
+  if (raw && !/\w/.test(src[i - 1] ?? "")) {
+    const close = src.indexOf(`"${raw[1]}`, i + raw[0].length);
+    const end = close < 0 ? src.length : close + 1 + raw[1].length;
+    return { end, text: src.slice(i, end) };
+  }
+  if (src[i] === '"') {
+    const end = stringEnd(src, i);
+    return { end: end < 0 ? src.length : end, text: src.slice(i, end < 0 ? src.length : end) };
+  }
+  if (src[i] === "'") {
+    const ch = /^'(?:\\(?:u\{[0-9a-fA-F_]+\}|x[0-9a-fA-F]{2}|.)|[^\\'\n])'/u.exec(src.slice(i, i + 16));
+    if (ch) return { end: i + ch[0].length, text: ch[0] };
+  }
+  return null;
+}
+
+/**
+ * files: { path: content }. Строковые и символьные литералы Rust с кириллицей вне комментариев
+ * и вне элементов под `#[cfg(test)]` (модули тестов, тестовые помощники). Возвращает ["path:line"].
+ */
+export function findRustCyrillic(files) {
+  const hits = [];
+  for (const [path, content] of Object.entries(files)) {
+    const lines = new Set();
+    for (let i = 0; i < content.length; ) {
+      if (content.startsWith("#[cfg(test)]", i)) {
+        i = skipItem(content, i + "#[cfg(test)]".length);
+        continue;
+      }
+      const lit = literalAt(content, i);
+      if (!lit) {
+        i++;
+        continue;
+      }
+      if (lit.text && CYR.test(lit.text)) lines.add(content.slice(0, i).split("\n").length);
+      i = Math.max(lit.end, i + 1);
+    }
+    for (const l of [...lines].sort((a, b) => a - b)) hits.push(`${path}:${l}`);
+  }
+  return hits;
+}
+
 function walk(dir, exts, out = []) {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
@@ -273,6 +349,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       walk(join(root, "src"), [".ts", ".tsx"]).map((p) => [relative(root, p), readFileSync(p, "utf8")]),
     );
     for (const hit of findCyrillic(files)) problems.push(`кириллица в коде: ${hit}`);
+  }
+  const rcIdx = process.argv.indexOf("--rust-cyrillic");
+  if (rcIdx >= 0) {
+    const paths = process.argv.slice(rcIdx + 1).filter((a) => !a.startsWith("--"));
+    const files = Object.fromEntries(paths.map((p) => [p, readFileSync(p, "utf8")]));
+    for (const hit of findRustCyrillic(files)) problems.push(`кириллица в Rust: ${hit}`);
   }
   if (problems.length) {
     console.error(problems.map((p) => `✗ ${p}`).join("\n"));

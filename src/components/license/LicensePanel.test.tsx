@@ -54,6 +54,29 @@ describe("LicensePanel", () => {
     expect(await screen.findByText("Ключ недействителен: подпись")).toBeInTheDocument();
   });
 
+  it("недействительный ключ: причина переводится по ключу", async () => {
+    vi.mocked(api.getLicenseStatus).mockResolvedValue({
+      ...FREE,
+      state: "invalid",
+      source: "user",
+      error: { key: "errors.license.unsupportedVersion", params: { version: "9" }, text: "Invalid key: a version 9 key requires a newer version of the app" },
+    });
+    renderWithClient(<LicensePanel />);
+    expect(await screen.findByText("Ключ недействителен: ключ версии 9 требует более новой версии приложения")).toBeInTheDocument();
+  });
+
+  it("ошибки политики переводятся по ключу", async () => {
+    vi.mocked(api.getLicenseStatus).mockResolvedValue(FREE);
+    vi.mocked(api.getPolicyStatus).mockResolvedValue({
+      ...UNMANAGED,
+      managed: true,
+      source: "/etc/x/policy.json",
+      errors: [{ key: "errors.policy.invalidNumber", params: { key: "updatesEnabled", value: "7" }, text: "updatesEnabled: invalid number 7" }],
+    });
+    renderWithClient(<LicensePanel />);
+    expect(await screen.findByText("updatesEnabled: недопустимое число 7")).toBeInTheDocument();
+  });
+
   it("удаление ключа — с подтверждением на странице", async () => {
     vi.mocked(api.getLicenseStatus).mockResolvedValue(PRO);
     vi.mocked(api.removeLicenseKey).mockResolvedValue(FREE);

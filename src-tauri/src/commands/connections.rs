@@ -153,7 +153,7 @@ pub fn save_connection_blocking(
             None => st.connections.delete(&saved.id),
         };
         if let Err(r) = rollback {
-            tracing::error!("не удалось откатить профиль {}: {r}", saved.id);
+            tracing::error!("failed to roll back profile {}: {r}", saved.id);
         }
         return Err(e);
     }

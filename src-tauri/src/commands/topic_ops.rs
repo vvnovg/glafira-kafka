@@ -1,7 +1,7 @@
 use tauri::State;
 
 use super::{blocking, with_pooled};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::guard::ensure_name_confirmed;
 use crate::kafka::admin::{self, ConfigChange, NewTopicSpec, PurgedPartition, TopicDeleteResult};
 use crate::kafka::configs::{TopicPolicy, describe_topic_policies};
@@ -121,9 +121,12 @@ pub async fn purge_topic_impl(
 ) -> AppResult<Vec<PurgedPartition>> {
     st.guarded(&connection_id, confirm.as_deref())?;
     if is_internal(&topic) {
-        return Err(AppError::invalid(format!(
-            "Внутренний топик «{topic}» нельзя очищать"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.internalPurge",
+            "Internal topic “{{topic}}” cannot be purged",
+            topic = topic
+        ));
     }
     ensure_name_confirmed(&topic, typed_name.as_deref())?;
     let all = partition_ids(st, &connection_id, &topic).await?;
@@ -167,12 +170,19 @@ pub async fn delete_topics_impl(
         .filter(|t| seen.insert(t.clone()))
         .collect();
     if topics.is_empty() {
-        return Err(AppError::invalid("Не выбраны топики"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noneSelected",
+            "No topics selected"
+        ));
     }
     if let Some(t) = topics.iter().find(|t| is_internal(t)) {
-        return Err(AppError::invalid(format!(
-            "Внутренний топик «{t}» нельзя удалять"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.internalDelete",
+            "Internal topic “{{topic}}” cannot be deleted",
+            topic = t
+        ));
     }
     // Один топик подтверждается его именем, несколько — их числом.
     let expected = match topics.as_slice() {
@@ -336,7 +346,8 @@ mod tests {
         .await
         .unwrap_err();
         assert_eq!(e.code, ErrorCode::InvalidInput);
-        assert!(e.message.contains("__consumer_offsets"), "{}", e.message);
+        assert_eq!(e.key, "errors.topics.internalPurge");
+        assert_eq!(e.params["topic"], "__consumer_offsets");
         let e = delete_topics_impl(
             &st,
             "dev".into(),
@@ -347,7 +358,8 @@ mod tests {
         .await
         .unwrap_err();
         assert_eq!(e.code, ErrorCode::InvalidInput);
-        assert!(e.message.contains("_schemas"), "{}", e.message);
+        assert_eq!(e.key, "errors.topics.internalDelete");
+        assert_eq!(e.params["topic"], "_schemas");
         // Guard остаётся первым: read-only отвечает READ_ONLY даже для внутреннего топика.
         let e = delete_topics_impl(
             &st,

@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use zip::write::SimpleFileOptions;
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::license::LicenseStatus;
 use crate::policy::PolicyStatus;
 use crate::storage::connections::ConnectionProfile;
@@ -32,7 +32,12 @@ struct InfoFile<'a> {
 }
 
 fn zip_err(e: impl std::fmt::Display) -> AppError {
-    AppError::internal("Не удалось записать архив диагностики").with_details(e.to_string())
+    app_err!(
+        ErrorCode::Internal,
+        "errors.diagnostics.writeFailed",
+        "Failed to write the diagnostics archive"
+    )
+    .with_details(e.to_string())
 }
 
 pub fn write_archive(

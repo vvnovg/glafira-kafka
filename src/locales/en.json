@@ -16,6 +16,94 @@
       "readOnly": "Connection “{{name}}” is read-only",
       "prodConfirm": "To change a prod connection, type its name “{{name}}”",
       "typeToConfirm": "Type “{{expected}}” to confirm"
+    },
+    "diagnostics": {
+      "noFile": "No file selected for the archive",
+      "writeFailed": "Failed to write the diagnostics archive"
+    },
+    "updates": {
+      "managed": "Updates are managed by your organization",
+      "notConfigured": "Updates are not configured in this build",
+      "badPolicyUrl": "Invalid update address in the policy: {{url}}",
+      "unavailable": "Updates are unavailable",
+      "noRelease": "The update server has no published versions (or it is temporarily unavailable)",
+      "checkFailed": "Failed to check for updates",
+      "downloadInterrupted": "The update download was interrupted — check your network and try again",
+      "badSignature": "The update signature failed verification — the update was not installed",
+      "installFailed": "Failed to install the update",
+      "sessionsActive": "Active sessions: {{active}} (browse, consumer or batch send). Updating will stop them.",
+      "none": "No updates available"
+    },
+    "browse": {
+      "threadFailed": "Failed to start the browse thread: {{error}}"
+    },
+    "consume": {
+      "threadFailed": "Failed to start the consumer session thread: {{error}}"
+    },
+    "app": {
+      "taskPanicked": "Background task failed: {{error}}"
+    },
+    "produce": {
+      "threadFailed": "Failed to start the send thread: {{error}}"
+    },
+    "topics": {
+      "internalPurge": "Internal topic “{{topic}}” cannot be purged",
+      "noneSelected": "No topics selected",
+      "internalDelete": "Internal topic “{{topic}}” cannot be deleted"
+    },
+    "license": {
+      "malformed": "Invalid key: the key is corrupted",
+      "badSignature": "Invalid key: the key signature could not be verified — the key was not issued by us or was modified",
+      "unsupportedVersion": "Invalid key: a version {{version}} key requires a newer version of the app",
+      "managed": "The license is managed by your organization (corporate policy) and cannot be changed",
+      "empty": "Invalid key: the key is empty",
+      "keyExpired": "The key expired on {{date}}",
+      "proExpired": "Pro license expired on {{date}} — this feature requires Pro",
+      "proRequired": "This feature requires Pro — activate a license on the License screen"
+    },
+    "policy": {
+      "invalidBool": "{{key}}: invalid boolean {{value}}",
+      "invalidNumber": "{{key}}: invalid number {{value}}",
+      "invalidString": "{{key}}: invalid string “{{value}}”",
+      "invalidType": "{{key}}: invalid value of type {{kind}}",
+      "unreadable": "Policy cannot be read: {{reason}}",
+      "httpsRequired": "{{key}}: an https:// address is required — updates are not downloaded over http"
+    },
+    "secrets": {
+      "keychain": "Cannot access the system secret store",
+      "readOnly": "OverlayStore is read-only"
+    },
+    "connections": {
+      "addressFormat": "Address “{{address}}” must be in host:port format",
+      "badPort": "Invalid port in address “{{address}}”",
+      "emptyHost": "Empty host in address “{{address}}”",
+      "noBootstrap": "Specify at least one bootstrap server",
+      "caRequired": "Specify a file: trusted CA",
+      "certificateRequired": "Specify a file: client certificate",
+      "keyRequired": "Specify a file: client key",
+      "caNotAbsolute": "Trusted CA: specify an absolute path (currently “{{path}}”)",
+      "certificateNotAbsolute": "Client certificate: specify an absolute path (currently “{{path}}”)",
+      "keyNotAbsolute": "Client key: specify an absolute path (currently “{{path}}”)",
+      "pemKeyRequired": "Specify a file: client key (PEM)",
+      "noId": "The connection has no ID",
+      "emptyName": "Connection name cannot be empty",
+      "saslUsernameRequired": "Specify the SASL username",
+      "secretInExtraProperties": "Secrets cannot be stored in extra properties: {{key}}",
+      "timeoutTooSmall": "Request timeout must be at least 1000 ms",
+      "notFound": "Connection {{id}} not found"
+    },
+    "storage": {
+      "writeFailed": "Failed to write {{path}}: {{error}}",
+      "newerSchema": "{{file}} was created by a newer version of the app (schemaVersion {{version}})",
+      "quarantineFailed": "File {{path}} is corrupted ({{parseError}}) and a backup copy could not be saved: {{renameError}}"
+    },
+    "history": {
+      "badConnectionId": "Invalid connection ID"
+    },
+    "templates": {
+      "unavailable": "Templates are unavailable: {{reason}}",
+      "nameRequired": "Specify a template name",
+      "notFound": "Template not found"
     }
   }
 }

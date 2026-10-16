@@ -64,7 +64,10 @@ describe("AboutPanel", () => {
   });
 
   it("политика выключила обновления", async () => {
-    vi.mocked(api.checkUpdate).mockResolvedValue({ status: "disabled", reason: "Обновления управляются вашей организацией" });
+    vi.mocked(api.checkUpdate).mockResolvedValue({
+      status: "disabled",
+      reason: { key: "errors.updates.managed", params: {}, text: "Updates are managed by your organization" },
+    });
     const user = userEvent.setup();
     renderWithClient(<AboutPanel />);
     await user.click(await screen.findByRole("button", { name: "Проверить обновления" }));
@@ -91,10 +94,16 @@ describe("AboutPanel", () => {
       updatesEnabled: false,
       updateUrl: null,
       hasLicenseKey: false,
-      errors: ["updateUrl: нужен адрес https:// — обновления по http не загружаются"],
+      errors: [
+        {
+          key: "errors.policy.httpsRequired",
+          params: { key: "updateUrl" },
+          text: "updateUrl: an https:// address is required — updates are not downloaded over http",
+        },
+      ],
     });
     renderWithClient(<AboutPanel />);
-    expect(await screen.findByText(/нужен адрес https/)).toBeInTheDocument();
+    expect(await screen.findByText(/updateUrl: нужен адрес https/)).toBeInTheDocument();
     expect(screen.getByText("задана")).toBeInTheDocument();
   });
 });

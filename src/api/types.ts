@@ -481,7 +481,8 @@ export interface LicenseStatus {
   kind: "personal" | "organization" | null;
   expires: string | null;
   daysLeft: number | null;
-  error: string | null;
+  /** Почему ключ недействителен — полная фраза. */
+  error: LocalizedText | null;
 }
 export interface PolicyStatus {
   managed: boolean;
@@ -489,7 +490,7 @@ export interface PolicyStatus {
   updatesEnabled: boolean;
   updateUrl: string | null;
   hasLicenseKey: boolean;
-  errors: string[];
+  errors: LocalizedText[];
 }
 
 export interface AppInfo {
@@ -503,6 +504,6 @@ export interface AppInfo {
 }
 
 export type UpdateCheck =
-  | { status: "disabled"; reason: string }
+  | { status: "disabled"; reason: LocalizedText }
   | { status: "upToDate" }
   | { status: "available"; version: string; notes: string | null; date: string | null };

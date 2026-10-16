@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkDictionaries, checkRustKeys, findCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
+import { checkDictionaries, checkRustKeys, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -127,4 +127,25 @@ test("параметры вызова совпадают с {{…}} шаблон
   assert.ok(p.some((x) => x.startsWith("g.rs:2: m.missing") && x.includes("нет параметра count")), p.join("\n"));
   assert.ok(p.some((x) => x.startsWith("g.rs:3: m.extra") && x.includes("лишний параметр count")), p.join("\n"));
   assert.ok(p.some((x) => x.startsWith("g.rs:4: m.dup") && x.includes("дважды")), p.join("\n"));
+});
+
+test("кириллица в литералах Rust: код — находка, комментарии и #[cfg(test)] — нет", () => {
+  const src = [
+    "//! Модуль: описание по-русски",
+    "/// Документация «в кавычках»",
+    'fn a() -> String { "Ошибка".into() } // комментарий "в кавычках"',
+    'fn b() -> &\'static str { "ok" /* "блок" */ }',
+    'fn c() { let s = r#"сырой"#; let ch = \'ё\'; }',
+    "fn d<'a>(x: &'a str) -> &'a str { x }",
+    'tracing::warn!("лог {x}");',
+    "#[cfg(test)]",
+    'pub fn helper() -> &\'static str { "тестовый помощник" }',
+    "#[cfg(test)]",
+    "mod tests {",
+    '    #[test] fn t() { assert_eq!(x, "по-русски {"); }',
+    "}",
+    'const AFTER: &str = "после тестов";',
+  ].join("\n");
+  assert.deepEqual(findRustCyrillic({ "x.rs": src }), ["x.rs:3", "x.rs:5", "x.rs:7", "x.rs:14"]);
+  assert.deepEqual(findRustCyrillic({ "y.rs": 'let s = "multi\nстрока";' }), ["y.rs:1"]);
 });

@@ -2,7 +2,7 @@ use tauri::State;
 use tauri::ipc::Channel;
 
 use super::{RemoveOnDrop, blocking};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::kafka::producer::{self, ProduceResult, ProducerSettings};
 use crate::produce::batch::{self, BatchEvent, BatchParams, BatchSink};
 use crate::produce::payload::{ProduceMessage, encode_message};
@@ -72,7 +72,7 @@ pub async fn produce_impl(
     .await;
     if let Err(e) = saved {
         // Сообщение уже в Kafka: ошибка истории не должна выглядеть как ошибка отправки.
-        tracing::warn!("не удалось записать историю отправки: {}", e.message);
+        tracing::warn!("failed to save send history: {}", e.message);
     }
     Ok(result)
 }
@@ -118,7 +118,14 @@ pub fn produce_batch_impl(
             let _guard = guard;
             batch::run_batch(&profile, secrets.as_ref(), params, cancel, &sink);
         })
-        .map_err(|e| AppError::internal(format!("Не удалось запустить поток отправки: {e}")))?;
+        .map_err(|e| {
+            app_err!(
+                ErrorCode::Internal,
+                "errors.produce.threadFailed",
+                "Failed to start the send thread: {{error}}",
+                error = e
+            )
+        })?;
     Ok(id)
 }
 

@@ -35,7 +35,7 @@ pub(crate) const EXIT_GRACE: std::time::Duration = std::time::Duration::from_sec
 /// `RunEvent::Exit` и из хука updater перед `process::exit` на Windows.
 pub(crate) fn shutdown_sessions<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     if !app.state::<AppState>().sessions.shutdown(EXIT_GRACE) {
-        tracing::warn!("сессии не завершились за {EXIT_GRACE:?}: выходим без ожидания");
+        tracing::warn!("sessions did not finish within {EXIT_GRACE:?}: exiting without waiting");
     }
 }
 
@@ -47,7 +47,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             crate::logging::init(&app.path().app_log_dir()?);
-            tracing::info!(version = env!("CARGO_PKG_VERSION"), "запуск");
+            tracing::info!(version = env!("CARGO_PKG_VERSION"), "starting");
             let dir = app.path().app_data_dir()?;
             // Каталог данных Tauri — `<базовый каталог>/<identifier>`: прежние лежат рядом.
             if let Some(parent) = dir.parent() {
@@ -61,21 +61,21 @@ pub fn run() {
                         from,
                         files = report.files.len(),
                         secrets = report.secrets,
-                        "миграция данных"
+                        "data migrated"
                     );
                 }
                 for e in &report.errors {
-                    tracing::warn!("миграция: {e}");
+                    tracing::warn!("migration: {e}");
                 }
             }
             let policy = crate::policy::sources::load();
             tracing::info!(
                 managed = policy.status.managed,
                 updates = policy.status.updates_enabled,
-                "политика"
+                "policy"
             );
             let st = AppState::new(&dir, Arc::new(KeyringStore::default()))?.with_policy(policy);
-            tracing::info!(tier = ?st.license.status().tier, "лицензия");
+            tracing::info!(tier = ?st.license.status().tier, "license");
             app.manage(st);
             Ok(())
         })

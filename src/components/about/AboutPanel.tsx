@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { save } from "@tauri-apps/plugin-dialog";
 import { api, toAppError } from "../../api/client";
+import { tr } from "../../i18n/text";
 import { ErrorBanner } from "../common/ErrorBanner";
 
 export function AboutPanel() {
@@ -38,9 +39,9 @@ export function AboutPanel() {
         <div><dt>Тариф</dt><dd>{license.data ? (license.data.tier === "pro" ? "Pro" : "Free") : "…"}</dd></div>
         <div><dt>Политика организации</dt><dd>{policy.data ? (policy.data.managed ? "задана" : "нет") : "…"}</dd></div>
       </dl>
-      {policy.data?.errors.map((e) => (
-        <p key={e} className="warn">
-          Политика организации: {e}
+      {policy.data?.errors.map((e, i) => (
+        <p key={i} className="warn">
+          Политика организации: {tr(e)}
         </p>
       ))}
       <p className="muted">Данные: <code>{i.dataDir}</code></p>
@@ -93,7 +94,7 @@ function UpdatesSection() {
         </button>
       </div>
       {check.error && <ErrorBanner error={check.error} onRetry={() => check.mutate()} />}
-      {r?.status === "disabled" && <p className="muted">{r.reason}</p>}
+      {r?.status === "disabled" && <p className="muted">{tr(r.reason)}</p>}
       {r?.status === "upToDate" && <p role="status">Установлена последняя версия</p>}
       {r?.status === "available" && (
         <>

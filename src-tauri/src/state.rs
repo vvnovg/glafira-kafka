@@ -109,10 +109,13 @@ impl AppState {
         }
         self.evict_connection(id);
         if let Err(e) = self.history.delete_connection(id) {
-            tracing::warn!("не удалось удалить историю подключения {id}: {}", e.message);
+            tracing::warn!("failed to delete history of connection {id}: {}", e.message);
         }
         if let Err(e) = self.templates.delete_for_connection(id) {
-            tracing::warn!("не удалось удалить шаблоны подключения {id}: {}", e.message);
+            tracing::warn!(
+                "failed to delete templates of connection {id}: {}",
+                e.message
+            );
         }
         Ok(())
     }

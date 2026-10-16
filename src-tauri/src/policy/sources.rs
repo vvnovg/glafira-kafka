@@ -38,7 +38,7 @@ pub fn read_json_file(path: &Path) -> RawPolicy {
         Err(e) => return RawPolicy::Unreadable(e.to_string()),
     };
     let Some(obj) = value.as_object() else {
-        return RawPolicy::Unreadable("ожидается JSON-объект".into());
+        return RawPolicy::Unreadable("expected a JSON object".into());
     };
     RawPolicy::Values(
         obj.iter()
@@ -60,10 +60,10 @@ pub fn read_json_file(path: &Path) -> RawPolicy {
 fn json_type(v: &serde_json::Value) -> &'static str {
     match v {
         serde_json::Value::Null => "null",
-        serde_json::Value::Number(_) => "дробное число",
-        serde_json::Value::Array(_) => "массив",
-        serde_json::Value::Object(_) => "объект",
-        _ => "неизвестный",
+        serde_json::Value::Number(_) => "float",
+        serde_json::Value::Array(_) => "array",
+        serde_json::Value::Object(_) => "object",
+        _ => "unknown",
     }
 }
 
@@ -79,7 +79,7 @@ pub fn read_plist_file(path: &Path) -> RawPolicy {
         Err(e) => return RawPolicy::Unreadable(e.to_string()),
     };
     let Some(dict) = value.as_dictionary() else {
-        return RawPolicy::Unreadable("ожидается словарь (dict)".into());
+        return RawPolicy::Unreadable("expected a dictionary (dict)".into());
     };
     RawPolicy::Values(
         dict.iter()
@@ -89,9 +89,9 @@ pub fn read_plist_file(path: &Path) -> RawPolicy {
                     plist::Value::String(s) => PolicyValue::Str(s.clone()),
                     plist::Value::Integer(i) => match i.as_signed() {
                         Some(n) => PolicyValue::Int(n),
-                        None => PolicyValue::Other("большое целое".into()),
+                        None => PolicyValue::Other("big integer".into()),
                     },
-                    _ => PolicyValue::Other("неподдерживаемый тип plist".into()),
+                    _ => PolicyValue::Other("unsupported plist type".into()),
                 };
                 (k.clone(), pv)
             })

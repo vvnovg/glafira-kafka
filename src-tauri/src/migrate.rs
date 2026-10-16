@@ -103,7 +103,7 @@ fn copy_secrets(
                 Ok(true) => report.secrets += 1,
                 Ok(false) => {}
                 // В ключе только id подключения и имя поля, значение не попадает в отчёт.
-                Err(e) => report.errors.push(format!("секрет {key}: {}", e.message)),
+                Err(e) => report.errors.push(format!("secret {key}: {}", e.message)),
             }
         }
     }

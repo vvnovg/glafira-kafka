@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::config::{
     SASL_PASSWORD, SSL_KEY_PASSWORD, SSL_KEYSTORE_PASSWORD, SSL_TRUSTSTORE_PASSWORD,
 };
@@ -40,7 +40,12 @@ impl Default for KeyringStore {
 }
 
 fn keyring_err(e: keyring::Error) -> AppError {
-    AppError::internal("Ошибка доступа к системному хранилищу секретов").with_details(e.to_string())
+    app_err!(
+        ErrorCode::Internal,
+        "errors.secrets.keychain",
+        "Cannot access the system secret store"
+    )
+    .with_details(e.to_string())
 }
 
 impl SecretStore for KeyringStore {
@@ -108,11 +113,19 @@ impl SecretStore for OverlayStore {
     }
 
     fn set(&self, _: &str, _: &str) -> AppResult<()> {
-        Err(AppError::internal("OverlayStore только для чтения"))
+        Err(app_err!(
+            ErrorCode::Internal,
+            "errors.secrets.readOnly",
+            "OverlayStore is read-only"
+        ))
     }
 
     fn delete(&self, _: &str) -> AppResult<()> {
-        Err(AppError::internal("OverlayStore только для чтения"))
+        Err(app_err!(
+            ErrorCode::Internal,
+            "errors.secrets.readOnly",
+            "OverlayStore is read-only"
+        ))
     }
 }
 

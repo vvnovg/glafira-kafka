@@ -3,7 +3,7 @@ use std::sync::RwLock;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::kafka::producer::ProducerSettings;
 use crate::produce::payload::ProduceMessage;
 use crate::storage::fs::{read_json_or_quarantine, write_json};
@@ -41,10 +41,9 @@ pub struct TemplateStore {
 
 fn load(path: &Path) -> AppResult<Vec<Template>> {
     match read_json_or_quarantine::<TemplatesFile>(path, SCHEMA_VERSION)? {
-        Some(f) if f.schema_version > SCHEMA_VERSION => Err(AppError::internal(format!(
-            "templates.json создан более новой версией приложения (schemaVersion {})",
-            f.schema_version
-        ))),
+        Some(f) if f.schema_version > SCHEMA_VERSION => Err(
+            crate::storage::fs::newer_schema_error(path, f.schema_version),
+        ),
         Some(f) => Ok(f.templates),
         None => Ok(Vec::new()),
     }
@@ -56,8 +55,13 @@ impl TemplateStore {
     pub fn open(data_dir: &Path) -> Self {
         let path = data_dir.join("templates.json");
         let cache = load(&path).map_err(|e| {
-            tracing::warn!("шаблоны недоступны: {}", e.message);
-            AppError::internal(format!("Шаблоны недоступны: {}", e.message))
+            tracing::warn!("templates are unavailable: {}", e.message);
+            app_err!(
+                ErrorCode::Internal,
+                "errors.templates.unavailable",
+                "Templates are unavailable: {{reason}}",
+                reason = e.message
+            )
         });
         Self {
             path,
@@ -95,7 +99,11 @@ impl TemplateStore {
     pub fn save(&self, mut t: Template) -> AppResult<Template> {
         t.name = t.name.trim().to_string();
         if t.name.is_empty() {
-            return Err(AppError::invalid("Укажите имя шаблона"));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.templates.nameRequired",
+                "Specify a template name"
+            ));
         }
         if t.id.is_empty() {
             t.id = uuid::Uuid::new_v4().to_string();
@@ -115,7 +123,11 @@ impl TemplateStore {
         let mut cache = self.cache.write_safe();
         let list = cache.as_ref().map_err(Clone::clone)?;
         if !list.iter().any(|t| t.id == id) {
-            return Err(AppError::not_found("Шаблон не найден"));
+            return Err(app_err!(
+                ErrorCode::NotFound,
+                "errors.templates.notFound",
+                "Template not found"
+            ));
         }
         let next: Vec<Template> = list.iter().filter(|t| t.id != id).cloned().collect();
         self.persist(&next)?;
@@ -243,8 +255,9 @@ mod tests {
         // Открытие не падает: приложение запускается, ошибку получают только операции шаблонов.
         let store = TemplateStore::open(dir.path());
         let err = store.list("c").unwrap_err();
+        assert_eq!(err.key, "errors.templates.unavailable");
         assert!(
-            err.message.contains("более новой версией"),
+            err.params["reason"].contains("newer version"),
             "{}",
             err.message
         );

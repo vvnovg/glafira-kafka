@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 
 /// Уникальное имя временного файла в том же каталоге: `<name>.<pid>.<n>.tmp`.
 /// Параллельные писатели в один путь не делят временный файл.
@@ -51,7 +51,13 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> AppResult<()> {
     })();
     result.map_err(|e| {
         let _ = fs::remove_file(&tmp);
-        AppError::internal(format!("Не удалось записать {}: {e}", path.display()))
+        app_err!(
+            ErrorCode::Internal,
+            "errors.storage.writeFailed",
+            "Failed to write {{path}}: {{error}}",
+            path = path.display(),
+            error = e
+        )
     })
 }
 
@@ -63,6 +69,17 @@ fn sync_dir(dir: &Path) {
     }
     #[cfg(not(unix))]
     let _ = dir;
+}
+
+/// Файл записан более новой версией приложения (`schemaVersion` выше поддерживаемой).
+pub fn newer_schema_error(path: &Path, version: impl std::fmt::Display) -> AppError {
+    app_err!(
+        ErrorCode::Internal,
+        "errors.storage.newerSchema",
+        "{{file}} was created by a newer version of the app (schemaVersion {{version}})",
+        file = path.display(),
+        version = version
+    )
 }
 
 pub fn read_json<T: DeserializeOwned>(path: &Path) -> AppResult<Option<T>> {
@@ -94,11 +111,7 @@ pub fn read_json_or_quarantine<T: DeserializeOwned>(
             .and_then(|x| x.as_u64())
             .is_some_and(|x| x > u64::from(max_schema))
     {
-        return Err(AppError::internal(format!(
-            "{} создан более новой версией приложения (schemaVersion {})",
-            path.display(),
-            v["schemaVersion"]
-        )));
+        return Err(newer_schema_error(path, &v["schemaVersion"]));
     }
     let ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -111,13 +124,17 @@ pub fn read_json_or_quarantine<T: DeserializeOwned>(
     name.push(format!(".corrupt-{ms}"));
     let backup = path.with_file_name(name);
     fs::rename(path, &backup).map_err(|e| {
-        AppError::internal(format!(
-            "Файл {} повреждён ({err}), не удалось сохранить копию: {e}",
-            path.display()
-        ))
+        app_err!(
+            ErrorCode::Internal,
+            "errors.storage.quarantineFailed",
+            "File {{path}} is corrupted ({{parseError}}) and a backup copy could not be saved: {{renameError}}",
+            path = path.display(),
+            parseError = err,
+            renameError = e
+        )
     })?;
     tracing::warn!(
-        "файл {} повреждён ({err}); сохранён как {}, начинаем с пустого",
+        "file {} is corrupted ({err}); saved as {}, starting empty",
         path.display(),
         backup.display()
     );

@@ -134,7 +134,7 @@ pub fn init(log_dir: &Path) {
                 .with(filter)
                 .with(stderr)
                 .try_init();
-            tracing::warn!("лог-файл недоступен ({}): {e}", log_dir.display());
+            tracing::warn!("log file is unavailable ({}): {e}", log_dir.display());
         }
     }
 }

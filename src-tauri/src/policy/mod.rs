@@ -6,6 +6,8 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
+use crate::i18n::LocalizedText;
+
 pub const KEY_UPDATES_ENABLED: &str = "updatesEnabled";
 pub const KEY_UPDATE_URL: &str = "updateUrl";
 pub const KEY_LICENSE_KEY: &str = "licenseKey";
@@ -15,17 +17,38 @@ pub enum PolicyValue {
     Bool(bool),
     Int(i64),
     Str(String),
-    /// Значение неподдерживаемого типа (описание типа).
+    /// Значение неподдерживаемого типа (техническое имя типа по-английски: `array`, `float`…).
     Other(String),
 }
 
 impl PolicyValue {
-    fn describe(&self) -> String {
+    /// «Недопустимое значение» ключа политики `key`.
+    fn invalid(&self, key: &str) -> LocalizedText {
         match self {
-            PolicyValue::Bool(b) => format!("логическое {b}"),
-            PolicyValue::Int(i) => format!("число {i}"),
-            PolicyValue::Str(s) => format!("строка «{s}»"),
-            PolicyValue::Other(t) => format!("значение типа {t}"),
+            PolicyValue::Bool(b) => ltext!(
+                "errors.policy.invalidBool",
+                "{{key}}: invalid boolean {{value}}",
+                key = key,
+                value = b
+            ),
+            PolicyValue::Int(i) => ltext!(
+                "errors.policy.invalidNumber",
+                "{{key}}: invalid number {{value}}",
+                key = key,
+                value = i
+            ),
+            PolicyValue::Str(s) => ltext!(
+                "errors.policy.invalidString",
+                "{{key}}: invalid string “{{value}}”",
+                key = key,
+                value = s
+            ),
+            PolicyValue::Other(t) => ltext!(
+                "errors.policy.invalidType",
+                "{{key}}: invalid value of type {{kind}}",
+                key = key,
+                kind = t
+            ),
         }
     }
 }
@@ -45,7 +68,7 @@ pub struct PolicyStatus {
     pub updates_enabled: bool,
     pub update_url: Option<String>,
     pub has_license_key: bool,
-    pub errors: Vec<String>,
+    pub errors: Vec<LocalizedText>,
 }
 
 impl Default for PolicyStatus {
@@ -79,7 +102,11 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                     managed: true,
                     source: Some(source.to_string()),
                     updates_enabled: false,
-                    errors: vec![format!("Политика не читается: {e}")],
+                    errors: vec![ltext!(
+                        "errors.policy.unreadable",
+                        "Policy cannot be read: {{reason}}",
+                        reason = e
+                    )],
                     ..PolicyStatus::default()
                 },
                 license_key: None,
@@ -103,8 +130,10 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
             }
             (KEY_UPDATE_URL, PolicyValue::Str(u)) if u.starts_with("http://") => {
                 broken = true;
-                status.errors.push(format!(
-                    "{key}: нужен адрес https:// — обновления по http не загружаются"
+                status.errors.push(ltext!(
+                    "errors.policy.httpsRequired",
+                    "{{key}}: an https:// address is required — updates are not downloaded over http",
+                    key = key
                 ));
             }
             (KEY_LICENSE_KEY, PolicyValue::Str(s)) if !s.trim().is_empty() => {
@@ -113,11 +142,9 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
             }
             (KEY_UPDATES_ENABLED | KEY_UPDATE_URL | KEY_LICENSE_KEY, other) => {
                 broken = true;
-                status
-                    .errors
-                    .push(format!("{key}: недопустимое {}", other.describe()));
+                status.errors.push(other.invalid(&key));
             }
-            (unknown, _) => tracing::warn!("неизвестный ключ политики «{unknown}» проигнорирован"),
+            (unknown, _) => tracing::warn!("unknown policy key “{unknown}” ignored"),
         }
     }
     if broken {
@@ -188,7 +215,8 @@ mod tests {
         let p = resolve("src", RawPolicy::Unreadable("plist: unexpected EOF".into()));
         assert!(p.status.managed);
         assert!(!p.status.updates_enabled);
-        assert!(p.status.errors[0].contains("unexpected EOF"));
+        assert_eq!(p.status.errors[0].key, "errors.policy.unreadable");
+        assert_eq!(p.status.errors[0].params["reason"], "plist: unexpected EOF");
         // Неверный тип или адрес — тоже «безопасно закрыто», даже если updatesEnabled = true.
         for bad in [
             values(&[("updatesEnabled", PolicyValue::Str("yes".into()))]),
@@ -201,6 +229,13 @@ mod tests {
             assert!(!p.status.updates_enabled);
             assert_eq!(p.status.errors.len(), 1, "{:?}", p.status.errors);
         }
+        let p = resolve(
+            "src",
+            values(&[("updatesEnabled", PolicyValue::Str("yes".into()))]),
+        );
+        assert_eq!(p.status.errors[0].key, "errors.policy.invalidString");
+        assert_eq!(p.status.errors[0].params["key"], "updatesEnabled");
+        assert_eq!(p.status.errors[0].params["value"], "yes");
     }
 
     #[test]
@@ -216,11 +251,8 @@ mod tests {
         assert!(!p.status.updates_enabled);
         assert_eq!(p.status.update_url, None);
         assert_eq!(p.status.errors.len(), 1);
-        assert!(
-            p.status.errors[0].contains("https://"),
-            "{:?}",
-            p.status.errors
-        );
+        assert_eq!(p.status.errors[0].key, "errors.policy.httpsRequired");
+        assert_eq!(p.status.errors[0].params["key"], "updateUrl");
     }
 
     #[test]

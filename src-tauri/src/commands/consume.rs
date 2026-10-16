@@ -11,7 +11,7 @@ use crate::consume::session::{ConsumeSink, run_consumer};
 use crate::consume::types::{
     CommitTarget, ConsumeEvent, ConsumerParams, current_user, default_group_id, validate,
 };
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::kafka::groups::{OffsetTarget, TopicPartitionRef};
 use crate::state::AppState;
 
@@ -70,7 +70,12 @@ pub fn start_consumer_impl<S: ConsumeSink>(
             run_consumer(&profile, secrets.as_ref(), params, cancel, rx, &sink);
         })
         .map_err(|e| {
-            AppError::internal(format!("Не удалось запустить поток consumer-сессии: {e}"))
+            app_err!(
+                ErrorCode::Internal,
+                "errors.consume.threadFailed",
+                "Failed to start the consumer session thread: {{error}}",
+                error = e
+            )
         })?;
     Ok(id)
 }

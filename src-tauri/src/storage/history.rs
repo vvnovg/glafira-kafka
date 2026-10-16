@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::kafka::producer::{ProduceResult, ProducerSettings};
 use crate::produce::payload::ProduceMessage;
 use crate::storage::fs::{read_json_or_quarantine, write_json};
@@ -85,7 +85,7 @@ impl HistoryStore {
         {
             use std::os::unix::fs::PermissionsExt;
             if let Err(e) = std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)) {
-                tracing::warn!("не удалось ограничить права {}: {e}", dir.display());
+                tracing::warn!("failed to restrict permissions on {}: {e}", dir.display());
             }
         }
         Ok(Self {
@@ -100,18 +100,20 @@ impl HistoryStore {
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
         if !safe {
-            return Err(AppError::invalid("Некорректный id подключения"));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.history.badConnectionId",
+                "Invalid connection ID"
+            ));
         }
         Ok(self.dir.join(format!("{connection_id}.json")))
     }
 
     fn read(&self, path: &Path) -> AppResult<Vec<HistoryEntry>> {
         match read_json_or_quarantine::<HistoryFile>(path, SCHEMA_VERSION)? {
-            Some(f) if f.schema_version > SCHEMA_VERSION => Err(AppError::internal(format!(
-                "{} создан более новой версией приложения (schemaVersion {})",
-                path.display(),
-                f.schema_version
-            ))),
+            Some(f) if f.schema_version > SCHEMA_VERSION => Err(
+                crate::storage::fs::newer_schema_error(path, f.schema_version),
+            ),
             Some(f) => Ok(f.entries),
             None => Ok(Vec::new()),
         }

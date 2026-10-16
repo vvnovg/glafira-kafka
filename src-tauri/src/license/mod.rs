@@ -3,10 +3,11 @@
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
-use license_format::{Kind, NaiveDate, VerifyingKey};
+use license_format::{Kind, LicenseError, NaiveDate, VerifyingKey};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::RwLockExt;
 
@@ -47,7 +48,8 @@ pub struct LicenseStatus {
     pub kind: Option<Kind>,
     pub expires: Option<NaiveDate>,
     pub days_left: Option<i64>,
-    pub error: Option<String>,
+    /// Почему ключ недействителен (полная фраза для интерфейса).
+    pub error: Option<LocalizedText>,
 }
 
 impl LicenseStatus {
@@ -65,6 +67,26 @@ impl LicenseStatus {
     }
 }
 
+/// Ошибки `license-format` (текст крейта — для логов) → ключи интерфейса.
+/// Подробность `Malformed` техническая и в интерфейс не попадает.
+fn license_error_text(e: &LicenseError) -> LocalizedText {
+    match e {
+        LicenseError::Malformed(_) => ltext!(
+            "errors.license.malformed",
+            "Invalid key: the key is corrupted"
+        ),
+        LicenseError::BadSignature => ltext!(
+            "errors.license.badSignature",
+            "Invalid key: the key signature could not be verified — the key was not issued by us or was modified"
+        ),
+        LicenseError::UnsupportedVersion(v) => ltext!(
+            "errors.license.unsupportedVersion",
+            "Invalid key: a version {{version}} key requires a newer version of the app",
+            version = v
+        ),
+    }
+}
+
 pub fn evaluate(
     token: Option<&str>,
     source: Option<LicenseSource>,
@@ -76,7 +98,7 @@ pub fn evaluate(
     };
     match license_format::verify(token, key) {
         Err(e) => LicenseStatus {
-            error: Some(e.to_string()),
+            error: Some(license_error_text(&e)),
             ..LicenseStatus::free(LicenseState::Invalid, source)
         },
         Ok(p) => {
@@ -122,7 +144,7 @@ impl LicenseManager {
     /// Открытый ключ из `src-tauri/license-public.key`, вшитый при сборке.
     pub fn embedded_key() -> VerifyingKey {
         license_format::parse_verifying_key(include_str!("../../license-public.key"))
-            .expect("license-public.key содержит неверный открытый ключ")
+            .expect("license-public.key contains an invalid public key")
     }
 
     /// Повреждённый `license.json` не мешает запуску: он переименовывается, лицензия — Free.
@@ -131,7 +153,7 @@ impl LicenseManager {
         let user_key = match read_json_or_quarantine::<LicenseFile>(&path, SCHEMA_VERSION) {
             Ok(f) => f.map(|f| f.key),
             Err(e) => {
-                tracing::warn!("лицензия не прочитана: {}", e.message);
+                tracing::warn!("license was not read: {}", e.message);
                 None
             }
         };
@@ -166,8 +188,10 @@ impl LicenseManager {
 
     fn ensure_not_managed(&self) -> AppResult<()> {
         if self.policy_key.read_safe().is_some() {
-            return Err(AppError::invalid(
-                "Лицензия управляется вашей организацией (корпоративная политика) — изменить её нельзя",
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.license.managed",
+                "The license is managed by your organization (corporate policy) and cannot be changed"
             ));
         }
         Ok(())
@@ -184,16 +208,18 @@ impl LicenseManager {
         );
         match st.state {
             LicenseState::Invalid | LicenseState::None => {
-                return Err(AppError::invalid(format!(
-                    "Ключ недействителен: {}",
-                    st.error.as_deref().unwrap_or("пустой ключ")
-                )));
+                let text = st.error.unwrap_or_else(|| {
+                    ltext!("errors.license.empty", "Invalid key: the key is empty")
+                });
+                return Err(AppError::localized(ErrorCode::InvalidInput, text));
             }
             LicenseState::Expired => {
-                return Err(AppError::invalid(format!(
-                    "Срок действия ключа истёк {}",
-                    st.expires.map(|d| d.to_string()).unwrap_or_default()
-                )));
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.license.keyExpired",
+                    "The key expired on {{date}}",
+                    date = st.expires.map(|d| d.to_string()).unwrap_or_default()
+                ));
             }
             LicenseState::Valid | LicenseState::Expiring => {}
         }
@@ -226,13 +252,19 @@ impl LicenseManager {
         if st.tier == Tier::Pro {
             return Ok(());
         }
-        let message = match (st.state, st.expires) {
-            (LicenseState::Expired, Some(d)) => {
-                format!("Срок лицензии Pro истёк {d} — функция доступна в Pro")
-            }
-            _ => "Функция доступна в Pro — активируйте лицензию на экране «Лицензия»".to_string(),
-        };
-        Err(AppError::new(ErrorCode::ProRequired, message))
+        Err(match (st.state, st.expires) {
+            (LicenseState::Expired, Some(d)) => app_err!(
+                ErrorCode::ProRequired,
+                "errors.license.proExpired",
+                "Pro license expired on {{date}} — this feature requires Pro",
+                date = d
+            ),
+            _ => app_err!(
+                ErrorCode::ProRequired,
+                "errors.license.proRequired",
+                "This feature requires Pro — activate a license on the License screen"
+            ),
+        })
     }
 }
 
@@ -284,7 +316,7 @@ mod tests {
 
         let s = evaluate(Some("garbage"), None, &key, today);
         assert_eq!((s.tier, s.state), (Tier::Free, LicenseState::Invalid));
-        assert!(s.error.unwrap().contains("повреждён"));
+        assert_eq!(s.error.unwrap().key, "errors.license.malformed");
     }
 
     fn manager(dir: &std::path::Path) -> LicenseManager {
@@ -319,7 +351,12 @@ mod tests {
         );
         let past = dev::pro_token("a@b", Some(d(2020, 1, 1)));
         let e = m.set_user_key(&past).unwrap_err();
-        assert!(e.message.contains("истёк"), "{}", e.message);
+        assert_eq!(e.key, "errors.license.keyExpired");
+        assert_eq!(e.params["date"], "2020-01-01");
+        let e = m.set_user_key("garbage").unwrap_err();
+        assert_eq!(e.key, "errors.license.malformed");
+        let e = m.set_user_key("  ").unwrap_err();
+        assert_eq!(e.key, "errors.license.empty");
         assert!(!dir.path().join("license.json").exists());
     }
 
@@ -349,6 +386,8 @@ mod tests {
         m.set_policy_key(Some(dev::pro_token("ACME", Some(d(2020, 1, 1)))));
         let e = m.require_pro().unwrap_err();
         assert_eq!(e.code, ErrorCode::ProRequired);
+        assert_eq!(e.key, "errors.license.proExpired");
+        assert_eq!(e.params["date"], "2020-01-01");
         assert!(e.message.contains("2020-01-01"), "{}", e.message);
     }
 

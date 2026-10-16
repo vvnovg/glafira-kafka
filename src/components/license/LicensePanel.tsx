@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { LicenseStatus } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { ErrorBanner } from "../common/ErrorBanner";
 
 const KIND = { personal: "личная", organization: "организации" } as const;
@@ -59,7 +60,7 @@ export function LicensePanel() {
       </dl>
       {st.state === "expiring" && <p className="warn">Лицензия истекает через {st.daysLeft} дн. ({st.expires}).</p>}
       {st.state === "expired" && <p className="warn">Лицензия истекла {st.expires}: функции Pro отключены, данные сохранены.</p>}
-      {st.state === "invalid" && <p className="warn">Ключ недействителен: {st.error}</p>}
+      {st.state === "invalid" && st.error && <p className="warn">{tr(st.error)}</p>}
 
       {managed ? (
         <p className="muted">Лицензия управляется вашей организацией.</p>
@@ -108,9 +109,9 @@ export function LicensePanel() {
         <section>
           <h3>Политика организации</h3>
           <p className="muted">Источник: {policy.data.source}</p>
-          {policy.data.errors.map((e) => (
-            <p key={e} className="warn">
-              {e}
+          {policy.data.errors.map((e, i) => (
+            <p key={i} className="warn">
+              {tr(e)}
             </p>
           ))}
         </section>

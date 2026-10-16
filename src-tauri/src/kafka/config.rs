@@ -1,6 +1,6 @@
 use rdkafka::ClientConfig;
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::secrets::{SecretStore, secret_key};
 use crate::storage::connections::{
     CertFormat, ConnectionProfile, SaslConfig, SecurityConfig, TlsConfig,
@@ -113,7 +113,13 @@ fn apply_sasl(
 ) -> AppResult<()> {
     let password = secrets
         .get(&secret_key(id, SASL_PASSWORD))?
-        .ok_or_else(|| AppError::invalid("Не задан пароль SASL для подключения"))?;
+        .ok_or_else(|| {
+            app_err!(
+                ErrorCode::InvalidInput,
+                "errors.connections.saslPasswordMissing",
+                "The SASL password for the connection is not set"
+            )
+        })?;
     c.set("sasl.mechanism", sasl.mechanism.as_str())
         .set("sasl.username", &sasl.username)
         .set("sasl.password", password);
@@ -220,7 +226,7 @@ mod tests {
     impl SecretStore for StrictStore {
         fn get(&self, key: &str) -> AppResult<Option<String>> {
             if !self.allowed.iter().any(|k| k == key) {
-                return Err(AppError::internal(format!(
+                return Err(crate::error::AppError::internal(format!(
                     "неожиданное чтение секрета {key}"
                 )));
             }
@@ -298,7 +304,7 @@ mod tests {
             .err()
             .unwrap();
         assert_eq!(e.code, ErrorCode::InvalidInput);
-        assert!(e.message.contains("зашифрован"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.keyEncrypted", "{}", e.message);
     }
 
     #[test]

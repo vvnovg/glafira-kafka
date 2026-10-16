@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ConnectionProfile, TopicDeleteResult } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 
@@ -26,7 +27,7 @@ export function DeleteTopicsPanel({ connection, topics, onDone, onCancel }: Prop
         <ul className="warn">
           {failed.map((r) => (
             <li key={r.name}>
-              {r.name}: {r.error?.message} {r.error?.details && <span className="muted">({r.error.details})</span>}
+              {r.name}: {r.error && tr(r.error)} {r.error?.details && <span className="muted">({r.error.details})</span>}
             </li>
           ))}
         </ul>

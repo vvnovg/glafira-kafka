@@ -7,7 +7,8 @@ use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaResult;
 use rdkafka::{Offset, TopicPartitionList};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::kafka::admin::topic_partition_ids;
 use crate::kafka::admin_ext;
 use crate::kafka::context::CapturingContext;
@@ -48,7 +49,7 @@ fn list_groups_within(h: &KafkaHandles, timeout: Duration) -> AppResult<GroupLis
         groups,
         errors: errors
             .into_iter()
-            .map(|e| format!("{}: {}", e.code, e.message))
+            .map(|e| LocalizedText::raw(format!("{}: {}", e.code, e.message)))
             .collect(),
     })
 }
@@ -64,7 +65,14 @@ pub fn describe_group(h: &KafkaHandles, id: &str) -> AppResult<GroupDescription>
     describe_groups(h, &[id.to_string()])?
         .into_iter()
         .next()
-        .ok_or_else(|| AppError::internal("Пустой ответ DescribeConsumerGroups"))
+        .ok_or_else(|| {
+            app_err!(
+                ErrorCode::Internal,
+                "errors.kafka.emptyResponse",
+                "Empty {{request}} response",
+                request = "DescribeConsumerGroups"
+            )
+        })
 }
 
 fn committed(h: &KafkaHandles, group: &str) -> AppResult<CommittedMap> {
@@ -78,7 +86,10 @@ fn committed_within(h: &KafkaHandles, group: &str, timeout: Duration) -> AppResu
         Ok(Err(item)) => Err(item_error(
             item.code,
             &item.message,
-            "Не удалось получить оффсеты группы",
+            ltext!(
+                "errors.groups.offsetsFailed",
+                "Failed to get the group offsets"
+            ),
         )),
         Err(e) => Err(h.kafka_err(started, e)),
     }
@@ -116,10 +127,13 @@ fn bounds_or_incomplete(
 pub fn group_offsets(h: &KafkaHandles, group: &str) -> AppResult<Vec<GroupPartitionOffset>> {
     let desc = describe_group(h, group)?;
     if let (Some(e), false) = (&desc.error, desc.not_found) {
-        return Err(
-            AppError::internal(format!("Не удалось получить участников группы «{group}»"))
-                .with_details(e.clone()),
-        );
+        return Err(app_err!(
+            ErrorCode::Internal,
+            "errors.groups.membersFailed",
+            "Failed to get the members of group “{{group}}”",
+            group = group
+        )
+        .with_details(e.clone()));
     }
     let committed = committed(h, group)?;
     let assigned: HashMap<Key, String> = desc
@@ -150,9 +164,10 @@ pub fn groups_lag(h: &KafkaHandles, ids: &[String]) -> AppResult<Vec<GroupLag>> 
         .map(|g| {
             let c = match remaining(deadline) {
                 Some(t) => committed_within(h, g, t),
-                None => Err(AppError::new(
-                    crate::error::ErrorCode::Timeout,
-                    "Превышено время ожидания пакета групп",
+                None => Err(app_err!(
+                    ErrorCode::Timeout,
+                    "errors.groups.batchTimeout",
+                    "The group batch timed out"
                 )),
             };
             (g.clone(), c)
@@ -176,15 +191,19 @@ pub fn groups_lag(h: &KafkaHandles, ids: &[String]) -> AppResult<Vec<GroupLag>> 
                     group_id,
                     total_lag: total_lag(&rows),
                     topics: topics.into_iter().collect(),
-                    error: bounds_failed
-                        .then(|| "Не удалось получить границы партиций в срок".to_string()),
+                    error: bounds_failed.then(|| {
+                        ltext!(
+                            "errors.groups.boundsTimeout",
+                            "Failed to get partition bounds in time"
+                        )
+                    }),
                 }
             }
             Err(e) => GroupLag {
                 group_id,
                 total_lag: None,
                 topics: Vec::new(),
-                error: Some(e.message),
+                error: Some(e.text()),
             },
         })
         .collect())
@@ -244,8 +263,10 @@ fn scope_keys(
     let keys: BTreeSet<Key> = match scope {
         ResetScope::All => {
             if committed.is_empty() {
-                return Err(AppError::invalid(
-                    "У группы нет закоммиченных оффсетов — выберите топики для сброса",
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.groups.noCommittedOffsets",
+                    "The group has no committed offsets — select topics to reset"
                 ));
             }
             committed.keys().cloned().collect()
@@ -312,10 +333,14 @@ pub fn preview_reset(h: &KafkaHandles, req: &ResetRequest) -> AppResult<Vec<Rese
             topic: k.0.clone(),
             partition: k.1,
             current: committed.get(k).and_then(|c| c.clone().ok().flatten()),
-            bounds: b
-                .get(k)
-                .cloned()
-                .unwrap_or_else(|| Err("нет ответа брокера".to_string())),
+            bounds: match b.get(k) {
+                Some(Ok(v)) => Ok(*v),
+                Some(Err(e)) => Err(LocalizedText::raw(e)),
+                None => Err(ltext!(
+                    "errors.groups.noBrokerAnswer",
+                    "no response from the broker"
+                )),
+            },
         })
         .collect();
     let mut rows = plan_reset(&states, &req.strategy, &by_time);
@@ -323,10 +348,15 @@ pub fn preview_reset(h: &KafkaHandles, req: &ResetRequest) -> AppResult<Vec<Rese
     for row in &mut rows {
         if let Some(Err(e)) = committed.get(&(row.topic.clone(), row.partition)) {
             row.target = None;
-            let msg = format!("коммит: {e}");
+            // «Нет коммита для сдвига» — следствие той же ошибки коммита, его не повторяем.
             row.error = Some(match row.error.take() {
-                Some(prev) => format!("{prev}; {msg}"),
-                None => msg,
+                Some(prev) if prev.key != no_committed_offset().key => ltext!(
+                    "errors.groups.errorAndCommitError",
+                    "{{previous}}; commit: {{error}}",
+                    previous = prev.text,
+                    error = e
+                ),
+                _ => ltext!("errors.groups.commitError", "commit: {{error}}", error = e),
             });
         }
     }
@@ -352,14 +382,17 @@ pub fn reset_offsets(
             return Err(item_error(
                 item.code,
                 &item.message,
-                "Не удалось сбросить оффсеты",
+                ltext!("errors.groups.resetFailed", "Failed to reset offsets"),
             ));
         }
         Err(e) => return Err(h.kafka_err(started, e)),
     };
-    let by_key: BTreeMap<Key, Option<String>> = applied
+    let by_key: BTreeMap<Key, Option<LocalizedText>> = applied
         .into_iter()
-        .map(|p| ((p.topic, p.partition), p.error.map(|e| e.message)))
+        .map(|p| {
+            let error = p.error.map(|e| LocalizedText::raw(e.message));
+            ((p.topic, p.partition), error)
+        })
         .collect();
     Ok(targets
         .iter()
@@ -370,7 +403,12 @@ pub fn reset_offsets(
             error: by_key
                 .get(&(t.topic.clone(), t.partition))
                 .cloned()
-                .unwrap_or_else(|| Some("брокер не подтвердил партицию".to_string())),
+                .unwrap_or_else(|| {
+                    Some(ltext!(
+                        "errors.groups.partitionNotConfirmed",
+                        "the broker did not confirm the partition"
+                    ))
+                }),
         })
         .collect())
 }
@@ -386,8 +424,9 @@ pub async fn delete_group(h: &Arc<KafkaHandles>, group: &str) -> AppResult<()> {
         Ok(r) => r,
         Err(e) => return Err(admin_error(h, started, e).await),
     };
+    let context = ltext!("errors.groups.deleteFailed", "Failed to delete the group");
     for r in results {
-        r.map_err(|(_name, code)| item_error(code, "", "Не удалось удалить группу"))?;
+        r.map_err(|(_name, code)| item_error(code, "", context.clone()))?;
     }
     Ok(())
 }

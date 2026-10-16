@@ -24,7 +24,7 @@ import { GroupList } from "./GroupList";
 beforeEach(() => {
   vi.mocked(api.listGroups).mockResolvedValue({
     groups: [{ groupId: "orders", state: "Stable", isSimple: false }],
-    errors: ["broker 2: timeout"],
+    errors: [{ key: "errors.generic", params: { message: "broker 2: timeout" }, text: "broker 2: timeout" }],
   });
   vi.mocked(api.describeGroups).mockResolvedValue([
     { groupId: "orders", state: "Stable", assignor: "range", members: [] },

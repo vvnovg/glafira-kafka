@@ -5,7 +5,7 @@ use openssl::sha::Sha1;
 use openssl::x509::X509;
 
 use super::der::read_tlv;
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 
 const JKS_MAGIC: [u8; 4] = [0xFE, 0xED, 0xFE, 0xED];
 const JCEKS_MAGIC: [u8; 4] = [0xCE, 0xCE, 0xCE, 0xCE];
@@ -29,7 +29,11 @@ struct Store {
 }
 
 fn damaged() -> AppError {
-    AppError::invalid("Хранилище JKS повреждено или обрезано")
+    app_err!(
+        ErrorCode::InvalidInput,
+        "errors.tls.jksDamaged",
+        "The JKS store is damaged or truncated"
+    )
 }
 
 struct Reader<'a> {
@@ -73,20 +77,29 @@ fn utf16be(s: &str) -> Vec<u8> {
 
 fn parse(data: &[u8], store_password: Option<&str>) -> AppResult<Store> {
     if data.starts_with(&JCEKS_MAGIC) {
-        return Err(AppError::invalid(
-            "Хранилище JCEKS не поддерживается — сконвертируйте его в PKCS#12: \
-             keytool -importkeystore -srcstoretype JCEKS -srckeystore <файл> -deststoretype PKCS12 -destkeystore <файл>.p12",
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.jceksUnsupported",
+            "JCEKS stores are not supported — convert it to PKCS#12: \
+             keytool -importkeystore -srcstoretype JCEKS -srckeystore <file> -deststoretype PKCS12 -destkeystore <file>.p12"
         ));
     }
     let mut r = Reader { data, pos: 0 };
     if r.take(4)? != JKS_MAGIC {
-        return Err(AppError::invalid("Файл не является хранилищем JKS"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.notJks",
+            "The file is not a JKS store"
+        ));
     }
     let version = r.u32()?;
     if version != 1 && version != 2 {
-        return Err(AppError::invalid(format!(
-            "Неподдерживаемая версия JKS: {version}"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.jksVersion",
+            "Unsupported JKS version: {{version}}",
+            version = version
+        ));
     }
     let count = r.u32()?;
     let mut store = Store {
@@ -121,9 +134,12 @@ fn parse(data: &[u8], store_password: Option<&str>) -> AppResult<Store> {
                 store.trusted.push(r.blob()?.to_vec());
             }
             other => {
-                return Err(AppError::invalid(format!(
-                    "Неизвестный тип записи JKS: {other}"
-                )));
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.tls.jksEntryType",
+                    "Unknown JKS entry type: {{tag}}",
+                    tag = other
+                ));
             }
         }
     }
@@ -135,8 +151,10 @@ fn parse(data: &[u8], store_password: Option<&str>) -> AppResult<Store> {
         h.update(WHITENER);
         h.update(&data[..body]);
         if h.finish() != digest {
-            return Err(AppError::invalid(
-                "Неверный пароль хранилища JKS (или файл повреждён)",
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.tls.jksBadStorePassword",
+                "Wrong JKS store password (or the file is damaged)"
             ));
         }
     }
@@ -144,7 +162,7 @@ fn parse(data: &[u8], store_password: Option<&str>) -> AppResult<Store> {
 }
 
 fn protected_data(info: &[u8]) -> AppResult<&[u8]> {
-    let bad = || AppError::invalid("Хранилище JKS: повреждённая запись ключа");
+    let bad = jks_bad_key_entry;
     let (t, seq, _) = read_tlv(info).ok_or_else(bad)?;
     if t != 0x30 {
         return Err(bad());
@@ -155,8 +173,10 @@ fn protected_data(info: &[u8]) -> AppResult<&[u8]> {
     }
     let (t, oid, _) = read_tlv(alg).ok_or_else(bad)?;
     if t != 0x06 || oid != KEY_PROTECTOR_OID {
-        return Err(AppError::invalid(
-            "Хранилище JKS: ключ защищён неподдерживаемым алгоритмом — сконвертируйте хранилище в PKCS#12",
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.jksKeyAlgorithm",
+            "JKS store: the key is protected with an unsupported algorithm — convert the store to PKCS#12"
         ));
     }
     let (t, data, _) = read_tlv(rest).ok_or_else(bad)?;
@@ -166,13 +186,19 @@ fn protected_data(info: &[u8]) -> AppResult<&[u8]> {
     Ok(data)
 }
 
+fn jks_bad_key_entry() -> AppError {
+    app_err!(
+        ErrorCode::InvalidInput,
+        "errors.tls.jksBadKeyEntry",
+        "JKS store: damaged key entry"
+    )
+}
+
 /// Расшифровка Sun KeyProtector → PKCS#8 DER.
 fn decrypt_key(info: &[u8], password: &str) -> AppResult<Vec<u8>> {
     let data = protected_data(info)?;
     if data.len() < 40 {
-        return Err(AppError::invalid(
-            "Хранилище JKS: повреждённая запись ключа",
-        ));
+        return Err(jks_bad_key_entry());
     }
     let (salt, rest) = data.split_at(20);
     let (encrypted, check) = rest.split_at(rest.len() - 20);
@@ -191,8 +217,10 @@ fn decrypt_key(info: &[u8], password: &str) -> AppResult<Vec<u8>> {
     h.update(&pw);
     h.update(&plain);
     if h.finish() != check {
-        return Err(AppError::invalid(
-            "Неверный пароль ключа в хранилище JKS — укажите пароль ключа (если он отличается от пароля хранилища)",
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.jksBadKeyPassword",
+            "Wrong key password in the JKS store — specify the key password (if it differs from the store password)"
         ));
     }
     Ok(plain)
@@ -200,15 +228,22 @@ fn decrypt_key(info: &[u8], password: &str) -> AppResult<Vec<u8>> {
 
 fn x509(der: &[u8]) -> AppResult<X509> {
     X509::from_der(der).map_err(|e| {
-        AppError::invalid("Хранилище JKS: повреждённый сертификат").with_details(e.to_string())
+        app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.jksBadCertificate",
+            "JKS store: damaged certificate"
+        )
+        .with_details(e.to_string())
     })
 }
 
 pub fn trusted_certificates(data: &[u8], store_password: Option<&str>) -> AppResult<Vec<X509>> {
     let store = parse(data, store_password)?;
     if store.trusted.is_empty() {
-        return Err(AppError::invalid(
-            "В хранилище JKS нет доверенных сертификатов (записей trustedCertEntry)",
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.jksNoTrusted",
+            "The JKS store has no trusted certificates (trustedCertEntry entries)"
         ));
     }
     store.trusted.iter().map(|d| x509(d)).collect()
@@ -236,19 +271,30 @@ pub fn identity(
             .iter()
             .find(|k| k.alias.eq_ignore_ascii_case(a))
             .ok_or_else(|| {
-                AppError::invalid(format!(
-                    "В хранилище JKS нет ключа «{a}». Доступны: {}",
-                    names()
-                ))
+                app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.tls.jksAliasNotFound",
+                    "The JKS store has no key “{{alias}}”. Available: {{available}}",
+                    alias = a,
+                    available = names()
+                )
             })?,
         None => match store.keys.as_slice() {
-            [] => return Err(AppError::invalid("В хранилище JKS нет закрытого ключа")),
+            [] => {
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.tls.jksNoPrivateKey",
+                    "The JKS store has no private key"
+                ));
+            }
             [one] => one,
             _ => {
-                return Err(AppError::invalid(format!(
-                    "В хранилище JKS несколько ключей — укажите alias: {}",
-                    names()
-                )));
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.tls.jksMultipleKeys",
+                    "The JKS store has several keys — specify the alias: {{available}}",
+                    available = names()
+                ));
             }
         },
     };
@@ -258,7 +304,12 @@ pub fn identity(
         .unwrap_or("");
     let pkcs8 = decrypt_key(&entry.protected_key, pw)?;
     let key = PKey::private_key_from_pkcs8(&pkcs8).map_err(|e| {
-        AppError::invalid("Хранилище JKS: не удалось прочитать ключ").with_details(e.to_string())
+        app_err!(
+            ErrorCode::InvalidInput,
+            "errors.tls.jksKeyReadFailed",
+            "JKS store: could not read the key"
+        )
+        .with_details(e.to_string())
     })?;
     let chain = entry
         .chain
@@ -298,7 +349,7 @@ mod tests {
     fn separate_key_password() {
         let data = fixture("client-keypass.jks");
         let e = identity(&data, None, Some("storepass"), None).unwrap_err();
-        assert!(e.message.contains("пароль ключа"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.jksBadKeyPassword", "{}", e.message);
         identity(&data, Some("CLIENT"), Some("storepass"), Some("keypass")).unwrap();
     }
 
@@ -306,7 +357,7 @@ mod tests {
     fn wrong_store_password_and_skipped_integrity_check() {
         let data = fixture("client.jks");
         let e = identity(&data, None, Some("nope"), Some("storepass")).unwrap_err();
-        assert!(e.message.contains("пароль хранилища"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.jksBadStorePassword", "{}", e.message);
         // Без пароля хранилища проверка целостности пропускается, ключ расшифровывается своим паролем.
         identity(&data, None, None, Some("storepass")).unwrap();
     }
@@ -328,17 +379,17 @@ mod tests {
         let certs = trusted_certificates(&fixture("truststore.jks"), Some("storepass")).unwrap();
         assert_eq!(certs.len(), 1);
         let e = trusted_certificates(&fixture("client.jks"), Some("storepass")).unwrap_err();
-        assert!(e.message.contains("доверенных"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.jksNoTrusted", "{}", e.message);
     }
 
     #[test]
     fn jceks_and_garbage_are_rejected_with_reason() {
         let e = identity(b"\xCE\xCE\xCE\xCE\0\0\0\x02\0\0\0\0", None, None, None).unwrap_err();
-        assert!(e.message.contains("JCEKS"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.jceksUnsupported", "{}", e.message);
         let mut truncated = fixture("client.jks");
         truncated.truncate(40);
         let e = identity(&truncated, None, None, Some("storepass")).unwrap_err();
-        assert!(e.message.contains("повреж"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.jksDamaged", "{}", e.message);
     }
 
     #[test]

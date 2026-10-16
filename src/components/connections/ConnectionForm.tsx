@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { useLicense } from "../../lib/useLicense";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -221,7 +222,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         <ul className="steps">
           {report.steps.map((s) => (
             <li key={s.name}>
-              {s.ok ? "✅" : "❌"} <strong>{STEP_LABELS[s.name]}:</strong> <span>{s.message}</span>
+              {s.ok ? "✅" : "❌"} <strong>{STEP_LABELS[s.name]}:</strong> <span>{tr(s.message)}</span>
               {s.error?.details && <pre className="muted">{s.error.details}</pre>}
             </li>
           ))}

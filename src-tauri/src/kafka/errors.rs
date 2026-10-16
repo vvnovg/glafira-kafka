@@ -7,6 +7,7 @@ use rdkafka::metadata::Metadata;
 use rdkafka::types::RDKafkaErrorCode;
 
 use crate::error::{AppError, ErrorCode, classify_message, from_kafka};
+use crate::i18n::LocalizedText;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::pool::KafkaHandles;
 
@@ -39,7 +40,7 @@ pub fn op_error(
 
 /// Ошибка отдельного элемента admin-ответа (топика, ресурса, группы, партиции).
 /// `message` — контекст для пользователя, в `details` — код и текст брокера.
-pub fn item_error(code: RDKafkaErrorCode, message: &str, context: &str) -> AppError {
+pub fn item_error(code: RDKafkaErrorCode, message: &str, context: LocalizedText) -> AppError {
     use RDKafkaErrorCode as C;
     let app_code = match code {
         C::TopicAlreadyExists
@@ -65,7 +66,7 @@ pub fn item_error(code: RDKafkaErrorCode, message: &str, context: &str) -> AppEr
     } else {
         format!("{code}: {message}")
     };
-    AppError::new(app_code, context).with_details(details)
+    AppError::localized(app_code, context).with_details(details)
 }
 
 /// Колбэки ошибок admin-клиента в rust-rdkafka не доставляются, поэтому причину (TLS/SASL)
@@ -306,14 +307,21 @@ mod tests {
             (C::Unknown, E::Internal),
         ];
         for (code, expected) in cases {
-            assert_eq!(item_error(code, "", "ctx").code, expected, "{code:?}");
+            assert_eq!(
+                item_error(code, "", ltext!("k.ctx", "ctx")).code,
+                expected,
+                "{code:?}"
+            );
         }
         let e = item_error(
             C::InvalidConfig,
             "Invalid value abc for configuration retention.ms",
-            "Не удалось изменить конфигурацию топика",
+            ltext!(
+                "errors.topics.alterConfigFailed",
+                "Failed to change the topic configuration"
+            ),
         );
-        assert_eq!(e.message, "Не удалось изменить конфигурацию топика");
+        assert_eq!(e.key, "errors.topics.alterConfigFailed");
         assert!(e.details.unwrap().contains("retention.ms"));
     }
 

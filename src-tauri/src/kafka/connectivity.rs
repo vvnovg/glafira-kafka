@@ -5,6 +5,7 @@ use rdkafka::consumer::Consumer;
 use serde::Serialize;
 
 use crate::error::{AppError, AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::kafka::pool::KafkaHandles;
 use crate::secrets::SecretStore;
 use crate::storage::connections::{ConnectionProfile, parse_bootstrap};
@@ -14,7 +15,7 @@ use crate::storage::connections::{ConnectionProfile, parse_bootstrap};
 pub struct TestStep {
     pub name: String,
     pub ok: bool,
-    pub message: String,
+    pub message: LocalizedText,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<AppError>,
 }
@@ -42,12 +43,19 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
     if let Err(e) = crate::kafka::config::build_client_config(p, secrets) {
         return failed(steps, "config", e);
     }
-    steps.push(passed("config", "Конфигурация корректна"));
+    steps.push(passed(
+        "config",
+        ltext!("messages.connectionTest.configOk", "Configuration is valid"),
+    ));
 
     match tcp_probe(&servers) {
         Ok(addr) => steps.push(passed(
             "tcp",
-            format!("TCP-соединение с {addr} установлено"),
+            ltext!(
+                "messages.connectionTest.tcpOk",
+                "TCP connection to {{address}} established",
+                address = addr
+            ),
         )),
         Err(e) => return failed(steps, "tcp", e),
     }
@@ -60,10 +68,11 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
     match handles.consumer.fetch_metadata(None, KAFKA_TIMEOUT) {
         Ok(md) => steps.push(passed(
             "kafka",
-            format!(
-                "Брокеров: {}, топиков: {}",
-                md.brokers().len(),
-                md.topics().len()
+            ltext!(
+                "messages.connectionTest.kafkaOk",
+                "Brokers: {{brokers}}, topics: {{topics}}",
+                brokers = md.brokers().len(),
+                topics = md.topics().len()
             ),
         )),
         Err(e) => return failed(steps, "kafka", handles.kafka_err(started, e)),
@@ -72,11 +81,11 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
     TestReport { ok: true, steps }
 }
 
-fn passed(name: &str, message: impl Into<String>) -> TestStep {
+fn passed(name: &str, message: LocalizedText) -> TestStep {
     TestStep {
         name: name.into(),
         ok: true,
-        message: message.into(),
+        message,
         error: None,
     }
 }
@@ -85,7 +94,7 @@ fn failed(mut steps: Vec<TestStep>, name: &str, error: AppError) -> TestReport {
     steps.push(TestStep {
         name: name.into(),
         ok: false,
-        message: error.message.clone(),
+        message: error.text(),
         error: Some(error),
     });
     TestReport { ok: false, steps }
@@ -108,9 +117,10 @@ fn tcp_probe(servers: &[(String, u16)]) -> AppResult<String> {
             }
         }
     }
-    Err(AppError::new(
+    Err(app_err!(
         ErrorCode::ConnectionFailed,
-        "Ни один bootstrap-сервер не доступен по TCP",
+        "errors.kafka.tcpUnreachable",
+        "None of the bootstrap servers is reachable over TCP"
     )
     .with_details(last))
 }

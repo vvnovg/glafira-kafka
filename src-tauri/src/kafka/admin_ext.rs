@@ -89,11 +89,11 @@ impl Drop for ConfigResource {
 
 fn cstring(s: &str) -> KafkaResult<CString> {
     CString::new(s)
-        .map_err(|_| KafkaError::AdminOpCreation(format!("Недопустимый символ NUL в «{s}»")))
+        .map_err(|_| KafkaError::AdminOpCreation(format!("NUL character is not allowed in “{s}”")))
 }
 
 fn null_result(what: &str) -> KafkaError {
-    KafkaError::AdminOpCreation(format!("librdkafka не создала {what}"))
+    KafkaError::AdminOpCreation(format!("librdkafka did not create {what}"))
 }
 
 /// # Safety
@@ -137,7 +137,7 @@ unsafe fn error_obj(e: *const rd::rd_kafka_error_t) -> Option<ItemError> {
 }
 
 fn unexpected_event() -> KafkaError {
-    KafkaError::AdminOpCreation("librdkafka вернула событие неожиданного типа".into())
+    KafkaError::AdminOpCreation("librdkafka returned an event of an unexpected type".into())
 }
 
 fn timeout_ms(timeout: Duration) -> i32 {
@@ -162,14 +162,14 @@ fn run(
     // SAFETY: rk — живой клиент: `admin` заимствован на всё время вызова.
     let queue = unsafe { rd::rd_kafka_queue_new(rk) };
     if queue.is_null() {
-        return Err(null_result("очередь событий"));
+        return Err(null_result("the event queue"));
     }
     let queue = Queue(queue);
     // SAFETY: rk жив (см. выше); op — валидное значение перечисления.
     let opts = unsafe { rd::rd_kafka_AdminOptions_new(rk, op) };
     if opts.is_null() {
         return Err(KafkaError::AdminOpCreation(
-            "Операция не поддерживается этой версией librdkafka".into(),
+            "The operation is not supported by this librdkafka version".into(),
         ));
     }
     let opts = Options(opts);
@@ -197,7 +197,7 @@ fn run(
     if code != NO_ERROR {
         // SAFETY: строка принадлежит живому событию и копируется сразу.
         let text = unsafe { string(rd::rd_kafka_event_error_string(ev.0)) };
-        tracing::warn!("admin-запрос завершился ошибкой: {text}");
+        tracing::warn!("admin request failed: {text}");
         return Err(KafkaError::AdminOp(code.into()));
     }
     Ok(ev)
@@ -387,11 +387,11 @@ unsafe fn read_partitions(list: *const rd::rd_kafka_topic_partition_list_t) -> V
 
 fn partition_list(items: &[(String, i32, i64)]) -> KafkaResult<PartitionList> {
     let size = i32::try_from(items.len())
-        .map_err(|_| KafkaError::AdminOpCreation("Слишком много партиций в запросе".into()))?;
+        .map_err(|_| KafkaError::AdminOpCreation("Too many partitions in the request".into()))?;
     // SAFETY: создаём пустой список нужной ёмкости; владение переходит к PartitionList.
     let list = unsafe { rd::rd_kafka_topic_partition_list_new(size) };
     if list.is_null() {
-        return Err(null_result("список партиций"));
+        return Err(null_result("the partition list"));
     }
     let list = PartitionList(list);
     for (topic, partition, offset) in items {
@@ -399,7 +399,7 @@ fn partition_list(items: &[(String, i32, i64)]) -> KafkaResult<PartitionList> {
         // SAFETY: список жив; t живёт до конца итерации, librdkafka копирует имя топика.
         let e = unsafe { rd::rd_kafka_topic_partition_list_add(list.0, t.as_ptr(), *partition) };
         if e.is_null() {
-            return Err(null_result("элемент списка партиций"));
+            return Err(null_result("a partition list element"));
         }
         // SAFETY: e — ненулевой указатель на только что добавленный элемент списка; он
         // действителен до следующего add (возможен realloc), а пишем мы до него.
@@ -591,7 +591,7 @@ pub fn list_consumer_group_offsets(
     // партиций допустим и означает «все партиции группы».
     let req = unsafe { rd::rd_kafka_ListConsumerGroupOffsets_new(g.as_ptr(), std::ptr::null()) };
     if req.is_null() {
-        return Err(null_result("запрос ListConsumerGroupOffsets"));
+        return Err(null_result("the ListConsumerGroupOffsets request"));
     }
     let req = ListOffsetsRequest(req);
     let ev = run(
@@ -633,7 +633,7 @@ pub fn alter_consumer_group_offsets(
     // librdkafka копирует имя группы и список партиций.
     let req = unsafe { rd::rd_kafka_AlterConsumerGroupOffsets_new(g.as_ptr(), list.0) };
     if req.is_null() {
-        return Err(null_result("запрос AlterConsumerGroupOffsets"));
+        return Err(null_result("the AlterConsumerGroupOffsets request"));
     }
     let req = AlterOffsetsRequest(req);
     let ev = run(

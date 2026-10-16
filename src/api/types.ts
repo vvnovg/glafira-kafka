@@ -84,7 +84,7 @@ export interface ConnectionProfile {
 export interface TestStep {
   name: "config" | "tcp" | "kafka";
   ok: boolean;
-  message: string;
+  message: LocalizedText;
   error?: AppError;
 }
 
@@ -245,7 +245,7 @@ export type ConfigChange = { op: "set"; name: string; value: string } | { op: "d
 export interface PurgedPartition {
   partition: number;
   lowWatermark: number | null;
-  error?: string;
+  error?: LocalizedText;
 }
 
 export interface TopicDeleteResult {
@@ -271,7 +271,7 @@ export interface GroupSummary {
 
 export interface GroupList {
   groups: GroupSummary[];
-  errors: string[];
+  errors: LocalizedText[];
 }
 
 export interface GroupMember {
@@ -296,14 +296,14 @@ export interface GroupPartitionOffset {
   logEnd: number | null;
   lag: number | null;
   memberClientId: string | null;
-  error?: string;
+  error?: LocalizedText;
 }
 
 export interface GroupLag {
   groupId: string;
   totalLag: number | null;
   topics: string[];
-  error?: string;
+  error?: LocalizedText;
 }
 
 export interface TopicGroupLag {
@@ -343,7 +343,7 @@ export interface ResetPreviewRow {
   target: number | null;
   low: number | null;
   high: number | null;
-  error?: string;
+  error?: LocalizedText;
 }
 
 export interface OffsetTarget {
@@ -356,7 +356,7 @@ export interface ResetResult {
   topic: string;
   partition: number;
   offset: number;
-  error?: string;
+  error?: LocalizedText;
 }
 
 export type PayloadFormat = "string" | "json" | "hex" | "base64" | "null";

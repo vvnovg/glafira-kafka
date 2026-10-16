@@ -1,7 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BrowsedMessage } from "../../api/types";
+import type { BrowsedMessage, LocalizedText } from "../../api/types";
 import { useWorkspace } from "../../state/workspace";
 import { renderWithClient } from "../../test/render";
 import { newProfile } from "../connections/profile";
@@ -23,7 +23,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 import { api } from "../../api/client";
 import { MessageDetails } from "./MessageDetails";
 
-const okGroups = { groups: [{ groupId: "svc", state: "Empty", isSimple: false }], errors: [] as string[] };
+const okGroups = { groups: [{ groupId: "svc", state: "Empty", isSimple: false }], errors: [] as LocalizedText[] };
 
 const msg: BrowsedMessage = { topic: "orders", partition: 2, offset: 41, timestamp: 0, key: null, value: null, headers: [], size: 0 };
 
@@ -68,7 +68,10 @@ describe("MessageDetails: сбросить группу сюда", () => {
   });
 
   it("показывает частичные ошибки списка групп", async () => {
-    vi.mocked(api.listGroups).mockResolvedValue({ ...okGroups, errors: ["broker 2 недоступен"] });
+    vi.mocked(api.listGroups).mockResolvedValue({
+      ...okGroups,
+      errors: [{ key: "errors.generic", params: { message: "broker 2 недоступен" }, text: "broker 2 недоступен" }],
+    });
     const user = userEvent.setup();
     renderWithClient(<MessageDetails message={msg} utc={false} connectionId="c" />);
     await user.click(await screen.findByRole("button", { name: "Сбросить группу сюда…" }));

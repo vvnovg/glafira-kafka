@@ -353,7 +353,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const rcIdx = process.argv.indexOf("--rust-cyrillic");
   if (rcIdx >= 0) {
     const paths = process.argv.slice(rcIdx + 1).filter((a) => !a.startsWith("--"));
-    const files = Object.fromEntries(paths.map((p) => [p, readFileSync(p, "utf8")]));
+    const expanded = paths.flatMap((p) => (statSync(p).isDirectory() ? walk(p, [".rs"]) : [p]));
+    const files = Object.fromEntries(expanded.map((p) => [p, readFileSync(p, "utf8")]));
     for (const hit of findRustCyrillic(files)) problems.push(`кириллица в Rust: ${hit}`);
   }
   if (problems.length) {

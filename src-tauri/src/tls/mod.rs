@@ -15,9 +15,7 @@ use openssl::pkey::{PKey, Private};
 use openssl::provider::Provider;
 use openssl::x509::X509;
 
-#[cfg(test)]
-use crate::error::ErrorCode;
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::storage::connections::{CertFormat, ClientCert};
 
 pub struct ClientIdentity {
@@ -28,28 +26,74 @@ pub struct ClientIdentity {
 impl std::fmt::Debug for ClientIdentity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ClientIdentity")
-            .field("key_pem", &"<скрыто>")
+            .field("key_pem", &"<hidden>")
             .finish_non_exhaustive()
     }
 }
 
-const CLIENT: &str = "Клиентский сертификат";
-const KEY: &str = "Ключ клиента";
-const CA: &str = "Доверенный CA";
-
-fn read_file(path: &str, what: &str) -> AppResult<Vec<u8>> {
-    let p = Path::new(path.trim());
-    if !p.is_absolute() {
-        return Err(AppError::invalid(format!(
-            "{what}: укажите абсолютный путь (сейчас «{path}»)"
-        )));
-    }
-    std::fs::read(p)
-        .map_err(|e| AppError::invalid(format!("{what}: не удалось прочитать «{path}»: {e}")))
+/// Какой файл TLS читается: от этого зависит начало текста ошибки («Доверенный CA: …»).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Part {
+    /// Клиентский сертификат (или хранилище с ним).
+    Client,
+    /// Ключ клиента (PEM).
+    Key,
+    /// Доверенный CA.
+    Ca,
 }
 
-fn ssl_err(message: String, e: ErrorStack) -> AppError {
-    AppError::invalid(message).with_details(e.to_string())
+fn invalid(text: crate::i18n::LocalizedText) -> AppError {
+    AppError::localized(ErrorCode::InvalidInput, text)
+}
+
+fn read_file(path: &str, part: Part) -> AppResult<Vec<u8>> {
+    let p = Path::new(path.trim());
+    if !p.is_absolute() {
+        return Err(invalid(match part {
+            Part::Ca => ltext!(
+                "errors.tls.caAbsolutePath",
+                "Trusted CA: specify an absolute path (currently “{{path}}”)",
+                path = path
+            ),
+            Part::Client => ltext!(
+                "errors.tls.clientAbsolutePath",
+                "Client certificate: specify an absolute path (currently “{{path}}”)",
+                path = path
+            ),
+            Part::Key => ltext!(
+                "errors.tls.keyAbsolutePath",
+                "Client key: specify an absolute path (currently “{{path}}”)",
+                path = path
+            ),
+        }));
+    }
+    std::fs::read(p).map_err(|e| {
+        invalid(match part {
+            Part::Ca => ltext!(
+                "errors.tls.caReadFailed",
+                "Trusted CA: could not read “{{path}}”: {{error}}",
+                path = path,
+                error = e
+            ),
+            Part::Client => ltext!(
+                "errors.tls.clientReadFailed",
+                "Client certificate: could not read “{{path}}”: {{error}}",
+                path = path,
+                error = e
+            ),
+            Part::Key => ltext!(
+                "errors.tls.keyReadFailed",
+                "Client key: could not read “{{path}}”: {{error}}",
+                path = path,
+                error = e
+            ),
+        })
+    })
+}
+
+/// Ошибка с текстом для интерфейса и исходным текстом OpenSSL в `details`.
+fn ssl_err(text: crate::i18n::LocalizedText, e: ErrorStack) -> AppError {
+    invalid(text).with_details(e.to_string())
 }
 
 fn non_empty(p: Option<&str>) -> Option<&str> {
@@ -57,7 +101,7 @@ fn non_empty(p: Option<&str>) -> Option<&str> {
 }
 
 /// Сертификаты из PEM (цепочка) или, если PEM-блоков нет, один сертификат DER (частый случай `.cer`).
-fn pem_or_der_certs(data: &[u8], path: &str, what: &str) -> AppResult<Vec<X509>> {
+fn pem_or_der_certs(data: &[u8], path: &str, part: Part) -> AppResult<Vec<X509>> {
     let pem_err = match X509::stack_from_pem(data) {
         Ok(certs) if !certs.is_empty() => return Ok(certs),
         Ok(_) => None,
@@ -68,22 +112,31 @@ fn pem_or_der_certs(data: &[u8], path: &str, what: &str) -> AppResult<Vec<X509>>
             Some(p) => format!("PEM: {p}; DER: {der_err}"),
             None => format!("DER: {der_err}"),
         };
-        AppError::invalid(format!(
-            "{what}: «{path}» не содержит сертификатов PEM или DER"
-        ))
+        invalid(match part {
+            Part::Ca => ltext!(
+                "errors.tls.caNoPemOrDer",
+                "Trusted CA: “{{path}}” contains no PEM or DER certificates",
+                path = path
+            ),
+            Part::Client | Part::Key => ltext!(
+                "errors.tls.clientNoPemOrDer",
+                "Client certificate: “{{path}}” contains no PEM or DER certificates",
+                path = path
+            ),
+        })
         .with_details(details)
     })
 }
 
 /// Доверенный CA в PEM (цепочка сертификатов).
 pub fn load_ca(format: CertFormat, path: &str, password: Option<&str>) -> AppResult<String> {
-    let data = read_file(path, CA)?;
+    let data = read_file(path, Part::Ca)?;
     let certs: Vec<X509> = match format {
-        CertFormat::Pem => pem_or_der_certs(&data, path, CA)?,
+        CertFormat::Pem => pem_or_der_certs(&data, path, Part::Ca)?,
         CertFormat::Jks if jks::is_jks(&data) => jks::trusted_certificates(&data, password)?,
         // Начиная с Java 9 keytool по умолчанию создаёт PKCS#12, даже если файл назван .jks.
         CertFormat::Pkcs12 | CertFormat::Jks => {
-            let p = parse_pkcs12(&data, password, CA)?;
+            let p = parse_pkcs12(&data, password, Part::Ca)?;
             p.cert
                 .into_iter()
                 .chain(p.ca.into_iter().flatten())
@@ -91,8 +144,10 @@ pub fn load_ca(format: CertFormat, path: &str, password: Option<&str>) -> AppRes
         }
     };
     if certs.is_empty() {
-        return Err(AppError::invalid(format!(
-            "{CA}: в «{path}» нет сертификатов"
+        return Err(invalid(ltext!(
+            "errors.tls.caNoCertificates",
+            "Trusted CA: “{{path}}” contains no certificates",
+            path = path
         )));
     }
     to_pem_chain(&certs)
@@ -107,62 +162,84 @@ pub fn load_identity(
     let (key, chain) = match cert.format {
         CertFormat::Pem => {
             let chain = pem_or_der_certs(
-                &read_file(&cert.certificate_path, CLIENT)?,
+                &read_file(&cert.certificate_path, Part::Client)?,
                 &cert.certificate_path,
-                CLIENT,
+                Part::Client,
             )?;
             let key_path = cert
                 .key_path
                 .as_deref()
                 .filter(|s| !s.trim().is_empty())
-                .ok_or_else(|| AppError::invalid(format!("{KEY}: укажите файл ключа")))?;
+                .ok_or_else(|| {
+                    invalid(ltext!(
+                        "errors.tls.keyFileMissing",
+                        "Client key: specify the key file"
+                    ))
+                })?;
             (
-                load_pem_key(&read_file(key_path, KEY)?, key_password)?,
+                load_pem_key(&read_file(key_path, Part::Key)?, key_password)?,
                 chain,
             )
         }
         CertFormat::Jks => {
-            let data = read_file(&cert.certificate_path, CLIENT)?;
+            let data = read_file(&cert.certificate_path, Part::Client)?;
             if jks::is_jks(&data) {
                 jks::identity(&data, cert.alias.as_deref(), store_password, key_password)?
             } else {
                 pkcs12_identity(&data, store_password)?
             }
         }
-        CertFormat::Pkcs12 => {
-            pkcs12_identity(&read_file(&cert.certificate_path, CLIENT)?, store_password)?
-        }
+        CertFormat::Pkcs12 => pkcs12_identity(
+            &read_file(&cert.certificate_path, Part::Client)?,
+            store_password,
+        )?,
     };
     finish_identity(key, chain)
+}
+
+fn key_not_pem() -> crate::i18n::LocalizedText {
+    ltext!(
+        "errors.tls.keyNotPem",
+        "Client key: the file does not contain a PEM key"
+    )
 }
 
 fn load_pem_key(data: &[u8], password: Option<&str>) -> AppResult<PKey<Private>> {
     let encrypted = String::from_utf8_lossy(data).contains("ENCRYPTED");
     match non_empty(password) {
-        None if encrypted => Err(AppError::invalid(format!(
-            "{KEY}: ключ зашифрован — укажите пароль ключа"
+        None if encrypted => Err(invalid(ltext!(
+            "errors.tls.keyEncrypted",
+            "Client key: the key is encrypted — specify the key password"
         ))),
-        None => PKey::private_key_from_pem(data)
-            .map_err(|e| ssl_err(format!("{KEY}: файл не содержит PEM-ключа"), e)),
+        None => PKey::private_key_from_pem(data).map_err(|e| ssl_err(key_not_pem(), e)),
         Some(pw) => PKey::private_key_from_pem_passphrase(data, pw.as_bytes()).map_err(|e| {
-            let msg = if encrypted {
-                format!("{KEY}: неверный пароль ключа")
+            let text = if encrypted {
+                ltext!(
+                    "errors.tls.keyBadPassword",
+                    "Client key: wrong key password"
+                )
             } else {
-                format!("{KEY}: файл не содержит PEM-ключа")
+                key_not_pem()
             };
-            ssl_err(msg, e)
+            ssl_err(text, e)
         }),
     }
 }
 
 fn pkcs12_identity(data: &[u8], password: Option<&str>) -> AppResult<(PKey<Private>, Vec<X509>)> {
-    let p = parse_pkcs12(data, password, CLIENT)?;
-    let key = p
-        .pkey
-        .ok_or_else(|| AppError::invalid(format!("{CLIENT}: в хранилище нет закрытого ключа")))?;
-    let cert = p
-        .cert
-        .ok_or_else(|| AppError::invalid(format!("{CLIENT}: в хранилище нет сертификата")))?;
+    let p = parse_pkcs12(data, password, Part::Client)?;
+    let key = p.pkey.ok_or_else(|| {
+        invalid(ltext!(
+            "errors.tls.clientNoPrivateKey",
+            "Client certificate: the store has no private key"
+        ))
+    })?;
+    let cert = p.cert.ok_or_else(|| {
+        invalid(ltext!(
+            "errors.tls.clientNoCertificate",
+            "Client certificate: the store has no certificate"
+        ))
+    })?;
     Ok((
         key,
         std::iter::once(cert)
@@ -185,80 +262,160 @@ fn is_unsupported(e: &ErrorStack) -> bool {
     t.contains("unsupported") || t.contains("rc2") || t.contains("fetch")
 }
 
-fn parse_pkcs12(data: &[u8], password: Option<&str>, what: &str) -> AppResult<ParsedPkcs12_2> {
-    let p12 = Pkcs12::from_der(data)
-        .map_err(|e| ssl_err(format!("{what}: файл не является хранилищем PKCS#12"), e))?;
+fn parse_pkcs12(data: &[u8], password: Option<&str>, part: Part) -> AppResult<ParsedPkcs12_2> {
+    let p12 = Pkcs12::from_der(data).map_err(|e| {
+        let text = match part {
+            Part::Ca => ltext!(
+                "errors.tls.caNotPkcs12",
+                "Trusted CA: the file is not a PKCS#12 store"
+            ),
+            Part::Client | Part::Key => ltext!(
+                "errors.tls.clientNotPkcs12",
+                "Client certificate: the file is not a PKCS#12 store"
+            ),
+        };
+        ssl_err(text, e)
+    })?;
     let pw = password.unwrap_or("");
     match p12.parse2(pw) {
         Ok(p) => Ok(p),
         Err(e) if is_unsupported(&e) && load_legacy_provider() => {
-            p12.parse2(pw).map_err(|e| pkcs12_err(what, e))
+            p12.parse2(pw).map_err(|e| pkcs12_err(part, e))
         }
-        Err(e) => Err(pkcs12_err(what, e)),
+        Err(e) => Err(pkcs12_err(part, e)),
     }
 }
 
-fn pkcs12_err(what: &str, e: ErrorStack) -> AppError {
+fn pkcs12_err(part: Part, e: ErrorStack) -> AppError {
     let t = e.to_string().to_lowercase();
-    let msg = if t.contains("mac verify") || t.contains("bad decrypt") {
-        format!("{what}: неверный пароль хранилища PKCS#12")
+    let ca = part == Part::Ca;
+    let text = if t.contains("mac verify") || t.contains("bad decrypt") {
+        if ca {
+            ltext!(
+                "errors.tls.caPkcs12BadPassword",
+                "Trusted CA: wrong PKCS#12 store password"
+            )
+        } else {
+            ltext!(
+                "errors.tls.clientPkcs12BadPassword",
+                "Client certificate: wrong PKCS#12 store password"
+            )
+        }
     } else if is_unsupported(&e) {
-        format!(
-            "{what}: хранилище PKCS#12 зашифровано устаревшим алгоритмом (RC2/3DES), который недоступен. \
-             Пересоздайте его с AES: openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC …"
+        if ca {
+            ltext!(
+                "errors.tls.caPkcs12Legacy",
+                "Trusted CA: the PKCS#12 store is encrypted with a legacy algorithm (RC2/3DES) that is not available. \
+                 Recreate it with AES: openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC …"
+            )
+        } else {
+            ltext!(
+                "errors.tls.clientPkcs12Legacy",
+                "Client certificate: the PKCS#12 store is encrypted with a legacy algorithm (RC2/3DES) that is not available. \
+                 Recreate it with AES: openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC …"
+            )
+        }
+    } else if ca {
+        ltext!(
+            "errors.tls.caPkcs12ReadFailed",
+            "Trusted CA: could not read the PKCS#12 store"
         )
     } else {
-        format!("{what}: не удалось прочитать хранилище PKCS#12")
+        ltext!(
+            "errors.tls.clientPkcs12ReadFailed",
+            "Client certificate: could not read the PKCS#12 store"
+        )
     };
-    ssl_err(msg, e)
+    ssl_err(text, e)
 }
 
 fn finish_identity(key: PKey<Private>, chain: Vec<X509>) -> AppResult<ClientIdentity> {
-    let leaf = chain
-        .first()
-        .ok_or_else(|| AppError::invalid(format!("{CLIENT}: файл не содержит сертификатов")))?;
-    let public = leaf
-        .public_key()
-        .map_err(|e| ssl_err(format!("{CLIENT}: не удалось прочитать открытый ключ"), e))?;
+    let leaf = chain.first().ok_or_else(|| {
+        invalid(ltext!(
+            "errors.tls.clientNoCertificates",
+            "Client certificate: the file contains no certificates"
+        ))
+    })?;
+    let public = leaf.public_key().map_err(|e| {
+        ssl_err(
+            ltext!(
+                "errors.tls.clientPublicKey",
+                "Client certificate: could not read the public key"
+            ),
+            e,
+        )
+    })?;
     if !public.public_eq(&key) {
-        return Err(AppError::invalid(format!(
-            "{KEY} не соответствует клиентскому сертификату"
+        return Err(invalid(ltext!(
+            "errors.tls.keyMismatch",
+            "The client key does not match the client certificate"
         )));
     }
-    let now = Asn1Time::days_from_now(0)
-        .map_err(|e| ssl_err("Не удалось получить текущее время".into(), e))?;
+    let now = Asn1Time::days_from_now(0).map_err(|e| {
+        ssl_err(
+            ltext!("errors.tls.currentTime", "Could not get the current time"),
+            e,
+        )
+    })?;
     // Ошибка сравнения — ошибка, а не «действителен».
     let cmp = |t: &openssl::asn1::Asn1TimeRef| {
-        t.compare(&now)
-            .map_err(|e| ssl_err(format!("{CLIENT}: не удалось проверить срок действия"), e))
+        t.compare(&now).map_err(|e| {
+            ssl_err(
+                ltext!(
+                    "errors.tls.clientValidityCheck",
+                    "Client certificate: could not check the validity period"
+                ),
+                e,
+            )
+        })
     };
     if cmp(leaf.not_before())? == Ordering::Greater {
-        return Err(AppError::invalid(format!(
-            "{CLIENT} ещё не действует (действует с {})",
-            leaf.not_before()
+        return Err(invalid(ltext!(
+            "errors.tls.clientNotYetValid",
+            "The client certificate is not valid yet (valid from {{date}})",
+            date = leaf.not_before()
         )));
     }
     if cmp(leaf.not_after())? == Ordering::Less {
-        return Err(AppError::invalid(format!(
-            "Срок действия: {CLIENT} истёк {}",
-            leaf.not_after()
+        return Err(invalid(ltext!(
+            "errors.tls.clientExpired",
+            "The client certificate expired on {{date}}",
+            date = leaf.not_after()
         )));
     }
-    let key_pem = key
-        .private_key_to_pem_pkcs8()
-        .map_err(|e| ssl_err(format!("{KEY}: не удалось преобразовать в PEM"), e))?;
+    let key_pem = key.private_key_to_pem_pkcs8().map_err(|e| {
+        ssl_err(
+            ltext!(
+                "errors.tls.keyToPem",
+                "Client key: could not convert to PEM"
+            ),
+            e,
+        )
+    })?;
     Ok(ClientIdentity {
         certificate_pem: to_pem_chain(&chain)?,
-        key_pem: String::from_utf8(key_pem).map_err(|_| AppError::internal("PEM не в UTF-8"))?,
+        key_pem: String::from_utf8(key_pem).map_err(|_| {
+            app_err!(
+                ErrorCode::Internal,
+                "errors.tls.pemNotUtf8",
+                "PEM is not UTF-8"
+            )
+        })?,
     })
 }
 
 fn to_pem_chain(certs: &[X509]) -> AppResult<String> {
     let mut out = String::new();
     for c in certs {
-        let pem = c
-            .to_pem()
-            .map_err(|e| ssl_err("Не удалось преобразовать сертификат в PEM".into(), e))?;
+        let pem = c.to_pem().map_err(|e| {
+            ssl_err(
+                ltext!(
+                    "errors.tls.certToPem",
+                    "Could not convert the certificate to PEM"
+                ),
+                e,
+            )
+        })?;
         out.push_str(&String::from_utf8_lossy(&pem));
     }
     Ok(out)
@@ -378,9 +535,9 @@ mod tests {
     fn encrypted_pem_key_needs_password() {
         let cc = pem_cert(CertFormat::Pem, "client.pem", Some("client-enc.key"));
         let e = load_identity(&cc, None, None).unwrap_err();
-        assert!(e.message.contains("зашифрован"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.keyEncrypted", "{}", e.message);
         let e = load_identity(&cc, Some("wrong"), None).unwrap_err();
-        assert!(e.message.contains("неверный пароль"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.keyBadPassword", "{}", e.message);
         let id = load_identity(&cc, Some("keypass"), None).unwrap();
         assert!(
             !id.key_pem.contains("ENCRYPTED"),
@@ -403,7 +560,7 @@ mod tests {
             Some("nope"),
         )
         .unwrap_err();
-        assert!(e.message.contains("неверный пароль"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.clientPkcs12BadPassword", "{}", e.message);
         load_identity(
             &pem_cert(CertFormat::Pkcs12, "client-nopass.p12", None),
             None,
@@ -417,7 +574,7 @@ mod tests {
         let cc = pem_cert(CertFormat::Pkcs12, "client-legacy.p12", None);
         match load_identity(&cc, None, Some("storepass")) {
             Ok(id) => assert!(id.certificate_pem.contains("BEGIN CERTIFICATE")),
-            Err(e) => assert!(e.message.contains("устаревшим алгоритмом"), "{}", e.message),
+            Err(e) => assert_eq!(e.key, "errors.tls.clientPkcs12Legacy", "{}", e.message),
         }
     }
 
@@ -449,7 +606,7 @@ mod tests {
         let (other_key, _) = self_signed(-1, 30);
         let cc = write_pair(dir.path(), &other_key, &cert);
         let e = load_identity(&cc, None, None).unwrap_err();
-        assert!(e.message.contains("не соответствует"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.keyMismatch", "{}", e.message);
     }
 
     #[test]
@@ -457,10 +614,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let (key, cert) = self_signed(-30, -1);
         let e = load_identity(&write_pair(dir.path(), &key, &cert), None, None).unwrap_err();
-        assert!(e.message.contains("истёк"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.clientExpired", "{}", e.message);
         let (key, cert) = self_signed(2, 30);
         let e = load_identity(&write_pair(dir.path(), &key, &cert), None, None).unwrap_err();
-        assert!(e.message.contains("ещё не действует"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.clientNotYetValid", "{}", e.message);
     }
 
     #[test]
@@ -481,6 +638,6 @@ mod tests {
             assert!(pem.contains("BEGIN CERTIFICATE"), "{file}");
         }
         let e = load_ca(CertFormat::Pem, &fixture("client.key"), None).unwrap_err();
-        assert!(e.message.contains("сертификат"), "{}", e.message);
+        assert_eq!(e.key, "errors.tls.caNoPemOrDer", "{}", e.message);
     }
 }

@@ -77,6 +77,14 @@ macro_rules! app_err {
     };
 }
 
+impl LocalizedText {
+    /// Технический текст как есть (сообщение брокера/librdkafka): не переводится, показывается
+    /// через `errors.generic`.
+    pub fn raw(text: impl Into<String>) -> Self {
+        ltext!("errors.generic", "{{message}}", message = text.into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -114,6 +122,24 @@ mod tests {
         let json = serde_json::to_value(&e).unwrap();
         assert_eq!(json["key"], "errors.guard.readOnly");
         assert_eq!(json["params"]["name"], "p");
+    }
+
+    #[test]
+    fn raw_text_and_error_text() {
+        let t = LocalizedText::raw("Broker: Unknown topic");
+        assert_eq!(t.key, "errors.generic");
+        assert_eq!(t.params["message"], "Broker: Unknown topic");
+        assert_eq!(t.text, "Broker: Unknown topic");
+        let e = app_err!(
+            ErrorCode::NotFound,
+            "errors.topics.notFound",
+            "Topic “{{topic}}” not found",
+            topic = "t"
+        );
+        let t = e.text();
+        assert_eq!(t.key, "errors.topics.notFound");
+        assert_eq!(t.params["topic"], "t");
+        assert_eq!(t.text, e.message);
     }
 
     #[test]

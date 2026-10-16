@@ -5,7 +5,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use std::time::Instant;
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppResult, ErrorCode};
 use crate::kafka::errors::admin_error;
 use crate::kafka::pool::KafkaHandles;
 
@@ -30,7 +30,14 @@ pub async fn describe_configs(
     let resource = match h.admin.describe_configs(&[spec], &opts).await {
         Ok(mut results) => results
             .pop()
-            .ok_or_else(|| AppError::internal("Пустой ответ DescribeConfigs"))?
+            .ok_or_else(|| {
+                app_err!(
+                    ErrorCode::Internal,
+                    "errors.kafka.emptyResponse",
+                    "Empty {{request}} response",
+                    request = "DescribeConfigs"
+                )
+            })?
             .map_err(KafkaError::AdminOp),
         Err(e) => Err(e),
     };

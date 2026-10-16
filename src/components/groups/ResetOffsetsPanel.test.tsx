@@ -19,7 +19,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(api.previewOffsetReset).mockResolvedValue([
     { topic: "t", partition: 0, current: 5, target: 0, low: 0, high: 9 },
-    { topic: "t", partition: 1, current: null, target: null, low: 0, high: 3, error: "Нет закоммиченного оффсета — сдвиг невозможен" },
+    {
+      topic: "t",
+      partition: 1,
+      current: null,
+      target: null,
+      low: 0,
+      high: 3,
+      error: { key: "errors.groups.noCommittedOffset", params: {}, text: "No committed offset — cannot shift" },
+    },
   ]);
   vi.mocked(api.resetOffsets).mockResolvedValue([{ topic: "t", partition: 0, offset: 0 }]);
 });
@@ -63,12 +71,12 @@ describe("ResetOffsetsPanel", () => {
   it("показывает результат по партициям и не применяет при пустом плане", async () => {
     const user = userEvent.setup();
     const dev = { ...prod, environment: "dev" as const };
-    vi.mocked(api.resetOffsets).mockResolvedValue([{ topic: "t", partition: 0, offset: 0, error: "boom" }]);
+    vi.mocked(api.resetOffsets).mockResolvedValue([{ topic: "t", partition: 0, offset: 0, error: { key: "errors.generic", params: { message: "boom" }, text: "boom" } }]);
     renderWithClient(<ResetOffsetsPanel connection={dev} groupId="g" onApplied={() => {}} onClose={() => {}} />);
     await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
     await user.click(await screen.findByRole("button", { name: "Применить (1)" }));
     expect(await screen.findByText(/t:0 — ошибка: boom/)).toBeInTheDocument();
-    vi.mocked(api.previewOffsetReset).mockResolvedValue([{ topic: "t", partition: 1, current: null, target: null, low: 0, high: 3, error: "x" }]);
+    vi.mocked(api.previewOffsetReset).mockResolvedValue([{ topic: "t", partition: 1, current: null, target: null, low: 0, high: 3, error: { key: "errors.generic", params: { message: "x" }, text: "x" } }]);
     await user.selectOptions(screen.getByLabelText("Стратегия"), "latest");
     await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
     expect(await screen.findByRole("button", { name: "Применить (0)" })).toBeDisabled();

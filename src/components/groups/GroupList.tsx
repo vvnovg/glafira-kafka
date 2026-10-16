@@ -2,7 +2,8 @@ import { useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { api, toAppError } from "../../api/client";
-import type { GroupDescription, GroupLag } from "../../api/types";
+import type { GroupDescription, GroupLag, LocalizedText } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
@@ -55,11 +56,11 @@ export function GroupList({ connectionId }: { connectionId: string }) {
   const lagById = new Map<string, GroupLag | { error: string }>();
   slices.forEach((slice, i) => {
     const d = details[i];
-    if (d?.isError && !d.data) for (const id of slice) descById.set(id, { error: toAppError(d.error).message });
+    if (d?.isError && !d.data) for (const id of slice) descById.set(id, { error: tr(toAppError(d.error)) });
     d?.data?.forEach((x) => descById.set(x.groupId, x));
     if (d?.isSuccess) for (const id of slice) if (!descById.has(id)) descById.set(id, { error: NO_DATA });
     const l = lags[i];
-    if (l?.isError && !l.data) for (const id of slice) lagById.set(id, { error: toAppError(l.error).message });
+    if (l?.isError && !l.data) for (const id of slice) lagById.set(id, { error: tr(toAppError(l.error)) });
     l?.data?.forEach((x) => lagById.set(x.groupId, x));
     if (l?.isSuccess) for (const id of slice) if (!lagById.has(id)) lagById.set(id, { error: NO_DATA });
   });
@@ -96,7 +97,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
         </span>
       </div>
       {q.data.errors.length > 0 && (
-        <p className="warn" role="alert" title={q.data.errors.join("\n")}>
+        <p className="warn" role="alert" title={q.data.errors.map(tr).join("\n")}>
           Список может быть неполным: часть брокеров не ответила ({q.data.errors.length}).
         </p>
       )}
@@ -116,7 +117,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
             const d = descById.get(g.groupId);
             const lag = lagById.get(g.groupId);
             const dErr = d?.error;
-            const lErr = lag?.error;
+            const lErr = errorText(lag?.error);
             const full = d && "members" in d ? d : undefined;
             const fullLag = lag && "topics" in lag ? lag : undefined;
             return (
@@ -145,4 +146,9 @@ export function GroupList({ connectionId }: { connectionId: string }) {
 function lagHint(l: GroupLag | undefined): string | undefined {
   if (!l || l.totalLag !== null) return undefined;
   return l.topics.length === 0 ? "нет коммитов" : "лаг неизвестен: ошибка оффсетов партиций";
+}
+
+/** Ошибка лага: текст из Rust (`LocalizedText`) или уже готовая строка интерфейса. */
+function errorText(e: string | LocalizedText | undefined): string | undefined {
+  return e === undefined || typeof e === "string" ? e : tr(e);
 }

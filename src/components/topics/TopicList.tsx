@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { api } from "../../api/client";
+import { api, toAppError } from "../../api/client";
+import { tr } from "../../i18n/text";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { useWorkspace } from "../../state/workspace";
@@ -114,7 +115,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
     if (r.isError && !r.data)
       for (const n of slice) {
         policies.set(n, null);
-        policyErrors.set(n, r.error instanceof Error ? r.error.message : String((r.error as { message?: string } | null)?.message ?? r.error));
+        policyErrors.set(n, tr(toAppError(r.error)));
       }
     for (const p of r.data ?? []) policies.set(p.name, p.cleanupPolicy);
   });

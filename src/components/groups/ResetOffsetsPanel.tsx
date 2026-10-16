@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ConnectionProfile, OffsetTarget, ResetPreviewRow } from "../../api/types";
+import { tr } from "../../i18n/text";
 import type { ResetPrefill } from "../../state/workspace";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -144,12 +145,12 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
                   <td>{r.topic}</td>
                   <td>{r.partition}</td>
                   <td>{r.current ?? <span className="muted" title="нет закоммиченного оффсета">нет коммита</span>}</td>
-                  <td title={r.target === null ? (r.error ?? "целевой оффсет не вычислен") : undefined}>{r.target ?? "—"}</td>
+                  <td title={r.target === null ? (r.error ? tr(r.error) : "целевой оффсет не вычислен") : undefined}>{r.target ?? "—"}</td>
                   <td className="muted">
                     <span title={r.low === null ? "граница партиции неизвестна" : undefined}>{r.low ?? "—"}</span> /{" "}
                     <span title={r.high === null ? "граница партиции неизвестна" : undefined}>{r.high ?? "—"}</span>
                   </td>
-                  <td className="warn">{r.error ?? (r.target === null ? "Нет целевого оффсета — не будет применено" : "")}</td>
+                  <td className="warn">{r.error ? tr(r.error) : r.target === null ? "Нет целевого оффсета — не будет применено" : ""}</td>
                 </tr>
               ))}
             </tbody>
@@ -161,7 +162,7 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
               <ul>
                 {apply.data.map((r) => (
                   <li key={`${r.topic}:${r.partition}`} className={r.error ? "warn" : undefined}>
-                    {r.topic}:{r.partition} — {r.error ? `ошибка: ${r.error}` : `оффсет ${r.offset} установлен`}
+                    {r.topic}:{r.partition} — {r.error ? `ошибка: ${tr(r.error)}` : `оффсет ${r.offset} установлен`}
                   </li>
                 ))}
               </ul>

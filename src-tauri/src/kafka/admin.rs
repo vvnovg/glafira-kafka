@@ -8,7 +8,8 @@ use rdkafka::types::RDKafkaErrorCode;
 use rdkafka::{Offset, TopicPartitionList};
 use serde::{Deserialize, Serialize};
 
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::kafka::admin_ext;
 use crate::kafka::errors::{admin_error, fetch_metadata_fast_fail, item_error};
 use crate::kafka::metadata::convert;
@@ -18,23 +19,37 @@ const MAX_TOPIC_NAME: usize = 249;
 
 pub fn validate_topic_name(name: &str) -> AppResult<()> {
     if name.is_empty() {
-        return Err(AppError::invalid("Имя топика не может быть пустым"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.nameEmpty",
+            "Topic name cannot be empty"
+        ));
     }
     if name == "." || name == ".." {
-        return Err(AppError::invalid("Имя топика не может быть «.» или «..»"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.nameDots",
+            "Topic name cannot be “.” or “..”"
+        ));
     }
     if name.len() > MAX_TOPIC_NAME {
-        return Err(AppError::invalid(format!(
-            "Имя топика длиннее {MAX_TOPIC_NAME} символов"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.nameTooLong",
+            "Topic name is longer than {{max}} characters",
+            max = MAX_TOPIC_NAME
+        ));
     }
     if let Some(c) = name
         .chars()
         .find(|c| !(c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-')))
     {
-        return Err(AppError::invalid(format!(
-            "Недопустимый символ «{c}»: разрешены латинские буквы, цифры, «.», «_» и «-»"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.nameInvalidChar",
+            "Invalid character “{{char}}”: only Latin letters, digits, “.”, “_” and “-” are allowed",
+            char = c
+        ));
     }
     Ok(())
 }
@@ -53,15 +68,21 @@ pub struct NewTopicSpec {
 pub fn validate_new_topic(spec: &NewTopicSpec) -> AppResult<()> {
     validate_topic_name(&spec.name)?;
     if spec.partitions < 1 {
-        return Err(AppError::invalid("Число партиций должно быть не меньше 1"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.partitionsMin",
+            "The number of partitions must be at least 1"
+        ));
     }
     if spec.replication_factor < 1 && spec.replication_factor != -1 {
-        return Err(AppError::invalid(
-            "Фактор репликации должен быть не меньше 1",
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.replicationMin",
+            "The replication factor must be at least 1"
         ));
     }
     if spec.configs.keys().any(|k| k.trim().is_empty()) {
-        return Err(AppError::invalid("Пустое имя параметра конфигурации"));
+        return Err(config_name_empty());
     }
     Ok(())
 }
@@ -72,9 +93,17 @@ fn admin_opts(h: &KafkaHandles) -> AdminOptions {
         .operation_timeout(Some(h.timeout))
 }
 
-fn topic_result(r: TopicResult, context: &str) -> AppResult<String> {
+fn config_name_empty() -> AppError {
+    app_err!(
+        ErrorCode::InvalidInput,
+        "errors.topics.configNameEmpty",
+        "Empty configuration parameter name"
+    )
+}
+
+fn topic_result(r: TopicResult, context: &LocalizedText) -> AppResult<String> {
     // Имя объекта не сообщение брокера: в details только код.
-    r.map_err(|(_name, code)| item_error(code, "", context))
+    r.map_err(|(_name, code)| item_error(code, "", context.clone()))
 }
 
 pub async fn create_topic(h: &Arc<KafkaHandles>, spec: &NewTopicSpec) -> AppResult<()> {
@@ -92,8 +121,9 @@ pub async fn create_topic(h: &Arc<KafkaHandles>, spec: &NewTopicSpec) -> AppResu
         Ok(r) => r,
         Err(e) => return Err(admin_error(h, started, e).await),
     };
+    let context = ltext!("errors.topics.createFailed", "Failed to create the topic");
     for r in results {
-        topic_result(r, "Не удалось создать топик")?;
+        topic_result(r, &context)?;
     }
     Ok(())
 }
@@ -105,17 +135,29 @@ pub fn topic_partition_ids(h: &KafkaHandles, topic: &str) -> AppResult<Vec<i32>>
     let t = topics
         .into_iter()
         .find(|t| t.name == topic && !t.partitions.is_empty())
-        .ok_or_else(|| AppError::not_found(format!("Топик «{topic}» не найден")))?;
+        .ok_or_else(|| topic_not_found(topic))?;
     let mut ids: Vec<i32> = t.partitions.iter().map(|p| p.id).collect();
     ids.sort_unstable();
     Ok(ids)
 }
 
+pub fn topic_not_found(topic: &str) -> AppError {
+    app_err!(
+        ErrorCode::NotFound,
+        "errors.topics.notFound",
+        "Topic “{{topic}}” not found",
+        topic = topic
+    )
+}
+
 pub fn validate_partition_increase(current: usize, new_total: i32) -> AppResult<()> {
     if new_total <= 0 || (new_total as usize) <= current {
-        return Err(AppError::invalid(format!(
-            "Новое число партиций должно быть больше текущего ({current})"
-        )));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.partitionsIncrease",
+            "The new number of partitions must be greater than the current one ({{current}})",
+            current = current
+        ));
     }
     Ok(())
 }
@@ -127,8 +169,12 @@ pub async fn add_partitions(h: &Arc<KafkaHandles>, topic: &str, new_total: usize
         Ok(r) => r,
         Err(e) => return Err(admin_error(h, started, e).await),
     };
+    let context = ltext!(
+        "errors.topics.addPartitionsFailed",
+        "Failed to add partitions"
+    );
     for r in results {
-        topic_result(r, "Не удалось добавить партиции")?;
+        topic_result(r, &context)?;
     }
     Ok(())
 }
@@ -138,10 +184,19 @@ pub fn resolve_partitions(all: &[i32], requested: Option<&[i32]>) -> AppResult<V
         return Ok(all.to_vec());
     };
     if req.is_empty() {
-        return Err(AppError::invalid("Не выбраны партиции"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noPartitionsSelected",
+            "No partitions selected"
+        ));
     }
     if let Some(bad) = req.iter().find(|p| !all.contains(p)) {
-        return Err(AppError::invalid(format!("В топике нет партиции {bad}")));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noSuchPartition",
+            "The topic has no partition {{partition}}",
+            partition = bad
+        ));
     }
     let mut out = req.to_vec();
     out.sort_unstable();
@@ -156,17 +211,22 @@ pub struct PurgedPartition {
     /// Новый low watermark; None — партицию очистить не удалось (см. error).
     pub low_watermark: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub error: Option<LocalizedText>,
 }
 
 /// Текст ошибки очистки партиции; PolicyViolation брокер возвращает для топиков без `delete`.
-fn purge_error_message(err: &KafkaError) -> String {
+fn purge_error_message(err: &KafkaError) -> LocalizedText {
     match err.rdkafka_error_code() {
-        Some(RDKafkaErrorCode::PolicyViolation) => {
-            "Брокер запретил удаление записей: у топика cleanup.policy без delete".to_string()
-        }
-        _ => err.to_string(),
+        Some(RDKafkaErrorCode::PolicyViolation) => purge_forbidden(),
+        _ => LocalizedText::raw(err.to_string()),
     }
+}
+
+fn purge_forbidden() -> LocalizedText {
+    ltext!(
+        "errors.topics.purgeForbidden",
+        "The broker refused to delete records: the topic cleanup.policy has no delete"
+    )
 }
 
 /// DeleteRecords до high watermark (Offset::End) по выбранным партициям.
@@ -197,7 +257,7 @@ pub async fn purge_topic(
             (Ok(()), other) => PurgedPartition {
                 partition: e.partition(),
                 low_watermark: None,
-                error: Some(format!("Неожиданный оффсет {other:?}")),
+                error: Some(LocalizedText::raw(format!("Unexpected offset {other:?}"))),
             },
             (Err(err), _) => PurgedPartition {
                 partition: e.partition(),
@@ -223,7 +283,11 @@ pub async fn delete_topics(
     names: &[String],
 ) -> AppResult<Vec<TopicDeleteResult>> {
     if names.is_empty() {
-        return Err(AppError::invalid("Не выбраны топики"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noneSelected",
+            "No topics selected"
+        ));
     }
     let refs: Vec<&str> = names.iter().map(String::as_str).collect();
     let started = Instant::now();
@@ -231,12 +295,13 @@ pub async fn delete_topics(
         Ok(r) => r,
         Err(e) => return Err(admin_error(h, started, e).await),
     };
+    let context = ltext!("errors.topics.deleteFailed", "Failed to delete the topic");
     Ok(results
         .into_iter()
         .map(|r| match r {
             Ok(name) => TopicDeleteResult { name, error: None },
             Err((name, code)) => TopicDeleteResult {
-                error: Some(item_error(code, "", "Не удалось удалить топик")),
+                error: Some(item_error(code, "", context.clone())),
                 name,
             },
         })
@@ -266,18 +331,25 @@ impl ConfigChange {
 
 pub fn validate_config_changes(changes: &[ConfigChange]) -> AppResult<()> {
     if changes.is_empty() {
-        return Err(AppError::invalid("Нет изменений конфигурации"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noConfigChanges",
+            "No configuration changes"
+        ));
     }
     let mut seen = HashSet::new();
     for c in changes {
         let name = c.name().trim();
         if name.is_empty() {
-            return Err(AppError::invalid("Пустое имя параметра конфигурации"));
+            return Err(config_name_empty());
         }
         if !seen.insert(name) {
-            return Err(AppError::invalid(format!(
-                "Параметр «{name}» изменяется дважды"
-            )));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.topics.configDuplicate",
+                "Parameter “{{name}}” is changed twice",
+                name = name
+            ));
         }
     }
     Ok(())
@@ -303,7 +375,10 @@ pub fn alter_topic_configs(
         Ok(Err(item)) => Err(item_error(
             item.code,
             &item.message,
-            "Не удалось изменить конфигурацию топика",
+            ltext!(
+                "errors.topics.alterConfigFailed",
+                "Failed to change the topic configuration"
+            ),
         )),
         Err(e) => Err(h.kafka_err(started, e)),
     }
@@ -312,18 +387,18 @@ pub fn alter_topic_configs(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::ErrorCode;
 
     #[test]
     fn purge_policy_violation_has_clear_message() {
         assert_eq!(
-            purge_error_message(&KafkaError::OffsetFetch(RDKafkaErrorCode::PolicyViolation)),
-            "Брокер запретил удаление записей: у топика cleanup.policy без delete"
+            purge_error_message(&KafkaError::OffsetFetch(RDKafkaErrorCode::PolicyViolation)).key,
+            "errors.topics.purgeForbidden"
         );
         let other = purge_error_message(&KafkaError::OffsetFetch(
             RDKafkaErrorCode::TopicAuthorizationFailed,
         ));
-        assert!(other.contains("authorization"), "{other}");
+        assert_eq!(other.key, "errors.generic");
+        assert!(other.text.contains("authorization"), "{}", other.text);
     }
 
     #[test]

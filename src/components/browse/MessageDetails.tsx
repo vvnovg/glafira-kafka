@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { BrowsedMessage, DecodedData } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { formatBytes, formatTimestamp } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { useConnection } from "../../lib/useConnection";
@@ -136,7 +137,7 @@ function ResetGroupHere({ connectionId, topic, message }: { connectionId: string
     <div>
       {groups.error && <ErrorBanner error={groups.error} onRetry={() => groups.refetch()} />}
       {groups.data && groups.data.errors.length > 0 && (
-        <p className="warn">Список групп может быть неполным: {groups.data.errors.join("; ")}</p>
+        <p className="warn">Список групп может быть неполным: {groups.data.errors.map(tr).join("; ")}</p>
       )}
       <div className="toolbar">
         {groups.isPending ? (

@@ -45,7 +45,7 @@ beforeEach(() => {
 describe("groupTotalLag", () => {
   it("сумма по партициям с коммитом, ошибка — неизвестно", () => {
     expect(groupTotalLag(offsets)).toBe(3);
-    expect(groupTotalLag([...offsets, { ...offsets[0], partition: 2, lag: null, logEnd: null, error: "нет лидера" }])).toBeNull();
+    expect(groupTotalLag([...offsets, { ...offsets[0], partition: 2, lag: null, logEnd: null, error: { key: "errors.generic", params: { message: "нет лидера" }, text: "нет лидера" } }])).toBeNull();
     expect(groupTotalLag([offsets[1]])).toBeNull();
     expect(groupTotalLag([])).toBeNull();
   });

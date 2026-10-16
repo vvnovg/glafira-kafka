@@ -11,6 +11,7 @@ use rdkafka::util::Timeout;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult, ErrorCode, classify_message, from_kafka};
+use crate::i18n::LocalizedText;
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::errors::item_error;
@@ -77,7 +78,11 @@ pub struct ProducerSettings {
 impl ProducerSettings {
     pub fn validate(&self) -> AppResult<()> {
         if self.idempotence && self.acks != Acks::All {
-            return Err(AppError::invalid("Идемпотентность требует acks = all"));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.produce.idempotenceAcks",
+                "Idempotence requires acks = all"
+            ));
         }
         Ok(())
     }
@@ -229,13 +234,13 @@ pub fn owned_headers(headers: &[(String, Vec<u8>)]) -> OwnedHeaders {
 /// (с учётом причины от клиента — TLS/SASL не должны выглядеть таймаутом).
 fn delivery_error(code: RDKafkaErrorCode, cause: Option<&str>) -> AppError {
     use RDKafkaErrorCode as C;
-    let context = "Не удалось отправить сообщение";
-    let details = |app: ErrorCode, message: &str| {
+    let context = || ltext!("errors.produce.sendFailed", "Failed to send the message");
+    let details = |app: ErrorCode, text: LocalizedText| {
         let d = match cause {
             Some(c) => format!("{code}\n{c}"),
             None => code.to_string(),
         };
-        AppError::new(app, message).with_details(d)
+        AppError::localized(app, text).with_details(d)
     };
     // Причина от клиента (TLS/SASL/сеть) важнее кода только для таймаута и транспортных кодов;
     // детерминированные ответы брокера (слишком большое сообщение, нет топика) её не перекрывают.
@@ -262,22 +267,32 @@ fn delivery_error(code: RDKafkaErrorCode, cause: Option<&str>) -> AppError {
     match code {
         C::MessageTimedOut => details(
             ErrorCode::Timeout,
-            "Сообщение не доставлено за время таймаута",
+            ltext!(
+                "errors.produce.deliveryTimeout",
+                "The message was not delivered within the timeout"
+            ),
         ),
-        C::UnknownTopic | C::UnknownTopicOrPartition => {
-            details(ErrorCode::NotFound, "Топик или партиция не найдены")
-        }
+        C::UnknownTopic | C::UnknownTopicOrPartition => details(
+            ErrorCode::NotFound,
+            ltext!(
+                "errors.produce.topicOrPartitionNotFound",
+                "Topic or partition not found"
+            ),
+        ),
         C::MessageSizeTooLarge | C::InvalidMessageSize | C::MessageBatchTooLarge => details(
             ErrorCode::InvalidInput,
-            "Сообщение слишком большое для брокера",
+            ltext!(
+                "errors.produce.messageTooLarge",
+                "The message is too large for the broker"
+            ),
         ),
         _ => {
-            let e = item_error(code, cause.unwrap_or(""), context);
+            let e = item_error(code, cause.unwrap_or(""), context());
             if e.code != ErrorCode::Internal {
                 e
             } else {
                 let app = classify_message(&code.to_string()).unwrap_or(ErrorCode::Internal);
-                AppError::new(app, context).with_details(e.details.unwrap_or_default())
+                AppError::localized(app, context()).with_details(e.details.unwrap_or_default())
             }
         }
     }

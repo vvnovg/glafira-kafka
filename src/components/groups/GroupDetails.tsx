@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { Confirmation, GroupDescription, GroupPartitionOffset } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { PRO_HINT, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
@@ -244,20 +245,23 @@ function OffsetsTable({ rows }: { rows: GroupPartitionOffset[] }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr key={`${r.topic}:${r.partition}`}>
-            <td>{r.topic}</td>
-            <td>{r.partition}</td>
-            <td className={r.error ? "warn" : ""} title={r.error}>
-              {r.committed !== null ? r.committed : r.error ? "—" : <span className="muted">нет коммита</span>}
-            </td>
-            <td title={r.logEnd === null ? (r.error ?? "log end неизвестен") : undefined}>{r.logEnd ?? "—"}</td>
-            <td title={r.lag === null ? (r.error ?? (r.committed === null ? "нет коммита" : "log end неизвестен")) : undefined}>
-              {formatCount(r.lag)}
-            </td>
-            <td>{r.memberClientId ?? "—"}</td>
-          </tr>
-        ))}
+        {rows.map((r) => {
+          const error = r.error ? tr(r.error) : undefined;
+          return (
+            <tr key={`${r.topic}:${r.partition}`}>
+              <td>{r.topic}</td>
+              <td>{r.partition}</td>
+              <td className={error ? "warn" : ""} title={error}>
+                {r.committed !== null ? r.committed : error ? "—" : <span className="muted">нет коммита</span>}
+              </td>
+              <td title={r.logEnd === null ? (error ?? "log end неизвестен") : undefined}>{r.logEnd ?? "—"}</td>
+              <td title={r.lag === null ? (error ?? (r.committed === null ? "нет коммита" : "log end неизвестен")) : undefined}>
+                {formatCount(r.lag)}
+              </td>
+              <td>{r.memberClientId ?? "—"}</td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

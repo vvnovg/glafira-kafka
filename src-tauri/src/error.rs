@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 use rdkafka::error::KafkaError;
 use serde::Serialize;
 
+use crate::i18n::LocalizedText;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ErrorCode {
@@ -69,6 +71,15 @@ impl AppError {
         matches!(code, ErrorCode::ConnectionFailed | ErrorCode::Timeout)
     }
 
+    /// Текст ошибки для полей-сообщений (ключ, параметры, английский текст).
+    pub fn text(&self) -> LocalizedText {
+        LocalizedText {
+            key: self.key.clone(),
+            params: self.params.clone(),
+            text: self.message.clone(),
+        }
+    }
+
     pub fn with_details(mut self, details: impl Into<String>) -> Self {
         self.details = Some(details.into());
         self
@@ -89,13 +100,23 @@ impl AppError {
 
 impl From<std::io::Error> for AppError {
     fn from(e: std::io::Error) -> Self {
-        AppError::internal(format!("Ошибка ввода-вывода: {e}"))
+        app_err!(
+            ErrorCode::Internal,
+            "errors.io",
+            "I/O error: {{error}}",
+            error = e
+        )
     }
 }
 
 impl From<serde_json::Error> for AppError {
     fn from(e: serde_json::Error) -> Self {
-        AppError::internal(format!("Ошибка JSON: {e}"))
+        app_err!(
+            ErrorCode::Internal,
+            "errors.json",
+            "JSON error: {{error}}",
+            error = e
+        )
     }
 }
 
@@ -130,22 +151,34 @@ pub fn classify_message(text: &str) -> Option<ErrorCode> {
 
 /// Уточнение TLS-ошибки по тексту librdkafka/OpenSSL. Имя хоста проверяется раньше общего
 /// «certificate verify failed», в который оно вложено.
-fn tls_message(text: &str) -> &'static str {
+fn tls_message(text: &str) -> LocalizedText {
     let t = text.to_lowercase();
     if t.contains("plaintext broker listener") {
-        "На этом адресе брокер принимает соединения без TLS — проверьте порт или выберите протокол без SSL"
+        ltext!(
+            "errors.kafka.plaintextListener",
+            "The broker accepts connections without TLS on this address — check the port or choose a protocol without SSL"
+        )
     } else if t.contains("hostname mismatch") || t.contains("ip address mismatch") {
-        "Имя хоста брокера не совпадает с его сертификатом"
+        ltext!(
+            "errors.kafka.hostnameMismatch",
+            "The broker host name does not match its certificate"
+        )
     } else if t.contains("certificate verify failed") {
-        "Сертификат брокера не подписан доверенным CA — проверьте «Доверенный CA»"
+        ltext!(
+            "errors.kafka.caUntrusted",
+            "The broker certificate is not signed by a trusted CA — check “Trusted CA”"
+        )
     } else if t.contains("certificate required")
         || t.contains("bad certificate")
         || t.contains("unknown ca")
         || t.contains("certificate unknown")
     {
-        "Брокер не принял клиентский сертификат"
+        ltext!(
+            "errors.kafka.clientCertRejected",
+            "The broker rejected the client certificate"
+        )
     } else {
-        "Ошибка TLS-соединения"
+        ltext!("errors.kafka.tlsError", "TLS connection error")
     }
 }
 
@@ -161,15 +194,21 @@ pub fn from_kafka(err: &KafkaError, client_error: Option<&str>) -> AppError {
         Some(c) => format!("{op}\n{c}"),
         None => op,
     };
-    let message = match code {
-        ErrorCode::ConnectionFailed => "Не удалось подключиться к брокерам",
+    let text = match code {
+        ErrorCode::ConnectionFailed => ltext!(
+            "errors.kafka.connectionFailed",
+            "Could not connect to the brokers"
+        ),
         ErrorCode::TlsError => tls_message(&details),
-        ErrorCode::AuthFailed => "Ошибка аутентификации",
-        ErrorCode::NotAuthorized => "Недостаточно прав для операции",
-        ErrorCode::Timeout => "Операция не уложилась в таймаут",
-        _ => "Ошибка Kafka",
+        ErrorCode::AuthFailed => ltext!("errors.kafka.authFailed", "Authentication failed"),
+        ErrorCode::NotAuthorized => ltext!(
+            "errors.kafka.notAuthorized",
+            "Not authorized to perform the operation"
+        ),
+        ErrorCode::Timeout => ltext!("errors.kafka.timeout", "The operation timed out"),
+        _ => ltext!("errors.kafka.generic", "Kafka error"),
     };
-    AppError::new(code, message).with_details(details)
+    AppError::localized(code, text).with_details(details)
 }
 
 #[cfg(test)]
@@ -232,32 +271,32 @@ mod tests {
         for (client, expected) in [
             (
                 "ssl://localhost:9092/bootstrap: SSL handshake failed: Disconnected: SSL connection closed by peer: connecting to a PLAINTEXT broker listener? (after 17ms in state SSL_HANDSHAKE)",
-                "без TLS",
+                "errors.kafka.plaintextListener",
             ),
             (
                 "ssl://h:9095/bootstrap: SSL handshake failed: error:0A000086:SSL routines::certificate verify failed: broker certificate could not be verified",
-                "не подписан доверенным CA",
+                "errors.kafka.caUntrusted",
             ),
             (
                 "ssl://h:9095/bootstrap: SSL handshake failed: certificate verify failed: Hostname mismatch",
-                "Имя хоста",
+                "errors.kafka.hostnameMismatch",
             ),
             (
                 "ssl://h:9095/bootstrap: SSL handshake failed: error:0A00045C:SSL routines::tlsv13 alert certificate required",
-                "не принял клиентский сертификат",
+                "errors.kafka.clientCertRejected",
             ),
             (
                 "ssl://h:9095/bootstrap: SSL handshake failed: sslv3 alert bad certificate",
-                "не принял клиентский сертификат",
+                "errors.kafka.clientCertRejected",
             ),
             (
                 "ssl://h:9095/bootstrap: SSL handshake failed: something new",
-                "Ошибка TLS-соединения",
+                "errors.kafka.tlsError",
             ),
         ] {
             let app = from_kafka(&err, Some(client));
             assert_eq!(app.code, ErrorCode::TlsError, "{client}");
-            assert!(app.message.contains(expected), "{client} → {}", app.message);
+            assert_eq!(app.key, expected, "{client}");
         }
     }
 

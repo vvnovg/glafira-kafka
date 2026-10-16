@@ -33,13 +33,27 @@ describe("ConnectionForm", () => {
     vi.mocked(api.testConnection).mockResolvedValue({
       ok: false,
       steps: [
-        { name: "config", ok: true, message: "Конфигурация корректна" },
-        { name: "tcp", ok: true, message: "TCP-соединение установлено" },
+        { name: "config", ok: true, message: { key: "messages.connectionTest.configOk", params: {}, text: "Configuration is valid" } },
+        {
+          name: "tcp",
+          ok: true,
+          message: {
+            key: "messages.connectionTest.tcpOk",
+            params: { address: "localhost:9094" },
+            text: "TCP connection to localhost:9094 established",
+          },
+        },
         {
           name: "kafka",
           ok: false,
-          message: "Ошибка аутентификации",
-          error: { code: "AUTH_FAILED", message: "Ошибка аутентификации", details: "SASL authentication error", retryable: false },
+          message: { key: "errors.kafka.authFailed", params: {}, text: "Authentication failed" },
+          error: {
+            code: "AUTH_FAILED",
+            key: "errors.kafka.authFailed",
+            message: "Authentication failed",
+            details: "SASL authentication error",
+            retryable: false,
+          },
         },
       ],
     });
@@ -64,7 +78,10 @@ describe("ConnectionForm", () => {
       "secret",
       { keyPassword: null, keystorePassword: null, truststorePassword: null },
     );
+    // Тексты шагов приходят ключами и показываются на языке интерфейса.
     expect(await screen.findByText("Ошибка аутентификации")).toBeInTheDocument();
+    expect(screen.getByText("Конфигурация корректна")).toBeInTheDocument();
+    expect(screen.getByText("TCP-соединение с localhost:9094 установлено")).toBeInTheDocument();
     expect(screen.getByText("SASL authentication error")).toBeInTheDocument();
   });
 

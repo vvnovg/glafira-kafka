@@ -42,7 +42,15 @@ describe("reset", () => {
   it("применяются только строки без ошибок", () => {
     const rows = [
       { topic: "t", partition: 0, current: 1, target: 0, low: 0, high: 5 },
-      { topic: "t", partition: 1, current: null, target: null, low: 0, high: 5, error: "Нет закоммиченного оффсета" },
+      {
+        topic: "t",
+        partition: 1,
+        current: null,
+        target: null,
+        low: 0,
+        high: 5,
+        error: { key: "errors.groups.noCommittedOffset", params: {}, text: "No committed offset — cannot shift" },
+      },
     ];
     expect(targetsFromPreview(rows)).toEqual([{ topic: "t", partition: 0, offset: 0 }]);
   });

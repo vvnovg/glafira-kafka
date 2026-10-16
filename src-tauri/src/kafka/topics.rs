@@ -6,7 +6,7 @@ use rdkafka::error::KafkaResult;
 use rdkafka::{Offset, TopicPartitionList};
 use serde::Serialize;
 
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 use crate::kafka::context::CapturingContext;
 use crate::kafka::errors::{fetch_metadata_fast_fail, retry_transient};
 use crate::kafka::metadata::{TopicMeta, convert};
@@ -82,10 +82,10 @@ pub fn message_count(low: i64, high: i64) -> i64 {
     (high - low).max(0)
 }
 
-/// Результат ListOffsets по партиции: (low, high) или текст ошибки брокера.
+/// Результат ListOffsets по партиции: (low, high) или технический текст ошибки (не переводится).
 pub type PartitionBoundsMap = HashMap<(String, i32), Result<(i64, i64), String>>;
 
-const NO_OFFSET: &str = "Брокер не вернул оффсет партиции";
+const NO_OFFSET: &str = "The broker did not return the partition offset";
 
 /// (low, high) watermark по каждой партиции двумя пакетными ListOffsets-запросами
 /// (offsets_for_times со спецзначениями -2 = earliest, -1 = latest).
@@ -139,7 +139,7 @@ fn list_offsets(
             let value = match (e.error(), e.offset()) {
                 (Err(err), _) => Err(err.to_string()),
                 (Ok(()), Offset::Offset(o)) => Ok(o),
-                (Ok(()), other) => Err(format!("Неожиданный оффсет {other:?}")),
+                (Ok(()), other) => Err(format!("Unexpected offset {other:?}")),
             };
             ((e.topic().to_string(), e.partition()), value)
         })
@@ -185,7 +185,7 @@ pub fn topic_details(h: &KafkaHandles, name: &str) -> AppResult<TopicDetails> {
     let t = topics
         .into_iter()
         .find(|t| t.name == name && !t.partitions.is_empty())
-        .ok_or_else(|| AppError::not_found(format!("Топик «{name}» не найден")))?;
+        .ok_or_else(|| crate::kafka::admin::topic_not_found(name))?;
     let keys: Vec<(String, i32)> = t
         .partitions
         .iter()

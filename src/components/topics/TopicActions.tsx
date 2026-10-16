@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../api/client";
+import { api, toAppError } from "../../api/client";
 import type { ConnectionProfile, TopicDetails } from "../../api/types";
+import { tr } from "../../i18n/text";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
@@ -176,7 +177,7 @@ function Purge({
           {run.data.map((p) => (
             <li key={p.partition} className={p.error ? "warn" : ""}>
               {p.error
-                ? `Партиция ${p.partition}: ${p.error}`
+                ? `Партиция ${p.partition}: ${tr(p.error)}`
                 : `Партиция ${p.partition}: новый low watermark ${p.lowWatermark ?? "—"}`}
             </li>
           ))}
@@ -196,7 +197,7 @@ function Purge({
         <p className="warn">cleanup.policy = {cleanup}: purge удалит и последние значения ключей (compact).</p>
       )}
       {policyError != null && (
-        <p className="warn" title={String((policyError as { message?: string }).message ?? policyError)}>
+        <p className="warn" title={tr(toAppError(policyError))}>
           Не удалось определить cleanup.policy — для compact-топика purge удалит и последние значения ключей.
         </p>
       )}

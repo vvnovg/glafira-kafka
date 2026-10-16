@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult, ErrorCode};
+use crate::i18n::LocalizedText;
 use crate::kafka::admin_ext::{GroupDescriptionRaw, RawPartition};
 use crate::kafka::topics::PartitionBoundsMap;
 use rdkafka::types::RDKafkaErrorCode;
@@ -27,7 +28,7 @@ pub struct GroupSummary {
 pub struct GroupList {
     pub groups: Vec<GroupSummary>,
     /// Частичные ошибки (например, один из брокеров не ответил) — список может быть неполным.
-    pub errors: Vec<String>,
+    pub errors: Vec<LocalizedText>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -97,7 +98,7 @@ pub struct GroupPartitionOffset {
     pub lag: Option<i64>,
     pub member_client_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub error: Option<LocalizedText>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -107,7 +108,7 @@ pub struct GroupLag {
     pub total_lag: Option<i64>,
     pub topics: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub error: Option<LocalizedText>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -177,7 +178,7 @@ pub struct ResetPreviewRow {
     pub low: Option<i64>,
     pub high: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub error: Option<LocalizedText>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -195,9 +196,10 @@ pub struct ResetResult {
     pub partition: i32,
     pub offset: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub error: Option<LocalizedText>,
 }
 
+/// Ошибки в картах — технический текст брокера/librdkafka (не переводится).
 pub type CommittedMap = BTreeMap<(String, i32), Result<Option<i64>, String>>;
 pub type TimeLookup = HashMap<(String, i32), Result<Option<i64>, String>>;
 
@@ -206,7 +208,7 @@ pub struct PartitionState {
     pub topic: String,
     pub partition: i32,
     pub current: Option<i64>,
-    pub bounds: Result<(i64, i64), String>,
+    pub bounds: Result<(i64, i64), LocalizedText>,
 }
 
 pub fn lag(committed: Option<i64>, log_end: Option<i64>) -> Option<i64> {
@@ -235,18 +237,16 @@ pub fn build_partition_offsets(
         .map(|k| {
             let (committed, commit_err) = match committed.get(k) {
                 Some(Ok(c)) => (*c, None),
-                Some(Err(e)) => (None, Some(format!("коммит: {e}"))),
+                Some(Err(e)) => (None, Some(e)),
                 None => (None, None),
             };
+            // Some(None) — брокер не вернул границы партиции.
             let (log_end, bounds_err) = match bounds.get(k) {
                 Some(Ok((_, high))) => (Some(*high), None),
-                Some(Err(e)) => (None, Some(format!("оффсеты: {e}"))),
-                None => (None, Some("оффсеты: нет ответа брокера".to_string())),
+                Some(Err(e)) => (None, Some(Some(e))),
+                None => (None, Some(None)),
             };
-            let error = match (commit_err, bounds_err) {
-                (None, None) => None,
-                (a, b) => Some([a, b].into_iter().flatten().collect::<Vec<_>>().join("; ")),
-            };
+            let error = partition_error(commit_err, bounds_err);
             GroupPartitionOffset {
                 topic: k.0.clone(),
                 partition: k.1,
@@ -260,6 +260,36 @@ pub fn build_partition_offsets(
         .collect()
 }
 
+fn partition_error(
+    commit: Option<&String>,
+    bounds: Option<Option<&String>>,
+) -> Option<LocalizedText> {
+    Some(match (commit, bounds) {
+        (None, None) => return None,
+        (Some(c), None) => ltext!("errors.groups.commitError", "commit: {{error}}", error = c),
+        (None, Some(Some(b))) => ltext!(
+            "errors.groups.offsetsError",
+            "offsets: {{error}}",
+            error = b
+        ),
+        (None, Some(None)) => ltext!(
+            "errors.groups.offsetsNoAnswer",
+            "offsets: no response from the broker"
+        ),
+        (Some(c), Some(Some(b))) => ltext!(
+            "errors.groups.commitAndOffsetsError",
+            "commit: {{commit}}; offsets: {{offsets}}",
+            commit = c,
+            offsets = b
+        ),
+        (Some(c), Some(None)) => ltext!(
+            "errors.groups.commitAndOffsetsNoAnswer",
+            "commit: {{commit}}; offsets: no response from the broker",
+            commit = c
+        ),
+    })
+}
+
 /// Сумма лагов партиций с коммитом; None, если хоть одна партиция с ошибкой
 /// или коммитов нет вовсе (лаг неизвестен, а не 0).
 pub fn total_lag(rows: &[GroupPartitionOffset]) -> Option<i64> {
@@ -271,26 +301,40 @@ pub fn total_lag(rows: &[GroupPartitionOffset]) -> Option<i64> {
 
 pub fn validate_reset_request(req: &ResetRequest) -> AppResult<()> {
     if req.group_id.trim().is_empty() {
-        return Err(AppError::invalid("Не указана группа"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.groups.groupMissing",
+            "No group specified"
+        ));
     }
     match req.strategy {
         ResetStrategy::Offset { offset } if offset < 0 => {
-            return Err(AppError::invalid("Оффсет не может быть отрицательным"));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.groups.offsetNegative",
+                "Offset cannot be negative"
+            ));
         }
         ResetStrategy::Timestamp { timestamp_ms } if timestamp_ms < 0 => {
-            return Err(AppError::invalid(
-                "Метка времени не может быть отрицательной",
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.groups.timestampNegative",
+                "Timestamp cannot be negative"
             ));
         }
         _ => {}
     }
     match &req.scope {
-        ResetScope::Topics { topics } if topics.is_empty() => {
-            Err(AppError::invalid("Не выбраны топики"))
-        }
-        ResetScope::Partitions { partitions } if partitions.is_empty() => {
-            Err(AppError::invalid("Не выбраны партиции"))
-        }
+        ResetScope::Topics { topics } if topics.is_empty() => Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noneSelected",
+            "No topics selected"
+        )),
+        ResetScope::Partitions { partitions } if partitions.is_empty() => Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noPartitionsSelected",
+            "No partitions selected"
+        )),
         _ => Ok(()),
     }
 }
@@ -303,7 +347,7 @@ pub fn plan_reset(
     let mut rows: Vec<ResetPreviewRow> = states
         .iter()
         .map(|s| {
-            let row = |target: Result<i64, String>, low: Option<i64>, high: Option<i64>| {
+            let row = |target: Result<i64, LocalizedText>, low: Option<i64>, high: Option<i64>| {
                 let (target, error) = match target {
                     Ok(t) => (Some(t), None),
                     Err(e) => (None, Some(e)),
@@ -330,17 +374,24 @@ pub fn plan_reset(
                 ResetStrategy::Shift { delta } => s
                     .current
                     .map(|c| clamp(c.saturating_add(*delta)))
-                    .ok_or_else(|| "Нет закоммиченного оффсета — сдвиг невозможен".to_string()),
-                ResetStrategy::Timestamp { .. } => match by_time
-                    .get(&(s.topic.clone(), s.partition))
-                {
-                    Some(Ok(Some(o))) if *o >= 0 => Ok(clamp(*o)),
-                    Some(Ok(Some(o))) => Err(format!("Некорректный оффсет по метке времени: {o}")),
-                    // Нет сообщений новее метки — встаём в конец.
-                    Some(Ok(None)) => Ok(high),
-                    None => Err("Нет ответа брокера по метке времени".to_string()),
-                    Some(Err(e)) => Err(e.clone()),
-                },
+                    .ok_or_else(no_committed_offset),
+                ResetStrategy::Timestamp { .. } => {
+                    match by_time.get(&(s.topic.clone(), s.partition)) {
+                        Some(Ok(Some(o))) if *o >= 0 => Ok(clamp(*o)),
+                        Some(Ok(Some(o))) => Err(ltext!(
+                            "errors.groups.badTimestampOffset",
+                            "Invalid offset for the timestamp: {{offset}}",
+                            offset = o
+                        )),
+                        // Нет сообщений новее метки — встаём в конец.
+                        Some(Ok(None)) => Ok(high),
+                        None => Err(ltext!(
+                            "errors.groups.noTimestampAnswer",
+                            "No response from the broker for the timestamp"
+                        )),
+                        Some(Err(e)) => Err(LocalizedText::raw(e)),
+                    }
+                }
             };
             row(target, Some(low), Some(high))
         })
@@ -349,51 +400,85 @@ pub fn plan_reset(
     rows
 }
 
+pub fn no_committed_offset() -> LocalizedText {
+    ltext!(
+        "errors.groups.noCommittedOffset",
+        "No committed offset — cannot shift"
+    )
+}
+
 pub fn validate_targets(targets: &[OffsetTarget]) -> AppResult<()> {
     if targets.is_empty() {
-        return Err(AppError::invalid("Нечего применять: план сброса пуст"));
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.groups.emptyPlan",
+            "Nothing to apply: the reset plan is empty"
+        ));
     }
     let mut seen = HashSet::new();
     for t in targets {
         if t.offset < 0 {
-            return Err(AppError::invalid(format!(
-                "Отрицательный оффсет для {}/{}",
-                t.topic, t.partition
-            )));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.groups.targetNegative",
+                "Negative offset for {{topic}}/{{partition}}",
+                topic = t.topic,
+                partition = t.partition
+            ));
         }
         if !seen.insert((&t.topic, t.partition)) {
-            return Err(AppError::invalid(format!(
-                "Партиция {}/{} указана дважды",
-                t.topic, t.partition
-            )));
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.groups.targetDuplicate",
+                "Partition {{topic}}/{{partition}} is specified twice",
+                topic = t.topic,
+                partition = t.partition
+            ));
         }
     }
     Ok(())
 }
 
-fn not_empty_error(d: &GroupDescription, action: &str) -> AppError {
+/// Действие над группой, которому мешают активные участники.
+#[derive(Debug, Clone, Copy)]
+enum GroupAction {
+    Reset,
+    Delete,
+}
+
+fn not_empty_error(d: &GroupDescription, action: GroupAction) -> AppError {
     let members = d
         .members
         .iter()
         .map(|m| format!("{} ({})", m.client_id, m.host))
         .collect::<Vec<_>>()
         .join(", ");
-    AppError::new(
-        ErrorCode::GroupNotEmpty,
-        format!(
-            "{action} возможно только для группы без участников (состояние сейчас: {})",
-            d.state
+    let err = match action {
+        GroupAction::Reset => app_err!(
+            ErrorCode::GroupNotEmpty,
+            "errors.groups.resetNotEmpty",
+            "Offsets can be reset only for a group without members (current state: {{state}})",
+            state = d.state
         ),
-    )
-    .with_details(format!("Активные участники: {members}"))
+        GroupAction::Delete => app_err!(
+            ErrorCode::GroupNotEmpty,
+            "errors.groups.deleteNotEmpty",
+            "Only a group without members can be deleted (current state: {{state}})",
+            state = d.state
+        ),
+    };
+    // details — технический текст, не переводится.
+    err.with_details(format!("Active members: {members}"))
 }
 
 fn description_ok(d: &GroupDescription) -> AppResult<()> {
     match d.error.as_ref().filter(|_| !d.not_found) {
-        Some(e) => Err(AppError::internal(format!(
-            "Не удалось получить состояние группы «{}»",
-            d.group_id
-        ))
+        Some(e) => Err(app_err!(
+            ErrorCode::Internal,
+            "errors.groups.stateFailed",
+            "Failed to get the state of group “{{group}}”",
+            group = d.group_id
+        )
         .with_details(e.clone())),
         None => Ok(()),
     }
@@ -407,26 +492,29 @@ pub fn check_resettable(d: &GroupDescription) -> AppResult<()> {
     }
     match d.state.as_str() {
         "Empty" | "Dead" => Ok(()),
-        _ => Err(not_empty_error(d, "Сброс оффсетов")),
+        _ => Err(not_empty_error(d, GroupAction::Reset)),
     }
 }
 
 pub fn check_deletable(d: &GroupDescription) -> AppResult<()> {
     description_ok(d)?;
     if d.not_found {
-        return Err(AppError::not_found(format!(
-            "Группа «{}» не найдена",
-            d.group_id
-        )));
+        return Err(group_not_found(&d.group_id));
     }
     match d.state.as_str() {
         "Empty" => Ok(()),
-        "Dead" => Err(AppError::not_found(format!(
-            "Группа «{}» не найдена",
-            d.group_id
-        ))),
-        _ => Err(not_empty_error(d, "Удаление")),
+        "Dead" => Err(group_not_found(&d.group_id)),
+        _ => Err(not_empty_error(d, GroupAction::Delete)),
     }
+}
+
+fn group_not_found(group: &str) -> AppError {
+    app_err!(
+        ErrorCode::NotFound,
+        "errors.groups.notFound",
+        "Group “{{group}}” not found",
+        group = group
+    )
 }
 
 #[cfg(test)]
@@ -501,18 +589,14 @@ mod tests {
         assert_eq!(rows[0].member_client_id.as_deref(), Some("client-a"));
         // назначена, но без коммита: лаг неизвестен, но это не ошибка
         assert_eq!(
-            (rows[1].committed, rows[1].lag, rows[1].error.as_deref()),
+            (rows[1].committed, rows[1].lag, rows[1].error.as_ref()),
             (None, None, None)
         );
         // ошибка оффсетов не превращается в 0
         assert_eq!((rows[2].log_end, rows[2].lag), (None, None));
-        assert!(
-            rows[2]
-                .error
-                .as_deref()
-                .unwrap()
-                .contains("leader not available")
-        );
+        let e = rows[2].error.as_ref().unwrap();
+        assert_eq!(e.key, "errors.groups.offsetsError");
+        assert_eq!(e.params["error"], "leader not available");
         assert_eq!(
             total_lag(&rows),
             None,
@@ -531,7 +615,11 @@ mod tests {
         assert_eq!(total_lag(&[]), None);
     }
 
-    fn state(p: i32, current: Option<i64>, bounds: Result<(i64, i64), String>) -> PartitionState {
+    fn state(
+        p: i32,
+        current: Option<i64>,
+        bounds: Result<(i64, i64), LocalizedText>,
+    ) -> PartitionState {
         PartitionState {
             topic: "t".into(),
             partition: p,
@@ -576,12 +664,9 @@ mod tests {
         let shifted = plan_reset(&states, &ResetStrategy::Shift { delta: -4 }, &none);
         assert_eq!(shifted[0].target, Some(2), "5 − 4 = 1 → прижато к low = 2");
         assert_eq!(shifted[1].target, None);
-        assert!(
-            shifted[1]
-                .error
-                .as_deref()
-                .unwrap()
-                .contains("Нет закоммиченного")
+        assert_eq!(
+            shifted[1].error.as_ref().unwrap().key,
+            "errors.groups.noCommittedOffset"
         );
         let forward = plan_reset(&states, &ResetStrategy::Shift { delta: 100 }, &none);
         assert_eq!(forward[0].target, Some(10));
@@ -606,12 +691,9 @@ mod tests {
         // нет записи в lookup → ошибка, не high
         let rows = plan_reset(&states, &ts, &TimeLookup::new());
         assert_eq!(rows[0].target, None);
-        assert!(
-            rows[0]
-                .error
-                .as_deref()
-                .unwrap()
-                .contains("Нет ответа брокера")
+        assert_eq!(
+            rows[0].error.as_ref().unwrap().key,
+            "errors.groups.noTimestampAnswer"
         );
         // отрицательный оффсет → ошибка, не low
         let neg = TimeLookup::from([(key("t", 0), Ok(Some(-1)))]);
@@ -621,19 +703,19 @@ mod tests {
         // Ok(None) → high
         let none = TimeLookup::from([(key("t", 0), Ok(None))]);
         let rows = plan_reset(&states, &ts, &none);
-        assert_eq!((rows[0].target, rows[0].error.as_deref()), (Some(10), None));
+        assert_eq!((rows[0].target, rows[0].error.as_ref()), (Some(10), None));
     }
 
     #[test]
     fn plan_reset_reports_partition_errors() {
-        let states = vec![state(0, Some(1), Err("нет лидера".into()))];
+        let states = vec![state(0, Some(1), Err(LocalizedText::raw("нет лидера")))];
         let rows = plan_reset(&states, &ResetStrategy::Earliest, &TimeLookup::new());
         assert_eq!(
             (rows[0].target, rows[0].low, rows[0].high),
             (None, None, None)
         );
         assert_eq!(rows[0].current, Some(1));
-        assert_eq!(rows[0].error.as_deref(), Some("нет лидера"));
+        assert_eq!(rows[0].error, Some(LocalizedText::raw("нет лидера")));
         let by_time = TimeLookup::from([(key("t", 0), Err("timeout".to_string()))]);
         let ok_bounds = vec![state(0, Some(1), Ok((0, 5)))];
         let rows = plan_reset(
@@ -642,7 +724,7 @@ mod tests {
             &by_time,
         );
         assert_eq!(rows[0].target, None);
-        assert_eq!(rows[0].error.as_deref(), Some("timeout"));
+        assert_eq!(rows[0].error, Some(LocalizedText::raw("timeout")));
     }
 
     #[test]
@@ -732,7 +814,7 @@ mod tests {
         assert!(check_resettable(&d).is_ok());
         let e = check_deletable(&d).unwrap_err();
         assert_eq!(e.code, ErrorCode::NotFound);
-        assert!(e.message.contains("не найдена"));
+        assert_eq!(e.key, "errors.groups.notFound");
         // Прочие ошибки describe остаются ошибками.
         d.not_found = false;
         assert_eq!(check_resettable(&d).unwrap_err().code, ErrorCode::Internal);

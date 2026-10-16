@@ -38,6 +38,10 @@ pub fn test_connection(p: &ConnectionProfile, secrets: &dyn SecretStore) -> Test
         Ok(s) => s,
         Err(e) => return failed(steps, "config", e),
     };
+    // Файлы сертификатов, пароли и SASL проверяются до сети: ошибка относится к конфигурации.
+    if let Err(e) = crate::kafka::config::build_client_config(p, secrets) {
+        return failed(steps, "config", e);
+    }
     steps.push(passed("config", "Конфигурация корректна"));
 
     match tcp_probe(&servers) {
@@ -144,5 +148,37 @@ mod tests {
             last.error.as_ref().unwrap().code,
             ErrorCode::ConnectionFailed
         );
+    }
+
+    #[test]
+    fn certificate_errors_fail_config_step() {
+        use crate::storage::connections::{CertFormat, ClientCert, SecurityConfig, TlsConfig};
+        let mut p = sample_profile("a");
+        p.security = SecurityConfig::Ssl {
+            tls: TlsConfig {
+                ca_location: None,
+                ca_format: CertFormat::Pem,
+                verify_hostname: true,
+                client_cert: Some(ClientCert {
+                    format: CertFormat::Pem,
+                    certificate_path: if cfg!(windows) {
+                        "C:\\nope.pem".into()
+                    } else {
+                        "/nope.pem".into()
+                    },
+                    key_path: Some(if cfg!(windows) {
+                        "C:\\nope.key".into()
+                    } else {
+                        "/nope.key".into()
+                    }),
+                    alias: None,
+                }),
+            },
+        };
+        let r = test_connection(&p, &MemoryStore::default());
+        assert!(!r.ok);
+        let last = r.steps.last().unwrap();
+        assert_eq!(last.name, "config");
+        assert_eq!(last.error.as_ref().unwrap().code, ErrorCode::InvalidInput);
     }
 }

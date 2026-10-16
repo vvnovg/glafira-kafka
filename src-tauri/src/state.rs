@@ -89,10 +89,10 @@ impl AppState {
         // Живые browse-сессии удаляемого подключения больше не нужны — даже если удаление ниже упадёт.
         self.sessions.cancel_for(id);
         self.connections.delete(id)?;
-        self.secrets.delete(&crate::secrets::secret_key(
-            id,
-            crate::kafka::config::SASL_PASSWORD,
-        ))?;
+        for field in crate::secrets::CONNECTION_SECRET_FIELDS {
+            self.secrets
+                .delete(&crate::secrets::secret_key(id, field))?;
+        }
         self.evict_connection(id);
         if let Err(e) = self.history.delete_connection(id) {
             tracing::warn!("не удалось удалить историю подключения {id}: {}", e.message);
@@ -185,6 +185,30 @@ mod tests {
         std::fs::write(hp.join("x"), b"x").unwrap();
         state.delete_connection_full("a").unwrap();
         assert!(state.connections.get("a").is_err(), "подключение удалено");
+    }
+
+    #[test]
+    fn delete_connection_removes_all_secrets() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        state.connections.upsert(sample_profile("a")).unwrap();
+        for f in crate::secrets::CONNECTION_SECRET_FIELDS {
+            state
+                .secrets
+                .set(&crate::secrets::secret_key("a", f), "x")
+                .unwrap();
+        }
+        state.delete_connection_full("a").unwrap();
+        for f in crate::secrets::CONNECTION_SECRET_FIELDS {
+            assert_eq!(
+                state
+                    .secrets
+                    .get(&crate::secrets::secret_key("a", f))
+                    .unwrap(),
+                None,
+                "{f}"
+            );
+        }
     }
 
     #[test]

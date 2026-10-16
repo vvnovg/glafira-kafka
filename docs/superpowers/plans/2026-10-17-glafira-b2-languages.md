@@ -244,7 +244,7 @@ test("строка совпадает с en без разрешения — ош
 test("типографика: многоточие и пробелы во французском", () => {
   const p = checkTypography({
     en: { a: "Loading...", b: "Loading…" },
-    fr: { a: "Chargement…", b: "Supprimer ?", c: "Nom : x", d: "« x »", e: "Supprimer ?", f: "« x »", g: "localhost:9092" },
+    fr: { a: "Chargement…", b: "Supprimer ?", c: "Nom : x", d: "« x »", e: "Supprimer\u00a0?", f: "«\u00a0x\u00a0»", g: "localhost:9092" },
   });
   assert.deepEqual(p.sort(), [
     "en: a — «...» вместо «…»",
@@ -607,7 +607,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 Run: `test ! -f src/locales/fr.json && echo absent`
 Expected: `absent`.
 
-- [ ] **Step 2: Перевести `en.json` → `fr.json`** по общим правилам и глоссарию. Неразрывный пробел U+00A0 — перед `:` `;` `!` `?`, после `«` и перед `»` (в JSON можно писать сам символ или ` `). Обязательные контрольные строки:
+- [ ] **Step 2: Перевести `en.json` → `fr.json`** по общим правилам и глоссарию. Неразрывный пробел U+00A0 — перед `:` `;` `!` `?`, после `«` и перед `»` (в JSON можно писать сам символ или escape `\u00a0`). Обязательные контрольные строки:
 
 | Ключ | Значение |
 |---|---|
@@ -617,11 +617,11 @@ Expected: `absent`.
 | `common.readOnly` | `Lecture seule` |
 | `sidebar.settings` | `Paramètres` |
 | `settings.language.system` | `Langue du système ({{name}})` |
-| `topics.delete.titleMany_one` | `Supprimer {{count}} topic ?` |
-| `topics.delete.titleMany_many` | `Supprimer {{count}} de topics ?` |
-| `topics.delete.titleMany_other` | `Supprimer {{count}} topics ?` |
+| `topics.delete.titleMany_one` | `Supprimer {{count}} topic\u00a0?` |
+| `topics.delete.titleMany_many` | `Supprimer {{count}} de topics\u00a0?` |
+| `topics.delete.titleMany_other` | `Supprimer {{count}} topics\u00a0?` |
 
-(` ` в таблице — неразрывный пробел.)
+(`\u00a0` в таблице — неразрывный пробел.)
 
 - [ ] **Step 3: Запустить проверку и исправить всё, кроме намеренных совпадений**
 

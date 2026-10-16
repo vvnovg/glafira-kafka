@@ -56,12 +56,30 @@ fn non_empty(p: Option<&str>) -> Option<&str> {
     p.filter(|s| !s.is_empty())
 }
 
+/// Сертификаты из PEM (цепочка) или, если PEM-блоков нет, один сертификат DER (частый случай `.cer`).
+fn pem_or_der_certs(data: &[u8], path: &str, what: &str) -> AppResult<Vec<X509>> {
+    let pem_err = match X509::stack_from_pem(data) {
+        Ok(certs) if !certs.is_empty() => return Ok(certs),
+        Ok(_) => None,
+        Err(e) => Some(e),
+    };
+    X509::from_der(data).map(|c| vec![c]).map_err(|der_err| {
+        let details = match pem_err {
+            Some(p) => format!("PEM: {p}; DER: {der_err}"),
+            None => format!("DER: {der_err}"),
+        };
+        AppError::invalid(format!(
+            "{what}: «{path}» не содержит сертификатов PEM или DER"
+        ))
+        .with_details(details)
+    })
+}
+
 /// Доверенный CA в PEM (цепочка сертификатов).
 pub fn load_ca(format: CertFormat, path: &str, password: Option<&str>) -> AppResult<String> {
     let data = read_file(path, CA)?;
     let certs: Vec<X509> = match format {
-        CertFormat::Pem => X509::stack_from_pem(&data)
-            .map_err(|e| ssl_err(format!("{CA}: «{path}» не содержит PEM-сертификатов"), e))?,
+        CertFormat::Pem => pem_or_der_certs(&data, path, CA)?,
         CertFormat::Jks if jks::is_jks(&data) => jks::trusted_certificates(&data, password)?,
         // Начиная с Java 9 keytool по умолчанию создаёт PKCS#12, даже если файл назван .jks.
         CertFormat::Pkcs12 | CertFormat::Jks => {
@@ -88,16 +106,11 @@ pub fn load_identity(
 ) -> AppResult<ClientIdentity> {
     let (key, chain) = match cert.format {
         CertFormat::Pem => {
-            let chain =
-                X509::stack_from_pem(&read_file(&cert.certificate_path, CLIENT)?).map_err(|e| {
-                    ssl_err(
-                        format!(
-                            "{CLIENT}: «{}» не содержит PEM-сертификатов",
-                            cert.certificate_path
-                        ),
-                        e,
-                    )
-                })?;
+            let chain = pem_or_der_certs(
+                &read_file(&cert.certificate_path, CLIENT)?,
+                &cert.certificate_path,
+                CLIENT,
+            )?;
             let key_path = cert
                 .key_path
                 .as_deref()
@@ -272,6 +285,44 @@ mod tests {
             key_path: key.map(fixture),
             alias: None,
         }
+    }
+
+    /// Сертификат из фикстуры, сохранённый в DER (типичный `.cer`).
+    fn der_copy(dir: &tempfile::TempDir, name: &str) -> String {
+        let pem = std::fs::read(fixture(name)).unwrap();
+        let der = X509::from_pem(&pem).unwrap().to_der().unwrap();
+        let path = dir.path().join(format!("{name}.cer"));
+        std::fs::write(&path, der).unwrap();
+        path.to_string_lossy().into_owned()
+    }
+
+    #[test]
+    fn der_certificates_are_accepted_in_pem_format() {
+        let dir = tempfile::tempdir().unwrap();
+        let ca = load_ca(CertFormat::Pem, &der_copy(&dir, "ca.pem"), None).unwrap();
+        assert!(ca.contains("BEGIN CERTIFICATE"));
+        let cert = ClientCert {
+            format: CertFormat::Pem,
+            certificate_path: der_copy(&dir, "client.pem"),
+            key_path: Some(fixture("client.key")),
+            alias: None,
+        };
+        let id = load_identity(&cert, None, None).unwrap();
+        assert!(id.certificate_pem.contains("BEGIN CERTIFICATE"));
+    }
+
+    #[test]
+    fn garbage_certificate_error_mentions_pem_and_der() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("x.cer");
+        std::fs::write(&path, b"not a certificate").unwrap();
+        let e = load_ca(CertFormat::Pem, &path.to_string_lossy(), None).unwrap_err();
+        assert_eq!(e.code, ErrorCode::InvalidInput);
+        assert!(
+            e.message.contains("PEM") && e.message.contains("DER"),
+            "{}",
+            e.message
+        );
     }
 
     /// Самоподписанный сертификат со сроком [now+from_days, now+to_days].

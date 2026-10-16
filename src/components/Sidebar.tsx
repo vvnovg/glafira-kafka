@@ -83,6 +83,9 @@ export function Sidebar() {
         <button type="button" className="link" onClick={() => open({ kind: "license" })}>
           Лицензия: {status ? (status.tier === "pro" ? "Pro" : "Free") : "…"}
         </button>
+        <button type="button" className="link" onClick={() => open({ kind: "about" })}>
+          О программе
+        </button>
       </div>
     </aside>
   );

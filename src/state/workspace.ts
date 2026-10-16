@@ -15,7 +15,8 @@ export type TabSpec =
   | { kind: "producer"; connectionId: string; prefill?: ProducerPrefill }
   | { kind: "consumer"; connectionId: string; key: string; topic?: string; groupId?: string }
   | { kind: "connection-form"; connectionId: string | null }
-  | { kind: "license" };
+  | { kind: "license" }
+  | { kind: "about" };
 
 export type Tab = TabSpec & { id: string };
 
@@ -31,6 +32,8 @@ export function tabId(spec: TabSpec): string {
       return `connection-form:${spec.connectionId ?? "new"}`;
     case "license":
       return "license";
+    case "about":
+      return "about";
     default:
       return `${spec.kind}:${spec.connectionId}`;
   }

@@ -14,6 +14,8 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
   switch (tab.kind) {
     case "license":
       return "Лицензия";
+    case "about":
+      return "О программе";
     case "connection-form":
       return tab.connectionId ? `Подключение: ${conn}` : "Новое подключение";
     case "cluster":

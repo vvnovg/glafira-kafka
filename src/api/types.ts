@@ -480,3 +480,13 @@ export interface PolicyStatus {
   hasLicenseKey: boolean;
   errors: string[];
 }
+
+export interface AppInfo {
+  name: string;
+  version: string;
+  commit: string;
+  os: string;
+  arch: string;
+  dataDir: string;
+  logDir: string;
+}

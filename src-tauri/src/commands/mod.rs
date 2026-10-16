@@ -1,3 +1,4 @@
+pub mod app;
 pub mod browse;
 pub mod cluster;
 pub mod connections;

@@ -1,6 +1,7 @@
 pub mod browse;
 pub mod commands;
 pub mod consume;
+pub mod diagnostics;
 pub mod error;
 pub mod guard;
 pub mod kafka;
@@ -105,6 +106,8 @@ pub fn run() {
             commands::consume::pause_partitions,
             commands::consume::resume_partitions,
             commands::consume::suggest_group_id,
+            commands::app::get_app_info,
+            commands::app::export_diagnostics,
             commands::license::get_policy_status,
             commands::license::get_license_status,
             commands::license::set_license_key,

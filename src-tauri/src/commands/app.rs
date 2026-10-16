@@ -139,12 +139,106 @@ fn updater(app: &AppHandle, url: Option<String>) -> AppResult<tauri_plugin_updat
         .map_err(|e| AppError::internal("Обновления недоступны").with_details(e.to_string()))
 }
 
-fn net_err(e: tauri_plugin_updater::Error) -> AppError {
+use tauri_plugin_updater::Error as UpdErr;
+
+/// Класс ошибки проверки обновлений.
+#[derive(Debug, PartialEq, Eq)]
+enum CheckErrorKind {
+    /// Сервер ответил не-2xx (плагин сводит это к `ReleaseNotFound`): версий ещё нет.
+    NoRelease,
+    Network,
+}
+
+fn classify_check_error(e: &UpdErr) -> CheckErrorKind {
+    match e {
+        UpdErr::ReleaseNotFound => CheckErrorKind::NoRelease,
+        _ => CheckErrorKind::Network,
+    }
+}
+
+fn net_err(e: UpdErr) -> AppError {
+    let details = e.to_string();
+    match classify_check_error(&e) {
+        CheckErrorKind::NoRelease => AppError::new(
+            ErrorCode::NotFound,
+            "На сервере обновлений пока нет опубликованных версий",
+        ),
+        CheckErrorKind::Network => AppError::new(
+            ErrorCode::ConnectionFailed,
+            "Не удалось проверить обновления",
+        ),
+    }
+    .with_details(details)
+}
+
+/// Класс ошибки скачивания/установки.
+#[derive(Debug, PartialEq, Eq)]
+enum DownloadErrorKind {
+    /// Сетевой сбой: скачивание можно повторить.
+    Transient,
+    /// Подпись не прошла проверку: повтор бессмыслен, ошибка сразу.
+    Signature,
+    Other,
+}
+
+fn classify_download_error(e: &UpdErr) -> DownloadErrorKind {
+    match e {
+        UpdErr::Reqwest(_) | UpdErr::Network(_) => DownloadErrorKind::Transient,
+        UpdErr::Minisign(_)
+        | UpdErr::Base64(_)
+        | UpdErr::SignatureUtf8(_)
+        | UpdErr::SignedVersionMismatch { .. }
+        | UpdErr::MissingSignedVersion => DownloadErrorKind::Signature,
+        _ => DownloadErrorKind::Other,
+    }
+}
+
+const DOWNLOAD_ATTEMPTS: u32 = 3;
+
+fn backoff(attempt: u32) -> std::time::Duration {
+    std::time::Duration::from_secs(u64::from(attempt))
+}
+
+fn download_failed(e: &UpdErr) -> AppError {
     AppError::new(
         ErrorCode::ConnectionFailed,
-        "Не удалось проверить обновления",
+        "Загрузка обновления прервалась — проверьте сеть и повторите",
     )
     .with_details(e.to_string())
+}
+
+fn signature_failed(e: &UpdErr) -> AppError {
+    AppError::internal("Подпись обновления не прошла проверку — обновление не установлено")
+        .with_details(e.to_string())
+}
+
+fn install_failed(e: &UpdErr) -> AppError {
+    AppError::internal("Не удалось установить обновление").with_details(e.to_string())
+}
+
+/// Скачивает пакет с повторами; повторяется только сетевая ошибка.
+async fn download_with_retry(update: &tauri_plugin_updater::Update) -> AppResult<Vec<u8>> {
+    let mut attempt = 1;
+    loop {
+        match update.download(|_, _| {}, || {}).await {
+            Ok(bytes) => return Ok(bytes),
+            Err(e) => match classify_download_error(&e) {
+                DownloadErrorKind::Signature => return Err(signature_failed(&e)),
+                DownloadErrorKind::Other => return Err(install_failed(&e)),
+                DownloadErrorKind::Transient if attempt >= DOWNLOAD_ATTEMPTS => {
+                    return Err(download_failed(&e));
+                }
+                DownloadErrorKind::Transient => {
+                    tracing::warn!(attempt, "загрузка обновления не удалась, повтор");
+                    let pause = backoff(attempt);
+                    tauri::async_runtime::spawn_blocking(move || std::thread::sleep(pause))
+                        .await
+                        .ok();
+                    attempt += 1;
+                }
+            },
+        }
+    }
 }
 
 #[tauri::command]
@@ -200,11 +294,17 @@ pub async fn install_update(
     // Пока шла проверка по сети, пользователь мог запустить сессию: спрашиваем снова.
     confirm_sessions(state.sessions.len(), force)?;
     tracing::info!(version = %update.version, "установка обновления");
-    update
-        .download_and_install(|_, _| {}, || {})
+    let bytes = download_with_retry(&update).await?;
+    // Установка синхронная (файлы, на Windows — запуск установщика): не блокируем рантайм.
+    let installer = update.clone();
+    tauri::async_runtime::spawn_blocking(move || installer.install(bytes))
         .await
         .map_err(|e| {
             AppError::internal("Не удалось установить обновление").with_details(e.to_string())
+        })?
+        .map_err(|e| match classify_download_error(&e) {
+            DownloadErrorKind::Signature => signature_failed(&e),
+            _ => install_failed(&e),
         })?;
     // RunEvent::Exit корректно завершает сессии перед перезапуском.
     app.restart();
@@ -281,6 +381,55 @@ mod tests {
         assert!(pubkey_configured(Some(
             "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWdu"
         )));
+    }
+
+    #[test]
+    fn check_error_classification() {
+        assert_eq!(
+            classify_check_error(&UpdErr::ReleaseNotFound),
+            CheckErrorKind::NoRelease
+        );
+        assert_eq!(
+            classify_check_error(&UpdErr::EmptyEndpoints),
+            CheckErrorKind::Network
+        );
+        let e = net_err(UpdErr::ReleaseNotFound);
+        assert_eq!(e.code, ErrorCode::NotFound);
+        assert!(e.message.contains("пока нет опубликованных версий"));
+        assert_eq!(
+            net_err(UpdErr::Network("x".into())).code,
+            ErrorCode::ConnectionFailed
+        );
+    }
+
+    #[test]
+    fn download_error_classification() {
+        assert_eq!(
+            classify_download_error(&UpdErr::Network("status 502".into())),
+            DownloadErrorKind::Transient
+        );
+        for e in [
+            UpdErr::SignatureUtf8("s".into()),
+            UpdErr::MissingSignedVersion,
+            UpdErr::SignedVersionMismatch {
+                signed: "1".into(),
+                announced: "2".into(),
+            },
+        ] {
+            assert_eq!(classify_download_error(&e), DownloadErrorKind::Signature);
+        }
+        assert_eq!(
+            classify_download_error(&UpdErr::InvalidUpdaterFormat),
+            DownloadErrorKind::Other
+        );
+        let e = signature_failed(&UpdErr::MissingSignedVersion);
+        assert_eq!(e.code, ErrorCode::Internal);
+        assert!(e.message.starts_with("Подпись обновления не прошла"));
+        let e = download_failed(&UpdErr::Network("x".into()));
+        assert_eq!(e.code, ErrorCode::ConnectionFailed);
+        assert!(e.message.starts_with("Загрузка обновления прервалась"));
+        assert_eq!(backoff(1).as_secs(), 1);
+        assert_eq!(backoff(2).as_secs(), 2);
     }
 
     #[test]

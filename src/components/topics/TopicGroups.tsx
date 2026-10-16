@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import { activateProps } from "../../lib/activate";
@@ -6,33 +7,34 @@ import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 
 export function TopicGroups({ connectionId, topic }: { connectionId: string; topic: string }) {
+  const { t } = useTranslation();
   const open = useWorkspace((s) => s.open);
   const q = useQuery({
     queryKey: ["topicGroups", connectionId, topic],
     queryFn: () => api.getTopicGroups(connectionId, topic),
   });
-  if (q.isPending) return <p className="empty">Поиск групп с коммитами в топик…</p>;
+  if (q.isPending) return <p className="empty">{t("topics.groups.loading")}</p>;
   if (q.error) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
   return (
     <div>
       <div className="toolbar">
         <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
-          Обновить
+          {t("topics.groups.refresh")}
         </button>
         {q.data.incomplete && (
-          <span className="warn">За время запроса проверены не все группы — список может быть неполным.</span>
+          <span className="warn">{t("topics.groups.incomplete")}</span>
         )}
       </div>
       {q.data.groups.length === 0 ? (
-        <p className="empty">Нет групп с коммитами в этот топик.</p>
+        <p className="empty">{t("topics.groups.empty")}</p>
       ) : (
         <table>
           <thead>
             <tr>
-              <th>Группа</th>
-              <th>Состояние</th>
-              <th>Партиций с коммитами</th>
-              <th>Лаг</th>
+              <th>{t("topics.groups.colGroup")}</th>
+              <th>{t("topics.groups.colState")}</th>
+              <th>{t("topics.groups.colPartitions")}</th>
+              <th>{t("topics.groups.colLag")}</th>
             </tr>
           </thead>
           <tbody>
@@ -41,7 +43,7 @@ export function TopicGroups({ connectionId, topic }: { connectionId: string; top
                 <td>{g.groupId}</td>
                 <td>{g.state}</td>
                 <td>{g.partitions}</td>
-                <td title={g.lag === null ? "Лаг неизвестен: не удалось получить конечные оффсеты партиций" : undefined}>
+                <td title={g.lag === null ? t("topics.groups.lagUnknown") : undefined}>
                   {formatCount(g.lag)}
                 </td>
               </tr>

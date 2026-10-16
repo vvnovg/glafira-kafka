@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ConnectionProfile, TopicDeleteResult } from "../../api/types";
@@ -14,6 +15,7 @@ interface Props {
 
 /** Удаление одного или нескольких топиков: один подтверждается именем, несколько — числом. */
 export function DeleteTopicsPanel({ connection, topics, onDone, onCancel }: Props) {
+  const { t } = useTranslation();
   const single = topics.length === 1;
   const del = useMutation({
     mutationFn: (c: Parameters<typeof api.deleteTopics>[2]) => api.deleteTopics(connection.id, topics, c),
@@ -36,22 +38,22 @@ export function DeleteTopicsPanel({ connection, topics, onDone, onCancel }: Prop
       {!del.data && (
         <ConfirmDialog
           connection={connection}
-          title={single ? `Удалить топик «${topics[0]}»?` : `Удалить ${topics.length} топиков?`}
+          title={single ? t("topics.delete.titleOne", { name: topics[0] }) : t("topics.delete.titleMany", { n: topics.length })}
           objectName={single ? topics[0] : String(topics.length)}
-          objectLabel={single ? "имя топика" : "число топиков"}
-          confirmLabel="Удалить"
+          objectLabel={single ? t("topics.delete.objectOne") : t("topics.delete.objectMany")}
+          confirmLabel={t("topics.delete.confirm")}
           danger
           busy={del.isPending}
           onConfirm={(c) => del.mutate(c)}
           onCancel={onCancel}
         >
           {!single && <p className="muted">{topics.join(", ")}</p>}
-          <p className="muted">Данные удаляются безвозвратно.</p>
+          <p className="muted">{t("topics.delete.irreversible")}</p>
         </ConfirmDialog>
       )}
       {del.data && (
         <button type="button" onClick={onCancel}>
-          Закрыть
+          {t("topics.delete.close")}
         </button>
       )}
     </div>

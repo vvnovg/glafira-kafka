@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
@@ -7,19 +8,20 @@ import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
 
 export function ClusterOverview({ connectionId }: { connectionId: string }) {
+  const { t } = useTranslation();
   const q = useQuery({ queryKey: ["cluster", connectionId], queryFn: () => api.getClusterOverview(connectionId) });
   const [brokerId, setBrokerId] = useState<number | null>(null);
 
-  if (q.isPending) return <p className="empty">Загрузка метаданных…</p>;
+  if (q.isPending) return <p className="empty">{t("cluster.overview.loading")}</p>;
   if (q.error) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
   const o = q.data;
 
   return (
     <div className="page">
       <div className="toolbar">
-        <h2>Обзор кластера</h2>
+        <h2>{t("cluster.overview.title")}</h2>
         <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
-          Обновить
+          {t("cluster.overview.refresh")}
         </button>
       </div>
       <dl className="stats">
@@ -30,21 +32,21 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
           </dd>
         </div>
         <div>
-          <dt>Контроллер</dt>
+          <dt>{t("cluster.overview.controller")}</dt>
           <dd>{o.controllerId ?? "—"}</dd>
         </div>
         <div>
-          <dt>Брокеры</dt>
+          <dt>{t("cluster.overview.brokers")}</dt>
           <dd>{o.brokers.length}</dd>
         </div>
         <div>
-          <dt>Топики (внутренние)</dt>
+          <dt>{t("cluster.overview.topicsInternal")}</dt>
           <dd>
             {formatCount(o.topicCount)} ({o.internalTopicCount})
           </dd>
         </div>
         <div>
-          <dt>Партиции</dt>
+          <dt>{t("cluster.overview.partitions")}</dt>
           <dd>{formatCount(o.partitionCount)}</dd>
         </div>
         <div>
@@ -57,12 +59,12 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
         </div>
       </dl>
 
-      <h3>Брокеры</h3>
+      <h3>{t("cluster.overview.brokers")}</h3>
       <table>
         <thead>
           <tr>
             <th>ID</th>
-            <th>Адрес</th>
+            <th>{t("cluster.overview.address")}</th>
             <th />
           </tr>
         </thead>
@@ -78,7 +80,7 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
               <td>
                 {b.host}:{b.port}
               </td>
-              <td>{b.id === o.controllerId && <span className="muted">контроллер</span>}</td>
+              <td>{b.id === o.controllerId && <span className="muted">{t("cluster.overview.controllerBadge")}</span>}</td>
             </tr>
           ))}
         </tbody>
@@ -90,14 +92,15 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
 }
 
 function BrokerConfig({ connectionId, brokerId }: { connectionId: string; brokerId: number }) {
+  const { t } = useTranslation();
   const q = useQuery({
     queryKey: ["brokerConfig", connectionId, brokerId],
     queryFn: () => api.getBrokerConfig(connectionId, brokerId),
   });
   return (
     <div>
-      <h3>Конфигурация брокера {brokerId}</h3>
-      {q.isPending && <p className="empty">Загрузка…</p>}
+      <h3>{t("cluster.overview.brokerConfig", { id: brokerId })}</h3>
+      {q.isPending && <p className="empty">{t("cluster.overview.brokerLoading")}</p>}
       {q.error ? <ErrorBanner error={q.error} onRetry={() => q.refetch()} /> : q.data && <ConfigTable entries={q.data} />}
     </div>
   );

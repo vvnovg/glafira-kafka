@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { api, toAppError } from "../../api/client";
@@ -21,12 +22,13 @@ import {
 
 const ROW_HEIGHT = 30;
 const REFRESH_OPTIONS = [
-  { label: "Автообновление: выкл.", value: 0 },
-  { label: "каждые 10 с", value: 10_000 },
-  { label: "каждые 30 с", value: 30_000 },
+  { labelKey: "topics.list.autoRefreshOff", value: 0 },
+  { labelKey: "topics.list.every10", value: 10_000 },
+  { labelKey: "topics.list.every30", value: 30_000 },
 ];
 
 export function TopicList({ connectionId }: { connectionId: string }) {
+  const { t: tt } = useTranslation();
   const [query, setQuery] = useState("");
   const [showInternal, setShowInternal] = useState(false);
   const [refreshMs, setRefreshMs] = useState(0);
@@ -120,21 +122,21 @@ export function TopicList({ connectionId }: { connectionId: string }) {
     for (const p of r.data ?? []) policies.set(p.name, p.cleanupPolicy);
   });
 
-  if (q.isPending) return <p className="empty">Загрузка списка топиков…</p>;
+  if (q.isPending) return <p className="empty">{tt("topics.list.loading")}</p>;
   if (q.error)
     return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
 
   return (
     <div className="page">
       <div className="toolbar">
-        <h2>Топики</h2>
+        <h2>{tt("topics.list.title")}</h2>
         <input
-          placeholder="Поиск (или /regex/)"
+          placeholder={tt("topics.list.search")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         {isInvalidRegexQuery(debouncedQuery) && (
-          <span className="warn">Некорректное регулярное выражение</span>
+          <span className="warn">{tt("topics.list.invalidRegex")}</span>
         )}
         <label>
           <input
@@ -142,7 +144,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
             checked={showInternal}
             onChange={(e) => setShowInternal(e.target.checked)}
           />{" "}
-          Внутренние
+          {tt("topics.list.internal")}
         </label>
         <select
           value={refreshMs}
@@ -150,7 +152,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
         >
           {REFRESH_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {tt(o.labelKey)}
             </option>
           ))}
         </select>
@@ -164,12 +166,12 @@ export function TopicList({ connectionId }: { connectionId: string }) {
             });
           }}
         >
-          Обновить
+          {tt("topics.list.refresh")}
         </button>
         {canMutate && (
           <>
             <button type="button" onClick={() => setCreating(true)} disabled={creating || deleting}>
-              Создать топик
+              {tt("topics.list.create")}
             </button>
             <button
               type="button"
@@ -180,18 +182,18 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 setSelected(new Set());
               }}
             >
-              {selecting ? "Отменить выбор" : "Выбрать"}
+              {selecting ? tt("topics.list.cancelSelect") : tt("topics.list.select")}
             </button>
             {selecting && (
               <button type="button" className="danger" disabled={selected.size === 0 || deleting || creating}
                 onClick={() => setDeleteTargets([...selected].filter((n) => !internalNames.has(n)).sort())}>
-                Удалить ({selected.size})
+                {tt("topics.list.deleteSelected", { count: selected.size })}
               </button>
             )}
           </>
         )}
         <span className="muted">
-          {rows.length} из {q.data.length}
+          {tt("topics.list.shownOf", { shown: rows.length, total: q.data.length })}
         </span>
       </div>
       {creating && connection && (
@@ -219,12 +221,12 @@ export function TopicList({ connectionId }: { connectionId: string }) {
       <div className="vlist" ref={parentRef}>
         <div className="row header topic-row" style={{ height: ROW_HEIGHT }}>
           <span />
-          <span>Имя</span>
-          <span>Партиции</span>
+          <span>{tt("topics.list.colName")}</span>
+          <span>{tt("topics.list.colPartitions")}</span>
           <span>RF</span>
-          <span>Сообщений (≈)</span>
+          <span>{tt("topics.list.colMessages")}</span>
           <span>cleanup.policy</span>
-          <span>Under-repl.</span>
+          <span>{tt("topics.list.colUnderRepl")}</span>
         </div>
         <div
           style={{ height: virtualizer.getTotalSize(), position: "relative" }}
@@ -244,7 +246,7 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                   {selecting && !t.internal && (
                     <input
                       type="checkbox"
-                      aria-label={`Выбрать ${t.name}`}
+                      aria-label={tt("topics.list.selectAria", { name: t.name })}
                       checked={selected.has(t.name)}
                       disabled={deleting}
                       onClick={(e) => e.stopPropagation()}
@@ -255,12 +257,12 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 </span>
                 <span title={t.name}>
                   {t.name}
-                  {t.internal && <span className="muted"> (внутр.)</span>}
+                  {t.internal && <span className="muted"> {tt("topics.list.internalBadge")}</span>}
                 </span>
                 <span>{t.partitionCount}</span>
                 <span>{t.replicationFactor}</span>
                 <span>{formatCount(counts.get(t.name))}</span>
-                <span title={policies.has(t.name) && policies.get(t.name) == null ? `Не удалось загрузить cleanup.policy: ${policyErrors.get(t.name) ?? "причина неизвестна"}` : undefined}>
+                <span title={policies.has(t.name) && policies.get(t.name) == null ? tt("topics.list.policyError", { reason: policyErrors.get(t.name) ?? tt("topics.list.unknownReason") }) : undefined}>
                   {policies.has(t.name) ? (policies.get(t.name) ?? "—") : "…"}
                 </span>
                 <span className={t.underReplicated > 0 ? "warn" : ""}>

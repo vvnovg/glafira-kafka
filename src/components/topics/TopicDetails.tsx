@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
@@ -16,14 +17,15 @@ import { TopicActions } from "./TopicActions";
 import { TopicGroups } from "./TopicGroups";
 
 type SubTab = "messages" | "partitions" | "configs" | "groups";
-const SUBTABS: { id: SubTab; label: string }[] = [
-  { id: "messages", label: "Сообщения" },
-  { id: "partitions", label: "Партиции" },
-  { id: "configs", label: "Конфигурация" },
-  { id: "groups", label: "Consumer groups" },
+const SUBTABS: { id: SubTab; labelKey: string }[] = [
+  { id: "messages", labelKey: "topics.details.tabMessages" },
+  { id: "partitions", labelKey: "topics.details.tabPartitions" },
+  { id: "configs", labelKey: "topics.details.tabConfigs" },
+  { id: "groups", labelKey: "topics.details.tabGroups" },
 ];
 
 export function TopicDetails({ connectionId, topic }: { connectionId: string; topic: string }) {
+  const { t: tt } = useTranslation();
   const [sub, setSub] = useState<SubTab>("messages");
   const q = useQuery({ queryKey: ["topic", connectionId, topic], queryFn: () => api.getTopic(connectionId, topic) });
 
@@ -35,7 +37,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
   const closeTab = useWorkspace((s) => s.close);
   const open = useWorkspace((s) => s.open);
 
-  if (q.isPending) return <p className="empty">Загрузка…</p>;
+  if (q.isPending) return <p className="empty">{tt("topics.details.loading")}</p>;
   if (q.error && !q.data) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
   const t = q.data;
 
@@ -45,15 +47,15 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
       <div className="toolbar">
         <h2>{t.name}</h2>
         <span className="muted">
-          партиций: {t.partitions.length} · RF: {t.replicationFactor} · сообщений ≈ {formatCount(t.messageCount)}
+          {tt("topics.details.summary", { partitions: t.partitions.length, rf: t.replicationFactor, messages: formatCount(t.messageCount) })}
         </span>
         <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
-          Обновить
+          {tt("topics.details.refresh")}
         </button>
         <button
           type="button"
           disabled={readOnly}
-          title={readOnly ? "Подключение только для чтения: отправка сообщений недоступна" : undefined}
+          title={readOnly ? tt("topics.details.produceReadOnly") : undefined}
           onClick={() =>
             open({
               kind: "producer",
@@ -65,15 +67,15 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
             })
           }
         >
-          Отправить сообщение
+          {tt("topics.details.produce")}
         </button>
         <button
           type="button"
           disabled={readOnly || locked}
-          title={readOnly ? "Подключение только для чтения: вход в группу меняет её состояние" : locked ? proHint() : undefined}
+          title={readOnly ? tt("topics.details.consumeReadOnly") : locked ? proHint() : undefined}
           onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}
         >
-          Читать как группа
+          {tt("topics.details.consume")}
           {locked && (
             <>
               {" "}
@@ -95,7 +97,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
       <div className="subtabs">
         {SUBTABS.map((s) => (
           <button key={s.id} type="button" className={sub === s.id ? "active" : ""} aria-pressed={sub === s.id} onClick={() => setSub(s.id)}>
-            {s.label}
+            {tt(s.labelKey)}
           </button>
         ))}
       </div>
@@ -111,24 +113,25 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
 }
 
 function PartitionsTable({ topic }: { topic: TopicDetailsDto }) {
+  const { t } = useTranslation();
   return (
     <table>
       <thead>
         <tr>
-          <th>Партиция</th>
-          <th>Лидер</th>
-          <th>Реплики</th>
+          <th>{t("topics.details.colPartition")}</th>
+          <th>{t("topics.details.colLeader")}</th>
+          <th>{t("topics.details.colReplicas")}</th>
           <th>ISR</th>
           <th>Low</th>
           <th>High</th>
-          <th>Сообщений</th>
+          <th>{t("topics.details.colMessages")}</th>
         </tr>
       </thead>
       <tbody>
         {topic.partitions.map((p) => (
           <tr key={p.id}>
             <td>{p.id}</td>
-            <td className={p.leader < 0 ? "warn" : ""}>{p.leader < 0 ? "нет" : p.leader}</td>
+            <td className={p.leader < 0 ? "warn" : ""}>{p.leader < 0 ? t("topics.details.noLeader") : p.leader}</td>
             <td>{p.replicas.join(", ")}</td>
             <td className={p.underReplicated ? "warn" : ""}>{p.isr.join(", ")}</td>
             <td>{p.low ?? "—"}</td>
@@ -144,6 +147,7 @@ function PartitionsTable({ topic }: { topic: TopicDetailsDto }) {
 }
 
 function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: string }) {
+  const { t } = useTranslation();
   const connection = useConnection(connectionId);
   const [editing, setEditing] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -151,7 +155,7 @@ function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: st
     queryKey: ["topicConfigs", connectionId, topic],
     queryFn: () => api.getTopicConfigs(connectionId, topic),
   });
-  if (q.isPending) return <p className="empty">Загрузка…</p>;
+  if (q.isPending) return <p className="empty">{t("topics.details.loading")}</p>;
   if (q.error) return <ErrorBanner error={q.error} onRetry={() => q.refetch()} />;
   const canEdit = connection !== undefined && !connection.readOnly;
   return (
@@ -162,9 +166,9 @@ function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: st
             type="button"
             aria-pressed={editing}
             disabled={editing && dirty}
-            title={editing && dirty ? "Есть несохранённые изменения: примените или отмените правки" : undefined}
+            title={editing && dirty ? t("topics.details.dirtyTitle") : undefined}
             onClick={() => setEditing((v) => !v)}>
-            {editing ? "Закрыть редактор" : "Редактировать"}
+            {editing ? t("topics.details.closeEditor") : t("topics.details.edit")}
           </button>
         </div>
       )}

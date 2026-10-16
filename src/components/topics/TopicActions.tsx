@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { ConnectionProfile, TopicDetails } from "../../api/types";
+import { i18n } from "../../i18n";
 import { tr } from "../../i18n/text";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -31,10 +33,11 @@ export function purgeBlockReason(cleanup: string | null): string | null {
   if (cleanup === null || cleanup.trim() === "") return null;
   const parts = cleanup.split(",").map((x) => x.trim());
   if (parts.includes("delete")) return null;
-  return `Очистка невозможна: у топика cleanup.policy=${cleanup} (нужно compact,delete или delete)`;
+  return i18n.t("topics.actions.purgeBlocked", { policy: cleanup });
 }
 
 export function TopicActions({ connection, topic, onDeleted }: Props) {
+  const { t } = useTranslation();
   const [action, setAction] = useState<Action>(null);
   const policy = useQuery({
     queryKey: ["topicPolicies", connection.id, [topic.name]],
@@ -46,7 +49,7 @@ export function TopicActions({ connection, topic, onDeleted }: Props) {
     <>
       <div className="toolbar">
         <button type="button" onClick={() => setAction("partitions")}>
-          Добавить партиции
+          {t("topics.actions.addPartitions")}
         </button>
         <button
           type="button"
@@ -55,10 +58,10 @@ export function TopicActions({ connection, topic, onDeleted }: Props) {
           title={purgeBlock ?? undefined}
           onClick={() => setAction("purge")}
         >
-          Очистить
+          {t("topics.actions.purge")}
         </button>
         <button type="button" className="danger" onClick={() => setAction("delete")}>
-          Удалить топик
+          {t("topics.actions.deleteTopic")}
         </button>
       </div>
       {purgeBlock && <p className="warn">{purgeBlock}</p>}
@@ -79,6 +82,7 @@ export function TopicActions({ connection, topic, onDeleted }: Props) {
 }
 
 function AddPartitions({ connection, topic, onClose }: { connection: ConnectionProfile; topic: TopicDetails; onClose: () => void }) {
+  const { t } = useTranslation();
   const invalidate = useInvalidateTopic(connection.id, topic.name);
   const current = topic.partitions.length;
   const [value, setValue] = useState(String(current + 1));
@@ -96,9 +100,9 @@ function AddPartitions({ connection, topic, onClose }: { connection: ConnectionP
   return (
     <div className="panel">
       <label>
-        Новое число партиций (сейчас {current})
+        {t("topics.actions.newTotal", { current })}
         <input
-          aria-label="Новое число партиций"
+          aria-label={t("topics.actions.newTotalAria")}
           type="number"
           min={current + 1}
           value={value}
@@ -107,15 +111,14 @@ function AddPartitions({ connection, topic, onClose }: { connection: ConnectionP
         />
       </label>
       <p className="muted">
-        Уменьшить число партиций нельзя. Сообщения с одним ключом после увеличения могут попадать в другую партицию — порядок
-        по ключу нарушится.
+        {t("topics.actions.addHint")}
       </p>
       {run.error && <ErrorBanner error={run.error} />}
       {confirming !== null ? (
         <ConfirmDialog
           connection={connection}
-          title={`Увеличить число партиций «${topic.name}» до ${confirming}?`}
-          confirmLabel="Подтвердить"
+          title={t("topics.actions.addTitle", { name: topic.name, total: confirming })}
+          confirmLabel={t("topics.actions.addConfirm")}
           busy={run.isPending}
           onConfirm={(c) => run.mutate({ total: confirming, confirm: c.confirm })}
           onCancel={() => setConfirming(null)}
@@ -128,10 +131,10 @@ function AddPartitions({ connection, topic, onClose }: { connection: ConnectionP
             disabled={!valid || run.isPending}
             onClick={() => (needsConfirmation(connection) ? setConfirming(n) : run.mutate({ total: n, confirm: null }))}
           >
-            Увеличить
+            {t("topics.actions.addSubmit")}
           </button>
           <button type="button" onClick={onClose}>
-            Отмена
+            {t("topics.actions.cancel")}
           </button>
         </div>
       )}
@@ -152,6 +155,7 @@ function Purge({
   policyError: unknown;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const invalidate = useInvalidateTopic(connection.id, topic.name);
   // Список партиций фиксируется при открытии: обновление топика не меняет цель под подтверждением.
   const [ids] = useState(() => topic.partitions.map((p) => p.id));
@@ -177,13 +181,13 @@ function Purge({
           {run.data.map((p) => (
             <li key={p.partition} className={p.error ? "warn" : ""}>
               {p.error
-                ? `Партиция ${p.partition}: ${tr(p.error)}`
-                : `Партиция ${p.partition}: новый low watermark ${p.lowWatermark ?? "—"}`}
+                ? t("topics.actions.partitionError", { id: p.partition, error: tr(p.error) })
+                : t("topics.actions.partitionOk", { id: p.partition, low: p.lowWatermark ?? "—" })}
             </li>
           ))}
         </ul>
         <button type="button" onClick={onClose}>
-          Закрыть
+          {t("topics.actions.close")}
         </button>
       </div>
     );
@@ -194,17 +198,17 @@ function Purge({
   return (
     <div className="panel">
       {compact && (
-        <p className="warn">cleanup.policy = {cleanup}: purge удалит и последние значения ключей (compact).</p>
+        <p className="warn">{t("topics.actions.compactWarn", { policy: cleanup })}</p>
       )}
       {policyError != null && (
         <p className="warn" title={tr(toAppError(policyError))}>
-          Не удалось определить cleanup.policy — для compact-топика purge удалит и последние значения ключей.
+          {t("topics.actions.policyUnknown")}
         </p>
       )}
       <div className="toolbar">
         {ids.map((id) => (
           <label key={id}>
-            <input type="checkbox" aria-label={`Партиция ${id}`} checked={selected.has(id)} disabled={run.isPending} onChange={() => toggle(id)} /> {id}
+            <input type="checkbox" aria-label={t("topics.actions.partitionAria", { id })} checked={selected.has(id)} disabled={run.isPending} onChange={() => toggle(id)} /> {id}
           </label>
         ))}
       </div>
@@ -214,18 +218,18 @@ function Purge({
         connection={connection}
         title={
           allSelected
-            ? `Очистить все партиции топика «${topic.name}»?`
-            : `Очистить партиции [${sortedSel.join(", ")}] топика «${topic.name}»?`
+            ? t("topics.actions.purgeAllTitle", { name: topic.name })
+            : t("topics.actions.purgeSomeTitle", { ids: sortedSel.join(", "), name: topic.name })
         }
         objectName={topic.name}
-        objectLabel="имя топика"
-        confirmLabel="Очистить партиции"
+        objectLabel={t("topics.actions.purgeObject")}
+        confirmLabel={t("topics.actions.purgeConfirm")}
         danger
         busy={run.isPending || selected.size === 0}
         onConfirm={(c) => run.mutate({ parts: sortedSel, c })}
         onCancel={onClose}
       >
-        <p className="muted">Сообщения до текущего конца выбранных партиций будут удалены безвозвратно.</p>
+        <p className="muted">{t("topics.actions.purgeIrreversible")}</p>
       </ConfirmDialog>
     </div>
   );

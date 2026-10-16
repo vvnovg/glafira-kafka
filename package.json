@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
-    "test:scripts": "node --test \"scripts/*.test.mjs\""
+    "test:scripts": "node --test \"scripts/*.test.mjs\"",
+    "i18n:check": "node scripts/i18n-check.mjs --no-cyrillic-scan"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.2",
@@ -17,8 +18,10 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.8.2",
     "@tauri-apps/plugin-opener": "^2",
+    "i18next": "^25.10.10",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-i18next": "^15.7.4",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

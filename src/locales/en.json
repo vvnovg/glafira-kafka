@@ -1,0 +1,13 @@
+{
+  "common": {
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "loading": "Loading…",
+    "details": "Details",
+    "openLicense": "Open “License”",
+    "proHint": "Available in Pro — activate a license on the “License” screen"
+  }
+}

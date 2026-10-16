@@ -17,7 +17,7 @@ pub fn build_client_config(
 ) -> AppResult<ClientConfig> {
     let mut c = ClientConfig::new();
     c.set("bootstrap.servers", p.bootstrap_servers.trim())
-        .set("client.id", "kafka-explorer")
+        .set("client.id", crate::product::KAFKA_CLIENT_PREFIX)
         .set("socket.connection.setup.timeout.ms", "10000")
         .set("security.protocol", protocol_name(&p.security));
     match &p.security {

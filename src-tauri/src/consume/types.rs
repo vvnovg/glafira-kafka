@@ -93,7 +93,7 @@ pub fn default_group_id(user: Option<&str>, suffix: &str) -> String {
     } else {
         clean.as_str()
     };
-    format!("kafka-explorer-{user}-{suffix}")
+    format!("{}-{user}-{suffix}", crate::product::KAFKA_CLIENT_PREFIX)
 }
 
 pub fn current_user() -> Option<String> {
@@ -215,15 +215,15 @@ mod tests {
     fn generated_group_id() {
         assert_eq!(
             default_group_id(Some("Анна Petrova"), "a1b2c3"),
-            "kafka-explorer-Petrova-a1b2c3"
+            "glafira-kafka-Petrova-a1b2c3"
         );
         assert_eq!(
             default_group_id(None, "a1b2c3"),
-            "kafka-explorer-user-a1b2c3"
+            "glafira-kafka-user-a1b2c3"
         );
         assert_eq!(
             default_group_id(Some("qa.bot"), "ffffff"),
-            "kafka-explorer-qabot-ffffff"
+            "glafira-kafka-qabot-ffffff"
         );
     }
 

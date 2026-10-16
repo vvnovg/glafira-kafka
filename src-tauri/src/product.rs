@@ -6,6 +6,8 @@ pub const IDENTIFIER: &str = "io.github.vvnovg.glafira.kafka";
 pub const KEYCHAIN_SERVICE: &str = "glafira-kafka";
 pub const POLICY_VENDOR: &str = "Glafira";
 pub const POLICY_PRODUCT: &str = "Kafka";
+/// Префикс имён, видимых в Kafka: client.id и consumer group (ACL, мониторинг).
+pub const KAFKA_CLIENT_PREFIX: &str = "glafira-kafka";
 /// Прежние (идентификатор, сервис keychain), от новых к старым. Данные и секреты отсюда
 /// переносятся при первом запуске (см. `migrate`).
 pub const LEGACY: &[(&str, &str)] = &[("dev.kafkaexplorer.app", "kafka-explorer")];

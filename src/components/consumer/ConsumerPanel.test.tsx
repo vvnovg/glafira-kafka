@@ -18,7 +18,7 @@ vi.mock("../../api/client", async (importOriginal) => {
     ...orig,
     api: {
       listConnections: vi.fn(),
-      suggestGroupId: vi.fn().mockResolvedValue("kafka-explorer-qa-abc123"),
+      suggestGroupId: vi.fn().mockResolvedValue("glafira-kafka-qa-abc123"),
       startConsumer: vi.fn(async (_p: unknown, cb: (e: ConsumeEvent) => void) => {
         emit = cb;
         return "sid";
@@ -45,7 +45,7 @@ beforeEach(() => {
 async function startDev() {
   const user = userEvent.setup();
   renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
-  await screen.findByDisplayValue("kafka-explorer-qa-abc123");
+  await screen.findByDisplayValue("glafira-kafka-qa-abc123");
   await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
   return user;
 }
@@ -54,10 +54,10 @@ describe("ConsumerPanel", () => {
   it("запуск, назначение, пауза и коммит всего прочитанного", async () => {
     const user = userEvent.setup();
     renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
-    expect(await screen.findByDisplayValue("kafka-explorer-qa-abc123")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("glafira-kafka-qa-abc123")).toBeInTheDocument();
     expect(screen.getByText(/влияет на кластер/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
-    expect(vi.mocked(api.startConsumer).mock.calls[0][0]).toMatchObject({ groupId: "kafka-explorer-qa-abc123", topics: ["orders"] });
+    expect(vi.mocked(api.startConsumer).mock.calls[0][0]).toMatchObject({ groupId: "glafira-kafka-qa-abc123", topics: ["orders"] });
     act(() => emit({ type: "rebalance", record: { kind: "assigned", partitions: [{ topic: "orders", partition: 0 }], at: 0 } }));
     await user.click(screen.getByRole("button", { name: "Пауза orders:0" }));
     expect(api.pausePartitions).toHaveBeenCalledWith("sid", [{ topic: "orders", partition: 0 }]);
@@ -77,7 +77,7 @@ describe("ConsumerPanel", () => {
   it("подключение стало read-only во время сессии: сессия останавливается", async () => {
     const user = userEvent.setup();
     const { client } = renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
-    await screen.findByDisplayValue("kafka-explorer-qa-abc123");
+    await screen.findByDisplayValue("glafira-kafka-qa-abc123");
     // Сбой stopSession не оставляет UI в «running»: сессию остановит и бэкенд (cancel_for при сохранении).
     vi.mocked(api.stopSession).mockRejectedValueOnce(new Error("сбой"));
     await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
@@ -98,7 +98,7 @@ describe("ConsumerPanel", () => {
         }),
     );
     const { client } = renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
-    await screen.findByDisplayValue("kafka-explorer-qa-abc123");
+    await screen.findByDisplayValue("glafira-kafka-qa-abc123");
     await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
     act(() => client.setQueryData(["connections"], conns.map((c) => (c.id === "dev" ? { ...c, readOnly: true } : c))));
     await screen.findByText(/недоступны для подключения только для чтения/);
@@ -109,7 +109,7 @@ describe("ConsumerPanel", () => {
 
   it("у всех полей формы есть видимые подписи", async () => {
     renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
-    await screen.findByDisplayValue("kafka-explorer-qa-abc123");
+    await screen.findByDisplayValue("glafira-kafka-qa-abc123");
     for (const label of ["group.id", "Топики", "auto.offset.reset", "isolation.level", "Формат ключа", "Формат значения", "Буфер, сообщений"]) {
       expect(screen.getByText(label)).toBeVisible();
       expect(screen.getByLabelText(label)).toBeInTheDocument();
@@ -185,7 +185,7 @@ describe("ConsumerPanel", () => {
   it("prod: проверка формы до подтверждения, подтверждение запуска и коммита", async () => {
     const user = userEvent.setup();
     renderWithClient(<ConsumerPanel connectionId="prod" />);
-    await screen.findByDisplayValue("kafka-explorer-qa-abc123");
+    await screen.findByDisplayValue("glafira-kafka-qa-abc123");
     await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
     expect(screen.getByText("Укажите топики")).toBeInTheDocument();
     expect(screen.queryByLabelText("Имя подключения")).not.toBeInTheDocument();

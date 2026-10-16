@@ -32,7 +32,10 @@ impl KafkaHandles {
             .map_err(|e| from_kafka(&e, None))?;
         let mut consumer_cfg = base.clone();
         consumer_cfg
-            .set("group.id", "kafka-explorer-metadata")
+            .set(
+                "group.id",
+                format!("{}-metadata", crate::product::KAFKA_CLIENT_PREFIX),
+            )
             .set("enable.auto.commit", "false")
             .set("enable.auto.offset.store", "false");
         let consumer: BaseConsumer<CapturingContext> = consumer_cfg

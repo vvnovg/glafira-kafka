@@ -114,7 +114,10 @@ fn create(
 ) -> AppResult<BaseConsumer<CapturingContext>> {
     let mut cfg = build_client_config(p, secrets)?;
     cfg.set("group.id", params.group_id.trim())
-        .set("client.id", "kafka-explorer-session")
+        .set(
+            "client.id",
+            format!("{}-session", crate::product::KAFKA_CLIENT_PREFIX),
+        )
         .set(
             "socket.timeout.ms",
             socket_timeout_ms(p.request_timeout_ms).to_string(),

@@ -75,10 +75,12 @@ plutil -p "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"
 Телеметрии и отчётов о сбоях нет.
 
 ## Права доступа в Kafka (ACL)
-Сессии чтения создают consumer group с именем `kafka-explorer-<пользователь>-<суффикс>` (по умолчанию; имя
-пользователя — латиница, цифры, `_`, `-`). Служебные запросы метаданных используют группу `kafka-explorer-metadata`.
-Чтобы выдать права заранее, разрешите префикс `kafka-explorer-` для ресурса Group (операции Read, Describe)
+Сессии чтения создают consumer group с именем `glafira-kafka-<пользователь>-<суффикс>` (по умолчанию; имя
+пользователя — латиница, цифры, `_`, `-`). Служебные запросы метаданных используют группу `glafira-kafka-metadata`.
+Чтобы выдать права заранее, разрешите префикс `glafira-kafka-` для ресурса Group (операции Read, Describe)
 и нужные Read/Describe на топики. Для режима «только чтение» права на запись не нужны.
+Просмотр сообщений использует временные группы `glafira-kafka-browse-<uuid>` без коммитов оффсетов.
+`client.id` клиентов — `glafira-kafka` (consumer-сессии — `glafira-kafka-session`): по нему соединения видны в квотах и метриках брокера.
 
 ## Данные и логи
 | | macOS | Windows | Linux |

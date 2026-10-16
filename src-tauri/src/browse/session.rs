@@ -204,7 +204,11 @@ fn create_consumer(
     // партиции назначаются через assign, поэтому группа на брокере не появляется.
     cfg.set(
         "group.id",
-        format!("kafka-explorer-browse-{}", uuid::Uuid::new_v4()),
+        format!(
+            "{}-browse-{}",
+            crate::product::KAFKA_CLIENT_PREFIX,
+            uuid::Uuid::new_v4()
+        ),
     )
     .set("enable.auto.commit", "false")
     .set("enable.auto.offset.store", "false")

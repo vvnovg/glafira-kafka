@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn suggested_group_id_shape() {
         let id = suggest_group_id();
-        assert!(id.starts_with("kafka-explorer-"), "{id}");
+        assert!(id.starts_with("glafira-kafka-"), "{id}");
         assert_eq!(id.rsplit('-').next().unwrap().len(), 6);
     }
 

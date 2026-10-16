@@ -431,7 +431,14 @@ mod tests {
         let mut b = sample_profile("b");
         b.security = SecurityConfig::SaslSsl {
             tls: TlsConfig {
-                ca_location: Some("/ca.pem".into()),
+                ca_location: Some(
+                    if cfg!(windows) {
+                        "C:\\ca.pem"
+                    } else {
+                        "/ca.pem"
+                    }
+                    .into(),
+                ),
                 ca_format: CertFormat::Pem,
                 verify_hostname: false,
                 client_cert: None,

@@ -320,6 +320,28 @@ mod tests {
     use super::*;
     use crate::error::ErrorCode;
 
+    /// Every codec offered in the Producer must be compiled into librdkafka on
+    /// this platform (on Windows snappy needs `.cargo/config.toml` →
+    /// `cmake/rdkafka-windows.cmake`, see that file).
+    #[test]
+    fn librdkafka_is_built_with_every_compression_codec() {
+        let features = ClientConfig::new()
+            .create_native_config()
+            .unwrap()
+            .get("builtin.features")
+            .unwrap();
+        let features: Vec<&str> = features.split(',').collect();
+        for c in [
+            Compression::Gzip,
+            Compression::Snappy,
+            Compression::Lz4,
+            Compression::Zstd,
+        ] {
+            let name = c.as_str();
+            assert!(features.contains(&name), "{name} missing in {features:?}");
+        }
+    }
+
     #[test]
     fn settings_json_and_config() {
         let s: ProducerSettings = serde_json::from_value(

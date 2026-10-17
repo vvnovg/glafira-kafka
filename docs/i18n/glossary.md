@@ -17,7 +17,7 @@
 
 ## Не переводится
 Kafka, Glafira, Pro, Free, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
-DNS, TCP, ID; имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`);
+DNS, TCP, ID, Build (сборка в «О программе»), Leader (лидер партиции); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`);
 команды, пути, адреса (`docker compose -f dev/docker-compose.yml up -d`, `keytool …`, `localhost:9092`);
 название экрана «Producer» (как в ru).
 

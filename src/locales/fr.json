@@ -832,7 +832,7 @@
     }
   },
   "consumer": {
-    "warn": "La session rejoint le groupe et agit sur le cluster : les autres membres du groupe subiront un rééquilibrage, et les commits modifient les offsets du groupe.",
+    "warn": "La session rejoint le groupe et agit sur le cluster : les autres membres du groupe subiront un rééquilibrage et les commits modifieront les offsets du groupe.",
     "proOnly": "Les sessions consumer sont disponibles dans Pro.",
     "readOnlyBlocked": "Les sessions consumer sont indisponibles pour les connexions en lecture seule : rejoindre un groupe modifie son état.",
     "disconnect": "Se déconnecter",

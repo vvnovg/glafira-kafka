@@ -1,109 +1,109 @@
-# Troubleshooting
+# Résolution des problèmes
 
-This chapter explains common connection errors and what to check for each of them. It also shows where the logs are and what to include in a support request. On macOS, the Help menu opens this chapter with [[ui:menu.troubleshooting]].
+Ce chapitre explique les erreurs de connexion courantes et ce qu’il faut vérifier pour chacune d’elles. Il indique aussi où se trouvent les journaux et que joindre à une demande d’assistance. Sur macOS, le menu « Aide » ouvre ce chapitre via [[ui:menu.troubleshooting]].
 
-An error message has a short text and, on most screens, the error code in brackets, for example `TIMEOUT`. Expand [[ui:common.details]] to see the original message from the Kafka client (librdkafka). It often names the exact broker address and cause.
+Un message d’erreur comporte un texte court et, sur la plupart des écrans, le code de l’erreur entre parenthèses, par exemple `TIMEOUT`. Dépliez [[ui:common.details]] pour voir le message d’origine du client Kafka (librdkafka). Il indique souvent l’adresse exacte du broker et la cause.
 
-## Cannot connect {#cannot-connect}
+## Connexion impossible {#cannot-connect}
 
-Start with [[ui:connections.form.test]] in the connection form, see [Test the connection](connections.md#test). The test stops at the first failed step, and the step shows where to look:
+Commencez par [[ui:connections.form.test]] dans le formulaire de connexion, voir [Tester la connexion](connections.md#test). Le test s’arrête à la première étape en échec, et cette étape indique où chercher :
 
-- [[ui:connections.form.step.config]] — the problem is in the form itself: an address without a port, a missing or unreadable certificate file, a wrong certificate password. The error names the field. For certificate files, see [TLS errors](troubleshooting.md#tls-errors).
-- [[ui:connections.form.step.tcp]] — the computer cannot reach the bootstrap servers. See [DNS and TCP](troubleshooting.md#dns-tcp).
-- [[ui:connections.form.step.kafka]] — the network works, but the TLS handshake, the SASL login or the metadata request failed. See [TLS errors](troubleshooting.md#tls-errors), [SASL errors](troubleshooting.md#sasl-errors) and [Timeouts](troubleshooting.md#timeouts).
+- [[ui:connections.form.step.config]] — le problème vient du formulaire lui-même : une adresse sans port, un fichier de certificat manquant ou illisible, un mot de passe de certificat erroné. L’erreur nomme le champ. Pour les fichiers de certificats, voir [Erreurs TLS](troubleshooting.md#tls-errors).
+- [[ui:connections.form.step.tcp]] — l’ordinateur ne parvient pas à joindre les serveurs bootstrap. Voir [DNS et TCP](troubleshooting.md#dns-tcp).
+- [[ui:connections.form.step.kafka]] — le réseau fonctionne, mais la négociation TLS, l’authentification SASL ou la requête de métadonnées a échoué. Voir [Erreurs TLS](troubleshooting.md#tls-errors), [Erreurs SASL](troubleshooting.md#sasl-errors) et [Délais dépassés](troubleshooting.md#timeouts).
 
-The most common cause is a protocol that does not match the port. Each broker listener has its own port and protocol. Ask your Kafka administrators which port belongs to which protocol, see [Security protocols](connections.md#security).
+La cause la plus fréquente est un protocole qui ne correspond pas au port. Chaque listener du broker a son propre port et son propre protocole. Demandez à vos administrateurs Kafka quel port correspond à quel protocole, voir [Protocoles de sécurité](connections.md#security).
 
-If the test passes but reading or sending fails, the cause is often the broker addresses. The client gets the list of brokers from the bootstrap server and then connects to each broker at the address the broker advertises (`advertised.listeners`). If these addresses are internal, for example Docker or Kubernetes host names, they cannot be reached from your computer. The addresses are listed in the broker table of the cluster overview, see [Cluster overview](topics.md#cluster-overview). Ask your administrators for a listener that is reachable from outside.
+Si le test réussit mais que la lecture ou l’envoi échoue, la cause tient souvent aux adresses des brokers. Le client obtient la liste des brokers auprès du serveur bootstrap, puis se connecte à chaque broker à l’adresse que celui-ci annonce (`advertised.listeners`). Si ces adresses sont internes, par exemple des noms d’hôte Docker ou Kubernetes, elles ne sont pas joignables depuis votre ordinateur. Les adresses sont listées dans le tableau des brokers de l’aperçu du cluster, voir [Aperçu du cluster](topics.md#cluster-overview). Demandez à vos administrateurs un listener joignable depuis l’extérieur.
 
-## DNS and TCP {#dns-tcp}
+## DNS et TCP {#dns-tcp}
 
-[[ui:errors.kafka.tcpUnreachable]] means that the app could not open a TCP connection to any address in [[ui:connections.form.bootstrap]]. Each address gets up to 5 seconds. The details show the last address tried and the reason. `DNS` in the details means the host name could not be resolved.
+[[ui:errors.kafka.tcpUnreachable]] signifie que l’app n’a pu ouvrir de connexion TCP vers aucune adresse de [[ui:connections.form.bootstrap]]. Chaque adresse dispose de 5 secondes au maximum. Les détails indiquent la dernière adresse essayée et la raison. `DNS` dans les détails signifie que le nom d’hôte n’a pas pu être résolu.
 
-Check:
+Vérifiez :
 
-- the host name and port, without a protocol prefix such as `https://`;
-- that a VPN is on, if the cluster is in a private network;
-- that a firewall does not block the port;
-- for a broker in Docker, that the port is published to the host, for example `-p 9092:9092`.
+- le nom d’hôte et le port, sans préfixe de protocole comme `https://` ;
+- qu’un VPN est activé, si le cluster se trouve dans un réseau privé ;
+- qu’un pare-feu ne bloque pas le port ;
+- pour un broker dans Docker, que le port est publié sur l’hôte, par exemple `-p 9092:9092`.
 
-To check the port outside the app, run `nc -vz <host> <port>` on macOS or Linux, or `Test-NetConnection <host> -Port <port>` in PowerShell on Windows.
+Pour vérifier le port en dehors de l’app, exécutez `nc -vz <host> <port>` sur macOS ou Linux, ou `Test-NetConnection <host> -Port <port>` dans PowerShell sur Windows.
 
-[[ui:errors.kafka.connectionFailed]] after the TCP step has passed usually means that a broker closed the connection or could not be reached later. Also check the broker addresses, see [Cannot connect](troubleshooting.md#cannot-connect).
+[[ui:errors.kafka.connectionFailed]] après la réussite de l’étape TCP signifie généralement qu’un broker a fermé la connexion ou qu’il n’a pas pu être joint ensuite. Vérifiez aussi les adresses des brokers, voir [Connexion impossible](troubleshooting.md#cannot-connect).
 
-## TLS errors {#tls-errors}
+## Erreurs TLS {#tls-errors}
 
-Errors on the [[ui:connections.form.step.kafka]] step during the TLS handshake:
+Erreurs de l’étape [[ui:connections.form.step.kafka]] lors de la négociation TLS :
 
 - [[ui:errors.kafka.plaintextListener]].
-- [[ui:errors.kafka.caUntrusted]]. Set [[ui:connections.tls.ca]] to the file of the CA that signed the broker certificates. Your administrators can give you this file. With an empty field, only the system root certificates are trusted.
-- [[ui:errors.kafka.hostnameMismatch]]. Connect by the name that the certificate was issued for, not by an IP address or an alias. In test environments only, you can turn off [[ui:connections.tls.verifyHostname]].
-- [[ui:errors.kafka.clientCertRejected]]. The broker requires a client certificate, or it does not trust the one you use. Check that [[ui:connections.tls.mtls]] is on and that the certificate was issued for this cluster. See [Client certificate (mTLS)](connections.md#mtls).
-- [[ui:errors.kafka.tlsError]] — another TLS problem. Expand [[ui:common.details]] for the cause.
+- [[ui:errors.kafka.caUntrusted]]. Indiquez dans [[ui:connections.tls.ca]] le fichier de la CA qui a signé les certificats des brokers. Vos administrateurs peuvent vous fournir ce fichier. Si le champ est vide, seuls les certificats racines du système sont reconnus.
+- [[ui:errors.kafka.hostnameMismatch]]. Connectez-vous avec le nom pour lequel le certificat a été émis, et non avec une adresse IP ou un alias. Dans les environnements de test uniquement, vous pouvez désactiver [[ui:connections.tls.verifyHostname]].
+- [[ui:errors.kafka.clientCertRejected]]. Le broker exige un certificat client, ou il ne fait pas confiance à celui que vous utilisez. Vérifiez que [[ui:connections.tls.mtls]] est activé et que le certificat a été émis pour ce cluster. Voir [Certificat client (mTLS)](connections.md#mtls).
+- [[ui:errors.kafka.tlsError]] — un autre problème TLS. Dépliez [[ui:common.details]] pour connaître la cause.
 
-If you chose a protocol without SSL and still see a TLS error, the port is probably a TLS listener. The details then say `connecting to a SSL listener?`. Choose `SSL` or `SASL_SSL`, or use the port of a listener without TLS.
+Si vous avez choisi un protocole sans SSL et voyez quand même une erreur TLS, le port correspond probablement à un listener TLS. Les détails indiquent alors `connecting to a SSL listener?`. Choisissez `SSL` ou `SASL_SSL`, ou utilisez le port d’un listener sans TLS.
 
-Problems with certificate files are reported on the [[ui:connections.form.step.config]] step, before the app connects. The message starts with the field name: trusted CA, client certificate or client key. Common cases:
+Les problèmes de fichiers de certificats sont signalés à l’étape [[ui:connections.form.step.config]], avant que l’app ne se connecte. Le message commence par le nom du champ : CA de confiance, certificat client ou clé client. Cas courants :
 
-- The path is not absolute or the file cannot be read. Enter the full path or choose the file with [[ui:connections.tls.pick]].
-- [[ui:errors.tls.keyEncrypted]], [[ui:errors.tls.keyBadPassword]], [[ui:errors.tls.clientPkcs12BadPassword]] or [[ui:errors.tls.jksBadStorePassword]] — enter the right password in the form.
-- [[ui:errors.tls.keyMismatch]] — the key file belongs to another certificate.
-- The client certificate has expired or is not valid yet — the message gives the date. Ask for a new certificate.
-- The PKCS#12 store uses a legacy algorithm, or the store is in JCEKS format. Convert the file as shown in [Certificate formats](connections.md#certificate-formats).
+- Le chemin n’est pas absolu ou le fichier ne peut pas être lu. Saisissez le chemin complet ou choisissez le fichier avec [[ui:connections.tls.pick]].
+- [[ui:errors.tls.keyEncrypted]], [[ui:errors.tls.keyBadPassword]], [[ui:errors.tls.clientPkcs12BadPassword]] ou [[ui:errors.tls.jksBadStorePassword]] — saisissez le bon mot de passe dans le formulaire.
+- [[ui:errors.tls.keyMismatch]] — le fichier de clé appartient à un autre certificat.
+- Le certificat client a expiré ou n’est pas encore valide — le message indique la date. Demandez un nouveau certificat.
+- Le magasin PKCS#12 utilise un algorithme ancien, ou le magasin est au format JCEKS. Convertissez le fichier comme indiqué dans [Formats de certificats](connections.md#certificate-formats).
 
-## SASL errors {#sasl-errors}
+## Erreurs SASL {#sasl-errors}
 
-[[ui:errors.kafka.authFailed]] means that the broker did not accept the SASL login. Check:
+[[ui:errors.kafka.authFailed]] signifie que le broker n’a pas accepté l’authentification SASL. Vérifiez :
 
-- the username and password. When you edit a saved connection, an empty password field keeps the saved password. Type the password again if you are not sure it is right;
-- [[ui:connections.form.saslMechanism]]. It must be the mechanism your user was created for. SCRAM credentials are created separately for `SCRAM-SHA-256` and `SCRAM-SHA-512`, and `PLAIN` users are configured separately again;
-- the protocol: `SASL_SSL` and `SASL_PLAINTEXT` usually use different ports.
+- le nom d’utilisateur et le mot de passe. Lorsque vous modifiez une connexion enregistrée, un champ de mot de passe vide conserve le mot de passe enregistré. Saisissez de nouveau le mot de passe si vous n’êtes pas sûr qu’il soit correct ;
+- [[ui:connections.form.saslMechanism]]. Il doit s’agir du mécanisme pour lequel votre utilisateur a été créé. Les identifiants SCRAM sont créés séparément pour `SCRAM-SHA-256` et `SCRAM-SHA-512`, et les utilisateurs `PLAIN` sont encore configurés à part ;
+- le protocole : `SASL_SSL` et `SASL_PLAINTEXT` utilisent généralement des ports différents.
 
-[[ui:errors.connections.saslPasswordMissing]] — no password is saved for this connection, for example after an import. Open the connection, enter the password and save it. See [Passwords](connections.md#passwords).
+[[ui:errors.connections.saslPasswordMissing]] — aucun mot de passe n’est enregistré pour cette connexion, par exemple après un import. Ouvrez la connexion, saisissez le mot de passe et enregistrez. Voir [Mots de passe](connections.md#passwords).
 
-[[ui:errors.secrets.keychain]] — the app cannot read the password from the system secret store. On macOS, allow access when Keychain asks. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+[[ui:errors.secrets.keychain]] — l’app ne peut pas lire le mot de passe dans le trousseau du système. Sur macOS, autorisez l’accès lorsque le Trousseau le demande. Sur Linux, vérifiez que GNOME Keyring, KWallet ou un autre fournisseur Secret Service tourne dans votre session.
 
-[[ui:errors.kafka.notAuthorized]] is different: the login succeeded, but the Kafka user has no rights (ACLs) for this operation, for example reading a topic or a group. Ask your administrators for the rights. Note that Kafka does not report an error for topics that you are not allowed to describe: they are simply missing from the topic list.
+[[ui:errors.kafka.notAuthorized]] est un cas différent : l’authentification a réussi, mais l’utilisateur Kafka n’a pas les droits (ACL) nécessaires pour cette opération, par exemple lire un topic ou un groupe. Demandez ces droits à vos administrateurs. Notez que Kafka ne signale aucune erreur pour les topics que vous n’êtes pas autorisé à décrire : ils sont simplement absents de la liste des topics.
 
-## Timeouts {#timeouts}
+## Délais dépassés {#timeouts}
 
-[[ui:errors.kafka.timeout]] means that the broker did not answer in time. Typical causes are a slow network or VPN, an overloaded cluster, or broker addresses that cannot be reached, see [Cannot connect](troubleshooting.md#cannot-connect).
+[[ui:errors.kafka.timeout]] signifie que le broker n’a pas répondu à temps. Les causes typiques sont un réseau ou un VPN lent, un cluster surchargé, ou des adresses de brokers injoignables, voir [Connexion impossible](troubleshooting.md#cannot-connect).
 
-A TLS or SASL problem can look like a timeout. The app tries to find the real cause and shows it instead, but this is not always possible. Expand [[ui:common.details]]: messages such as `SSL handshake failed` or `SASL authentication error` point to the cause.
+Un problème TLS ou SASL peut ressembler à un dépassement de délai. L’app tente de trouver la cause réelle et l’affiche à la place, mais ce n’est pas toujours possible. Dépliez [[ui:common.details]] : des messages comme `SSL handshake failed` ou `SASL authentication error` indiquent la cause.
 
-If the network is just slow, increase [[ui:connections.form.timeout]] in the connection form. The default is `30000` ms. This value applies to requests to the brokers, to sending messages and to reading. The connection test uses its own limits (5 seconds for each TCP address and 10 seconds for the Kafka step), so a larger value does not change the test.
+Si le réseau est simplement lent, augmentez [[ui:connections.form.timeout]] dans le formulaire de connexion. La valeur par défaut est `30000` ms. Cette valeur s’applique aux requêtes vers les brokers, à l’envoi de messages et à la lecture. Le test de connexion utilise ses propres limites (5 secondes pour chaque adresse TCP et 10 secondes pour l’étape Kafka) : une valeur plus élevée ne change donc rien au test.
 
-## An action is unavailable or refused {#read-only-blocked}
+## Action indisponible ou refusée {#read-only-blocked}
 
-If a button is hidden or disabled, or an action is refused, check these causes:
+Si un bouton est masqué ou désactivé, ou si une action est refusée, vérifiez les causes suivantes :
 
-- The connection is read-only. A lock icon next to its name marks it. Buttons that change the cluster are hidden or disabled. If such a request still reaches the app core, for example after the mode was turned on while a screen was open, the error says that the connection is read-only. To make changes, open the connection, clear [[ui:common.readOnly]] and save. In Free, this box cannot be cleared on a prod connection. See [Read-only](connections.md#read-only).
-- The connection is prod. Changes ask you to type the connection name. Until the name matches, the action is not performed. See [Environments and prod](connections.md#environments).
-- The feature needs Pro. The error says [[ui:errors.license.proRequired]], or gives the end date if the license has expired. See [Free and Pro](license-updates.md#free-and-pro).
-- The consumer group has active members. Offsets can be reset and a group can be deleted only when it has no members. See [Reset offsets](groups.md#reset-offsets).
-- The setting is managed by your organization. A policy can set the interface language, the license key and update checks, and these cannot be changed in the app. See [Settings set by your organization](getting-started.md#managed-settings).
-- Kafka refused the operation with [[ui:errors.kafka.notAuthorized]]. This is a matter of rights in the cluster, not of Glafira settings. See [SASL errors](troubleshooting.md#sasl-errors).
+- La connexion est en lecture seule. Elle est signalée par une icône de cadenas à côté de son nom. Les boutons qui modifient le cluster sont masqués ou désactivés. Si une telle requête parvient malgré tout au cœur de l’app, par exemple après l’activation du mode alors qu’un écran était ouvert, l’erreur indique que la connexion est en lecture seule. Pour apporter des modifications, ouvrez la connexion, décochez [[ui:common.readOnly]] et enregistrez. Dans Free, cette case ne peut pas être décochée sur une connexion prod. Voir [Lecture seule](connections.md#read-only).
+- La connexion est prod. Les modifications vous demandent de saisir le nom de la connexion. Tant que le nom ne correspond pas, l’action n’est pas effectuée. Voir [Environnements et prod](connections.md#environments).
+- La fonctionnalité nécessite Pro. L’erreur indique [[ui:errors.license.proRequired]], ou la date de fin si la licence a expiré. Voir [Free et Pro](license-updates.md#free-and-pro).
+- Le consumer group a des membres actifs. Les offsets ne peuvent être réinitialisés et un groupe ne peut être supprimé que s’il n’a aucun membre. Voir [Réinitialiser les offsets](groups.md#reset-offsets).
+- Le paramètre est géré par votre organisation. Une politique peut fixer la langue de l’interface, la clé de licence et la recherche de mises à jour, qui ne peuvent alors pas être modifiées dans l’app. Voir [Paramètres définis par votre organisation](getting-started.md#managed-settings).
+- Kafka a refusé l’opération avec [[ui:errors.kafka.notAuthorized]]. C’est une question de droits dans le cluster, pas de paramètres de Glafira. Voir [Erreurs SASL](troubleshooting.md#sasl-errors).
 
-## Logs {#logs}
+## Journaux {#logs}
 
-The app writes a log of its work and of Kafka client errors. The exact folder is shown on the [[ui:sidebar.about]] screen in [[ui:about.logDir]]. By default:
+L’app écrit un journal de son fonctionnement et des erreurs du client Kafka. Le dossier exact est affiché sur l’écran [[ui:sidebar.about]], dans [[ui:about.logDir]]. Par défaut :
 
-- macOS: `~/Library/Logs/io.github.vvnovg.glafira.kafka`
-- Windows: `%LOCALAPPDATA%\io.github.vvnovg.glafira.kafka\logs`
-- Linux: `~/.local/share/io.github.vvnovg.glafira.kafka/logs`
+- macOS : `~/Library/Logs/io.github.vvnovg.glafira.kafka`
+- Windows : `%LOCALAPPDATA%\io.github.vvnovg.glafira.kafka\logs`
+- Linux : `~/.local/share/io.github.vvnovg.glafira.kafka/logs`
 
-The current file is `app.log`. When it reaches 5 MB, it is renamed to `app.1.log`, and older files move on to `app.2.log` and so on. The app keeps up to five files and deletes the oldest one.
+Le fichier actuel est `app.log`. Lorsqu’il atteint 5 MB, il est renommé en `app.1.log`, et les fichiers plus anciens deviennent `app.2.log`, etc. L’app conserve jusqu’à cinq fichiers et supprime le plus ancien.
 
-Passwords are not written to the logs. Broker addresses and the texts of Kafka errors are written. You do not need to collect the files by hand: the diagnostics archive includes them, see [Diagnostics archive](license-updates.md#diagnostics).
+Les mots de passe ne sont pas écrits dans les journaux. Les adresses des brokers et les textes des erreurs Kafka le sont. Inutile de rassembler les fichiers à la main : l’archive de diagnostic les inclut, voir [Archive de diagnostic](license-updates.md#diagnostics).
 
-## Contact support {#support}
+## Contacter l’assistance {#support}
 
-Before you contact support, run [[ui:connections.form.test]] and note which step fails. Then send the request to whoever supports Glafira for you, for example your administrators. Include:
+Avant de contacter l’assistance, lancez [[ui:connections.form.test]] et notez l’étape qui échoue. Envoyez ensuite la demande à la personne qui assure le support de Glafira pour vous, par exemple vos administrateurs. Joignez :
 
-- the diagnostics archive, see [Diagnostics archive](license-updates.md#diagnostics). It contains the version, the build, the logs and the connection profiles without passwords;
-- what you did, what you expected and what happened, step by step;
-- the full error text, together with the [[ui:common.details]] content. You can select and copy this text;
-- a screenshot, if the problem is in the interface;
-- the time when the error happened, to find it in the logs.
+- l’archive de diagnostic, voir [Archive de diagnostic](license-updates.md#diagnostics). Elle contient la version, le build, les journaux et les profils de connexion sans mots de passe ;
+- ce que vous avez fait, ce que vous attendiez et ce qui s’est passé, étape par étape ;
+- le texte complet de l’erreur, avec le contenu de [[ui:common.details]]. Vous pouvez sélectionner et copier ce texte ;
+- une capture d’écran, si le problème concerne l’interface ;
+- l’heure à laquelle l’erreur s’est produite, pour la retrouver dans les journaux.
 
-If you cannot create the archive, give the [[ui:about.version]] and [[ui:about.build]] values from the [[ui:sidebar.about]] screen and attach the log files from the logs folder.
+Si vous ne pouvez pas créer l’archive, indiquez les valeurs [[ui:about.version]] et [[ui:about.build]] de l’écran [[ui:sidebar.about]] et joignez les fichiers journaux du dossier des journaux.

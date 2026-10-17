@@ -108,3 +108,13 @@ tab — Tab (der, Pl. Tabs); screen — Bildschirm; panel (левая панел
 checkbox — Kontrollkästchen; logs — Protokolle (Protokolldateien); batch send — Stapelversand, Stapel;
 release page — Release-Seite; installer — Installationsprogramm; support request — Supportanfrage;
 macOS menu Help — Menü „Hilfe“.
+
+## Слова руководства (fr)
+
+Термины, которые часто встречаются в `docs/guide/fr` и отсутствуют в словаре интерфейса:
+tab — onglet; screen — écran; panel (левая панель) — panneau; button — bouton; checkbox — case à cocher;
+logs — journaux (fichiers journaux); batch send — envoi par lot, lot; batch (Kafka) — batch;
+release page — page des versions; installer — programme d’installation; support request — demande d’assistance;
+support — assistance; timestamp — horodatage; tombstone — tombstone; listener — listener;
+macOS menu Help — menu « Aide »; to commit — commiter; read-only connection — connexion en lecture seule
+(с меткой: «connexions en [[ui:common.readOnly]]»).

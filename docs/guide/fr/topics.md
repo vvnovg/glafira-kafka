@@ -1,131 +1,131 @@
-# Cluster and topics
+# Cluster et topics
 
-This chapter covers the cluster overview, the topic list, creating and deleting topics, the topic screen and topic configuration. Under each connection in the [[ui:sidebar.connections]] panel there are links to [[ui:sidebar.cluster]] and [[ui:sidebar.topics]]. Each opens in its own tab.
+Ce chapitre traite de l’aperçu du cluster, de la liste des topics, de la création et de la suppression de topics, de l’écran d’un topic et de sa configuration. Sous chaque connexion du panneau [[ui:sidebar.connections]] figurent les liens [[ui:sidebar.cluster]] et [[ui:sidebar.topics]]. Chacun s’ouvre dans son propre onglet.
 
-## Cluster overview {#cluster-overview}
+## Aperçu du cluster {#cluster-overview}
 
-[[ui:cluster.overview.title]] shows the state of the cluster at the moment it was loaded. Click [[ui:cluster.overview.refresh]] to load it again.
+L’écran [[ui:cluster.overview.title]] montre l’état du cluster au moment de son chargement. Cliquez sur [[ui:cluster.overview.refresh]] pour le recharger.
 
-- `Cluster ID` — the cluster identifier.
-- [[ui:cluster.overview.controller]] — the ID of the broker that the cluster reports as the controller. In KRaft clusters, clients do not talk to the controllers directly: the cluster reports a random broker here, not the active controller, and it may change between refreshes.
-- [[ui:cluster.overview.brokers]] — the number of brokers.
-- [[ui:cluster.overview.topicsInternal]] — all topics, with the number of internal topics in brackets.
-- [[ui:cluster.overview.partitions]] — the number of partitions in all topics.
-- `Under-replicated` — partitions where not all replicas are in sync (in the ISR). Usually a broker is down or cannot keep up.
-- `Offline` — partitions without a leader. Nobody can write to them or read from them.
+- `Cluster ID` — l’identifiant du cluster.
+- [[ui:cluster.overview.controller]] — l’ID du broker que le cluster déclare comme contrôleur. Dans les clusters KRaft, les clients ne communiquent pas directement avec les contrôleurs : le cluster indique ici un broker aléatoire, et non le contrôleur actif, qui peut changer d’une actualisation à l’autre.
+- [[ui:cluster.overview.brokers]] — le nombre de brokers.
+- [[ui:cluster.overview.topicsInternal]] — tous les topics, avec le nombre de topics internes entre parenthèses.
+- [[ui:cluster.overview.partitions]] — le nombre de partitions de tous les topics.
+- `Under-replicated` — les partitions dont toutes les répliques ne sont pas synchronisées (dans l’ISR). En général, un broker est arrêté ou n’arrive pas à suivre.
+- `Offline` — les partitions sans leader. Personne ne peut y écrire ni y lire.
 
-A non-zero value in `Under-replicated` or `Offline` is highlighted.
+Une valeur non nulle dans `Under-replicated` ou `Offline` est mise en évidence.
 
-Below is the broker table with `ID` and [[ui:cluster.overview.address]]. The broker from the [[ui:cluster.overview.controller]] field is marked [[ui:cluster.overview.controllerBadge]]. In KRaft clusters, this is the same random broker, not the active controller. Click a broker to see its configuration under the table. Broker configuration can only be viewed. Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to hide parameters with default values. A lock icon marks read-only parameters.
+En dessous se trouve le tableau des brokers avec `ID` et [[ui:cluster.overview.address]]. Le broker du champ [[ui:cluster.overview.controller]] est marqué [[ui:cluster.overview.controllerBadge]]. Dans les clusters KRaft, il s’agit du même broker aléatoire, et non du contrôleur actif. Cliquez sur un broker pour afficher sa configuration sous le tableau. La configuration d’un broker est en consultation seule. Utilisez [[ui:common.config.searchParam]] pour trouver un paramètre par son nom, et [[ui:common.config.onlyChanged]] pour masquer les paramètres à leur valeur par défaut. Une icône de cadenas signale les paramètres en lecture seule.
 
-## Topic list {#topic-list}
+## Liste des topics {#topic-list}
 
-[[ui:sidebar.topics]] lists the topics of the cluster. Click a row to open the topic in its own tab.
+L’écran [[ui:sidebar.topics]] liste les topics du cluster. Cliquez sur une ligne pour ouvrir le topic dans son propre onglet.
 
-The columns are [[ui:topics.list.colName]], [[ui:topics.list.colPartitions]], `RF` (replication factor), [[ui:topics.list.colMessages]], `cleanup.policy` and [[ui:topics.list.colUnderRepl]] (the number of under-replicated partitions). The message count is approximate: it is the difference between the end and start offsets of the partitions. Compaction and transaction markers make the real number smaller. Message counts and `cleanup.policy` are loaded only for the rows you scroll to.
+Les colonnes sont [[ui:topics.list.colName]], [[ui:topics.list.colPartitions]], `RF` (facteur de réplication), [[ui:topics.list.colMessages]], `cleanup.policy` et [[ui:topics.list.colUnderRepl]] (le nombre de partitions sous-répliquées). Le nombre de messages est approximatif : c’est la différence entre les offsets de fin et de début des partitions. La compaction et les marqueurs de transaction rendent le nombre réel plus petit. Le nombre de messages et `cleanup.policy` ne sont chargés que pour les lignes que vous faites défiler à l’écran.
 
-Toolbar controls:
+Commandes de la barre d’outils :
 
-- [[ui:topics.list.search]] — type part of a name to find topics; case does not matter. To search with a regular expression, put it between slashes, for example `/^orders\..*/`.
-- [[ui:topics.list.internal]] — show internal topics, such as `__consumer_offsets`. They are marked [[ui:topics.list.internalBadge]].
-- The auto-refresh list — [[ui:topics.list.autoRefreshOff]], [[ui:topics.list.every10]] or [[ui:topics.list.every30]].
-- [[ui:topics.list.refresh]] — reload the list and the message counts now.
+- [[ui:topics.list.search]] — saisissez une partie d’un nom pour trouver des topics, sans tenir compte de la casse. Pour chercher avec une expression régulière, placez-la entre barres obliques, par exemple `/^orders\..*/`.
+- [[ui:topics.list.internal]] — affiche les topics internes, comme `__consumer_offsets`. Ils sont marqués [[ui:topics.list.internalBadge]].
+- La liste d’actualisation automatique — [[ui:topics.list.autoRefreshOff]], [[ui:topics.list.every10]] ou [[ui:topics.list.every30]].
+- [[ui:topics.list.refresh]] — recharge immédiatement la liste et le nombre de messages.
 
-Next to the toolbar, the app shows how many topics match the search out of the total. On [[ui:common.readOnly]] connections, the [[ui:topics.list.create]] and [[ui:topics.list.select]] buttons are hidden.
+À côté de la barre d’outils, l’app indique combien de topics correspondent à la recherche sur le total. Sur les connexions en [[ui:common.readOnly]], les boutons [[ui:topics.list.create]] et [[ui:topics.list.select]] sont masqués.
 
-## Create a topic {#create-topic}
+## Créer un topic {#create-topic}
 
-1. In the topic list, click [[ui:topics.list.create]]. The [[ui:topics.create.title]] form opens above the list.
-2. Enter a [[ui:topics.create.name]]. It can contain Latin letters, digits, `.`, `_` and `-`, up to 249 characters. The form warns if the name has both `.` and `_`: Kafka metric names of such topics may collide with other topics.
-3. Set the number of [[ui:topics.create.partitions]]. Partitions are read in parallel, and order is guaranteed only within one partition. The number can be increased later, but never decreased.
-4. Set the [[ui:topics.create.rf]] — how many copies of each partition the brokers keep. It cannot be more than the number of brokers, which the form shows under the field. The default is 3, or the number of brokers if there are fewer. `-1` uses the broker default.
-5. Choose a [[ui:topics.create.preset]]:
-   - [[ui:topics.create.presetDelete]] — old messages are deleted by time.
-   - `compact` — only the latest value per key is kept.
-   - `compact + delete` — both.
-   - [[ui:topics.create.presetTest]] — messages are kept for one hour.
-6. Optionally, add [[ui:topics.create.extraConfigs]], one per line, for example `retention.ms=86400000`. They override the preset. Lines that start with `#` are ignored.
-7. Click [[ui:topics.create.submit]].
+1. Dans la liste des topics, cliquez sur [[ui:topics.list.create]]. Le formulaire [[ui:topics.create.title]] s’ouvre au-dessus de la liste.
+2. Saisissez le [[ui:topics.create.name]]. Il peut contenir des lettres latines, des chiffres, `.`, `_` et `-`, jusqu’à 249 caractères. Le formulaire vous avertit si le nom contient à la fois `.` et `_` : les noms des métriques Kafka de ces topics peuvent entrer en collision avec ceux d’autres topics.
+3. Indiquez le nombre de [[ui:topics.create.partitions]]. Les partitions sont lues en parallèle, et l’ordre n’est garanti qu’au sein d’une même partition. Ce nombre peut être augmenté plus tard, mais jamais diminué.
+4. Indiquez le [[ui:topics.create.rf]] — le nombre de copies de chaque partition conservées par les brokers. Il ne peut pas dépasser le nombre de brokers, que le formulaire affiche sous le champ. La valeur par défaut est 3, ou le nombre de brokers s’il est inférieur. `-1` utilise la valeur par défaut du broker.
+5. Choisissez un [[ui:topics.create.preset]] :
+   - [[ui:topics.create.presetDelete]] — les anciens messages sont supprimés selon leur âge.
+   - `compact` — seule la dernière valeur de chaque clé est conservée.
+   - `compact + delete` — les deux.
+   - [[ui:topics.create.presetTest]] — les messages sont conservés une heure.
+6. Si nécessaire, ajoutez des [[ui:topics.create.extraConfigs]], un par ligne, par exemple `retention.ms=86400000`. Ils remplacent les valeurs du préréglage. Les lignes commençant par `#` sont ignorées.
+7. Cliquez sur [[ui:topics.create.submit]].
 
-When the form is valid, it shows the equivalent `kafka-topics.sh` command. You can copy it, for example, to create the same topic in another cluster.
+Lorsque le formulaire est valide, il affiche la commande `kafka-topics.sh` équivalente. Vous pouvez la copier, par exemple pour créer le même topic dans un autre cluster.
 
-On a prod connection, you confirm the creation by typing the connection name. After the topic is created, its tab opens.
+Sur une connexion prod, vous confirmez la création en saisissant le nom de la connexion. Une fois le topic créé, son onglet s’ouvre.
 
-## Delete topics {#delete-topics}
+## Supprimer des topics {#delete-topics}
 
-To delete one topic, open it and click [[ui:topics.actions.deleteTopic]]. Type the topic name to confirm and click [[ui:topics.delete.confirm]]. The topic tab closes.
+Pour supprimer un topic, ouvrez-le et cliquez sur [[ui:topics.actions.deleteTopic]]. Saisissez le nom du topic pour confirmer et cliquez sur [[ui:topics.delete.confirm]]. L’onglet du topic se ferme.
 
-To delete several topics at once:
+Pour supprimer plusieurs topics à la fois :
 
-1. In the topic list, click [[ui:topics.list.select]]. Checkboxes appear next to the names.
-2. Select the topics. Internal topics cannot be selected.
-3. Click the delete button. It shows the number of selected topics.
-4. Check the list of names, type their number to confirm and click [[ui:topics.delete.confirm]].
+1. Dans la liste des topics, cliquez sur [[ui:topics.list.select]]. Des cases à cocher apparaissent à côté des noms.
+2. Cochez les topics. Les topics internes ne peuvent pas être sélectionnés.
+3. Cliquez sur le bouton de suppression. Il indique le nombre de topics sélectionnés.
+4. Vérifiez la liste des noms, saisissez leur nombre pour confirmer et cliquez sur [[ui:topics.delete.confirm]].
 
-[[ui:topics.list.cancelSelect]] hides the checkboxes.
+[[ui:topics.list.cancelSelect]] masque les cases à cocher.
 
-On a prod connection, both ways of deleting also ask you to type the connection name.
+Sur une connexion prod, les deux méthodes de suppression demandent aussi de saisir le nom de la connexion.
 
-Deletion cannot be undone: the data is lost. If some topics are not deleted, for example because of missing rights, the app lists them with the reason. The other topics are deleted.
+La suppression est irréversible : les données sont perdues. Si certains topics ne sont pas supprimés, par exemple faute de droits, l’app les liste avec la raison. Les autres topics sont supprimés.
 
-## Topic screen {#topic-details}
+## Écran du topic {#topic-details}
 
-The topic tab shows the number of partitions, the replication factor and the approximate message count. The buttons at the top:
+L’onglet du topic affiche le nombre de partitions, le facteur de réplication et le nombre approximatif de messages. Les boutons du haut :
 
-- [[ui:topics.details.refresh]] — reload the topic data.
-- [[ui:topics.details.produce]] — open the [[ui:sidebar.producer]] with this topic. See [Producer](producer.md).
-- [[ui:topics.details.consume]] — start a consumer session for this topic. This needs Pro. See [Consumer sessions](consumer-sessions.md).
+- [[ui:topics.details.refresh]] — recharge les données du topic.
+- [[ui:topics.details.produce]] — ouvre le [[ui:sidebar.producer]] avec ce topic. Voir [Producer](producer.md).
+- [[ui:topics.details.consume]] — lance une session consumer pour ce topic. Nécessite Pro. Voir [Sessions consumer](consumer-sessions.md).
 
-On [[ui:common.readOnly]] connections, both buttons are disabled.
+Sur les connexions en [[ui:common.readOnly]], ces deux boutons sont désactivés.
 
-The second row has actions that change the topic. It is hidden on read-only connections and for internal topics.
+La deuxième ligne contient les actions qui modifient le topic. Elle est masquée sur les connexions en lecture seule et pour les topics internes.
 
-- [[ui:topics.actions.addPartitions]] — enter the new total and click [[ui:topics.actions.addSubmit]]. The number of partitions cannot be decreased. After an increase, messages with the same key may go to a different partition, so the order by key breaks.
-- [[ui:topics.actions.purge]] — delete all messages up to the current end of the selected partitions. The topic itself stays. Select the partitions, type the topic name and click [[ui:topics.actions.purgeConfirm]]. Purge works only when `cleanup.policy` includes `delete`; otherwise the button is disabled and the reason is shown. For a `compact,delete` topic, purge also deletes the latest values of the keys.
-- [[ui:topics.actions.deleteTopic]] — see [Delete topics](topics.md#delete-topics).
+- [[ui:topics.actions.addPartitions]] — saisissez le nouveau total et cliquez sur [[ui:topics.actions.addSubmit]]. Le nombre de partitions ne peut pas être diminué. Après une augmentation, des messages ayant la même clé peuvent aller dans une autre partition : l’ordre par clé n’est alors plus garanti.
+- [[ui:topics.actions.purge]] — supprime tous les messages jusqu’à la fin actuelle des partitions sélectionnées. Le topic lui-même est conservé. Sélectionnez les partitions, saisissez le nom du topic et cliquez sur [[ui:topics.actions.purgeConfirm]]. La purge ne fonctionne que si `cleanup.policy` inclut `delete` ; sinon, le bouton est désactivé et la raison est affichée. Pour un topic `compact,delete`, la purge supprime aussi les dernières valeurs des clés.
+- [[ui:topics.actions.deleteTopic]] — voir [Supprimer des topics](topics.md#delete-topics).
 
-On a prod connection, each of these actions also asks for the connection name.
+Sur une connexion prod, chacune de ces actions demande aussi le nom de la connexion.
 
-The tabs below:
+Les onglets du bas :
 
-- [[ui:topics.details.tabMessages]] — browse messages. See [Browsing messages](browse.md).
-- [[ui:topics.details.tabPartitions]] — a table with each partition: [[ui:topics.details.colLeader]], [[ui:topics.details.colReplicas]], `ISR` (in-sync replicas), the start (`Low`) and end (`High`) offsets and the number of messages. A partition without a leader shows [[ui:topics.details.noLeader]].
-- [[ui:topics.details.tabConfigs]] — topic parameters. See [Topic configuration](topics.md#topic-config).
-- [[ui:topics.details.tabGroups]] — consumer groups that have committed offsets for this topic, with [[ui:topics.groups.colState]], [[ui:topics.groups.colPartitions]] and [[ui:topics.groups.colLag]]. Click a group to open it. See [Consumer groups](groups.md).
+- [[ui:topics.details.tabMessages]] — parcourir les messages. Voir [Parcourir les messages](browse.md).
+- [[ui:topics.details.tabPartitions]] — un tableau des partitions : [[ui:topics.details.colLeader]], [[ui:topics.details.colReplicas]], `ISR` (répliques synchronisées), les offsets de début (`Low`) et de fin (`High`) et le nombre de messages. Une partition sans leader affiche [[ui:topics.details.noLeader]].
+- [[ui:topics.details.tabConfigs]] — les paramètres du topic. Voir [Configuration du topic](topics.md#topic-config).
+- [[ui:topics.details.tabGroups]] — les consumer groups qui ont commité des offsets pour ce topic, avec [[ui:topics.groups.colState]], [[ui:topics.groups.colPartitions]] et [[ui:topics.groups.colLag]]. Cliquez sur un groupe pour l’ouvrir. Voir [Consumer groups](groups.md).
 
-## Topic configuration {#topic-config}
+## Configuration du topic {#topic-config}
 
-The [[ui:topics.details.tabConfigs]] tab lists all topic parameters with three columns:
+L’onglet [[ui:topics.details.tabConfigs]] liste tous les paramètres du topic sur trois colonnes :
 
-- [[ui:common.config.colParam]] — the parameter name. Names in bold are set explicitly: on the topic or in the broker configuration.
-- [[ui:common.config.colValue]] — the current value. Sensitive values are hidden as `••••••`.
-- [[ui:common.config.colSource]] — where the value comes from. For example, `DynamicTopic` is set on this topic, `StaticBroker` and `DynamicBroker` come from the broker configuration, and `Default` is the Kafka default.
+- [[ui:common.config.colParam]] — le nom du paramètre. Les noms en gras sont définis explicitement : sur le topic ou dans la configuration du broker.
+- [[ui:common.config.colValue]] — la valeur actuelle. Les valeurs sensibles sont masquées sous la forme `••••••`.
+- [[ui:common.config.colSource]] — l’origine de la valeur. Par exemple, `DynamicTopic` est défini sur ce topic, `StaticBroker` et `DynamicBroker` proviennent de la configuration du broker, et `Default` est la valeur par défaut de Kafka.
 
-Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to show only the parameters in bold. A lock icon marks read-only parameters. The `?` icon next to a name explains the parameter.
+Utilisez [[ui:common.config.searchParam]] pour trouver un paramètre par son nom, et [[ui:common.config.onlyChanged]] pour n’afficher que les paramètres en gras. Une icône de cadenas signale les paramètres en lecture seule. L’icône `?` à côté d’un nom explique le paramètre.
 
-## Change the configuration {#edit-config}
+## Modifier la configuration {#edit-config}
 
-1. On the [[ui:topics.details.tabConfigs]] tab, click [[ui:topics.details.edit]]. On [[ui:common.readOnly]] connections, this button is hidden.
-2. Change values in the [[ui:common.config.colValue]] column. Read-only and sensitive parameters cannot be edited. To remove the topic's own value, click [[ui:common.config.reset]]: the broker value then applies. An empty value is not allowed.
-3. Click [[ui:common.config.review]]. The app shows each change as old value → new value; [[ui:common.config.defaultValue]] means the value is reset.
-4. Click [[ui:common.config.apply]], or [[ui:common.config.back]] to continue editing.
+1. Dans l’onglet [[ui:topics.details.tabConfigs]], cliquez sur [[ui:topics.details.edit]]. Sur les connexions en [[ui:common.readOnly]], ce bouton est masqué.
+2. Modifiez les valeurs dans la colonne [[ui:common.config.colValue]]. Les paramètres en lecture seule et les paramètres sensibles ne sont pas modifiables. Pour retirer la valeur propre au topic, cliquez sur [[ui:common.config.reset]] : la valeur du broker s’applique alors. Une valeur vide n’est pas autorisée.
+3. Cliquez sur [[ui:common.config.review]]. L’app affiche chaque modification sous la forme ancienne valeur → nouvelle valeur ; [[ui:common.config.defaultValue]] signifie que la valeur est réinitialisée.
+4. Cliquez sur [[ui:common.config.apply]], ou sur [[ui:common.config.back]] pour continuer à modifier.
 
-Nothing changes in the cluster until you apply. [[ui:common.config.discard]] cancels all edits. While there are unsaved edits, [[ui:topics.details.closeEditor]] is disabled. On a prod connection, you confirm the changes by typing the connection name.
+Rien ne change dans le cluster tant que vous n’avez pas appliqué les modifications. [[ui:common.config.discard]] annule toutes les modifications. Tant qu’il reste des modifications non enregistrées, [[ui:topics.details.closeEditor]] est désactivé. Sur une connexion prod, vous confirmez les modifications en saisissant le nom de la connexion.
 
-Only the parameters you changed are sent. Other topic parameters stay as they are. The broker checks the values and rejects invalid ones with an error.
+Seuls les paramètres modifiés sont envoyés. Les autres paramètres du topic restent inchangés. Le broker vérifie les valeurs et refuse les valeurs non valides avec une erreur.
 
-## Topic parameters {#config-parameters}
+## Paramètres des topics {#config-parameters}
 
-Kafka topics have dozens of parameters. The `?` icons in the configuration table explain each of them. Most often you need these:
+Les topics Kafka ont des dizaines de paramètres. Les icônes `?` du tableau de configuration expliquent chacun d’eux. Voici ceux dont on a le plus souvent besoin :
 
-- `cleanup.policy` — what happens to old data. `delete` removes old segments by time or size. `compact` keeps only the latest value per key. `compact,delete` does both.
-- `retention.ms` — how long messages are kept, in milliseconds. The default is `604800000` (7 days); `-1` keeps them forever. Works when `cleanup.policy` includes `delete`.
-- `retention.bytes` — the maximum size of each partition before old segments are deleted. The default `-1` means no size limit.
-- `segment.ms` and `segment.bytes` — when the broker starts a new log segment. Retention and compaction work on whole segments, so a message may stay longer than `retention.ms` until its segment is closed.
-- `min.insync.replicas` — how many replicas must confirm a write with `acks=all`. Usually 2 with replication factor 3.
-- `max.message.bytes` — the largest batch the broker accepts for this topic. The default is about 1 MB. Producers must allow the same size (`max.request.size`).
-- `compression.type` — how the broker stores messages. `producer` keeps the producer's compression.
-- `message.timestamp.type` — `CreateTime` (the time set by the producer) or `LogAppendTime` (the time the broker wrote the message). This is the time shown when you browse messages.
-- `delete.retention.ms` — how long delete markers (messages with a null value) stay in a compacted topic. The default is 1 day.
+- `cleanup.policy` — ce qui arrive aux anciennes données. `delete` supprime les anciens segments selon leur âge ou leur taille. `compact` ne conserve que la dernière valeur de chaque clé. `compact,delete` fait les deux.
+- `retention.ms` — la durée de conservation des messages, en millisecondes. La valeur par défaut est `604800000` (7 jours) ; `-1` les conserve indéfiniment. S’applique lorsque `cleanup.policy` inclut `delete`.
+- `retention.bytes` — la taille maximale de chaque partition avant la suppression des anciens segments. La valeur par défaut `-1` signifie aucune limite de taille.
+- `segment.ms` et `segment.bytes` — le moment où le broker commence un nouveau segment de log. La rétention et la compaction portent sur des segments entiers : un message peut donc rester plus longtemps que `retention.ms`, jusqu’à la fermeture de son segment.
+- `min.insync.replicas` — le nombre de répliques qui doivent confirmer une écriture avec `acks=all`. En général 2 avec un facteur de réplication de 3.
+- `max.message.bytes` — le plus grand batch que le broker accepte pour ce topic. La valeur par défaut est d’environ 1 MB. Les producteurs doivent autoriser la même taille (`max.request.size`).
+- `compression.type` — la façon dont le broker stocke les messages. `producer` conserve la compression du producteur.
+- `message.timestamp.type` — `CreateTime` (l’heure définie par le producteur) ou `LogAppendTime` (l’heure à laquelle le broker a écrit le message). C’est cette heure qui s’affiche lorsque vous parcourez les messages.
+- `delete.retention.ms` — la durée pendant laquelle les marqueurs de suppression (messages à valeur nulle) restent dans un topic compacté. La valeur par défaut est de 1 jour.
 
-Some parameters exist only in newer Kafka versions, and some are deprecated. The `?` icon says so where it matters. Parameters for tiered storage, such as `remote.storage.enable`, work only if the cluster supports it.
+Certains paramètres n’existent que dans les versions récentes de Kafka, et certains sont obsolètes. L’icône `?` le précise quand c’est important. Les paramètres du tiered storage, comme `remote.storage.enable`, ne fonctionnent que si le cluster le prend en charge.

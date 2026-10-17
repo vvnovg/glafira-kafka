@@ -39,7 +39,7 @@ Click a group in the list to open its tab. At the top, a summary shows the state
 
 - [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] or [[ui:groups.details.refresh10]].
 - [[ui:groups.details.refresh]] — reload now.
-- [[ui:groups.details.join]] — start a [consumer session](consumer-sessions.md) in this group. The session form gets the group ID and the topics the group has commits for. This needs Pro, and the button is disabled on [[ui:common.readOnly]] connections.
+- [[ui:groups.details.join]] — start a [consumer session](consumer-sessions.md) in this group. The session form gets the group ID and the topics the group has commits for. This needs Pro, and the button is disabled on [[ui:common.readOnly]] connections; point at the button to see the reason.
 
 [[ui:groups.details.partitions]] lists the partitions the group has commits for, and the partitions assigned to its members. The total lag of the group is shown above the table. The columns are [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (the committed offset), `Log end` (the end offset of the partition), [[ui:groups.details.colLag]] and [[ui:groups.details.colMember]] (the client ID of the member that reads the partition).
 
@@ -49,9 +49,9 @@ The second row has [[ui:groups.details.resetOffsets]] and [[ui:groups.details.de
 
 ## Reset offsets {#reset-offsets}
 
-Resetting offsets moves the committed offsets of a group. The group then rereads messages or skips them. Offsets can be reset only for a group without active members, in the `Empty` state. Otherwise the members would overwrite the new offsets with their own commits. Stop the applications of the group first.
+Resetting offsets moves the committed offsets of a group. The group then rereads messages or skips them. Offsets can be reset only for a group without active members (state `Empty` or `Dead`). Otherwise the members would overwrite the new offsets with their own commits. Stop the applications of the group first.
 
-1. On the group tab, click [[ui:groups.details.resetOffsets]]. While the group has members, the button is disabled and the reason is shown.
+1. On the group tab, click [[ui:groups.details.resetOffsets]]. While the group has members, the button is disabled; point at the button to see the reason.
 2. Choose the [[ui:groups.reset.strategy]]. See [Reset strategies](groups.md#reset-strategies).
 3. Choose the [[ui:groups.reset.scope]]. See [Reset scope](groups.md#reset-scope).
 4. Click [[ui:groups.reset.preview]].
@@ -89,7 +89,7 @@ The time is your local time, with seconds. Kafka finds the offset by message tim
 
 Deleting a group removes all its committed offsets. Only a group without members, in the `Empty` state, can be deleted.
 
-1. On the group tab, click [[ui:groups.details.deleteGroup]]. While the group has members, the button is disabled.
+1. On the group tab, click [[ui:groups.details.deleteGroup]]. While the group has members, the button is disabled; point at the button to see the reason.
 2. Type the group ID to confirm. On a prod connection, also type the connection name.
 3. Click [[ui:common.delete]].
 

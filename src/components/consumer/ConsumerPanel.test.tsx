@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionProfile, ConsumeEvent } from "../../api/types";
@@ -207,7 +207,7 @@ describe("ConsumerPanel", () => {
     const user = userEvent.setup();
     renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
     await screen.findByDisplayValue("glafira-kafka-qa-abc123");
-    screen.getByRole("button", { name: "Подсказка: Группа и топики" });
+    screen.getByRole("button", { name: "Подсказка: Вступление в группу" });
     await user.click(screen.getByRole("button", { name: "Подсказка: автокоммит" }));
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
       "Автоматически коммитит прочитанные оффсеты в фоне. Без него — вручную, кнопками коммита.",
@@ -217,5 +217,11 @@ describe("ConsumerPanel", () => {
     act(() => emit({ type: "rebalance", record: { kind: "assigned", partitions: [orders0], at: 0 } }));
     screen.getByRole("button", { name: "Подсказка: Закоммитить всё прочитанное" });
     screen.getByRole("button", { name: "Подсказка: пауза" });
+    // Форма в <fieldset disabled> на время сессии, но значок автокоммита открывается (span, а не button).
+    const autoCommit = screen.getByRole("button", { name: "Подсказка: автокоммит" });
+    act(() => autoCommit.focus());
+    expect(autoCommit).toHaveFocus();
+    fireEvent.keyDown(autoCommit, { key: "Enter" });
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Автоматически коммитит прочитанные оффсеты в фоне.");
   });
 });

@@ -60,26 +60,37 @@ export function Hint({ k, label }: { k: string; label: string }) {
     };
   }, [open]);
 
-  const onClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const toggle = () => {
     if (pinned) close();
     else {
       setPinned(true);
       setOpen(true);
     }
   };
+  const onClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggle();
+  };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault(); // Space не прокручивает панель
+    e.stopPropagation(); // не активирует строку с activateProps вокруг значка
+    if (!e.repeat) toggle();
+  };
 
+  // span, а не button: `<fieldset disabled>` отключает вложенные кнопки, а подсказка должна работать и там.
   return (
     <>
-      <button
-        type="button"
+      <span
+        role="button"
+        tabIndex={0}
         className="hint-icon"
         ref={refs.setReference}
         aria-label={t("hints.label", { name: label })}
-        {...getReferenceProps({ onClick })}
+        {...getReferenceProps({ onClick, onKeyDown })}
       >
         ?
-      </button>
+      </span>
       {open && (
         <FloatingPortal>
           <div ref={refs.setFloating} className="hint-tooltip" style={floatingStyles} {...getFloatingProps({ onClick: (e: React.MouseEvent) => e.stopPropagation() })}>

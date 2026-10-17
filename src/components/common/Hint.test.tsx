@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "../../i18n";
@@ -105,5 +105,75 @@ describe("Hint", () => {
     const tip = screen.getByRole("tooltip");
     expect(btn).toHaveAttribute("aria-describedby", tip.id);
     expect(tip.querySelector("code")).toHaveTextContent("acks");
+  });
+  // user-event считает отключённым любой элемент внутри `<fieldset disabled>` (в браузере — только контролы форм),
+  // поэтому здесь события шлёт fireEvent, а фокус — нативный focus(): jsdom, как и браузер, его даёт.
+  it("внутри <fieldset disabled>: клик закрепляет", () => {
+    render(
+      <fieldset disabled>
+        <Hint k="hints.test.a" label="acks" />
+      </fieldset>,
+    );
+    const btn = screen.getByRole("button", { name: "Подсказка: acks" });
+    fireEvent.click(btn);
+    fireEvent.mouseLeave(btn);
+    act(() => vi.advanceTimersByTime(500));
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("внутри <fieldset disabled>: фокус даёт подсказку, Enter закрепляет и снимает", () => {
+    render(
+      <fieldset disabled>
+        <button type="button">контрол</button>
+        <Hint k="hints.test.a" label="acks" />
+      </fieldset>,
+    );
+    const btn = screen.getByRole("button", { name: "Подсказка: acks" });
+    act(() => btn.focus());
+    expect(btn).toHaveFocus();
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    fireEvent.keyDown(btn, { key: "Enter" });
+    act(() => btn.blur());
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    act(() => btn.focus());
+    fireEvent.keyDown(btn, { key: "Enter" });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("Space переключает закрепление", async () => {
+    const user = setup();
+    render(<Hint k="hints.test.a" label="acks" />);
+    const btn = screen.getByRole("button", { name: "Подсказка: acks" });
+    btn.focus();
+    await user.keyboard(" ");
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    await user.keyboard(" ");
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    await user.keyboard(" ");
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  });
+
+  it("автоповтор клавиши не переключает повторно", async () => {
+    const user = setup();
+    render(<Hint k="hints.test.a" label="acks" />);
+    screen.getByRole("button", { name: "Подсказка: acks" }).focus();
+    await user.keyboard("{Enter>3/}");
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  });
+
+  it("Enter и Space на значке не всплывают к предку с onKeyDown", async () => {
+    const user = setup();
+    const spy = vi.fn();
+    render(
+      <div onKeyDown={spy}>
+        <Hint k="hints.test.a" label="acks" />
+      </div>,
+    );
+    screen.getByRole("button", { name: "Подсказка: acks" }).focus();
+    await user.keyboard("{Enter}");
+    await user.keyboard(" ");
+    expect(spy).not.toHaveBeenCalled();
   });
 });

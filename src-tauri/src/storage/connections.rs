@@ -123,6 +123,8 @@ pub struct ConnectionProfile {
     #[serde(default)]
     pub order: i64,
     /// Поля из более новой версии Glafira: сохраняются при записи как есть.
+    /// В `ConnectionStore::upsert` пустой `extra` у существующего профиля означает
+    /// «оставить сохранённый»: форма фронтенда может не знать этих полей.
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
@@ -303,7 +305,17 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
         validate_tls(tls)?;
     }
     // Секреты хранятся только в keychain: connections.json не должен их содержать.
-    if let Some(key) = p.extra_properties.keys().find(|k| is_secret_property(k)) {
+    // Неизвестные поля профиля тоже пишутся в файл: секретоподобные не принимаем.
+    let secret_extra = p.extra.keys().find(|k| {
+        let k = k.to_lowercase();
+        k.contains("password") || k.contains("secret")
+    });
+    if let Some(key) = p
+        .extra_properties
+        .keys()
+        .find(|k| is_secret_property(k))
+        .or(secret_extra)
+    {
         return Err(app_err!(
             ErrorCode::InvalidInput,
             "errors.connections.secretInExtraProperties",
@@ -392,6 +404,34 @@ pub(crate) fn validate_folder_name(name: &str) -> AppResult<()> {
     Ok(())
 }
 
+fn truncate_chars(s: &str, max: usize) -> &str {
+    match s.char_indices().nth(max) {
+        Some((i, _)) => &s[..i],
+        None => s,
+    }
+}
+
+/// Имя, не совпадающее (без учёта регистра) ни с одним из `taken`: при совпадении добавляется
+/// суффикс « (2)», « (3)»…; основа укорачивается, чтобы имя уложилось в 100 символов.
+pub(crate) fn unique_name(taken: &[&str], wanted: &str) -> String {
+    let is_taken = |name: &str| {
+        let name = name.to_lowercase();
+        taken.iter().any(|t| t.trim().to_lowercase() == name)
+    };
+    let wanted = truncate_chars(wanted, FOLDER_NAME_MAX_CHARS);
+    if !is_taken(wanted) {
+        return wanted.to_string();
+    }
+    (2..)
+        .map(|n| {
+            let suffix = format!(" ({n})");
+            let base = truncate_chars(wanted, FOLDER_NAME_MAX_CHARS - suffix.chars().count());
+            format!("{}{suffix}", base.trim_end())
+        })
+        .find(|candidate| !is_taken(candidate))
+        .expect("suffix sequence is infinite")
+}
+
 /// Инварианты дерева: ссылки на папки существуют, циклов нет,
 /// имена папок валидны и уникальны среди соседей без учёта регистра.
 pub(crate) fn check_tree(data: &StoreData) -> AppResult<()> {
@@ -467,26 +507,49 @@ fn repair_on_read(data: &mut StoreData) {
             f.parent_id = None;
         }
     }
-    // Цикл из правленного вручную файла: разрываем его у первой встреченной папки.
+    // Цикл из правленного вручную файла: в корень уходит первая папка, лежащая на цикле
+    // (путь вверх возвращается к ней самой); папки, лишь ведущие в цикл, остаются на месте.
     for i in 0..data.folders.len() {
         let parents: HashMap<&str, Option<&str>> = data
             .folders
             .iter()
             .map(|f| (f.id.as_str(), f.parent_id.as_deref()))
             .collect();
+        let start = data.folders[i].id.as_str();
         let mut seen = HashSet::new();
-        let mut cur = Some(data.folders[i].id.as_str());
-        let mut cyclic = false;
+        let mut cur = parents.get(start).copied().flatten();
+        let mut on_cycle = false;
         while let Some(id) = cur {
+            if id == start {
+                on_cycle = true;
+                break;
+            }
             if !seen.insert(id) {
-                cyclic = true;
                 break;
             }
             cur = parents.get(id).copied().flatten();
         }
-        if cyclic {
+        if on_cycle {
             data.folders[i].parent_id = None;
         }
+    }
+    // Имена: trim, пустое — id папки, не длиннее 100 символов, уникальны среди соседей.
+    let mut taken: HashMap<Option<String>, Vec<String>> = HashMap::new();
+    for f in &mut data.folders {
+        let trimmed = f.name.trim();
+        let wanted = if trimmed.is_empty() {
+            f.id.trim()
+        } else {
+            trimmed
+        };
+        let wanted = truncate_chars(wanted, FOLDER_NAME_MAX_CHARS)
+            .trim_end()
+            .to_string();
+        let siblings = taken.entry(f.parent_id.clone()).or_default();
+        let refs: Vec<&str> = siblings.iter().map(String::as_str).collect();
+        let name = unique_name(&refs, &wanted);
+        siblings.push(name.clone());
+        f.name = name;
     }
 }
 
@@ -550,6 +613,12 @@ impl ConnectionStore {
         Ok(result)
     }
 
+    /// Создаёт или обновляет подключение и возвращает его в сохранённом виде.
+    ///
+    /// Новое подключение кладётся в конец папки `folder_id` входящего профиля.
+    /// У существующего `folder_id` и `order` берутся из сохранённого, входящие значения
+    /// игнорируются: место подключения меняют только команды перемещения. Пустой `extra`
+    /// входящего профиля тоже означает «оставить сохранённый».
     pub fn upsert(&self, mut profile: ConnectionProfile) -> AppResult<ConnectionProfile> {
         validate_profile(&profile)?;
         self.update(|data| {
@@ -559,6 +628,8 @@ impl ConnectionStore {
                     if profile.extra.is_empty() {
                         profile.extra = std::mem::take(&mut slot.extra);
                     }
+                    profile.folder_id = slot.folder_id.take();
+                    profile.order = slot.order;
                     *slot = profile.clone();
                 }
                 None => {
@@ -974,5 +1045,106 @@ mod tests {
         assert_eq!(folders[0].parent_id, None);
         check_tree(&store.cache.read_safe()).unwrap();
         store.delete("a").unwrap();
+    }
+
+    #[test]
+    fn folder_names_are_repaired_on_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let long = "я".repeat(101);
+        std::fs::write(
+            dir.path().join("connections.json"),
+            format!(
+                r##"{{"schemaVersion":1,"folders":[
+                  {{"id":"e","name":"   "}},{{"id":"l","name":"{long}"}},
+                  {{"id":"p1","name":"Prod"}},{{"id":"p2","name":" prod "}},{{"id":"p3","name":"PROD"}},
+                  {{"id":"c","name":"prod","parentId":"p1"}}],
+                  "connections":[]}}"##
+            ),
+        )
+        .unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        check_tree(&store.cache.read_safe()).unwrap();
+        let names: Vec<_> = store.list_folders().into_iter().map(|f| f.name).collect();
+        assert_eq!(names[0], "e");
+        assert_eq!(names[1], "я".repeat(100));
+        assert_eq!(&names[2..], ["Prod", "prod (2)", "PROD (3)", "prod"]);
+        store.upsert(sample_profile("a")).unwrap();
+    }
+
+    #[test]
+    fn unique_name_adds_suffix_case_insensitively() {
+        assert_eq!(unique_name(&[], "A"), "A");
+        assert_eq!(unique_name(&["a"], "A"), "A (2)");
+        assert_eq!(unique_name(&["A", "a (2)"], "A"), "A (3)");
+        let long = "x".repeat(100);
+        let n = unique_name(&[long.as_str()], &long);
+        assert_eq!(n.chars().count(), 100);
+        assert!(n.ends_with(" (2)"));
+    }
+
+    #[test]
+    fn upsert_of_existing_profile_keeps_its_place() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        store
+            .update(|d| {
+                d.folders.push(folder("f", "F", None));
+                Ok(())
+            })
+            .unwrap();
+        store.upsert(sample_profile("x")).unwrap();
+        let mut p = sample_profile("a");
+        p.folder_id = Some("f".into());
+        let saved = store.upsert(p).unwrap();
+        assert_eq!(saved.order, 0);
+        let mut edited = saved.clone();
+        edited.folder_id = None;
+        edited.order = 99;
+        edited.name = "renamed".into();
+        let back = store.upsert(edited).unwrap();
+        assert_eq!(back.folder_id.as_deref(), Some("f"));
+        assert_eq!(back.order, 0);
+        let stored = store.get("a").unwrap();
+        assert_eq!(
+            (
+                stored.folder_id.as_deref(),
+                stored.order,
+                stored.name.as_str()
+            ),
+            (Some("f"), 0, "renamed")
+        );
+    }
+
+    #[test]
+    fn cycle_repair_detaches_only_folders_on_the_cycle() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("connections.json"),
+            r##"{"schemaVersion":1,"folders":[
+              {"id":"z","name":"Z","parentId":"x"},
+              {"id":"x","name":"X","parentId":"y"},{"id":"y","name":"Y","parentId":"x"}],
+              "connections":[]}"##,
+        )
+        .unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let f = store.list_folders();
+        assert_eq!(f[0].parent_id.as_deref(), Some("x"));
+        let roots = f[1..].iter().filter(|f| f.parent_id.is_none()).count();
+        assert_eq!(roots, 1);
+        check_tree(&store.cache.read_safe()).unwrap();
+    }
+
+    #[test]
+    fn secret_like_unknown_fields_are_rejected() {
+        for key in ["saslPassword", "clientSecret"] {
+            let mut p = sample_profile("a");
+            p.extra.insert(key.into(), serde_json::json!("x"));
+            let e = validate_profile(&p).unwrap_err();
+            assert_eq!(e.key, "errors.connections.secretInExtraProperties", "{key}");
+            assert_eq!(e.params["key"], key);
+        }
+        let mut p = sample_profile("a");
+        p.extra.insert("pinned".into(), serde_json::json!(true));
+        assert!(validate_profile(&p).is_ok());
     }
 }

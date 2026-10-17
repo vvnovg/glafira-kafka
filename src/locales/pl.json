@@ -984,6 +984,13 @@
       "mtls": "Wymagany, jeśli brokery uwierzytelniają klientów certyfikatem. Certyfikat i klucz wydają administratorzy Kafki.",
       "alias": "Nazwa wpisu klucza w pliku JKS lub PKCS#12. Potrzebna tylko wtedy, gdy plik zawiera kilka kluczy.",
       "keyPassword": "Tylko jeśli klucz ma własne hasło: inne niż hasło magazynu kluczy albo zaszyfrowany klucz PEM."
+    },
+    "topics": {
+      "partitions": "Partycje są odczytywane równolegle; kolejność jest gwarantowana tylko w obrębie jednej partycji. Liczbę można później zwiększyć, ale nigdy zmniejszyć.",
+      "rf": "Liczba kopii każdej partycji przechowywanych przez brokery. Nie więcej niż liczba brokerów; dla prod zwykle 3.",
+      "preset": "<code>delete</code> usuwa stare wiadomości według czasu, <code>compact</code> zachowuje ostatnią wartość każdego klucza, <code>compact + delete</code> robi jedno i drugie, <code>test</code> przechowuje wiadomości przez 1 godzinę.",
+      "extraConfigs": "Dowolne parametry topiku w postaci <code>key=value</code>, po jednym w wierszu, na przykład <code>retention.ms=86400000</code>. Mają pierwszeństwo przed profilem.",
+      "config": "„przywróć wartość domyślną” usuwa nadpisanie — obowiązuje wartość domyślna brokera. Nic się nie zmieni, dopóki zmiany nie zostaną przejrzane i potwierdzone."
     }
   }
 }

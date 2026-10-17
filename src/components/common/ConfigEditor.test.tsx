@@ -66,4 +66,16 @@ describe("ConfigEditor", () => {
     await user.click(screen.getByRole("button", { name: "Применить" }));
     expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "t", [{ op: "set", name: "retention.ms", value: "2000" }], "prod-1");
   });
+
+  it("подсказка «?» рядом с «Проверить изменения»", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ConfigEditor connection={dev} topic="t" entries={entries} onDone={() => {}} />);
+    const review = screen.getByRole("button", { name: "Проверить изменения" });
+    const hint = screen.getByRole("button", { name: "Подсказка: Проверить изменения" });
+    expect(review.nextElementSibling).toBe(hint);
+    await user.click(hint);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "«к default» удаляет переопределение — действует значение брокера. Ничего не меняется, пока вы не проверите и не подтвердите изменения.",
+    );
+  });
 });

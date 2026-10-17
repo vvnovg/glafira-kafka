@@ -980,6 +980,13 @@
       "mtls": "Necesario si los brokers autentican a los clientes por certificado. El certificado y la clave los emiten los administradores de Kafka.",
       "alias": "Nombre de la entrada de la clave en el archivo JKS o PKCS#12. Solo es necesario si el archivo contiene varias claves.",
       "keyPassword": "Solo si la clave tiene su propia contraseña: distinta de la del keystore, o una clave PEM cifrada."
+    },
+    "topics": {
+      "partitions": "Las particiones se leen en paralelo; el orden solo está garantizado dentro de una partición. El número puede aumentarse más adelante, pero nunca reducirse.",
+      "rf": "Cuántas copias de cada partición guardan los brokers. Como máximo, el número de brokers; para prod lo habitual es 3.",
+      "preset": "<code>delete</code> elimina los mensajes antiguos por tiempo, <code>compact</code> conserva el último valor de cada clave, <code>compact + delete</code> hace ambas cosas, <code>test</code> conserva los mensajes 1 hora.",
+      "extraConfigs": "Cualquier ajuste del topic como <code>key=value</code>, uno por línea, por ejemplo <code>retention.ms=86400000</code>. Tiene prioridad sobre el preajuste.",
+      "config": "“restablecer” elimina el valor personalizado y se aplica el valor predeterminado del broker. No cambia nada hasta que revises y confirmes los cambios."
     }
   }
 }

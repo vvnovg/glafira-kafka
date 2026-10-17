@@ -976,6 +976,13 @@
       "mtls": "Erforderlich, wenn die Broker Clients per Zertifikat authentifizieren. Zertifikat und Schlüssel stellen Ihre Kafka-Administratoren aus.",
       "alias": "Name des Schlüsseleintrags in der JKS- oder PKCS#12-Datei. Nur nötig, wenn die Datei mehrere Schlüssel enthält.",
       "keyPassword": "Nur wenn der Schlüssel ein eigenes Passwort hat: abweichend vom Keystore-Passwort oder bei einem verschlüsselten PEM-Schlüssel."
+    },
+    "topics": {
+      "partitions": "Partitionen werden parallel gelesen; die Reihenfolge ist nur innerhalb einer Partition garantiert. Die Anzahl lässt sich später erhöhen, aber nie verringern.",
+      "rf": "Wie viele Kopien jeder Partition die Broker vorhalten. Höchstens so viele wie Broker; für Prod ist 3 üblich.",
+      "preset": "<code>delete</code> löscht alte Nachrichten nach Zeit, <code>compact</code> behält den neuesten Wert je Schlüssel, <code>compact + delete</code> macht beides, <code>test</code> bewahrt Nachrichten 1 Stunde auf.",
+      "extraConfigs": "Beliebige Topic-Einstellungen als <code>key=value</code>, eine pro Zeile, zum Beispiel <code>retention.ms=86400000</code>. Haben Vorrang vor der Voreinstellung.",
+      "config": "„auf Standard zurücksetzen“ entfernt den eigenen Wert, dann gilt der Standardwert des Brokers. Es ändert sich nichts, bis Sie die Änderungen prüfen und bestätigen."
     }
   }
 }

@@ -57,4 +57,18 @@ describe("CreateTopicForm", () => {
     await user.click(screen.getByRole("button", { name: "Создать топик" }));
     expect(api.createTopic).toHaveBeenCalledWith("c", expect.objectContaining({ name: "t" }), "prod-1");
   });
+
+  it("подсказки «?» у полей формы; открытая подсказка показывает текст", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<CreateTopicForm connection={dev} onCreated={() => {}} onCancel={() => {}} />);
+    for (const label of ["Партиции", "Фактор репликации", "Пресет", "Доп. конфиги (key=value)"]) {
+      expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
+    }
+    // Значок рядом с подписью, а не внутри: доступное имя поля не меняется.
+    expect(screen.getByLabelText("Фактор репликации")).toHaveAttribute("id", "ct-rf");
+    await user.click(screen.getByRole("button", { name: "Подсказка: Фактор репликации" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Сколько копий каждой партиции хранят брокеры. Не больше числа брокеров; для prod обычно 3.",
+    );
+  });
 });

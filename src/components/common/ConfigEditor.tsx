@@ -6,6 +6,7 @@ import type { ConfigChange, ConfigEntry, ConnectionProfile } from "../../api/typ
 import { ConfirmDialog, needsConfirmation } from "./ConfirmDialog";
 import { type ConfigEdit, type DiffRow, diffConfigs, isEditable } from "./configDiff";
 import { ErrorBanner } from "./ErrorBanner";
+import { Hint } from "./Hint";
 
 interface Props {
   connection: ConnectionProfile;
@@ -104,6 +105,7 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
         }}>
           {t("common.config.review")}
         </button>
+        <Hint k="hints.topics.config" label={t("common.config.review")} />
         <button type="button" disabled={Object.keys(edits).length === 0} onClick={() => setEdits({})}>
           {t("common.config.discard")}
         </button>

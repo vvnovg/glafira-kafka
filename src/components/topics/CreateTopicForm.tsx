@@ -6,6 +6,7 @@ import type { ConnectionProfile, NewTopicSpec } from "../../api/types";
 import { parseProps } from "../connections/profile";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { buildCreateCommand, TOPIC_PRESETS, topicNameWarning, validateTopicName } from "./topicName";
 
 interface Props {
@@ -67,12 +68,21 @@ export function CreateTopicForm({ connection, onCreated, onCancel }: Props) {
         <input id="ct-name" value={name} onChange={(e) => setName(e.target.value)} />
         {name && nameError && <p className="warn full">{nameError}</p>}
         {topicNameWarning(name) && <p className="muted full">{topicNameWarning(name)}</p>}
-        <label htmlFor="ct-partitions">{t("topics.create.partitions")}</label>
+        <span className="field-label">
+          <label htmlFor="ct-partitions">{t("topics.create.partitions")}</label>
+          <Hint k="hints.topics.partitions" label={t("topics.create.partitions")} />
+        </span>
         <input id="ct-partitions" type="number" min={1} value={partitions} onChange={(e) => setPartitions(e.target.value)} />
-        <label htmlFor="ct-rf">{t("topics.create.rf")}</label>
+        <span className="field-label">
+          <label htmlFor="ct-rf">{t("topics.create.rf")}</label>
+          <Hint k="hints.topics.rf" label={t("topics.create.rf")} />
+        </span>
         <input id="ct-rf" type="number" value={rfValue} onChange={(e) => setRf(e.target.value)} />
         {brokers !== undefined && <p className="muted full">{t("topics.create.brokersInCluster", { count: brokers })}</p>}
-        <label htmlFor="ct-preset">{t("topics.create.preset")}</label>
+        <span className="field-label">
+          <label htmlFor="ct-preset">{t("topics.create.preset")}</label>
+          <Hint k="hints.topics.preset" label={t("topics.create.preset")} />
+        </span>
         <select id="ct-preset" value={preset} onChange={(e) => setPreset(e.target.value)}>
           {TOPIC_PRESETS.map((pr) => (
             <option key={pr.id} value={pr.id}>
@@ -80,7 +90,10 @@ export function CreateTopicForm({ connection, onCreated, onCancel }: Props) {
             </option>
           ))}
         </select>
-        <label htmlFor="ct-configs">{t("topics.create.extraConfigs")}</label>
+        <span className="field-label">
+          <label htmlFor="ct-configs">{t("topics.create.extraConfigs")}</label>
+          <Hint k="hints.topics.extraConfigs" label={t("topics.create.extraConfigs")} />
+        </span>
         <textarea id="ct-configs" rows={3} value={extra} onChange={(e) => setExtra(e.target.value)} />
       </fieldset>
       {(extraError || numbersError) && <p className="warn">{extraError ?? numbersError}</p>}

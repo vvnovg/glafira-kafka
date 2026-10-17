@@ -976,6 +976,13 @@
       "mtls": "Needed if the brokers authenticate clients by certificate. Your Kafka admins issue the certificate and key.",
       "alias": "The key entry name in the JKS or PKCS#12 file. Needed only if the file holds several keys.",
       "keyPassword": "Only if the key has its own password: different from the keystore password, or an encrypted PEM key."
+    },
+    "topics": {
+      "partitions": "Partitions are read in parallel; order is guaranteed only within one partition. The count can be increased later but never decreased.",
+      "rf": "How many copies of each partition the brokers keep. At most the number of brokers; 3 is the usual choice for prod.",
+      "preset": "<code>delete</code> removes old messages by time, <code>compact</code> keeps the latest value per key, <code>compact + delete</code> does both, <code>test</code> keeps messages for 1 hour.",
+      "extraConfigs": "Any topic setting as <code>key=value</code>, one per line, for example <code>retention.ms=86400000</code>. Overrides the preset.",
+      "config": "“reset to default” removes the override, and the broker default applies. Nothing changes until you review and confirm the changes."
     }
   }
 }

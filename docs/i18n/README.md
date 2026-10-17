@@ -1,7 +1,8 @@
 # Локализация (i18n)
 
-Интерфейс и тексты Rust локализуются через словари `src/locales/<код>.json` (сейчас `en` — эталон, `ru`).
-Остальные языки (de, fr, es, it, pl, pt-BR) появятся в B2: код языка уже есть в `src/i18n/languages.ts`.
+Интерфейс и тексты Rust локализуются через словари `src/locales/<код>.json`: `en` — эталон ключей и параметров,
+`ru` — эталон смысла, `de`, `fr`, `es`, `it`, `pl`, `pt-BR` — Pro-языки (без Pro-лицензии действует `en`).
+Термины и стиль переводов — [glossary.md](glossary.md), выборочная проверка носителем — [review-checklist.md](review-checklist.md).
 
 ## Соглашение о ключах
 - Вложенные объекты, ключи в camelCase: `<область>.<экран/компонент>.<смысл>`, например `topics.delete.titleOne`.
@@ -11,12 +12,14 @@
 
 ## Как добавить строку
 1. В компоненте: `const { t } = useTranslation();` и `t("область.экран.смысл", { param })`.
-2. Добавить ключ в `src/locales/en.json` и `src/locales/ru.json` (для остальных языков — в B2).
+2. Добавить ключ во все словари `src/locales/*.json`: `en` — эталон, `ru` — по-русски, Pro-языки — перевод по глоссарию.
+   Если перевод намеренно совпадает с английским (`Producer`, `DNS / TCP`), добавить ключ в `docs/i18n/same-as-en.json`.
 3. `pnpm i18n:check` — словари согласованы, нет забытой кириллицы в коде.
 
 ## Плюралы
 Число рядом с существительным — только через `count` и суффиксы `_one`, `_few`, `_many`, `_other`
-(набор форм зависит от языка: en — `one`/`other`, ru — все четыре). Пример: `topics.delete.titleMany_*`.
+(набор форм — по `Intl.PluralRules`: en, de — `one`/`other`; fr, es, it, pt-BR — `one`/`many`/`other`;
+ru, pl — `one`/`few`/`many`/`other`). Пример: `topics.delete.titleMany_*`.
 Подписи вида «участников: N» (метка: значение) плюрала не требуют.
 
 ## Тексты из Rust
@@ -27,9 +30,19 @@
 - Ключи, вызванные из Rust, проверяются: `pnpm i18n:check` падает, если ключа нет в словаре.
 
 ## Проверки
-`pnpm i18n:check` = `node scripts/i18n-check.mjs --rust-cyrillic src-tauri/src`:
-одинаковые ключи и параметры во всех словарях, плюральные формы под язык, ключи `ltext!`/`app_err!`,
+`pnpm i18n:check` = `node scripts/i18n-check.mjs --require-all-languages --rust-cyrillic src-tauri/src`:
+словарь есть у каждого языка из `src/i18n/languages.ts`; одинаковые ключи, параметры и теги во всех словарях;
+плюральные формы под язык; строки, совпадающие с en, — только из `docs/i18n/same-as-en.json`;
+многоточие `…` и неразрывные пробелы во французском; ключи `ltext!`/`app_err!`;
 кириллица в коде фронтенда и Rust (кроме словарей и тестов). Запускается в CI. Тесты скриптов — `pnpm test:scripts`.
+
+`node scripts/i18n-check.mjs --lengths` дополнительно печатает строки, заметно длиннее английских, —
+что проверить на ширине окна 1400 px и 900 px.
+
+## Новый язык
+1. Код и самоназвание — в `src/i18n/languages.ts` и в списке языков Rust (`src-tauri/src/settings.rs`).
+2. Столбец в `glossary.md`, затем `src/locales/<код>.json` переводом `en.json`.
+3. `pnpm i18n:check`, `pnpm vitest run src/i18n/locales.test.ts`, смоук по `docs/smoke/b2.md`.
 
 ## Псевдоязык
 В dev-сборке (`pnpm tauri dev`) в «Настройки» → «Язык» есть пункт «Pseudo (dev)»: все строки показываются как `[!! … !!]`

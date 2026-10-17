@@ -209,5 +209,31 @@
     "tabs.producer",
     "topics.details.colLeader",
     "topics.groups.colLag"
+  ],
+  "pt-BR": [
+    "about.build",
+    "about.logDir",
+    "browse.form.offsetAria",
+    "cluster.overview.brokers",
+    "connections.form.prodPro",
+    "connections.form.step.tcp",
+    "errors.groups.commitAndOffsetsError",
+    "errors.groups.commitError",
+    "errors.groups.errorAndCommitError",
+    "errors.groups.offsetsError",
+    "errors.source.csv",
+    "groups.details.colHost",
+    "groups.details.colLag",
+    "groups.list.colLag",
+    "groups.list.title",
+    "groups.reset.offset",
+    "producer.partitionAuto",
+    "settings.language.proSuffix",
+    "sidebar.groups",
+    "sidebar.producer",
+    "tabs.producer",
+    "topics.details.colLeader",
+    "topics.details.tabGroups",
+    "topics.groups.colLag"
   ]
 }

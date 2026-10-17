@@ -30,6 +30,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const queryClient = useQueryClient();
   const foldersQ = useQuery({ queryKey: ["folders"], queryFn: api.listFolders });
   const paths = useMemo(() => folderPaths(foldersQ.data ?? []), [foldersQ.data]);
+  // Ссылка на несуществующую папку означает корень (так её показывает и дерево).
+  const knownFolder = (id: string | null | undefined): string | null =>
+    !id || (foldersQ.isSuccess && !paths.some((p) => p.id === id)) ? null : id;
+  const folderId = knownFolder(profile.folderId);
   const open = useWorkspace((s) => s.open);
   const close = useWorkspace((s) => s.close);
   const closeForConnection = useWorkspace((s) => s.closeForConnection);
@@ -38,7 +42,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const sec = profile.security;
 
   const update = (patch: Partial<ConnectionProfile>) => setProfile((p) => ({ ...p, ...patch }));
-  const current = (): ConnectionProfile => ({ ...profile, extraProperties: parseProps(propsText) });
+  const current = (): ConnectionProfile => ({ ...profile, folderId, extraProperties: parseProps(propsText) });
 
   const tlsPasswords = (): TlsPasswordsInput | undefined =>
     "tls" in profile.security
@@ -71,9 +75,8 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
     run(async () => {
       const saved = await api.saveConnection(current(), password || undefined, tlsPasswords());
       // save_connection не меняет место существующего подключения в дереве — перенос отдельной командой.
-      const folderId = profile.folderId ?? null;
       try {
-        if (!isNew && folderId !== (initial.folderId ?? null)) {
+        if (!isNew && folderId !== knownFolder(initial.folderId)) {
           await api.moveItems([{ kind: "connection", id: saved.id }], folderId, null);
         }
       } finally {
@@ -106,7 +109,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         <input id="cf-name" value={profile.name} onChange={(e) => update({ name: e.target.value })} />
 
         <label htmlFor="cf-folder">{t("connections.form.folder")}</label>
-        <select id="cf-folder" value={profile.folderId ?? ""} onChange={(e) => update({ folderId: e.target.value || null })}>
+        <select id="cf-folder" value={folderId ?? ""} onChange={(e) => update({ folderId: e.target.value || null })}>
           <option value="">{t("connections.form.folderRoot")}</option>
           {paths.map((p) => (
             <option key={p.id} value={p.id}>

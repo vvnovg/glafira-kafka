@@ -13,6 +13,8 @@ import { buildTree, canMoveFolder, filterTree, type TreeNode } from "./folderTre
 const COLLAPSED_KEY = "glafira.tree.collapsed";
 /** Тип данных перетаскивания: сам элемент берётся из ref (в dragover браузер данные не отдаёт). */
 const DRAG_TYPE = "application/x-glafira-tree-item";
+/** Доля высоты строки папки сверху, где бросок означает «перед папкой». */
+const BEFORE_ZONE = 0.3;
 
 function readCollapsed(): Set<string> {
   try {
@@ -68,6 +70,10 @@ function FolderNameInput({ initial, onSubmit, onCancel }: { initial: string; onS
         readOnly={busy}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={onKeyDown}
+        // Пустое поле, из которого ушёл фокус, — передумали: строка ввода исчезает.
+        onBlur={() => {
+          if (!busy && value.trim() === "") onCancel();
+        }}
       />
       {error && (
         <p className="tree-error" role="alert">
@@ -212,8 +218,9 @@ export function ConnectionTree() {
   // --- Перетаскивание ---
   const canDrop = (item: TreeItemRef | null, target: DropTarget): boolean => {
     if (!item) return false;
+    if (target.before?.kind === item.kind && target.before.id === item.id) return false;
     if (item.kind === "folder") return canMoveFolder(folders ?? [], item.id, target.parentId);
-    return !(target.before?.kind === "connection" && target.before.id === item.id);
+    return true;
   };
 
   const dragSource = (item: TreeItemRef) => ({
@@ -231,12 +238,15 @@ export function ConnectionTree() {
     },
   });
 
-  const dropTarget = (target: DropTarget) => ({
+  /** Обработчики цели; resolve выбирает цель по перетаскиваемому элементу и точке (зоны строки папки). */
+  const dropTarget = (resolve: (item: TreeItemRef, e: DragEvent) => DropTarget, ownKeys: string[]) => ({
     onDragOver: (e: DragEvent) => {
       e.stopPropagation();
+      const item = dragged.current;
+      const target = item ? resolve(item, e) : null;
       // Без preventDefault браузер не разрешает drop: недопустимая цель так и остаётся без подсветки.
-      if (!canDrop(dragged.current, target)) {
-        if (dropKey === target.key) setDropKey(null);
+      if (!target || !canDrop(item, target)) {
+        if (dropKey !== null && ownKeys.includes(dropKey)) setDropKey(null);
         return;
       }
       e.preventDefault();
@@ -245,14 +255,16 @@ export function ConnectionTree() {
     },
     onDragLeave: (e: DragEvent) => {
       e.stopPropagation();
-      if (dropKey === target.key) setDropKey(null);
+      if (dropKey !== null && ownKeys.includes(dropKey)) setDropKey(null);
     },
     onDrop: (e: DragEvent) => {
       e.stopPropagation();
       const item = dragged.current;
       dragged.current = null;
       setDropKey(null);
-      if (!item || !canDrop(item, target)) return;
+      if (!item) return;
+      const target = resolve(item, e);
+      if (!canDrop(item, target)) return;
       e.preventDefault();
       api
         .moveItems([item], target.parentId, target.before)
@@ -261,7 +273,34 @@ export function ConnectionTree() {
     },
   });
 
-  const rootTarget = dropTarget({ key: "root", parentId: null, before: null });
+  /** Конец папок уровня parentId: туда попадает папка, брошенная на подключение этого уровня. */
+  const foldersEndKey = (parentId: string | null) => `end:${parentId ?? ""}`;
+
+  const rootTarget = dropTarget(() => ({ key: "root", parentId: null, before: null }), ["root"]);
+
+  /** Строка папки: верхние ~30% — «перед папкой» (только для папок), остальное — «внутрь». */
+  const folderRowTarget = (folder: ConnectionFolder, parentId: string | null) =>
+    dropTarget(
+      (item, e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const topZone = rect.height > 0 && e.clientY < rect.top + rect.height * BEFORE_ZONE;
+        if (item.kind === "folder" && topZone && item.id !== folder.id && canMoveFolder(folders ?? [], item.id, parentId)) {
+          return { key: `fb:${folder.id}`, parentId, before: { kind: "folder", id: folder.id } };
+        }
+        return { key: `f:${folder.id}`, parentId: folder.id, before: null };
+      },
+      [`fb:${folder.id}`, `f:${folder.id}`],
+    );
+
+  /** Строка подключения: подключение встаёт перед ним, папка — в конец папок того же уровня. */
+  const connectionRowTarget = (id: string, parentId: string | null) =>
+    dropTarget(
+      (item) =>
+        item.kind === "folder"
+          ? { key: foldersEndKey(parentId), parentId, before: null }
+          : { key: `c:${id}`, parentId, before: { kind: "connection", id } },
+      [`c:${id}`, foldersEndKey(parentId)],
+    );
 
   const nameInput = (parentId: string | null) =>
     editing?.mode === "create" && editing.parentId === parentId ? (
@@ -270,25 +309,36 @@ export function ConnectionTree() {
       </li>
     ) : null;
 
-  const renderNodes = (nodes: TreeNode[], parentId: string | null) =>
-    nodes.map((node) => {
+  /** Последняя папка уровня (подсветка «в конец папок»); null — папок на уровне нет. */
+  const lastFolderId = (nodes: TreeNode[]) => nodes.reduce<string | null>((last, n) => (n.kind === "folder" ? n.folder.id : last), null);
+
+  const folderRowClass = (folder: ConnectionFolder, parentId: string | null, isLast: boolean, children: TreeNode[]) => {
+    const classes = ["tree-folder"];
+    if (dropKey === `fb:${folder.id}`) classes.push("drop-before");
+    // «Внутрь» — и когда папку бросают в конец папок этого уровня, а своих вложенных папок нет.
+    if (dropKey === `f:${folder.id}` || (dropKey === foldersEndKey(folder.id) && lastFolderId(children) === null)) classes.push("drop-into");
+    if (isLast && dropKey === foldersEndKey(parentId)) classes.push("drop-after");
+    return classes.join(" ");
+  };
+
+  const renderNodes = (nodes: TreeNode[], parentId: string | null) => {
+    const last = lastFolderId(nodes);
+    return nodes.map((node) => {
       if (node.kind === "connection") {
         const c = node.connection;
-        const key = `c:${c.id}`;
         return (
           <ConnectionNode
             key={c.id}
             connection={c}
             rowProps={{
               ...dragSource({ kind: "connection", id: c.id }),
-              ...dropTarget({ key, parentId, before: { kind: "connection", id: c.id } }),
-              className: dropKey === key ? "drop-before" : undefined,
+              ...connectionRowTarget(c.id, parentId),
+              className: dropKey === `c:${c.id}` ? "drop-before" : undefined,
             }}
           />
         );
       }
       const { folder } = node;
-      const key = `f:${folder.id}`;
       const expanded = filtering || !collapsed.has(folder.id);
       const renaming = editing?.mode === "rename" && editing.folderId === folder.id;
       const childInput = nameInput(folder.id);
@@ -298,9 +348,9 @@ export function ConnectionTree() {
             <FolderNameInput initial={folder.name} onSubmit={(name) => renameFolder(folder.id, name)} onCancel={() => setEditing(null)} />
           ) : (
             <div
-              className={dropKey === key ? "tree-folder drop-into" : "tree-folder"}
+              className={folderRowClass(folder, parentId, folder.id === last, node.children)}
               {...dragSource({ kind: "folder", id: folder.id })}
-              {...dropTarget({ key, parentId: folder.id, before: null })}
+              {...folderRowTarget(folder, parentId)}
               onContextMenu={(e) => {
                 e.preventDefault();
                 setMenu(folder.id);
@@ -319,7 +369,15 @@ export function ConnectionTree() {
                 <span className="tree-name">{folder.name}</span>
               </button>
               <span className="tree-menu-anchor">
-                <button type="button" className="icon" title={t("sidebar.menu")} aria-label={t("sidebar.menu")} onClick={() => toggleMenu(folder.id)}>
+                <button
+                  type="button"
+                  className="icon"
+                  title={t("sidebar.menu")}
+                  aria-label={t("sidebar.menu")}
+                  aria-haspopup="menu"
+                  aria-expanded={menu === folder.id}
+                  onClick={() => toggleMenu(folder.id)}
+                >
                   ⋯
                 </button>
                 {menu === folder.id && <FolderMenu label={t("sidebar.menu")} items={folderMenuItems(folder)} onClose={() => setMenu(null)} />}
@@ -336,13 +394,15 @@ export function ConnectionTree() {
         </li>
       );
     });
+  };
 
   const error = connectionsQ.error ?? foldersQ.error;
+  const rootHighlight = dropKey === "root" || (dropKey === foldersEndKey(null) && lastFolderId(visible) === null);
   const empty = connectionsQ.isSuccess && (connections ?? []).length === 0 && (folders ?? []).length === 0;
 
   return (
     <>
-      <div className={dropKey === "root" ? "sidebar-header drop-into" : "sidebar-header"} {...rootTarget}>
+      <div className={rootHighlight ? "sidebar-header drop-into" : "sidebar-header"} {...rootTarget}>
         <span>{t("sidebar.connections")}</span>
         <span className="sidebar-actions">
           <button type="button" title={t("sidebar.newConnection")} onClick={() => open({ kind: "connection-form", connectionId: null })}>
@@ -352,7 +412,14 @@ export function ConnectionTree() {
             +📁
           </button>
           <span className="tree-menu-anchor">
-            <button type="button" title={t("sidebar.menu")} aria-label={t("sidebar.menu")} onClick={() => toggleMenu("header")}>
+            <button
+              type="button"
+              title={t("sidebar.menu")}
+              aria-label={t("sidebar.menu")}
+              aria-haspopup="menu"
+              aria-expanded={menu === "header"}
+              onClick={() => toggleMenu("header")}
+            >
               ⋯
             </button>
             {menu === "header" && (
@@ -383,7 +450,7 @@ export function ConnectionTree() {
         {nameInput(null)}
         {renderNodes(visible, null)}
       </ul>
-      <div className={dropKey === "root" ? "tree-root-drop drop-into" : "tree-root-drop"} aria-hidden="true" {...rootTarget} />
+      <div className={rootHighlight ? "tree-root-drop drop-into" : "tree-root-drop"} aria-hidden="true" {...rootTarget} />
     </>
   );
 }

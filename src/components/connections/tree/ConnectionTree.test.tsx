@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { createEvent, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionFolder, ConnectionProfile } from "../../../api/types";
@@ -56,6 +56,13 @@ function stubDataTransfer() {
     getData: (type: string) => data.get(type) ?? "",
     types: [] as string[],
   };
+}
+
+/** dragover/drop с clientY: в jsdom нет DragEvent, координату задаём на событии сами. */
+function dragAt(type: "dragOver" | "drop", el: HTMLElement, dataTransfer: object, clientY: number) {
+  const event = createEvent[type](el, { dataTransfer });
+  Object.defineProperty(event, "clientY", { value: clientY });
+  return fireEvent(el, event);
 }
 
 async function openFolderMenu(name: string) {
@@ -295,5 +302,149 @@ describe("ConnectionTree", () => {
     expect(fireEvent.dragOver(header, { dataTransfer })).toBe(false);
     fireEvent.drop(header, { dataTransfer });
     expect(api.moveItems).toHaveBeenCalledWith([{ kind: "folder", id: "b" }], null, null);
+  });
+
+  describe("порядок папок и цели перетаскивания", () => {
+    const SIBLINGS: ConnectionFolder[] = [
+      { id: "A", name: "Альфа", parentId: null, order: 0 },
+      { id: "B", name: "Бета", parentId: null, order: 1 },
+      { id: "C", name: "Вложенная", parentId: "A", order: 0 },
+    ];
+
+    /** Строка 20px сверху на 100px: верхние ~30% — «перед», остальное — «внутрь». */
+    function stubRect(el: HTMLElement) {
+      el.getBoundingClientRect = () => ({ top: 100, bottom: 120, height: 20, left: 0, right: 200, width: 200, x: 0, y: 100, toJSON: () => ({}) });
+    }
+
+    beforeEach(() => {
+      vi.mocked(api.listFolders).mockResolvedValue(SIBLINGS);
+      vi.mocked(api.moveItems).mockResolvedValue(undefined);
+    });
+
+    it("папка, брошенная на верх строки соседней папки, встаёт перед ней", async () => {
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("local");
+      const target = folderRow("Альфа");
+      stubRect(target);
+      const dataTransfer = stubDataTransfer();
+      fireEvent.dragStart(folderRow("Бета"), { dataTransfer });
+      expect(dragAt("dragOver", target, dataTransfer, 102)).toBe(false);
+      expect(target).toHaveClass("drop-before");
+      expect(target).not.toHaveClass("drop-into");
+      dragAt("drop", target, dataTransfer, 102);
+      expect(api.moveItems).toHaveBeenCalledWith([{ kind: "folder", id: "B" }], null, { kind: "folder", id: "A" });
+    });
+
+    it("ниже верхней зоны строки папки — внутрь", async () => {
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("local");
+      const target = folderRow("Альфа");
+      stubRect(target);
+      const dataTransfer = stubDataTransfer();
+      fireEvent.dragStart(folderRow("Бета"), { dataTransfer });
+      dragAt("dragOver", target, dataTransfer, 112);
+      expect(target).toHaveClass("drop-into");
+      dragAt("drop", target, dataTransfer, 112);
+      expect(api.moveItems).toHaveBeenCalledWith([{ kind: "folder", id: "B" }], "A", null);
+    });
+
+    it("подключение на верх строки папки кладётся внутрь (зона «перед» — только для папок)", async () => {
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("local");
+      const target = folderRow("Альфа");
+      stubRect(target);
+      const dataTransfer = stubDataTransfer();
+      fireEvent.dragStart(connRow("local"), { dataTransfer });
+      dragAt("dragOver", target, dataTransfer, 101);
+      expect(target).toHaveClass("drop-into");
+      dragAt("drop", target, dataTransfer, 101);
+      expect(api.moveItems).toHaveBeenCalledWith([{ kind: "connection", id: "y" }], "A", null);
+    });
+
+    it("папка на подключение — в конец папок этого уровня, подсвечивается последняя папка", async () => {
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("local");
+      const dataTransfer = stubDataTransfer();
+      fireEvent.dragStart(folderRow("Вложенная"), { dataTransfer });
+      expect(fireEvent.dragOver(connRow("local"), { dataTransfer })).toBe(false);
+      expect(connRow("local")).not.toHaveClass("drop-before");
+      expect(folderRow("Бета")).toHaveClass("drop-after");
+      fireEvent.drop(connRow("local"), { dataTransfer });
+      expect(api.moveItems).toHaveBeenCalledWith([{ kind: "folder", id: "C" }], null, null);
+    });
+
+    it("папку нельзя поставить перед ней самой", async () => {
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("local");
+      const target = folderRow("Бета");
+      stubRect(target);
+      const dataTransfer = stubDataTransfer();
+      fireEvent.dragStart(target, { dataTransfer });
+      expect(dragAt("dragOver", target, dataTransfer, 101)).toBe(true);
+      dragAt("drop", target, dataTransfer, 101);
+      expect(api.moveItems).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("доступность меню", () => {
+    it("триггер: aria-haspopup и aria-expanded; Esc возвращает фокус и не уходит в document", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("kafka-ift");
+      const trigger = within(folderRow("ИФТ")).getByRole("button", { name: "Ещё действия" });
+      expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await user.click(trigger);
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getAllByRole("menuitem")[0]).toHaveFocus();
+      const docKey = vi.fn();
+      document.addEventListener("keydown", docKey);
+      try {
+        await user.keyboard("{Escape}");
+      } finally {
+        document.removeEventListener("keydown", docKey);
+      }
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+      expect(docKey).not.toHaveBeenCalled();
+      expect(trigger).toHaveFocus();
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("Tab закрывает меню", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("kafka-ift");
+      const header = screen.getByText("Подключения").closest(".sidebar-header") as HTMLElement;
+      await user.click(within(header).getByRole("button", { name: "Ещё действия" }));
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+      await user.tab();
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
+
+    it("перетаскивание не начинается из меню", async () => {
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("kafka-ift");
+      await openFolderMenu("ИФТ");
+      const dataTransfer = stubDataTransfer();
+      const notPrevented = fireEvent.dragStart(screen.getAllByRole("menuitem")[0], { dataTransfer });
+      expect(notPrevented).toBe(false);
+      fireEvent.dragOver(folderRow("Проект А"), { dataTransfer });
+      fireEvent.drop(folderRow("Проект А"), { dataTransfer });
+      expect(api.moveItems).not.toHaveBeenCalled();
+    });
+  });
+
+  it("пустое поле имени отменяется при потере фокуса, непустое остаётся", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionTree />);
+    await screen.findByText("local");
+    await user.click(screen.getByRole("button", { name: "Новая папка" }));
+    fireEvent.blur(screen.getByRole("textbox", { name: "Имя папки" }));
+    expect(screen.queryByRole("textbox", { name: "Имя папки" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Новая папка" }));
+    await user.type(screen.getByRole("textbox", { name: "Имя папки" }), "x");
+    fireEvent.blur(screen.getByRole("textbox", { name: "Имя папки" }));
+    expect(screen.getByRole("textbox", { name: "Имя папки" })).toHaveValue("x");
   });
 });

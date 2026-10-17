@@ -65,6 +65,7 @@ tr.clickable:hover, .row.clickable:hover { background: var(--bg-alt); }
 .tree-folder[draggable="true"], .tree-conn[draggable="true"] { cursor: grab; }
 .drop-into { outline: 2px solid var(--accent); outline-offset: -1px; border-radius: 4px; }
 .drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
 .tree-root-drop { min-height: 24px; }
 .env-badge { color: #fff; font-size: 10px; padding: 0 4px; border-radius: 3px; }
 .workspace { flex: 1; display: flex; flex-direction: column; min-width: 0; }

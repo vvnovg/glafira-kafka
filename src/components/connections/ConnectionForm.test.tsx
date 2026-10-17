@@ -323,4 +323,39 @@ describe("ConnectionForm", () => {
     await screen.findByRole("option", { name: "Проект А / ИФТ" });
     expect(screen.getByLabelText("Папка")).toHaveValue("b");
   });
+
+  it("поле «Папка»: неизвестная папка считается корнем и не вызывает перенос", async () => {
+    vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
+    const initial = { ...newProfile(), id: "c1", name: "x", folderId: "gone", order: 0 };
+    vi.mocked(api.saveConnection).mockResolvedValue(initial);
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    expect(screen.getByLabelText("Папка")).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    await vi.waitFor(() => expect(api.saveConnection).toHaveBeenCalledWith(expect.objectContaining({ folderId: null }), undefined, undefined));
+    expect(api.moveItems).not.toHaveBeenCalled();
+  });
+
+  it("поле «Папка»: ошибка переноса после сохранения показывается, вкладка остаётся открытой", async () => {
+    vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
+    const initial = { ...newProfile(), id: "c1", name: "x", folderId: "b", order: 0 };
+    vi.mocked(api.saveConnection).mockResolvedValue(initial);
+    vi.mocked(api.moveItems).mockRejectedValue({
+      code: "INVALID_INPUT",
+      key: "errors.folders.notFound",
+      params: { id: "a" },
+      message: "Folder a not found",
+      retryable: false,
+    });
+    useWorkspace.setState({ tabs: [], activeId: null });
+    useWorkspace.getState().open({ kind: "connection-form", connectionId: "c1" });
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={initial} tabId="connection-form:c1" />);
+    await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    await user.selectOptions(screen.getByLabelText("Папка"), "Проект А");
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    expect(await screen.findByText("Папка a не найдена")).toBeInTheDocument();
+    expect(useWorkspace.getState().tabs.map((t) => t.id)).toEqual(["connection-form:c1"]);
+  });
 });

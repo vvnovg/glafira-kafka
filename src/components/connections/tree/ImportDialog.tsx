@@ -18,6 +18,9 @@ interface Props {
   onImported: (result: ImportPreview) => void;
 }
 
+/** Элементы, на которые попадает фокус по Tab (отключённые пропускаются). */
+const FOCUSABLE = "button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled]), summary, a[href], [tabindex]:not([tabindex='-1'])";
+
 const itemLabel = (item: PreviewItem) => [...item.path, item.name].join(" / ");
 
 /** Раскрываемый список одной группы предпросмотра; пустая группа не показывается. */
@@ -60,8 +63,29 @@ export function ImportDialog({ path, initialTargetId, onClose, onImported }: Pro
   const paths = folderPaths(foldersQ.data ?? []);
 
   useEffect(() => {
+    // Фокус возвращается туда, где он был до открытия (обычно кнопка «⋯» меню, из которого открыли диалог).
+    const returnTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     rootRef.current?.querySelector<HTMLElement>("select")?.focus();
+    return () => {
+      if (returnTo?.isConnected) returnTo.focus();
+    };
   }, []);
+
+  /** Tab и Shift+Tab ходят по кругу внутри диалога: дерево за ним недоступно, пока диалог открыт. */
+  const trapTab = (e: KeyboardEvent) => {
+    const items = [...(rootRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey && (active === first || !rootRef.current?.contains(active))) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && (active === last || !rootRef.current?.contains(active))) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   const apply = async () => {
     setBusy(true);
@@ -80,6 +104,7 @@ export function ImportDialog({ path, initialTargetId, onClose, onImported }: Pro
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Tab") trapTab(e);
     if (e.key === "Escape" && !busy) {
       e.stopPropagation();
       onClose();

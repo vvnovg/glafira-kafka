@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Проверки локализации: одинаковые ключи и параметры во всех словарях, ключи из Rust, забытая кириллица в коде.
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PLURAL = /_(zero|one|two|few|many|other)$/;
@@ -521,6 +521,81 @@ export function findRustCyrillic(files) {
   return hits;
 }
 
+export const GUIDE_CHAPTERS = ["getting-started", "connections", "topics", "browse", "producer", "groups", "consumer-sessions", "license-updates", "troubleshooting"];
+
+const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** Разбор главы руководства: заголовок, якоря разделов, метки `[[ui:ключ]]`, ссылки между главами и найденные нарушения формата. */
+export function parseGuideChapter(text) {
+  const problems = [];
+  const lines = text.split("\n");
+  const first = lines.find((l) => l.trim() !== "");
+  const title = first && /^# \S/.test(first) ? first.slice(2).trim() : null;
+  if (title === null) problems.push("первая непустая строка должна быть заголовком «# …»");
+  const anchors = [];
+  let fence = false;
+  const prose = [];
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      fence = !fence;
+      continue;
+    }
+    if (fence) continue;
+    const h = /^#{2,6} .*?\{#([^}]*)\}\s*$/.exec(line);
+    if (h) {
+      if (!KEBAB.test(h[1])) problems.push(`якорь {#${h[1]}} не в kebab-case (латиница, цифры, дефисы)`);
+      anchors.push(h[1]);
+    }
+    prose.push(line.replace(/`[^`]*`/g, ""));
+  }
+  const body = prose.join("\n");
+  if (/<[A-Za-z]/.test(body)) problems.push("сырой HTML в главе");
+  const labels = [...body.matchAll(/\[\[ui:([^\]]*)\]\]/g)].map((m) => m[1]);
+  const links = [];
+  for (const m of body.matchAll(/\[[^\]]*\]\(([^)\s]*)\)/g)) {
+    const target = m[1];
+    const md = /^([\w-]+)\.md(?:#([\w-]+))?$/.exec(target);
+    if (md) links.push({ chapter: md[1], anchor: md[2] ?? null });
+    else if (!target.startsWith("https://")) problems.push(`ссылка ${target} — допустимы только https:// и главы «глава.md#якорь»`);
+  }
+  return { title, anchors, labels, links, problems };
+}
+
+/** files: { "<код>/<глава>.md": текст }. Глав у каждого языка ровно `chapters`; якоря как в en; метки — ключи en без параметров; ссылки — на существующие главы и якоря. */
+export function checkGuide(files, codes, enFlat, chapters = GUIDE_CHAPTERS) {
+  const problems = [];
+  const parsed = {};
+  for (const code of codes) {
+    for (const ch of chapters) {
+      const path = `${code}/${ch}.md`;
+      if (!(path in files)) problems.push(`${path}: нет главы`);
+      else parsed[path] = parseGuideChapter(files[path]);
+    }
+  }
+  for (const path of Object.keys(files)) {
+    const [code, name] = path.split("/");
+    if (codes.includes(code) && !chapters.includes((name ?? "").replace(/\.md$/, ""))) problems.push(`${path}: лишний файл, такой главы нет в списке`);
+  }
+  for (const [path, ch] of Object.entries(parsed)) {
+    const [code, name] = path.split("/");
+    for (const pr of ch.problems) problems.push(`${path}: ${pr}`);
+    const enAnchors = parsed[`en/${name}`]?.anchors;
+    if (code !== "en" && enAnchors && ch.anchors.join(" ") !== enAnchors.join(" ")) {
+      problems.push(`${path}: якоря [${ch.anchors.join(", ")}] не совпадают с en [${enAnchors.join(", ")}]`);
+    }
+    for (const key of ch.labels) {
+      if (!enFlat.has(key)) problems.push(`${path}: метка [[ui:${key}]] — нет ключа ${key} в en`);
+      else if (enFlat.get(key).includes("{{")) problems.push(`${path}: метка [[ui:${key}]] — у ключа есть параметры {{…}}, метка для него невозможна`);
+    }
+    for (const l of ch.links) {
+      const target = parsed[`${code}/${l.chapter}.md`];
+      if (!target) problems.push(`${path}: ссылка на несуществующую главу ${l.chapter}.md`);
+      else if (l.anchor && !target.anchors.includes(l.anchor)) problems.push(`${path}: ссылка ${l.chapter}.md#${l.anchor} — в главе нет якоря #${l.anchor}`);
+    }
+  }
+  return problems;
+}
+
 function walk(dir, exts, out = []) {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
@@ -559,6 +634,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   );
   problems.push(...checkFrontendKeys(frontendKeys(srcFiles), flatten(dicts.en)));
   problems.push(...checkHints(hintKeys(srcFiles), flatten(dicts.en)));
+  const guideDir = join(root, "docs/guide");
+  const guideFiles = Object.fromEntries(walk(guideDir, [".md"]).map((p) => [relative(guideDir, p).split(sep).join("/"), readFileSync(p, "utf8")]));
+  problems.push(...checkGuide(guideFiles, codes, flatten(dicts.en)));
   if (!process.argv.includes("--no-cyrillic-scan")) {
     const files = srcFiles;
     for (const hit of findCyrillic(files)) problems.push(`кириллица в коде: ${hit}`);

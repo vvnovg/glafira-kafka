@@ -966,5 +966,8 @@
     "notice": {
       "available": "Доступна версия {{version}}."
     }
+  },
+  "hints": {
+    "label": "Подсказка: {{name}}"
   }
 }

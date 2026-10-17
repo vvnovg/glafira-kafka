@@ -111,3 +111,7 @@ label.inline { display: inline-flex; gap: 4px; align-items: center; white-space:
 .sidebar-footer { padding: 8px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .notice { display: flex; gap: 8px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .about-summary { margin: 0; max-width: 720px; line-height: 1.5; }
+.hint-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; padding: 0; margin-left: 4px; border: 1px solid var(--muted); border-radius: 50%; background: none; color: var(--muted); font-size: 10px; line-height: 1; cursor: help; vertical-align: middle; }
+.hint-icon:hover, .hint-icon:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+.hint-tooltip { z-index: 1000; max-width: 320px; padding: 6px 8px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); font-size: 12px; line-height: 1.4; }
+.hint-tooltip code { font-size: 11px; }

@@ -962,5 +962,8 @@
     "notice": {
       "available": "A versão {{version}} está disponível."
     }
+  },
+  "hints": {
+    "label": "Dica: {{name}}"
   }
 }

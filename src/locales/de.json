@@ -958,5 +958,8 @@
     "notice": {
       "available": "Version {{version}} ist verfügbar."
     }
+  },
+  "hints": {
+    "label": "Hinweis: {{name}}"
   }
 }

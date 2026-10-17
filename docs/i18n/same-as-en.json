@@ -1,0 +1,14 @@
+{
+  "ru": [
+    "connections.form.prodPro",
+    "connections.form.step.tcp",
+    "errors.source.csv",
+    "groups.list.title",
+    "settings.language.proSuffix",
+    "sidebar.groups",
+    "sidebar.producer",
+    "tabs.producer",
+    "topics.details.tabGroups",
+    "topics.list.colUnderRepl"
+  ]
+}

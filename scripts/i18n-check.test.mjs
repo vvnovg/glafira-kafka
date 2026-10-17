@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkDictionaries, checkFrontendKeys, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
+import { checkDictionaries, checkFrontendKeys, checkLanguageFiles, checkSameAsEn, checkTypography, languageCodes, lengthReport, tags, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -187,4 +187,52 @@ test("ключи фронтенда: статические проверяютс
   const p = checkFrontendKeys(keys, en);
   assert.deepEqual(p.map((x) => x.split(" ")[3]), ["typo.key", "tabs.missing"]);
   assert.ok(p[0].includes("src/a.tsx:1"), p[0]);
+});
+
+test("теги совпадают с en", () => {
+  assert.deepEqual(tags("a <code>{{x}}</code> <offset/> <file>"), ["</code>", "<code>", "<file>", "<offset/>"]);
+  const en = { a: "Type <code>{{name}}</code>", n_one: "<total/> {{count}}", n_other: "<total/> {{count}}s" };
+  const ok = { a: "Tippen <code>{{name}}</code>", n_one: "<total/> {{count}}", n_other: "<total/> {{count}}" };
+  assert.deepEqual(checkDictionaries({ en, de: ok }), []);
+  const p = checkDictionaries({ en, de: { ...ok, a: "Tippen {{name}}", n_other: "{{count}}" } });
+  assert.ok(p.some((x) => x.includes("de: a") && x.includes("<code>")), p.join("\n"));
+  assert.ok(p.some((x) => x.includes("de: n_other") && x.includes("<total/>")), p.join("\n"));
+});
+
+test("строка совпадает с en без разрешения — ошибка", () => {
+  const en = { a: "Save", b: "Kafka", c: "{{message}}", n_one: "{{count}} topic", n_other: "{{count}} topics" };
+  const de = { a: "Save", b: "Kafka", c: "{{message}}", n_one: "{{count}} Topic", n_other: "{{count}} topics" };
+  const p = checkSameAsEn({ en, de }, { de: ["b"] });
+  assert.ok(p.some((x) => x.includes("de: a ")), p.join("\n"));
+  assert.ok(!p.some((x) => x.includes("de: b ")), "b разрешён");
+  assert.ok(!p.some((x) => x.includes("de: c ")), "без букв вне параметров — не ошибка");
+  assert.ok(p.some((x) => x.includes("de: n_other")), "плюральная форма сравнивается с en той же формы или _other");
+  const stale = checkSameAsEn({ en, de: { ...de, a: "Speichern", n_other: "{{count}} Topics" } }, { de: ["a", "b"] });
+  assert.deepEqual(stale, ["de: a в docs/i18n/same-as-en.json, но перевод отличается от en — уберите из списка"]);
+});
+
+test("типографика: многоточие и пробелы во французском", () => {
+  const p = checkTypography({
+    en: { a: "Loading...", b: "Loading…" },
+    fr: { a: "Chargement…", b: "Supprimer ?", c: "Nom : x", d: "« x »", e: "Supprimer ?", f: "« x »", g: "localhost:9092" },
+  });
+  assert.deepEqual(p.sort(), [
+    "en: a — «...» вместо «…»",
+    "fr: b — обычный пробел вместо U+00A0 перед «?»",
+    "fr: c — обычный пробел вместо U+00A0 перед «:»",
+    "fr: d — обычный пробел вместо U+00A0 у кавычек « »",
+  ]);
+});
+
+test("языки из languages.ts и файлы словарей", () => {
+  const ts = 'export const LANGUAGES = [\n  { code: "en", nativeName: "English", pro: false },\n  { code: "pt-BR", nativeName: "Português (Brasil)", pro: true },\n];';
+  assert.deepEqual(languageCodes(ts), ["en", "pt-BR"]);
+  assert.deepEqual(checkLanguageFiles(["en", "ru", "de"], ["en", "ru"], { requireAll: false }), []);
+  assert.deepEqual(checkLanguageFiles(["en", "ru", "de"], ["en", "ru"], { requireAll: true }), ["нет словаря src/locales/de.json"]);
+  assert.deepEqual(checkLanguageFiles(["en", "ru"], ["en", "ru", "xx"], { requireAll: false }), ["словарь src/locales/xx.json — языка xx нет в src/i18n/languages.ts"]);
+});
+
+test("отчёт о длине: только заметно длиннее en", () => {
+  const r = lengthReport({ en: { a: "Delete topic", b: "OK", c: "Save" }, de: { a: "Das Topic endgültig löschen", b: "Einverstanden", c: "Speich" } });
+  assert.deepEqual(r, ["de: a — 27 / 12 (×2.3) «Das Topic endgültig löschen»"]);
 });

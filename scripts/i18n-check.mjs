@@ -19,6 +19,13 @@ export function placeholders(text) {
   return [...new Set([...text.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map((m) => m[1]))];
 }
 
+const TAG = /<\/?[A-Za-z][\w-]*\s*\/?>/g;
+
+/** Теги в строке (`<code>`, `</code>`, `<offset/>`, буквальные `<file>`) — отсортированный список с повторами. */
+export function tags(text) {
+  return [...text.matchAll(TAG)].map((m) => m[0].replace(/\s+/g, "")).sort();
+}
+
 function pluralForms(code) {
   const rules = new Intl.PluralRules(code);
   return rules.resolvedOptions().pluralCategories;
@@ -35,7 +42,11 @@ export function checkDictionaries(dicts) {
     const stem = k.replace(PLURAL, "");
     const params = new Set(placeholders(v));
     const prev = baseKeys.get(stem);
-    baseKeys.set(stem, { plural: PLURAL.test(k), params: prev ? new Set([...prev.params, ...params]) : params });
+    baseKeys.set(stem, {
+      plural: PLURAL.test(k),
+      params: prev ? new Set([...prev.params, ...params]) : params,
+      tags: prev ? prev.tags : tags(v),
+    });
   }
   for (const [code, map] of Object.entries(flat)) {
     if (code === "en") continue;
@@ -53,6 +64,9 @@ export function checkDictionaries(dicts) {
           if (!got.has(p) && !(info.plural && p === "count")) problems.push(`${code}: ${key} без параметра {{${p}}}`);
         }
         for (const p of got) if (!info.params.has(p)) problems.push(`${code}: ${key} с лишним параметром {{${p}}}`);
+        const gotTags = tags(map.get(key));
+        if (gotTags.join(" ") !== info.tags.join(" "))
+          problems.push(`${code}: ${key} — теги ${gotTags.join(" ") || "(нет)"}, в en ${info.tags.join(" ") || "(нет)"}`);
       }
     }
     for (const k of map.keys()) {
@@ -60,6 +74,76 @@ export function checkDictionaries(dicts) {
     }
   }
   return problems;
+}
+
+const hasLetters = (v) => /[A-Za-zÀ-ž]/.test(v.replace(/\{\{[^}]*\}\}|<[^>]*>/g, ""));
+
+/** Строки, совпадающие с en буква в букву (вероятно, забыли перевести). allow: { code: [ключ] } — намеренные совпадения. */
+export function checkSameAsEn(dicts, allow = {}) {
+  const problems = [];
+  const en = flatten(dicts.en);
+  const enOf = (k) => en.get(k) ?? en.get(`${k.replace(PLURAL, "")}_other`);
+  for (const [code, dict] of Object.entries(dicts)) {
+    if (code === "en") continue;
+    const map = flatten(dict);
+    const ok = new Set(allow[code] ?? []);
+    for (const [k, v] of map) {
+      if (v === enOf(k) && hasLetters(v) && !ok.has(k))
+        problems.push(`${code}: ${k} совпадает с en «${v}» — переведите или добавьте ключ в docs/i18n/same-as-en.json`);
+    }
+    for (const k of ok) {
+      if (map.has(k) && map.get(k) !== enOf(k))
+        problems.push(`${code}: ${k} в docs/i18n/same-as-en.json, но перевод отличается от en — уберите из списка`);
+    }
+  }
+  return problems;
+}
+
+/** Типографика: «...» вместо «…» во всех языках; во французском — U+00A0 перед : ; ! ? и внутри « ». */
+export function checkTypography(dicts) {
+  const problems = [];
+  for (const [code, dict] of Object.entries(dicts)) {
+    for (const [k, v] of flatten(dict)) {
+      if (v.includes("...")) problems.push(`${code}: ${k} — «...» вместо «…»`);
+      if (code !== "fr") continue;
+      for (const ch of new Set([...v.matchAll(/ ([:;!?])/g)].map((m) => m[1])))
+        problems.push(`fr: ${k} — обычный пробел вместо U+00A0 перед «${ch}»`);
+      if (/« | »/.test(v)) problems.push(`fr: ${k} — обычный пробел вместо U+00A0 у кавычек « »`);
+    }
+  }
+  return problems;
+}
+
+/** Коды языков из src/i18n/languages.ts (поля `code: "…"`). */
+export function languageCodes(languagesTs) {
+  return [...languagesTs.matchAll(/\bcode:\s*"([\w-]+)"/g)].map((m) => m[1]);
+}
+
+/** Каждый словарь — язык из списка; с requireAll — у каждого языка из списка есть словарь. */
+export function checkLanguageFiles(codes, dictCodes, { requireAll }) {
+  const problems = [];
+  for (const d of dictCodes) if (!codes.includes(d)) problems.push(`словарь src/locales/${d}.json — языка ${d} нет в src/i18n/languages.ts`);
+  if (requireAll) for (const c of codes) if (!dictCodes.includes(c)) problems.push(`нет словаря src/locales/${c}.json`);
+  return problems;
+}
+
+/** Строки, заметно длиннее английских, — кандидаты на обрезание в вёрстке (для ручной проверки, не ошибка). */
+export function lengthReport(dicts, { ratio = 1.6, minLength = 6, top = 15 } = {}) {
+  const en = flatten(dicts.en);
+  const out = [];
+  for (const [code, dict] of Object.entries(dicts)) {
+    if (code === "en") continue;
+    const rows = [];
+    for (const [k, v] of flatten(dict)) {
+      const base = en.get(k) ?? en.get(`${k.replace(PLURAL, "")}_other`);
+      if (!base || base.length < minLength || v.length / base.length < ratio) continue;
+      rows.push({ k, v, r: v.length / base.length, len: base.length });
+    }
+    rows.sort((a, b) => b.r - a.r);
+    for (const { k, v, r, len } of rows.slice(0, top))
+      out.push(`${code}: ${k} — ${v.length} / ${len} (×${r.toFixed(1)}) «${v}»`);
+  }
+  return out;
 }
 
 /** files: { path: content }. Кириллица в строках кода фронтенда вне словарей, тестов и комментариев. */
@@ -368,6 +452,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       .map((f) => [f.replace(/\.json$/, ""), JSON.parse(readFileSync(join(locales, f), "utf8"))]),
   );
   const problems = checkDictionaries(dicts);
+  const allow = JSON.parse(readFileSync(join(root, "docs/i18n/same-as-en.json"), "utf8"));
+  problems.push(...checkSameAsEn(dicts, allow), ...checkTypography(dicts));
+  const codes = languageCodes(readFileSync(join(root, "src/i18n/languages.ts"), "utf8"));
+  problems.push(...checkLanguageFiles(codes, Object.keys(dicts), { requireAll: process.argv.includes("--require-all-languages") }));
+  if (process.argv.includes("--lengths")) for (const line of lengthReport(dicts)) console.log(`↔ ${line}`);
   const rustFiles = Object.fromEntries(
     walk(join(root, "src-tauri/src"), [".rs"]).map((p) => [relative(root, p), readFileSync(p, "utf8")]),
   );

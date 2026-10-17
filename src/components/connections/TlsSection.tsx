@@ -1,7 +1,8 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import type { CertFormat, ClientCert, TlsConfig } from "../../api/types";
+import { Hint } from "../common/Hint";
 import { formatFromPath, newClientCert } from "./profile";
 
 export type SecretField = { text: string; clear: boolean };
@@ -21,16 +22,27 @@ const FORMATS: { value: CertFormat; label: string }[] = [
   { value: "jks", label: "JKS" },
 ];
 
+/** Подпись строки сетки; значок подсказки — рядом с `<label>`, а не внутри (иначе попадёт в доступное имя поля). */
+function RowLabel({ id, label, hint }: { id: string; label: string; hint?: ReactNode }) {
+  if (!hint) return <label htmlFor={id}>{label}</label>;
+  return (
+    <span className="field-label">
+      <label htmlFor={id}>{label}</label>
+      {hint}
+    </span>
+  );
+}
+
 async function pickFile(onPath: (p: string) => void) {
   const path = await openDialog({ multiple: false, directory: false });
   if (typeof path === "string") onPath(path);
 }
 
-function PathRow(props: { id: string; label: string; value: string; placeholder?: string; onChange: (v: string) => void }) {
+function PathRow(props: { id: string; label: string; hint?: ReactNode; value: string; placeholder?: string; onChange: (v: string) => void }) {
   const { t } = useTranslation();
   return (
     <>
-      <label htmlFor={props.id}>{props.label}</label>
+      <RowLabel id={props.id} label={props.label} hint={props.hint} />
       <div className="path-field">
         <input id={props.id} placeholder={props.placeholder} value={props.value} onChange={(e) => props.onChange(e.target.value)} />
         <button type="button" aria-label={t("connections.tls.pickAria", { label: props.label })} onClick={() => void pickFile(props.onChange)}>
@@ -41,10 +53,10 @@ function PathRow(props: { id: string; label: string; value: string; placeholder?
   );
 }
 
-function FormatRow(props: { id: string; label: string; value: CertFormat; onChange: (f: CertFormat) => void }) {
+function FormatRow(props: { id: string; label: string; hint?: ReactNode; value: CertFormat; onChange: (f: CertFormat) => void }) {
   return (
     <>
-      <label htmlFor={props.id}>{props.label}</label>
+      <RowLabel id={props.id} label={props.label} hint={props.hint} />
       <select id={props.id} value={props.value} onChange={(e) => props.onChange(e.target.value as CertFormat)}>
         {FORMATS.map((f) => (
           <option key={f.value} value={f.value}>
@@ -56,11 +68,11 @@ function FormatRow(props: { id: string; label: string; value: CertFormat; onChan
   );
 }
 
-function PasswordRow(props: { id: string; label: string; value: SecretField; isNew: boolean; onChange: (v: SecretField) => void }) {
+function PasswordRow(props: { id: string; label: string; hint?: ReactNode; value: SecretField; isNew: boolean; onChange: (v: SecretField) => void }) {
   const { t } = useTranslation();
   return (
     <>
-      <label htmlFor={props.id}>{props.label}</label>
+      <RowLabel id={props.id} label={props.label} hint={props.hint} />
       <div className="path-field">
         <input
           id={props.id}
@@ -103,28 +115,44 @@ export function TlsSection({ tls, onChange, secrets, onSecrets, isNew }: Props) 
   const cc = tls.clientCert;
   const setCc = (patch: Partial<ClientCert>) => cc && set({ clientCert: { ...cc, ...patch } });
   const setSecret = (k: keyof TlsSecrets) => (v: SecretField) => onSecrets({ ...secrets, [k]: v });
+  const keyPasswordLabel = cc?.format === "jks" ? t("connections.tls.keyPasswordJks") : t("connections.tls.keyPasswordPem");
 
   return (
     <>
       <PathRow
         id={`${uid}-ca`}
         label={t("connections.tls.ca")}
+        hint={<Hint k="hints.connections.ca" label={t("connections.tls.ca")} />}
         placeholder={t("connections.tls.caPlaceholder")}
         value={tls.caLocation ?? ""}
         onChange={(v) => set({ caLocation: v || null, caFormat: formatFromPath(v) ?? tls.caFormat })}
       />
       {tls.caLocation && (
         <>
-          <FormatRow id={`${uid}-caf`} label={t("connections.tls.caFormat")} value={tls.caFormat} onChange={(caFormat) => set({ caFormat })} />
+          <FormatRow
+            id={`${uid}-caf`}
+            label={t("connections.tls.caFormat")}
+            hint={<Hint k="hints.connections.caFormat" label={t("connections.tls.caFormat")} />}
+            value={tls.caFormat}
+            onChange={(caFormat) => set({ caFormat })}
+          />
           {tls.caFormat !== "pem" && (
             <PasswordRow id={`${uid}-tsp`} label={t("connections.tls.truststorePassword")} value={secrets.truststore} isNew={isNew} onChange={setSecret("truststore")} />
           )}
         </>
       )}
-      <label htmlFor={`${uid}-verify`}>{t("connections.tls.verifyHostname")}</label>
+      <RowLabel
+        id={`${uid}-verify`}
+        label={t("connections.tls.verifyHostname")}
+        hint={<Hint k="hints.connections.verifyHostname" label={t("connections.tls.verifyHostname")} />}
+      />
       <input id={`${uid}-verify`} type="checkbox" checked={tls.verifyHostname} onChange={(e) => set({ verifyHostname: e.target.checked })} />
 
-      <label htmlFor={`${uid}-mtls`}>{t("connections.tls.mtls")}</label>
+      <RowLabel
+        id={`${uid}-mtls`}
+        label={t("connections.tls.mtls")}
+        hint={<Hint k="hints.connections.mtls" label={t("connections.tls.mtls")} />}
+      />
       <input
         id={`${uid}-mtls`}
         type="checkbox"
@@ -146,7 +174,11 @@ export function TlsSection({ tls, onChange, secrets, onSecrets, isNew }: Props) 
           )}
           {cc.format === "jks" && (
             <>
-              <label htmlFor={`${uid}-alias`}>{t("connections.tls.alias")}</label>
+              <RowLabel
+                id={`${uid}-alias`}
+                label={t("connections.tls.alias")}
+                hint={<Hint k="hints.connections.alias" label={t("connections.tls.alias")} />}
+              />
               <input id={`${uid}-alias`} placeholder={t("connections.tls.aliasPlaceholder")} value={cc.alias ?? ""} onChange={(e) => setCc({ alias: e.target.value || null })} />
             </>
           )}
@@ -156,7 +188,8 @@ export function TlsSection({ tls, onChange, secrets, onSecrets, isNew }: Props) 
           {cc.format !== "pkcs12" && (
             <PasswordRow
               id={`${uid}-kp`}
-              label={cc.format === "jks" ? t("connections.tls.keyPasswordJks") : t("connections.tls.keyPasswordPem")}
+              label={keyPasswordLabel}
+              hint={<Hint k="hints.connections.keyPassword" label={keyPasswordLabel} />}
               value={secrets.key}
               isNew={isNew}
               onChange={setSecret("key")}

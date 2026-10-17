@@ -964,6 +964,22 @@
     }
   },
   "hints": {
-    "label": "Aide : {{name}}"
+    "label": "Aide : {{name}}",
+    "connections": {
+      "environment": "Marque la connexion d’une couleur. Pour les connexions prod (Pro), toute modification doit être confirmée en saisissant le nom de la connexion.",
+      "readOnly": "Bloque tout ce qui modifie le cluster : envoi, réinitialisation des offsets, suppression de topics et de groupes, sessions consumer.",
+      "bootstrap": "Un ou plusieurs <code>host:port</code>, séparés par des virgules. Le client trouve lui-même les autres brokers.",
+      "protocol": "PLAINTEXT — sans chiffrement ni authentification. SSL — chiffrement TLS. SASL_* — authentification par identifiant et mot de passe ; SASL_SSL chiffre en plus.",
+      "saslMechanism": "Les administrateurs Kafka savent quel mécanisme le cluster utilise. SCRAM ne transmet jamais le mot de passe lui-même ; PLAIN sans TLS l’envoie en clair.",
+      "timeout": "Durée d’attente de la réponse d’un broker, en millisecondes. Augmentez-la pour les réseaux lents et les VPN.",
+      "props": "Tout paramètre librdkafka sous la forme <code>key=value</code>, un par ligne. Les mots de passe et les clés ne sont pas autorisés ici.",
+      "test": "Vérifie les paramètres, DNS et TCP, puis Kafka (TLS, SASL, métadonnées). Rien n’est enregistré ni modifié.",
+      "ca": "La CA qui a signé les certificats des brokers. Laissez vide si le système lui fait déjà confiance.",
+      "caFormat": "Format du fichier : PEM (texte, <code>-----BEGIN</code>), PKCS#12 (<code>.p12</code>, <code>.pfx</code>) ou JKS (keystore Java).",
+      "verifyHostname": "Vérifie que le certificat du broker a été émis pour son nom d’hôte. À désactiver uniquement dans les environnements de test.",
+      "mtls": "Nécessaire si les brokers authentifient les clients par certificat. Le certificat et la clé sont délivrés par les administrateurs Kafka.",
+      "alias": "Nom de l’entrée de la clé dans le fichier JKS ou PKCS#12. Nécessaire uniquement si le fichier contient plusieurs clés.",
+      "keyPassword": "Uniquement si la clé a son propre mot de passe : différent de celui du keystore, ou clé PEM chiffrée."
+    }
   }
 }

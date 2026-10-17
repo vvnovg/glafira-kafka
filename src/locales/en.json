@@ -960,6 +960,22 @@
     }
   },
   "hints": {
-    "label": "Hint: {{name}}"
+    "label": "Hint: {{name}}",
+    "connections": {
+      "environment": "Marks the connection with a color. prod connections (Pro) ask you to type the connection name before any change.",
+      "readOnly": "Blocks everything that changes the cluster: sending, offset resets, deleting topics and groups, consumer sessions.",
+      "bootstrap": "One or more <code>host:port</code>, comma-separated. The client discovers the other brokers by itself.",
+      "protocol": "PLAINTEXT — no encryption or login. SSL — TLS encryption. SASL_* — login with a password; SASL_SSL also encrypts.",
+      "saslMechanism": "Your Kafka admins know which one the cluster uses. SCRAM never sends the password itself; PLAIN without TLS sends it in clear text.",
+      "timeout": "How long to wait for a broker response, in milliseconds. Increase it for slow networks and VPNs.",
+      "props": "Any librdkafka setting as <code>key=value</code>, one per line. Passwords and keys are not allowed here.",
+      "test": "Checks the settings, DNS and TCP, then Kafka (TLS, SASL, metadata). Nothing is saved or changed.",
+      "ca": "The CA that signed the brokers' certificates. Leave empty if the system already trusts it.",
+      "caFormat": "File format: PEM (text, <code>-----BEGIN</code>), PKCS#12 (<code>.p12</code>, <code>.pfx</code>) or JKS (Java keystore).",
+      "verifyHostname": "Checks that the broker certificate matches its host name. Turn it off only in test environments.",
+      "mtls": "Needed if the brokers authenticate clients by certificate. Your Kafka admins issue the certificate and key.",
+      "alias": "The key entry name in the JKS or PKCS#12 file. Needed only if the file holds several keys.",
+      "keyPassword": "Only if the key has its own password: different from the keystore password, or an encrypted PEM key."
+    }
   }
 }

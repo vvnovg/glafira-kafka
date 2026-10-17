@@ -964,6 +964,22 @@
     }
   },
   "hints": {
-    "label": "Ayuda: {{name}}"
+    "label": "Ayuda: {{name}}",
+    "connections": {
+      "environment": "Marca la conexión con un color. En las conexiones prod (Pro), cualquier cambio debe confirmarse escribiendo el nombre de la conexión.",
+      "readOnly": "Bloquea todo lo que modifica el clúster: envío, restablecimiento de offsets, eliminación de topics y grupos, sesiones de consumer.",
+      "bootstrap": "Uno o varios <code>host:port</code>, separados por comas. El cliente encuentra el resto de brokers por sí solo.",
+      "protocol": "PLAINTEXT — sin cifrado ni inicio de sesión. SSL — cifrado TLS. SASL_* — inicio de sesión con usuario y contraseña; SASL_SSL además cifra.",
+      "saslMechanism": "Los administradores de Kafka saben qué mecanismo usa el clúster. SCRAM nunca envía la contraseña en sí; PLAIN sin TLS la envía en texto plano.",
+      "timeout": "Cuánto esperar la respuesta de un broker, en milisegundos. Auméntalo en redes lentas o con VPN.",
+      "props": "Cualquier parámetro de librdkafka como <code>key=value</code>, uno por línea. Aquí no se permiten contraseñas ni claves.",
+      "test": "Comprueba la configuración, DNS y TCP, y luego Kafka (TLS, SASL, metadatos). No guarda ni cambia nada.",
+      "ca": "La CA que firmó los certificados de los brokers. Déjalo vacío si el sistema ya confía en ella.",
+      "caFormat": "Formato del archivo: PEM (texto, <code>-----BEGIN</code>), PKCS#12 (<code>.p12</code>, <code>.pfx</code>) o JKS (keystore de Java).",
+      "verifyHostname": "Comprueba que el certificado del broker se emitió para su nombre de host. Desactívalo solo en entornos de prueba.",
+      "mtls": "Necesario si los brokers autentican a los clientes por certificado. El certificado y la clave los emiten los administradores de Kafka.",
+      "alias": "Nombre de la entrada de la clave en el archivo JKS o PKCS#12. Solo es necesario si el archivo contiene varias claves.",
+      "keyPassword": "Solo si la clave tiene su propia contraseña: distinta de la del keystore, o una clave PEM cifrada."
+    }
   }
 }

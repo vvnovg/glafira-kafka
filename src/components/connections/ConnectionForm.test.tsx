@@ -201,4 +201,62 @@ describe("ConnectionForm", () => {
       truststorePassword: null,
     });
   });
+
+  it("подсказки «?» у полей формы; открытая подсказка показывает текст", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={newProfile()} tabId="t" />);
+    for (const label of [
+      "Окружение",
+      "Только чтение",
+      "Bootstrap-серверы",
+      "Протокол",
+      "Таймаут запроса, мс",
+      "Доп. свойства librdkafka",
+      "Проверить подключение",
+    ]) {
+      expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
+    }
+    // Значок рядом с подписью, а не внутри: доступное имя поля не меняется.
+    expect(screen.getByLabelText("Bootstrap-серверы")).toHaveAttribute("id", "cf-bootstrap");
+    await user.click(screen.getByRole("button", { name: "Подсказка: Bootstrap-серверы" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Один или несколько host:port через запятую. Остальные брокеры клиент найдёт сам.",
+    );
+  });
+
+  it("подсказки SASL и TLS появляются вместе с полями", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={newProfile()} tabId="t" />);
+    expect(screen.queryByRole("button", { name: "Подсказка: Доверенный CA" })).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Протокол"), "SASL_SSL");
+    await user.click(screen.getByLabelText("Клиентский сертификат (mTLS)"));
+    for (const label of [
+      "Механизм SASL",
+      "Доверенный CA",
+      "Проверять hostname",
+      "Клиентский сертификат (mTLS)",
+      "Пароль ключа (если зашифрован)",
+    ]) {
+      expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
+    }
+  });
+
+  it("подсказки формата CA, alias и пароля ключа JKS", () => {
+    const initial = {
+      ...newProfile(),
+      security: {
+        protocol: "SSL" as const,
+        tls: {
+          caLocation: "/ca.jks",
+          caFormat: "jks" as const,
+          verifyHostname: true,
+          clientCert: { format: "jks" as const, certificatePath: "/c.jks", keyPath: null, alias: null },
+        },
+      },
+    };
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    for (const label of ["Формат CA", "Alias ключа", "Пароль ключа (если отличается)"]) {
+      expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
+    }
+  });
 });

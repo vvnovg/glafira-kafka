@@ -968,6 +968,22 @@
     }
   },
   "hints": {
-    "label": "Podpowiedź: {{name}}"
+    "label": "Podpowiedź: {{name}}",
+    "connections": {
+      "environment": "Oznacza połączenie kolorem. W połączeniach prod (Pro) każdą zmianę trzeba potwierdzić, wpisując nazwę połączenia.",
+      "readOnly": "Blokuje wszystko, co zmienia klaster: wysyłanie, resetowanie offsetów, usuwanie topików i grup, sesje konsumenta.",
+      "bootstrap": "Jeden lub kilka adresów <code>host:port</code>, rozdzielonych przecinkami. Pozostałe brokery klient znajdzie sam.",
+      "protocol": "PLAINTEXT — bez szyfrowania i logowania. SSL — szyfrowanie TLS. SASL_* — logowanie loginem i hasłem; SASL_SSL dodatkowo szyfruje.",
+      "saslMechanism": "Jakiego mechanizmu używa klaster, wiedzą administratorzy Kafki. SCRAM nie przesyła samego hasła; PLAIN bez TLS przesyła je otwartym tekstem.",
+      "timeout": "Jak długo czekać na odpowiedź brokera, w milisekundach. Warto zwiększyć przy wolnej sieci lub VPN.",
+      "props": "Dowolne parametry librdkafka w postaci <code>key=value</code>, po jednym w wierszu. Nie można tu podawać haseł ani kluczy.",
+      "test": "Sprawdza ustawienia, DNS i TCP, a następnie Kafkę (TLS, SASL, metadane). Niczego nie zapisuje ani nie zmienia.",
+      "ca": "CA, którym podpisano certyfikaty brokerów. Pole można zostawić puste, jeśli system już ufa temu CA.",
+      "caFormat": "Format pliku: PEM (tekst, <code>-----BEGIN</code>), PKCS#12 (<code>.p12</code>, <code>.pfx</code>) lub JKS (magazyn kluczy Java).",
+      "verifyHostname": "Sprawdza, czy certyfikat brokera wystawiono na jego nazwę hosta. Wyłączać tylko w środowiskach testowych.",
+      "mtls": "Wymagany, jeśli brokery uwierzytelniają klientów certyfikatem. Certyfikat i klucz wydają administratorzy Kafki.",
+      "alias": "Nazwa wpisu klucza w pliku JKS lub PKCS#12. Potrzebna tylko wtedy, gdy plik zawiera kilka kluczy.",
+      "keyPassword": "Tylko jeśli klucz ma własne hasło: inne niż hasło magazynu kluczy albo zaszyfrowany klucz PEM."
+    }
   }
 }

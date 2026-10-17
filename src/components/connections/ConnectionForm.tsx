@@ -7,6 +7,7 @@ import { tr } from "../../i18n/text";
 import { useLicense } from "../../lib/useLicense";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { formatProps, parseProps, withProtocol } from "./profile";
 import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./TlsSection";
 
@@ -92,7 +93,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         <label htmlFor="cf-name">{t("connections.form.name")}</label>
         <input id="cf-name" value={profile.name} onChange={(e) => update({ name: e.target.value })} />
 
-        <label htmlFor="cf-env">{t("connections.form.environment")}</label>
+        <span className="field-label">
+          <label htmlFor="cf-env">{t("connections.form.environment")}</label>
+          <Hint k="hints.connections.environment" label={t("connections.form.environment")} />
+        </span>
         <select
           id="cf-env"
           value={profile.environment}
@@ -111,13 +115,19 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           })}
         </select>
 
-        <label htmlFor="cf-ro">{t("common.readOnly")}</label>
+        <span className="field-label">
+          <label htmlFor="cf-ro">{t("common.readOnly")}</label>
+          <Hint k="hints.connections.readOnly" label={t("common.readOnly")} />
+        </span>
         <input id="cf-ro" type="checkbox" checked={profile.readOnly} onChange={(e) => update({ readOnly: e.target.checked })} />
 
         <label htmlFor="cf-color">{t("connections.form.color")}</label>
         <input id="cf-color" type="color" value={profile.color} onChange={(e) => update({ color: e.target.value })} />
 
-        <label htmlFor="cf-bootstrap">{t("connections.form.bootstrap")}</label>
+        <span className="field-label">
+          <label htmlFor="cf-bootstrap">{t("connections.form.bootstrap")}</label>
+          <Hint k="hints.connections.bootstrap" label={t("connections.form.bootstrap")} />
+        </span>
         <input
           id="cf-bootstrap"
           placeholder="host1:9092,host2:9092"
@@ -125,7 +135,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           onChange={(e) => update({ bootstrapServers: e.target.value })}
         />
 
-        <label htmlFor="cf-protocol">{t("connections.form.protocol")}</label>
+        <span className="field-label">
+          <label htmlFor="cf-protocol">{t("connections.form.protocol")}</label>
+          <Hint k="hints.connections.protocol" label={t("connections.form.protocol")} />
+        </span>
         <select id="cf-protocol" value={sec.protocol} onChange={(e) => update({ security: withProtocol(sec, e.target.value as Protocol) })}>
           {PROTOCOLS.map((p) => (
             <option key={p} value={p}>
@@ -146,7 +159,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
 
         {"sasl" in sec && (
           <>
-            <label htmlFor="cf-mech">{t("connections.form.saslMechanism")}</label>
+            <span className="field-label">
+              <label htmlFor="cf-mech">{t("connections.form.saslMechanism")}</label>
+              <Hint k="hints.connections.saslMechanism" label={t("connections.form.saslMechanism")} />
+            </span>
             <select
               id="cf-mech"
               value={sec.sasl.mechanism}
@@ -176,7 +192,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           </>
         )}
 
-        <label htmlFor="cf-timeout">{t("connections.form.timeout")}</label>
+        <span className="field-label">
+          <label htmlFor="cf-timeout">{t("connections.form.timeout")}</label>
+          <Hint k="hints.connections.timeout" label={t("connections.form.timeout")} />
+        </span>
         <input
           id="cf-timeout"
           type="number"
@@ -186,7 +205,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           onChange={(e) => update({ requestTimeoutMs: Number(e.target.value) })}
         />
 
-        <label htmlFor="cf-props">{t("connections.form.props")}</label>
+        <span className="field-label">
+          <label htmlFor="cf-props">{t("connections.form.props")}</label>
+          <Hint k="hints.connections.props" label={t("connections.form.props")} />
+        </span>
         <textarea id="cf-props" rows={4} placeholder={t("connections.form.propsPlaceholder")} value={propsText} onChange={(e) => setPropsText(e.target.value)} />
       </div>
 
@@ -194,6 +216,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         <button type="button" disabled={busy} onClick={onTest}>
           {t("connections.form.test")}
         </button>
+        <Hint k="hints.connections.test" label={t("connections.form.test")} />
         <button type="button" className="primary" disabled={busy} onClick={onSave}>
           {t("common.save")}
         </button>

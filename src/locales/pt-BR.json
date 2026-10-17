@@ -964,6 +964,22 @@
     }
   },
   "hints": {
-    "label": "Dica: {{name}}"
+    "label": "Dica: {{name}}",
+    "connections": {
+      "environment": "Marca a conexão com uma cor. Nas conexões prod (Pro), qualquer alteração precisa ser confirmada digitando o nome da conexão.",
+      "readOnly": "Bloqueia tudo o que altera o cluster: envio, redefinição de offsets, exclusão de tópicos e grupos, sessões de consumer.",
+      "bootstrap": "Um ou mais <code>host:port</code>, separados por vírgula. O cliente encontra os demais brokers sozinho.",
+      "protocol": "PLAINTEXT — sem criptografia nem login. SSL — criptografia TLS. SASL_* — login com usuário e senha; SASL_SSL também criptografa.",
+      "saslMechanism": "Os administradores do Kafka sabem qual mecanismo o cluster usa. O SCRAM nunca envia a senha em si; o PLAIN sem TLS a envia em texto puro.",
+      "timeout": "Quanto tempo esperar a resposta de um broker, em milissegundos. Aumente para redes lentas e VPN.",
+      "props": "Qualquer configuração da librdkafka no formato <code>key=value</code>, uma por linha. Senhas e chaves não são permitidas aqui.",
+      "test": "Verifica as configurações, DNS e TCP e depois o Kafka (TLS, SASL, metadados). Nada é salvo nem alterado.",
+      "ca": "A CA que assinou os certificados dos brokers. Deixe vazio se o sistema já confia nela.",
+      "caFormat": "Formato do arquivo: PEM (texto, <code>-----BEGIN</code>), PKCS#12 (<code>.p12</code>, <code>.pfx</code>) ou JKS (keystore Java).",
+      "verifyHostname": "Verifica se o certificado do broker foi emitido para o nome do host dele. Desative apenas em ambientes de teste.",
+      "mtls": "Necessário se os brokers autenticam os clientes por certificado. O certificado e a chave são emitidos pelos administradores do Kafka.",
+      "alias": "Nome da entrada da chave no arquivo JKS ou PKCS#12. Necessário apenas se o arquivo contiver várias chaves.",
+      "keyPassword": "Somente se a chave tiver senha própria: diferente da senha do keystore, ou uma chave PEM criptografada."
+    }
   }
 }

@@ -964,6 +964,22 @@
     }
   },
   "hints": {
-    "label": "Suggerimento: {{name}}"
+    "label": "Suggerimento: {{name}}",
+    "connections": {
+      "environment": "Contrassegna la connessione con un colore. Per le connessioni prod (Pro) qualsiasi modifica va confermata digitando il nome della connessione.",
+      "readOnly": "Blocca tutto ciò che modifica il cluster: invio, reimpostazione degli offset, eliminazione di topic e gruppi, sessioni consumer.",
+      "bootstrap": "Uno o più <code>host:port</code>, separati da virgole. Gli altri broker il client li trova da solo.",
+      "protocol": "PLAINTEXT — senza cifratura né accesso. SSL — cifratura TLS. SASL_* — accesso con nome utente e password; SASL_SSL inoltre cifra.",
+      "saslMechanism": "Quale meccanismo usa il cluster lo sanno gli amministratori di Kafka. SCRAM non invia mai la password stessa; PLAIN senza TLS la invia in chiaro.",
+      "timeout": "Quanto attendere la risposta di un broker, in millisecondi. Aumentalo per reti lente e VPN.",
+      "props": "Qualsiasi impostazione di librdkafka nel formato <code>key=value</code>, una per riga. Password e chiavi qui non sono ammesse.",
+      "test": "Verifica le impostazioni, DNS e TCP, poi Kafka (TLS, SASL, metadati). Non salva né modifica nulla.",
+      "ca": "La CA che ha firmato i certificati dei broker. Lascia vuoto se il sistema la considera già attendibile.",
+      "caFormat": "Formato del file: PEM (testo, <code>-----BEGIN</code>), PKCS#12 (<code>.p12</code>, <code>.pfx</code>) o JKS (keystore Java).",
+      "verifyHostname": "Verifica che il certificato del broker sia stato emesso per il suo nome host. Disattivalo solo negli ambienti di test.",
+      "mtls": "Necessario se i broker autenticano i client tramite certificato. Certificato e chiave vengono rilasciati dagli amministratori di Kafka.",
+      "alias": "Nome della voce della chiave nel file JKS o PKCS#12. Serve solo se il file contiene più chiavi.",
+      "keyPassword": "Solo se la chiave ha una password propria: diversa da quella del keystore, oppure una chiave PEM cifrata."
+    }
   }
 }

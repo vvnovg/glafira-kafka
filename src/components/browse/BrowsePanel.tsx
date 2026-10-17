@@ -4,6 +4,7 @@ import type { BrowsedMessage } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { BrowseForm } from "./BrowseForm";
 import { MessageDetails } from "./MessageDetails";
 import { messageKey, MessageTable } from "./MessageTable";
@@ -39,6 +40,7 @@ export function BrowsePanel({ connectionId, topic }: { connectionId: string; top
         <button type="button" className="primary" onClick={onStart}>
           {running ? t("browse.panel.restart") : t("browse.panel.read")}
         </button>
+        <Hint k="hints.browse.readerNotGroup" label={t("browse.panel.read")} />
         <button type="button" disabled={!running} onClick={() => void stop()}>
           {t("browse.panel.stop")}
         </button>

@@ -994,6 +994,12 @@
       "onlyEmpty": "Active members would overwrite the new offsets with their own commits. Stop the group's applications first.",
       "preview": "Shows current and new offsets per partition. Nothing changes until you apply.",
       "lag": "How many messages the group has not read yet: the end of the log minus the committed offset."
+    },
+    "browse": {
+      "startPosition": "Where to start reading: the latest N messages, from the beginning, from an offset, from a point in time, or the last X minutes.",
+      "limit": "How many messages to show. Large values make reading slower.",
+      "format": "How to decode keys and values: string, JSON, hex or base64. Only the display changes, not the data.",
+      "readerNotGroup": "Browsing does not join a consumer group and commits nothing, so the cluster is not changed."
     }
   }
 }

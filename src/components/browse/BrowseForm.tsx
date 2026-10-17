@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { DataFormat, StartPosition } from "../../api/types";
+import { Hint } from "../common/Hint";
 import { FilterFields } from "./FilterFields";
 import type { BrowseFormState } from "./params";
 
@@ -31,6 +32,7 @@ export function BrowseForm({ form, onChange }: Props) {
             </option>
           ))}
         </select>
+        <Hint k="hints.browse.startPosition" label={t("browse.form.startPosition")} />
         {form.startType === "latest" && (
           <input aria-label="N" type="number" min={1} value={form.count} onChange={(e) => set("count", Number(e.target.value))} style={{ width: 80 }} />
         )}
@@ -47,12 +49,15 @@ export function BrowseForm({ form, onChange }: Props) {
         <label>
           {t("browse.form.limit")} <input type="number" min={1} max={100000} value={form.limit} onChange={(e) => set("limit", Number(e.target.value))} style={{ width: 80 }} />
         </label>
+        <Hint k="hints.browse.limit" label={t("browse.form.limit")} />
         <label>
           <input type="checkbox" checked={form.live} onChange={(e) => set("live", e.target.checked)} /> Live tail
         </label>
       </fieldset>
       <fieldset>
-        <legend>{t("browse.form.format")}</legend>
+        <legend>
+          {t("browse.form.format")} <Hint k="hints.browse.format" label={t("browse.form.format")} />
+        </legend>
         <label>
           {t("browse.form.key")}{" "}
           <select value={form.keyFormat} onChange={(e) => set("keyFormat", e.target.value as DataFormat)}>

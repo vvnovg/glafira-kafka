@@ -1002,6 +1002,12 @@
       "onlyEmpty": "Aktywni członkowie nadpisaliby nowe offsety własnymi commitami. Najpierw należy zatrzymać aplikacje grupy.",
       "preview": "Pokazuje bieżące i nowe offsety dla każdej partycji. Nic się nie zmienia do kliknięcia „Zastosuj”.",
       "lag": "Ile wiadomości grupa jeszcze nie odczytała: koniec logu minus zatwierdzony offset."
+    },
+    "browse": {
+      "startPosition": "Skąd zacząć odczyt: ostatnie N wiadomości, od początku, od offsetu, od wskazanego momentu lub z ostatnich X minut.",
+      "limit": "Ile wiadomości wyświetlić. Duże wartości spowalniają odczyt.",
+      "format": "Jak dekodować klucze i wartości: ciąg znaków, JSON, hex lub base64. Zmienia się tylko sposób wyświetlania, nie dane.",
+      "readerNotGroup": "Przeglądanie nie dołącza do grupy konsumentów i niczego nie zatwierdza, więc klaster pozostaje bez zmian."
     }
   }
 }

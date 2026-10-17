@@ -998,6 +998,12 @@
       "onlyEmpty": "I membri attivi sovrascriverebbero i nuovi offset con i propri commit. Arresta prima le applicazioni del gruppo.",
       "preview": "Mostra gli offset attuali e nuovi per partizione. Nulla cambia finché non fai clic su “Applica”.",
       "lag": "Quanti messaggi il gruppo non ha ancora letto: la fine del log meno l’offset sottoposto a commit."
+    },
+    "browse": {
+      "startPosition": "Da dove iniziare la lettura: gli ultimi N messaggi, dall’inizio, da un offset, da un momento preciso o gli ultimi X minuti.",
+      "limit": "Quanti messaggi mostrare. Valori elevati rallentano la lettura.",
+      "format": "Come decodificare chiavi e valori: stringa, JSON, hex o base64. Cambia solo la visualizzazione, non i dati.",
+      "readerNotGroup": "La lettura non entra in nessun consumer group e non esegue commit, quindi il cluster non cambia."
     }
   }
 }

@@ -998,6 +998,12 @@
       "onlyEmpty": "Les membres actifs écraseraient les nouveaux offsets par leurs propres commits. Arrêtez d’abord les applications du groupe.",
       "preview": "Affiche les offsets actuels et nouveaux par partition. Rien ne change tant que vous n’avez pas cliqué sur « Appliquer ».",
       "lag": "Nombre de messages que le groupe n’a pas encore lus : fin du log moins l’offset commité."
+    },
+    "browse": {
+      "startPosition": "Point de départ de la lecture : les N derniers messages, depuis le début, depuis un offset, depuis un instant donné ou les X dernières minutes.",
+      "limit": "Nombre de messages à afficher. Des valeurs élevées ralentissent la lecture.",
+      "format": "Décodage des clés et des valeurs : chaîne, JSON, hex ou base64. Seul l’affichage change, pas les données.",
+      "readerNotGroup": "La consultation ne rejoint aucun consumer group et ne commite rien — le cluster n’est pas modifié."
     }
   }
 }

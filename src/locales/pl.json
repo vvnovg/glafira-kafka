@@ -33,9 +33,9 @@
       "discard": "Odrzuć zmiany",
       "changesCount": "zmiany: {{count}}",
       "valueAria": "Wartość parametru {{name}}",
-      "emptyValue": "pusta wartość; użyj „przywróć domyślną”",
-      "resetAria": "Przywróć domyślną: {{name}}",
-      "reset": "przywróć domyślną"
+      "emptyValue": "pusta wartość; użyj „przywróć wartość domyślną”",
+      "resetAria": "Przywróć wartość domyślną: {{name}}",
+      "reset": "przywróć wartość domyślną"
     }
   },
   "errors": {
@@ -474,7 +474,7 @@
       "partitions": "Partycje",
       "rf": "Współczynnik replikacji",
       "brokersInCluster": "Brokery w klastrze: {{count}}",
-      "preset": "Preset",
+      "preset": "Szablon",
       "extraConfigs": "Dodatkowe parametry (key=value)",
       "partitionsError": "Liczba partycji musi wynosić co najmniej 1",
       "rfError": "Współczynnik replikacji musi być liczbą całkowitą ≥ 1 (lub -1 — wartość domyślna brokera)",
@@ -953,7 +953,7 @@
     "updates": {
       "title": "Aktualizacje",
       "check": "Sprawdź aktualizacje",
-      "upToDate": "Zainstalowano najnowszą wersję",
+      "upToDate": "Zainstalowana jest najnowsza wersja",
       "available": "Dostępna jest wersja {{version}}",
       "confirmAria": "Potwierdź aktualizację",
       "stopAndUpdate": "Zatrzymaj sesje i zaktualizuj",

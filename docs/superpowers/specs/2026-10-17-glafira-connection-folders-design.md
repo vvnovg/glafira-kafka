@@ -34,13 +34,15 @@ Glafira не терял данные. Ошибка чтения — только
 - имя папки непустое, до 100 символов; имена папок внутри одного родителя уникальны (без учёта регистра);
 - удалить можно только пустую папку.
 
+**Сохранение подключения:** `save_connection` существующего подключения не меняет его папку и порядок — их меняют только команды перемещения (форма вызывает `moveItems`).
+
 **Миграция:** существующие подключения — в корне, `order` — по текущему порядку списка.
 
 ## 3. Команды Rust
 
 | Команда | Что делает |
 |---|---|
-| `list_connection_tree() -> { folders, connections }` | дерево целиком (заменяет `list_connections` во фронтенде; `list_connections` остаётся для совместимости) |
+| `list_folders() -> Vec<ConnectionFolder>` | все папки; профили из `list_connections` несут `folderId` и `order`, дерево собирает фронтенд |
 | `create_folder(name, parent_id) -> ConnectionFolder` | новая папка в конце уровня |
 | `rename_folder(id, name)` | переименование |
 | `delete_folder(id)` | только пустую, иначе `AppError` `errors.folders.notEmpty` |
@@ -49,7 +51,7 @@ Glafira не терял данные. Ошибка чтения — только
 | `preview_import(path, target_folder_id?, update_existing) -> ImportPreview` | разбор и план без записи |
 | `apply_import(path, target_folder_id?, update_existing) -> ImportResult` | применение одной записью файла; при ошибке не меняется ничего |
 
-`save_connection` принимает `folder_id` (поле «Папка» в форме). Все тексты ошибок — ключи словарей (`errors.folders.*`, `errors.import.*`).
+Поле «Папка» в форме применяется через `move_items` (см. §2). Все тексты ошибок — ключи словарей (`errors.folders.*`, `errors.import.*`).
 
 ## 4. Формат файла экспорта
 

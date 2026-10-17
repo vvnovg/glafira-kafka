@@ -143,7 +143,7 @@
     "policy": {
       "invalidBool": "{{key}}: недопустимое логическое {{value}}",
       "invalidNumber": "{{key}}: недопустимое число {{value}}",
-      "invalidString": "{{key}}: недопустимое строка «{{value}}»",
+      "invalidString": "{{key}}: недопустимая строка «{{value}}»",
       "invalidType": "{{key}}: недопустимое значение типа {{kind}}",
       "unreadable": "Политика не читается: {{reason}}",
       "httpsRequired": "{{key}}: нужен адрес https:// — обновления по http не загружаются",
@@ -264,7 +264,7 @@
       "currentTime": "Не удалось получить текущее время",
       "clientValidityCheck": "Клиентский сертификат: не удалось проверить срок действия",
       "clientNotYetValid": "Клиентский сертификат ещё не действует (действует с {{date}})",
-      "clientExpired": "Срок действия: Клиентский сертификат истёк {{date}}",
+      "clientExpired": "Клиентский сертификат истёк {{date}}",
       "keyToPem": "Ключ клиента: не удалось преобразовать в PEM",
       "pemNotUtf8": "PEM не в UTF-8",
       "certToPem": "Не удалось преобразовать сертификат в PEM",

@@ -51,7 +51,7 @@
     },
     "updates": {
       "managed": "Aktualizacjami zarządza organizacja",
-      "notConfigured": "Aktualizacje nie są skonfigurowane w tej kompilacji",
+      "notConfigured": "Aktualizacje nie są skonfigurowane w tym buildzie",
       "badPolicyUrl": "Nieprawidłowy adres aktualizacji w zasadach: {{url}}",
       "unavailable": "Aktualizacje są niedostępne",
       "noRelease": "Na serwerze aktualizacji nie ma opublikowanych wersji (lub jest on chwilowo niedostępny)",
@@ -474,7 +474,7 @@
       "partitions": "Partycje",
       "rf": "Współczynnik replikacji",
       "brokersInCluster": "Brokery w klastrze: {{count}}",
-      "preset": "Szablon",
+      "preset": "Profil",
       "extraConfigs": "Dodatkowe parametry (key=value)",
       "partitionsError": "Liczba partycji musi wynosić co najmniej 1",
       "rfError": "Współczynnik replikacji musi być liczbą całkowitą ≥ 1 (lub -1 — wartość domyślna brokera)",
@@ -511,7 +511,7 @@
       "empty": "Żadna grupa nie ma zatwierdzonych offsetów w tym topiku.",
       "colGroup": "Grupa",
       "colState": "Stan",
-      "colPartitions": "Partycje z zatwierdzeniami",
+      "colPartitions": "Partycje z zatwierdzonymi offsetami",
       "colLag": "Lag",
       "lagUnknown": "Lag nieznany: nie udało się pobrać końcowych offsetów partycji"
     },

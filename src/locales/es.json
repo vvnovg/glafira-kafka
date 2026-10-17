@@ -51,7 +51,7 @@
     },
     "updates": {
       "managed": "Las actualizaciones las gestiona tu organización",
-      "notConfigured": "Las actualizaciones no están configuradas en esta compilación",
+      "notConfigured": "Las actualizaciones no están configuradas en este build",
       "badPolicyUrl": "Dirección de actualización no válida en la política: {{url}}",
       "unavailable": "Las actualizaciones no están disponibles",
       "noRelease": "El servidor de actualizaciones no tiene versiones publicadas (o no está disponible temporalmente)",

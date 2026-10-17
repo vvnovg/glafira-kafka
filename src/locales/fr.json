@@ -51,7 +51,7 @@
     },
     "updates": {
       "managed": "Les mises à jour sont gérées par votre organisation",
-      "notConfigured": "Les mises à jour ne sont pas configurées dans cette version",
+      "notConfigured": "Les mises à jour ne sont pas configurées dans ce build",
       "badPolicyUrl": "Adresse de mise à jour non valide dans la politique : {{url}}",
       "unavailable": "Mises à jour indisponibles",
       "noRelease": "Le serveur de mises à jour n’a aucune version publiée (ou il est temporairement indisponible)",

@@ -17,7 +17,7 @@
 
 ## Не переводится
 Kafka, Glafira, Pro, Free, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
-DNS, TCP, ID, Build (сборка в «О программе»), Leader (лидер партиции); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`);
+DNS, TCP, ID, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»), Leader (лидер партиции); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`);
 команды, пути, адреса (`docker compose -f dev/docker-compose.yml up -d`, `keytool …`, `localhost:9092`);
 название экрана «Producer» (как в ru).
 
@@ -52,6 +52,7 @@ DNS, TCP, ID, Build (сборка в «О программе»), Leader (лид�
 | bootstrap server | bootstrap-сервер | Bootstrap-Server | serveur bootstrap | servidor bootstrap | server bootstrap | serwer bootstrap | servidor bootstrap |
 | consumer session | consumer-сессия | Consumer-Sitzung | session consumer | sesión de consumer | sessione consumer | sesja konsumenta | sessão de consumer |
 | read-only | только чтение | Schreibgeschützt | Lecture seule | Solo lectura | Sola lettura | Tylko do odczytu | Somente leitura |
+| preset (набор настроек при создании топика) | пресет | Voreinstellung | préréglage | preajuste | profilo | profil (не «szablon» — так названы шаблоны продюсера) | predefinição |
 | committed offset | закоммиченный оффсет | committeter Offset | offset commité | offset con commit | offset sottoposto a commit | zatwierdzony offset | offset com commit |
 | reset offsets | сбросить оффсеты | Offsets zurücksetzen | Réinitialiser les offsets | Restablecer offsets | Reimposta gli offset | Zresetuj offsety | Redefinir offsets |
 | retention | хранение (retention) | Aufbewahrung | rétention | retención | conservazione | retencja | retenção |

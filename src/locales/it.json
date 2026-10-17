@@ -1013,6 +1013,12 @@
       "compression": "Comprime i batch: meno traffico e spazio su disco, un po’ più di CPU. <code>zstd</code> e <code>lz4</code> sono scelte comuni.",
       "idempotence": "Evita i duplicati quando il client ritenta un invio. Richiede <code>acks = all</code>.",
       "batchRate": "Limita l’invio in batch a N messaggi al secondo per non sovraccaricare il cluster."
+    },
+    "consumer": {
+      "join": "A differenza della lettura, una sessione è un vero membro del gruppo: il gruppo esegue un ribilanciamento e i commit modificano i suoi offset.",
+      "autoCommit": "Esegue automaticamente il commit degli offset letti in background. Senza questa opzione, esegui il commit manualmente con i pulsanti di commit.",
+      "commit": "“Esegui il commit fino al messaggio selezionato” esegue il commit dell’offset successivo al messaggio selezionato; “Esegui il commit dei messaggi letti” esegue il commit di tutti i messaggi letti finora.",
+      "pause": "La pausa interrompe la lettura di una partizione senza uscire dal gruppo, quindi non avviene alcun ribilanciamento."
     }
   }
 }

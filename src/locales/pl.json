@@ -1017,6 +1017,12 @@
       "compression": "Kompresuje paczki: mniejszy ruch i mniej miejsca na dysku, nieco większe użycie CPU. Częsty wybór to <code>zstd</code> i <code>lz4</code>.",
       "idempotence": "Chroni przed duplikatami przy ponownej próbie wysłania. Wymaga <code>acks = all</code>.",
       "batchRate": "Ogranicza wysyłkę wsadową do N wiadomości na sekundę, aby nie przeciążyć klastra."
+    },
+    "consumer": {
+      "join": "W odróżnieniu od przeglądania sesja jest prawdziwym członkiem grupy: w grupie następuje rebalans, a zatwierdzenia zmieniają jej offsety.",
+      "autoCommit": "Automatycznie zatwierdza odczytane offsety w tle. Bez tej opcji zatwierdzanie odbywa się ręcznie, przyciskami zatwierdzania.",
+      "commit": "„Zatwierdź do zaznaczonej” zatwierdza offset następny po zaznaczonej wiadomości; „Zatwierdź wszystkie odczytane” zatwierdza wszystkie dotąd odczytane wiadomości.",
+      "pause": "Wstrzymanie zatrzymuje odczyt partycji bez opuszczania grupy, więc rebalans nie nastąpi."
     }
   }
 }

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { RebalanceRecord, TopicPartitionRef } from "../../api/types";
 import { formatTimestamp } from "../../lib/format";
+import { Hint } from "../common/Hint";
 import { partitionKey } from "./state";
 
 interface Props {
@@ -18,7 +19,10 @@ export function AssignmentPanel({ assignment, paused, log, disabled, onPause, on
   const sorted = [...assignment].sort((a, b) => a.topic.localeCompare(b.topic) || a.partition - b.partition);
   return (
     <div className="assignment">
-      <h4>{t("consumer.assignment.title", { count: assignment.length })}</h4>
+      <h4>
+        {t("consumer.assignment.title", { count: assignment.length })}{" "}
+        <Hint k="hints.consumer.pause" label={t("consumer.assignment.pause")} />
+      </h4>
       {sorted.length === 0 && <p className="muted">{t("consumer.assignment.none")}</p>}
       <ul>
         {sorted.map((p) => {

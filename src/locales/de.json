@@ -1009,6 +1009,12 @@
       "compression": "Komprimiert Batches: weniger Datenverkehr und Speicherplatz, etwas mehr CPU. Häufig gewählt werden <code>zstd</code> und <code>lz4</code>.",
       "idempotence": "Verhindert Duplikate, wenn der Client einen Sendevorgang wiederholt. Erfordert <code>acks = all</code>.",
       "batchRate": "Begrenzt den Stapelversand auf N Nachrichten pro Sekunde, damit der Cluster nicht überlastet wird."
+    },
+    "consumer": {
+      "join": "Anders als beim Anzeigen ist eine Session ein echtes Gruppenmitglied: Die Gruppe führt ein Rebalance durch, und Commits ändern ihre Offsets.",
+      "autoCommit": "Committet gelesene Offsets automatisch im Hintergrund. Ohne diese Option wird manuell über die Commit-Schaltflächen committet.",
+      "commit": "„Bis zur Auswahl committen“ committet den Offset nach der ausgewählten Nachricht; „Alles Gelesene committen“ committet alle bisher gelesenen Nachrichten.",
+      "pause": "Pausieren stoppt das Lesen einer Partition, ohne die Gruppe zu verlassen. Dadurch findet kein Rebalance statt."
     }
   }
 }

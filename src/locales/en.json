@@ -1009,6 +1009,12 @@
       "compression": "Compresses batches: less traffic and disk space, a bit more CPU. <code>zstd</code> and <code>lz4</code> are common choices.",
       "idempotence": "Prevents duplicates when the client retries a send. Requires <code>acks = all</code>.",
       "batchRate": "Limits batch sending to N messages per second so the cluster is not overloaded."
+    },
+    "consumer": {
+      "join": "Unlike browsing, a session is a real group member: the group rebalances, and commits change its offsets.",
+      "autoCommit": "Commits read offsets automatically in the background. Without it, commit manually with the commit buttons.",
+      "commit": "“Commit up to selected” commits the offset after the selected message; “Commit everything read” commits all messages read so far.",
+      "pause": "Pausing stops reading a partition without leaving the group, so no rebalance happens."
     }
   }
 }

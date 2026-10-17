@@ -1013,6 +1013,12 @@
       "compression": "Compresse les lots : moins de trafic et d’espace disque, un peu plus de CPU. <code>zstd</code> et <code>lz4</code> sont des choix courants.",
       "idempotence": "Évite les doublons lorsque le client renvoie un message. Nécessite <code>acks = all</code>.",
       "batchRate": "Limite l’envoi par lot à N messages par seconde pour ne pas surcharger le cluster."
+    },
+    "consumer": {
+      "join": "Contrairement à la consultation, une session est un vrai membre du groupe : le groupe subit un rééquilibrage et les commits modifient ses offsets.",
+      "autoCommit": "Commite automatiquement les offsets lus en arrière-plan. Sans cette option, le commit se fait manuellement avec les boutons de commit.",
+      "commit": "« Commiter jusqu’à la sélection » commite l’offset qui suit le message sélectionné ; « Commiter tous les messages lus » commite tous les messages lus jusqu’ici.",
+      "pause": "La pause arrête la lecture d’une partition sans quitter le groupe, donc aucun rééquilibrage n’a lieu."
     }
   }
 }

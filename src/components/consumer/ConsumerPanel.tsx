@@ -13,6 +13,7 @@ import { MessageDetails } from "../browse/MessageDetails";
 import { messageKey, MessageTable } from "../browse/MessageTable";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { AssignmentPanel } from "./AssignmentPanel";
 import { buildConsumerParams, type ConsumerFormState, defaultConsumerForm } from "./form";
 import { partitionKey } from "./state";
@@ -142,7 +143,7 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
   return (
     <div className="page browse">
       <p className="warn">
-        {t("consumer.warn")}
+        {t("consumer.warn")} <Hint k="hints.consumer.join" label={t("consumer.form.groupTopics")} />
       </p>
       <div className="browse-form">
         <fieldset disabled={running}>
@@ -190,6 +191,7 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
           <label>
             <input type="checkbox" checked={form.enableAutoCommit} onChange={(e) => set({ enableAutoCommit: e.target.checked })} /> {t("consumer.form.autoCommit")}
           </label>
+          <Hint k="hints.consumer.autoCommit" label={t("consumer.form.autoCommit")} />
           <label className="field">
             <span>isolation.level</span>
             <select
@@ -262,6 +264,7 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
           <button type="button" disabled={!running || !state.sessionId || commit.isPending} onClick={() => requestCommit({ type: "allConsumed" })}>
             {t("consumer.actions.commitAll")}
           </button>
+          <Hint k="hints.consumer.commit" label={t("consumer.actions.commitAll")} />
           <label>
             <input type="checkbox" checked={utc} onChange={(e) => setUtc(e.target.checked)} /> UTC
           </label>

@@ -202,4 +202,20 @@ describe("ConsumerPanel", () => {
     await user.click(screen.getByRole("button", { name: "Подтвердить" }));
     expect(api.commitOffsets).toHaveBeenCalledWith("sid", { type: "allConsumed" }, "prod-1");
   });
+
+  it("подсказки: значки в форме и в запущенной сессии, текст автокоммита", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ConsumerPanel connectionId="dev" topic="orders" />);
+    await screen.findByDisplayValue("glafira-kafka-qa-abc123");
+    screen.getByRole("button", { name: "Подсказка: Группа и топики" });
+    await user.click(screen.getByRole("button", { name: "Подсказка: автокоммит" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Автоматически коммитит прочитанные оффсеты в фоне. Без него — вручную, кнопками коммита.",
+    );
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Подключиться к группе" }));
+    act(() => emit({ type: "rebalance", record: { kind: "assigned", partitions: [orders0], at: 0 } }));
+    screen.getByRole("button", { name: "Подсказка: Закоммитить всё прочитанное" });
+    screen.getByRole("button", { name: "Подсказка: пауза" });
+  });
 });

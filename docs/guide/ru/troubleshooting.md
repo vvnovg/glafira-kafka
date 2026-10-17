@@ -29,7 +29,7 @@
 
 Чтобы проверить порт без приложения, выполните `nc -vz <host> <port>` на macOS или Linux либо `Test-NetConnection <host> -Port <port>` в PowerShell на Windows.
 
-«[[ui:errors.kafka.connectionFailed]]» после успешного TCP-шага обычно означает, что брокер закрыл соединение или позже стал недоступен. Одна из возможных причин — протокол `PLAINTEXT` на TLS-порту. Проверьте и адреса брокеров, см. [Не удаётся подключиться](troubleshooting.md#cannot-connect).
+«[[ui:errors.kafka.connectionFailed]]» после успешного TCP-шага обычно означает, что брокер закрыл соединение или позже стал недоступен. Проверьте и адреса брокеров, см. [Не удаётся подключиться](troubleshooting.md#cannot-connect).
 
 ## Ошибки TLS {#tls-errors}
 
@@ -40,6 +40,8 @@
 - [[ui:errors.kafka.hostnameMismatch]]. Подключайтесь по имени, на которое выпущен сертификат, а не по IP-адресу или псевдониму. Только в тестовых окружениях можно выключить [[ui:connections.tls.verifyHostname]].
 - [[ui:errors.kafka.clientCertRejected]]. Брокер требует клиентский сертификат или не доверяет тому, что вы используете. Проверьте, что [[ui:connections.tls.mtls]] включён и сертификат выпущен для этого кластера. См. [Клиентский сертификат (mTLS)](connections.md#mtls).
 - [[ui:errors.kafka.tlsError]] — другая проблема TLS. Причина — в [[ui:common.details]].
+
+Если вы выбрали протокол без SSL, а ошибка всё равно про TLS, скорее всего, этот порт — TLS-listener. В подробностях тогда написано `connecting to a SSL listener?`. Выберите `SSL` или `SASL_SSL` либо укажите порт listener без TLS.
 
 О проблемах с файлами сертификатов сообщает шаг [[ui:connections.form.step.config]], ещё до подключения. Сообщение начинается с названия поля: доверенный CA, клиентский сертификат или ключ клиента. Частые случаи:
 

@@ -29,7 +29,7 @@ Check:
 
 To check the port outside the app, run `nc -vz <host> <port>` on macOS or Linux, or `Test-NetConnection <host> -Port <port>` in PowerShell on Windows.
 
-[[ui:errors.kafka.connectionFailed]] after the TCP step has passed usually means that a broker closed the connection or could not be reached later. One possible cause is the `PLAINTEXT` protocol on a TLS port. Also check the broker addresses, see [Cannot connect](troubleshooting.md#cannot-connect).
+[[ui:errors.kafka.connectionFailed]] after the TCP step has passed usually means that a broker closed the connection or could not be reached later. Also check the broker addresses, see [Cannot connect](troubleshooting.md#cannot-connect).
 
 ## TLS errors {#tls-errors}
 
@@ -40,6 +40,8 @@ Errors on the [[ui:connections.form.step.kafka]] step during the TLS handshake:
 - [[ui:errors.kafka.hostnameMismatch]]. Connect by the name that the certificate was issued for, not by an IP address or an alias. In test environments only, you can turn off [[ui:connections.tls.verifyHostname]].
 - [[ui:errors.kafka.clientCertRejected]]. The broker requires a client certificate, or it does not trust the one you use. Check that [[ui:connections.tls.mtls]] is on and that the certificate was issued for this cluster. See [Client certificate (mTLS)](connections.md#mtls).
 - [[ui:errors.kafka.tlsError]] — another TLS problem. Expand [[ui:common.details]] for the cause.
+
+If you chose a protocol without SSL and still see a TLS error, the port is probably a TLS listener. The details then say `connecting to a SSL listener?`. Choose `SSL` or `SASL_SSL`, or use the port of a listener without TLS.
 
 Problems with certificate files are reported on the [[ui:connections.form.step.config]] step, before the app connects. The message starts with the field name: trusted CA, client certificate or client key. Common cases:
 

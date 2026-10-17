@@ -14,7 +14,7 @@ Pro adds:
 
 In Free, these features are visible but unavailable. The consumer session commands are disabled and marked with a lock and `Pro`. The prod option is shown as [[ui:connections.form.prodPro]]. Pro languages are marked `Pro` in the language list. If an action needs Pro, the error says [[ui:errors.license.proRequired]] and offers the [[ui:common.openLicense]] button.
 
-The [[ui:tabs.license]] screen lists the same features under [[ui:license.whatProGives]].
+The [[ui:tabs.license]] screen lists consumer sessions and prod mode under [[ui:license.whatProGives]]. The extra languages are not in that list.
 
 ## Activate a key {#activate}
 
@@ -61,13 +61,15 @@ To check manually:
 2. In [[ui:about.updates.title]], click [[ui:about.updates.check]].
 3. If a new version is available, the screen shows its number and release notes. Click [[ui:about.updates.install]].
 
-The app downloads the update, checks its signature, installs it and restarts. A download interrupted by a network problem is retried automatically, up to three attempts in total. If the signature check fails, the app reports [[ui:errors.updates.badSignature]].
+The app downloads the update, checks its signature, installs it and restarts. A download interrupted by a network problem is retried automatically, up to three attempts in total. If all three attempts fail, the app reports [[ui:errors.updates.downloadInterrupted]]. If the signature check fails, the app reports [[ui:errors.updates.badSignature]].
+
+Installing may ask for an administrator password, because the app is installed for all users of the computer: by the `.pkg` installer on macOS, the `.msi` installer on Windows, or a `.deb` or `.rpm` package on Linux. Users without administrator rights cannot update such an installation.
 
 If messages are being read, a consumer session is running or a batch is being sent, the app asks first and says how many sessions are active. Click [[ui:about.updates.stopAndUpdate]] to stop them and continue, or [[ui:common.cancel]]. Connections, settings, the license key and other data are kept after an update.
 
-Updates are downloaded from the releases page on GitHub. If the check fails with [[ui:errors.updates.checkFailed]], check your network or proxy. [[ui:errors.updates.notConfigured]] means that this build has no update settings, for example when it is built from source. In that case, download new versions from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+Updates are downloaded from the releases page on GitHub. If the check fails with [[ui:errors.updates.checkFailed]], check your network or proxy. [[ui:errors.updates.notConfigured]] means that this build was made without the updater key, for example a development or test build. In that case, download new versions from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
 
-An organization can turn off update checks through a policy, or point them to an internal mirror. When checks are turned off, the [[ui:about.updates.title]] section says [[ui:errors.updates.managed]].
+An organization can turn off update checks through a policy, or point them to an internal mirror. When checks are turned off, the [[ui:about.updates.title]] section says [[ui:errors.updates.managed]] after you click [[ui:about.updates.check]]. Like [[ui:errors.updates.notConfigured]], this message appears only after the click; the check at startup shows nothing in these cases.
 
 ## About {#about}
 
@@ -98,6 +100,6 @@ When the archive is saved, the screen shows its path. The ZIP file contains:
 - `connections.json` — connection profiles: names, environments, bootstrap servers, protocols, SASL usernames, certificate file paths, extra properties and timeouts;
 - `logs/` — the app log files.
 
-The archive contains no passwords: they are kept in the system secret store, and extra properties cannot contain secrets. The license key and certificate files are not included either. Host names, usernames and file paths are stored as plain text, and the logs contain broker addresses from Kafka error messages. Look through the archive before you send it outside your company.
+The archive contains no passwords: they are kept in the system secret store, and extra properties with passwords and secrets are refused when a connection is saved. The license key and certificate files are not included either. Host names, usernames and file paths are stored as plain text, and the logs contain broker addresses from Kafka error messages. Look through the archive before you send it outside your company.
 
 The app sends nothing by itself. Attach the archive to your support request yourself, see [Contact support](troubleshooting.md#support).

@@ -333,6 +333,12 @@
       "nameTooLong": "Nazwa folderu jest dłuższa niż 100 znaków",
       "nameTaken": "Folder „{{name}}” już tu istnieje",
       "notEmpty": "Folder nie jest pusty: najpierw przenieś lub usuń jego połączenia i foldery"
+    },
+    "import": {
+      "notGlafiraFile": "To nie jest plik połączeń Glafira",
+      "incompatibleVersion": "Plik został utworzony w niezgodnej wersji Glafira — zaktualizuj aplikację",
+      "invalidJson": "Plik jest uszkodzony lub nie jest w formacie JSON: {{error}}",
+      "unsupportedConnection": "Nieobsługiwane przez tę wersję Glafira (zaktualizuj aplikację): {{error}}"
     }
   },
   "messages": {
@@ -976,6 +982,18 @@
     },
     "notice": {
       "available": "Dostępna jest wersja {{version}}."
+    }
+  },
+  "warnings": {
+    "import": {
+      "prodReadOnly_one": "{{count}} połączenie prod będzie tylko do odczytu: zmiana połączeń prod wymaga Pro",
+      "prodReadOnly_few": "{{count}} połączenia prod będą tylko do odczytu: zmiana połączeń prod wymaga Pro",
+      "prodReadOnly_many": "{{count}} połączeń prod będzie tylko do odczytu: zmiana połączeń prod wymaga Pro",
+      "prodReadOnly_other": "{{count}} połączenia prod będzie tylko do odczytu: zmiana połączeń prod wymaga Pro",
+      "missingFiles_one": "Nie znaleziono na tym komputerze plików certyfikatów {{count}} połączenia — sprawdź ścieżki",
+      "missingFiles_few": "Nie znaleziono na tym komputerze plików certyfikatów {{count}} połączeń — sprawdź ścieżki",
+      "missingFiles_many": "Nie znaleziono na tym komputerze plików certyfikatów {{count}} połączeń — sprawdź ścieżki",
+      "missingFiles_other": "Nie znaleziono na tym komputerze plików certyfikatów {{count}} połączenia — sprawdź ścieżki"
     }
   },
   "hints": {

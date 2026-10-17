@@ -425,13 +425,17 @@ export function rustKeys(files /* {path: content} */) {
   return { calls, problems };
 }
 
-/** Каждый ключ Rust есть в en.json, текст en совпадает с шаблоном Rust, параметры вызова = {{…}} шаблона. */
+/** Каждый ключ Rust есть в en.json, текст en совпадает с шаблоном Rust, параметры вызова = {{…}} шаблона.
+ * Плюральный ключ передаётся без суффикса (`warnings.x`): шаблон Rust — форма `_other` из en, параметр `count` обязателен. */
 export function checkRustKeys(calls, enFlat) {
   const problems = [];
   for (const { key, template, params, where } of calls) {
-    if (!enFlat.has(key)) problems.push(`en: нет ключа ${key} (используется в Rust, ${where})`);
-    else if (enFlat.get(key) !== template)
-      problems.push(`en: ${key} отличается от шаблона в Rust (${where}): «${enFlat.get(key)}» ≠ «${template}»`);
+    const plural = !enFlat.has(key) && enFlat.has(`${key}_other`);
+    const enKey = plural ? `${key}_other` : key;
+    if (!enFlat.has(enKey)) problems.push(`en: нет ключа ${key} (используется в Rust, ${where})`);
+    else if (enFlat.get(enKey) !== template)
+      problems.push(`en: ${enKey} отличается от шаблона в Rust (${where}): «${enFlat.get(enKey)}» ≠ «${template}»`);
+    if (plural && !params.includes("count")) problems.push(`${where}: ${key} — плюральный ключ без параметра count`);
     const used = new Set(placeholders(template));
     for (const p of used) if (!params.includes(p)) problems.push(`${where}: ${key} — нет параметра ${p} для {{${p}}}`);
     for (const p of params) if (!used.has(p)) problems.push(`${where}: ${key} — лишний параметр ${p}, в шаблоне нет {{${p}}}`);

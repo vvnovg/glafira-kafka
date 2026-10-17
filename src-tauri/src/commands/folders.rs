@@ -5,9 +5,12 @@ use time::format_description::well_known::Rfc3339;
 
 use super::blocking;
 use crate::error::{AppError, AppResult};
+use crate::license::Tier;
 use crate::state::AppState;
 use crate::storage::connections::ConnectionFolder;
-use crate::storage::exchange::{ExportSummary, build_export};
+use crate::storage::exchange::{
+    ExportSummary, ImportOptions, ImportPreview, build_export, parse_exchange, plan_import,
+};
 use crate::storage::fs::write_json;
 use crate::storage::tree::TreeItemRef;
 
@@ -94,6 +97,78 @@ fn export_to_file(
     })
 }
 
+/// Предпросмотр импорта файла `path` под папку `target_folder_id` (или в корень); ничего не меняет.
+#[tauri::command]
+pub async fn preview_import(
+    state: State<'_, AppState>,
+    path: String,
+    target_folder_id: Option<String>,
+    update_existing: bool,
+) -> AppResult<ImportPreview> {
+    let st = state.inner().clone();
+    blocking(move || {
+        import_from_file(
+            &st,
+            Path::new(&path),
+            target_folder_id.as_deref(),
+            update_existing,
+            false,
+        )
+    })
+    .await
+}
+
+/// Применяет импорт: план пересчитывается на свежих данных и пишется одной записью.
+#[tauri::command]
+pub async fn apply_import(
+    state: State<'_, AppState>,
+    path: String,
+    target_folder_id: Option<String>,
+    update_existing: bool,
+) -> AppResult<ImportPreview> {
+    let st = state.inner().clone();
+    blocking(move || {
+        import_from_file(
+            &st,
+            Path::new(&path),
+            target_folder_id.as_deref(),
+            update_existing,
+            true,
+        )
+    })
+    .await
+}
+
+fn import_from_file(
+    st: &AppState,
+    path: &Path,
+    target: Option<&str>,
+    update_existing: bool,
+    apply: bool,
+) -> AppResult<ImportPreview> {
+    let parsed = parse_exchange(&std::fs::read(path)?)?;
+    let opts = ImportOptions {
+        target,
+        update_existing,
+        is_pro: st.license.status().tier == Tier::Pro,
+    };
+    let file_exists = |p: &str| Path::new(p).is_file();
+    if !apply {
+        return Ok(plan_import(&st.connections.snapshot(), &parsed, &opts, &file_exists)?.preview);
+    }
+    let preview = st.connections.update(|data| {
+        let plan = plan_import(data, &parsed, &opts, &file_exists)?;
+        *data = plan.next;
+        Ok(plan.preview)
+    })?;
+    // Живые сессии обновлённых подключений работают со старым профилем — как при сохранении формы.
+    for item in &preview.updated {
+        st.sessions.cancel_for(&item.id);
+        st.evict_connection(&item.id);
+    }
+    Ok(preview)
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -137,5 +212,86 @@ mod tests {
 
         let err = export_to_file(&st, &path, Some("nope"), "now").unwrap_err();
         assert_eq!(err.key, "errors.folders.notFound");
+    }
+
+    fn write_file(dir: &Path, profile_bootstrap: &str) -> std::path::PathBuf {
+        let mut p = serde_json::to_value(sample_profile("a")).unwrap();
+        p["bootstrapServers"] = profile_bootstrap.into();
+        let mut n = serde_json::to_value(sample_profile("n")).unwrap();
+        n["environment"] = "prod".into();
+        let path = dir.join("in.glafira-connections.json");
+        std::fs::write(
+            &path,
+            serde_json::to_vec(&serde_json::json!({
+                "format": "glafira-connections", "version": 1,
+                "folders": [], "connections": [p, n],
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        path
+    }
+
+    #[test]
+    fn preview_does_not_write_and_apply_writes_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        st.connections.upsert(sample_profile("a")).unwrap();
+        let input = tempfile::tempdir().unwrap();
+        let path = write_file(input.path(), "changed:9092");
+        let conns = dir.path().join("connections.json");
+        let before = std::fs::read(&conns).unwrap();
+
+        let preview = import_from_file(&st, &path, None, true, false).unwrap();
+        assert_eq!(preview.updated.len(), 1);
+        assert_eq!(preview.added.len(), 1);
+        // Free: prod-подключение станет только для чтения.
+        assert_eq!(preview.warnings[0].key, "warnings.import.prodReadOnly");
+        assert_eq!(std::fs::read(&conns).unwrap(), before);
+
+        let applied = import_from_file(&st, &path, None, true, true).unwrap();
+        assert_eq!(applied, preview);
+        assert_eq!(
+            st.connections.get("a").unwrap().bootstrap_servers,
+            "changed:9092"
+        );
+        assert!(st.connections.get("n").unwrap().read_only);
+        let reopened = crate::storage::connections::ConnectionStore::open(dir.path()).unwrap();
+        assert_eq!(reopened.list().len(), 2);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn failed_apply_changes_nothing() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let data = dir.path().join("data");
+        let st = AppState::new(&data, Arc::new(MemoryStore::default())).unwrap();
+        st.connections.upsert(sample_profile("a")).unwrap();
+        let path = write_file(dir.path(), "changed:9092");
+        let conns = data.join("connections.json");
+        let before = std::fs::read(&conns).unwrap();
+
+        // Каталог данных только для чтения: временный файл не создать, запись падает.
+        std::fs::set_permissions(&data, std::fs::Permissions::from_mode(0o555)).unwrap();
+        let result = import_from_file(&st, &path, None, true, true);
+        std::fs::set_permissions(&data, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(result.is_err());
+        assert_eq!(std::fs::read(&conns).unwrap(), before);
+        assert_eq!(st.connections.list().len(), 1);
+        assert_eq!(
+            st.connections.get("a").unwrap().bootstrap_servers,
+            "localhost:9092"
+        );
+    }
+
+    #[test]
+    fn foreign_file_is_an_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        let path = dir.path().join("x.json");
+        std::fs::write(&path, br#"{"format":"other","version":1}"#).unwrap();
+        let err = import_from_file(&st, &path, None, true, false).unwrap_err();
+        assert_eq!(err.key, "errors.import.notGlafiraFile");
     }
 }

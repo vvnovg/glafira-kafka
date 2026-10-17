@@ -38,6 +38,14 @@ describe("api client", () => {
     expect(invoke).toHaveBeenCalledWith("test_connection", { input: { profile, saslPassword: "pw", tlsPasswords: null } });
   });
 
+  it("previewImport и applyImport передают цель и флаг обновления", async () => {
+    invoke.mockResolvedValue({ added: [], updated: [], unchanged: [], skipped: [], warnings: [], needsPasswords: 0 });
+    await api.previewImport("/f.json", null, true);
+    expect(invoke).toHaveBeenCalledWith("preview_import", { path: "/f.json", targetFolderId: null, updateExisting: true });
+    await api.applyImport("/f.json", "t", false);
+    expect(invoke).toHaveBeenCalledWith("apply_import", { path: "/f.json", targetFolderId: "t", updateExisting: false });
+  });
+
   it("пробрасывает AppError как есть", async () => {
     const err = { code: "NOT_FOUND", message: "нет", retryable: false };
     invoke.mockRejectedValue(err);

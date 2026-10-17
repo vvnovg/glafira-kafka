@@ -333,6 +333,12 @@
       "nameTooLong": "Der Ordnername ist länger als 100 Zeichen",
       "nameTaken": "Hier gibt es bereits einen Ordner „{{name}}“",
       "notEmpty": "Der Ordner ist nicht leer: Verschieben oder löschen Sie zuerst seine Verbindungen und Ordner"
+    },
+    "import": {
+      "notGlafiraFile": "Dies ist keine Glafira-Verbindungsdatei",
+      "incompatibleVersion": "Die Datei wurde mit einer inkompatiblen Version von Glafira erstellt — aktualisieren Sie die App",
+      "invalidJson": "Die Datei ist beschädigt oder kein JSON: {{error}}",
+      "unsupportedConnection": "Von dieser Glafira-Version nicht unterstützt (App aktualisieren): {{error}}"
     }
   },
   "messages": {
@@ -968,6 +974,14 @@
     },
     "notice": {
       "available": "Version {{version}} ist verfügbar."
+    }
+  },
+  "warnings": {
+    "import": {
+      "prodReadOnly_one": "{{count}} Prod-Verbindung wird schreibgeschützt: Änderungen an Prod-Verbindungen erfordern Pro",
+      "prodReadOnly_other": "{{count}} Prod-Verbindungen werden schreibgeschützt: Änderungen an Prod-Verbindungen erfordern Pro",
+      "missingFiles_one": "Zertifikatsdateien von {{count}} Verbindung wurden auf diesem Computer nicht gefunden — prüfen Sie die Pfade",
+      "missingFiles_other": "Zertifikatsdateien von {{count}} Verbindungen wurden auf diesem Computer nicht gefunden — prüfen Sie die Pfade"
     }
   },
   "hints": {

@@ -96,6 +96,30 @@ export interface ExportSummary {
   folders: number;
 }
 
+/** Элемент предпросмотра импорта; `path` — имена папок от корня до места элемента. */
+export interface PreviewItem {
+  kind: "folder" | "connection";
+  id: string;
+  name: string;
+  path: string[];
+}
+
+/** Подключение файла, которое не будет импортировано. */
+export interface SkippedImport {
+  name: string;
+  reason: LocalizedText;
+}
+
+/** Предпросмотр (и итог) импорта подключений. */
+export interface ImportPreview {
+  added: PreviewItem[];
+  updated: PreviewItem[];
+  unchanged: PreviewItem[];
+  skipped: SkippedImport[];
+  warnings: LocalizedText[];
+  needsPasswords: number;
+}
+
 /** Ссылка на элемент дерева подключений для перемещения. */
 export interface TreeItemRef {
   kind: "folder" | "connection";

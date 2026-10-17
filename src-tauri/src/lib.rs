@@ -92,6 +92,8 @@ pub fn run() {
             commands::folders::delete_folder,
             commands::folders::move_items,
             commands::folders::export_connections,
+            commands::folders::preview_import,
+            commands::folders::apply_import,
             commands::cluster::get_cluster_overview,
             commands::cluster::get_broker_config,
             commands::topics::list_topics,

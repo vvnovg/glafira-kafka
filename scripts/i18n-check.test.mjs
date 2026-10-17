@@ -132,6 +132,23 @@ test("параметры вызова совпадают с {{…}} шаблон
   assert.ok(p.some((x) => x.startsWith("g.rs:4: m.dup") && x.includes("дважды")), p.join("\n"));
 });
 
+test("ключи из Rust: плюральный ключ без суффикса сверяется с формой _other", () => {
+  const rust = rustKeys({
+    "p.rs": 'ltext!("w.items", "{{count}} items", count = n);\nltext!("w.items", "{{count}} item", count = n);\nltext!("w.items", "{{count}} items", count = n, extra = x);',
+  });
+  assert.deepEqual(rust.problems, []);
+  const en = new Map([
+    ["w.items_one", "{{count}} item"],
+    ["w.items_other", "{{count}} items"],
+  ]);
+  const p = checkRustKeys(rust.calls, en);
+  assert.equal(p.length, 2, p.join("\n"));
+  assert.ok(p.some((x) => x.includes("w.items_other отличается") && x.includes("p.rs:2")), p.join("\n"));
+  assert.ok(p.some((x) => x.startsWith("p.rs:3: w.items") && x.includes("лишний параметр extra")), p.join("\n"));
+  const noCount = checkRustKeys([{ key: "w.items", template: "items", params: [], where: "q.rs:1" }], new Map([["w.items_other", "items"]]));
+  assert.deepEqual(noCount, ["q.rs:1: w.items — плюральный ключ без параметра count"]);
+});
+
 test("кириллица в литералах Rust: код — находка, комментарии и #[cfg(test)] — нет", () => {
   const src = [
     "//! Модуль: описание по-русски",

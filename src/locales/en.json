@@ -333,6 +333,12 @@
       "nameTooLong": "The folder name is longer than 100 characters",
       "nameTaken": "A folder named “{{name}}” already exists here",
       "notEmpty": "The folder is not empty: move or delete its connections and folders first"
+    },
+    "import": {
+      "notGlafiraFile": "This is not a Glafira connections file",
+      "incompatibleVersion": "The file was created by an incompatible version of Glafira — update the app",
+      "invalidJson": "The file is damaged or is not JSON: {{error}}",
+      "unsupportedConnection": "Not supported by this version of Glafira (update the app): {{error}}"
     }
   },
   "messages": {
@@ -968,6 +974,14 @@
     },
     "notice": {
       "available": "Version {{version}} is available."
+    }
+  },
+  "warnings": {
+    "import": {
+      "prodReadOnly_one": "{{count}} prod connection will be read-only: changing prod connections requires Pro",
+      "prodReadOnly_other": "{{count}} prod connections will be read-only: changing prod connections requires Pro",
+      "missingFiles_one": "Certificate files of {{count}} connection are not found on this computer — check the paths",
+      "missingFiles_other": "Certificate files of {{count}} connections are not found on this computer — check the paths"
     }
   },
   "hints": {

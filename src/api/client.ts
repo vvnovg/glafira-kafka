@@ -38,6 +38,7 @@ import type {
   ConfigEntry,
   ConnectionFolder,
   ExportSummary,
+  ImportPreview,
   ConnectionProfile,
   TestReport,
   TlsPasswordsInput,
@@ -96,6 +97,10 @@ export const api = {
     call<void>("move_items", { items, parentId, before }),
   exportConnections: (path: string, folderId: string | null) =>
     call<ExportSummary>("export_connections", { path, folderId }),
+  previewImport: (path: string, targetFolderId: string | null, updateExisting: boolean) =>
+    call<ImportPreview>("preview_import", { path, targetFolderId, updateExisting }),
+  applyImport: (path: string, targetFolderId: string | null, updateExisting: boolean) =>
+    call<ImportPreview>("apply_import", { path, targetFolderId, updateExisting }),
 
   getClusterOverview: (connectionId: string) => call<ClusterOverview>("get_cluster_overview", { connectionId }),
   getBrokerConfig: (connectionId: string, brokerId: number) =>

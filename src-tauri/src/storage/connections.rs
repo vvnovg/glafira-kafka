@@ -601,6 +601,11 @@ impl ConnectionStore {
             .ok_or_else(|| connection_not_found(id))
     }
 
+    /// Копия всех данных хранилища (для расчётов без записи, например предпросмотра импорта).
+    pub(crate) fn snapshot(&self) -> StoreData {
+        self.cache.read_safe().clone()
+    }
+
     /// Изменяет данные одной транзакцией: `f` работает с копией, затем проверяются
     /// инварианты дерева и пишется файл; кэш заменяется только после успешной записи.
     pub(crate) fn update<R>(&self, f: impl FnOnce(&mut StoreData) -> AppResult<R>) -> AppResult<R> {

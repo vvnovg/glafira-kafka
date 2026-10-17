@@ -333,6 +333,12 @@
       "nameTooLong": "El nombre de la carpeta supera los 100 caracteres",
       "nameTaken": "Ya existe aquí una carpeta “{{name}}”",
       "notEmpty": "La carpeta no está vacía: primero mueve o elimina sus conexiones y carpetas"
+    },
+    "import": {
+      "notGlafiraFile": "Este no es un archivo de conexiones de Glafira",
+      "incompatibleVersion": "El archivo se creó con una versión incompatible de Glafira — actualiza la aplicación",
+      "invalidJson": "El archivo está dañado o no es JSON: {{error}}",
+      "unsupportedConnection": "No compatible con esta versión de Glafira (actualiza la aplicación): {{error}}"
     }
   },
   "messages": {
@@ -972,6 +978,16 @@
     },
     "notice": {
       "available": "La versión {{version}} está disponible."
+    }
+  },
+  "warnings": {
+    "import": {
+      "prodReadOnly_one": "{{count}} conexión prod será de solo lectura: modificar conexiones prod requiere Pro",
+      "prodReadOnly_many": "{{count}} de conexiones prod serán de solo lectura: modificar conexiones prod requiere Pro",
+      "prodReadOnly_other": "{{count}} conexiones prod serán de solo lectura: modificar conexiones prod requiere Pro",
+      "missingFiles_one": "No se encontraron en este equipo los archivos de certificado de {{count}} conexión — revisa las rutas",
+      "missingFiles_many": "No se encontraron en este equipo los archivos de certificado de {{count}} de conexiones — revisa las rutas",
+      "missingFiles_other": "No se encontraron en este equipo los archivos de certificado de {{count}} conexiones — revisa las rutas"
     }
   },
   "hints": {

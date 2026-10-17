@@ -905,6 +905,7 @@
     "expires": "Действует до",
     "perpetual": "бессрочно",
     "expiringUnknown": "Лицензия скоро истекает ({{date}}).",
+    "expiringToday": "Лицензия истекает сегодня ({{date}}).",
     "expiring_one": "Лицензия истекает через {{count}} дн. ({{date}}).",
     "expiring_few": "Лицензия истекает через {{count}} дн. ({{date}}).",
     "expiring_many": "Лицензия истекает через {{count}} дн. ({{date}}).",
@@ -924,6 +925,7 @@
     "policySource": "Источник: {{source}}",
     "notice": {
       "expiringUnknown": "Лицензия Pro скоро истекает.",
+      "expiringToday": "Лицензия Pro истекает сегодня.",
       "expiring_one": "Лицензия Pro истекает через {{count}} дн.",
       "expiring_few": "Лицензия Pro истекает через {{count}} дн.",
       "expiring_many": "Лицензия Pro истекает через {{count}} дн.",

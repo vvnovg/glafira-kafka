@@ -905,6 +905,7 @@
     "expires": "Ważna do",
     "perpetual": "bezterminowa",
     "expiringUnknown": "Licencja wkrótce wygasa ({{date}}).",
+    "expiringToday": "Licencja wygasa dzisiaj ({{date}}).",
     "expiring_one": "Licencja wygasa za {{count}} dzień ({{date}}).",
     "expiring_few": "Licencja wygasa za {{count}} dni ({{date}}).",
     "expiring_many": "Licencja wygasa za {{count}} dni ({{date}}).",
@@ -924,6 +925,7 @@
     "policySource": "Źródło: {{source}}",
     "notice": {
       "expiringUnknown": "Licencja Pro wkrótce wygasa.",
+      "expiringToday": "Licencja Pro wygasa dzisiaj.",
       "expiring_one": "Licencja Pro wygasa za {{count}} dzień.",
       "expiring_few": "Licencja Pro wygasa za {{count}} dni.",
       "expiring_many": "Licencja Pro wygasa za {{count}} dni.",

@@ -22,6 +22,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 });
 
 import { api } from "../../api/client";
+import { LicenseNotice } from "./LicenseNotice";
 import { LicensePanel } from "./LicensePanel";
 
 beforeEach(() => {
@@ -105,5 +106,26 @@ describe("LicensePanel", () => {
     vi.mocked(api.getLicenseStatus).mockResolvedValue({ ...PRO, tier: "free", state: "expired", expires: "2026-10-01", daysLeft: -15 });
     renderWithClient(<LicensePanel />);
     expect(await screen.findByText(/истекла 2026-10-01/)).toBeInTheDocument();
+  });
+
+  it("в последний день — «сегодня», а не «через 0 дн.»", async () => {
+    vi.mocked(api.getLicenseStatus).mockResolvedValue({ ...PRO, state: "expiring", expires: "2026-10-17", daysLeft: 0 });
+    const { unmount } = renderWithClient(<LicensePanel />);
+    expect(await screen.findByText("Лицензия истекает сегодня (2026-10-17).")).toBeInTheDocument();
+    expect(screen.queryByText(/через 0/)).not.toBeInTheDocument();
+    unmount();
+    vi.mocked(api.getLicenseStatus).mockResolvedValue({ ...PRO, state: "expiring", expires: "2026-10-18", daysLeft: 1 });
+    renderWithClient(<LicensePanel />);
+    expect(await screen.findByText("Лицензия истекает через 1 дн. (2026-10-18).")).toBeInTheDocument();
+  });
+
+  it("плашка: daysLeft 0 и 1", async () => {
+    vi.mocked(api.getLicenseStatus).mockResolvedValue({ ...PRO, state: "expiring", daysLeft: 0 });
+    const { unmount } = renderWithClient(<LicenseNotice />);
+    expect(await screen.findByText("Лицензия Pro истекает сегодня.")).toBeInTheDocument();
+    unmount();
+    vi.mocked(api.getLicenseStatus).mockResolvedValue({ ...PRO, state: "expiring", daysLeft: 1 });
+    renderWithClient(<LicenseNotice />);
+    expect(await screen.findByText("Лицензия Pro истекает через 1 дн.")).toBeInTheDocument();
   });
 });

@@ -901,6 +901,7 @@
     "expires": "Gültig bis",
     "perpetual": "unbefristet",
     "expiringUnknown": "Die Lizenz läuft bald ab ({{date}}).",
+    "expiringToday": "Die Lizenz läuft heute ab ({{date}}).",
     "expiring_one": "Die Lizenz läuft in {{count}} Tag ab ({{date}}).",
     "expiring_other": "Die Lizenz läuft in {{count}} Tagen ab ({{date}}).",
     "expired": "Die Lizenz ist am {{date}} abgelaufen: Pro-Funktionen sind deaktiviert, Ihre Daten bleiben erhalten.",
@@ -918,6 +919,7 @@
     "policySource": "Quelle: {{source}}",
     "notice": {
       "expiringUnknown": "Die Pro-Lizenz läuft bald ab.",
+      "expiringToday": "Die Pro-Lizenz läuft heute ab.",
       "expiring_one": "Die Pro-Lizenz läuft in {{count}} Tag ab.",
       "expiring_other": "Die Pro-Lizenz läuft in {{count}} Tagen ab.",
       "expired": "Die Pro-Lizenz ist am {{date}} abgelaufen: Pro-Funktionen sind deaktiviert.",

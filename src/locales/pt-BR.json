@@ -903,6 +903,7 @@
     "expires": "Válida até",
     "perpetual": "perpétua",
     "expiringUnknown": "A licença expira em breve ({{date}}).",
+    "expiringToday": "A licença expira hoje ({{date}}).",
     "expiring_one": "A licença expira em {{count}} dia ({{date}}).",
     "expiring_many": "A licença expira em {{count}} de dias ({{date}}).",
     "expiring_other": "A licença expira em {{count}} dias ({{date}}).",
@@ -921,6 +922,7 @@
     "policySource": "Origem: {{source}}",
     "notice": {
       "expiringUnknown": "A licença Pro expira em breve.",
+      "expiringToday": "A licença Pro expira hoje.",
       "expiring_one": "A licença Pro expira em {{count}} dia.",
       "expiring_many": "A licença Pro expira em {{count}} de dias.",
       "expiring_other": "A licença Pro expira em {{count}} dias.",

@@ -15,7 +15,9 @@ export function LicenseNotice() {
         {status.state === "expiring"
           ? status.daysLeft == null
             ? t("license.notice.expiringUnknown")
-            : t("license.notice.expiring", { count: status.daysLeft })
+            : status.daysLeft === 0
+              ? t("license.notice.expiringToday")
+              : t("license.notice.expiring", { count: status.daysLeft })
           : t("license.notice.expired", { date: status.expires })}
       </span>
       <button type="button" className="link" onClick={() => open({ kind: "license" })}>

@@ -901,6 +901,7 @@
     "expires": "Valid until",
     "perpetual": "perpetual",
     "expiringUnknown": "The license expires soon ({{date}}).",
+    "expiringToday": "The license expires today ({{date}}).",
     "expiring_one": "The license expires in {{count}} day ({{date}}).",
     "expiring_other": "The license expires in {{count}} days ({{date}}).",
     "expired": "The license expired on {{date}}: Pro features are disabled, your data is kept.",
@@ -918,6 +919,7 @@
     "policySource": "Source: {{source}}",
     "notice": {
       "expiringUnknown": "The Pro license expires soon.",
+      "expiringToday": "The Pro license expires today.",
       "expiring_one": "The Pro license expires in {{count}} day.",
       "expiring_other": "The Pro license expires in {{count}} days.",
       "expired": "The Pro license expired on {{date}}: Pro features are disabled.",

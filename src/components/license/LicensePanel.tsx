@@ -61,7 +61,9 @@ export function LicensePanel() {
       {st.state === "expiring" && <p className="warn">
           {st.daysLeft == null
             ? t("license.expiringUnknown", { date: st.expires })
-            : t("license.expiring", { count: st.daysLeft, date: st.expires })}
+            : st.daysLeft === 0
+              ? t("license.expiringToday", { date: st.expires })
+              : t("license.expiring", { count: st.daysLeft, date: st.expires })}
         </p>}
       {st.state === "expired" && <p className="warn">{t("license.expired", { date: st.expires })}</p>}
       {st.state === "invalid" && st.error && <p className="warn">{tr(st.error)}</p>}

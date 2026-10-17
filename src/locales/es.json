@@ -903,6 +903,7 @@
     "expires": "Válida hasta",
     "perpetual": "perpetua",
     "expiringUnknown": "La licencia caduca pronto ({{date}}).",
+    "expiringToday": "La licencia caduca hoy ({{date}}).",
     "expiring_one": "La licencia caduca en {{count}} día ({{date}}).",
     "expiring_many": "La licencia caduca en {{count}} de días ({{date}}).",
     "expiring_other": "La licencia caduca en {{count}} días ({{date}}).",
@@ -921,6 +922,7 @@
     "policySource": "Origen: {{source}}",
     "notice": {
       "expiringUnknown": "La licencia Pro caduca pronto.",
+      "expiringToday": "La licencia Pro caduca hoy.",
       "expiring_one": "La licencia Pro caduca en {{count}} día.",
       "expiring_many": "La licencia Pro caduca en {{count}} de días.",
       "expiring_other": "La licencia Pro caduca en {{count}} días.",

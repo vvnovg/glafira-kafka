@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionProfile } from "../api/types";
 import { useHelpContext } from "../state/helpContext";
 import { useWorkspace } from "../state/workspace";
@@ -25,7 +25,10 @@ vi.mock("../api/client", async (importOriginal) => {
 vi.mock("./TabContent", () => ({ TabContent: () => <div /> }));
 
 describe("Layout tabs", () => {
+  afterEach(() => useHelpContext.setState({ byTab: {} }));
+
   beforeEach(() => {
+    useHelpContext.setState({ byTab: {} });
     useWorkspace.setState({
       tabs: [
         { kind: "topics", connectionId: "c1", id: "topics:c1" },
@@ -79,7 +82,6 @@ describe("Layout tabs", () => {
     renderWithClient(<Layout />);
     fireEvent.keyDown(window, { key: "F1" });
     expect(useWorkspace.getState().tabs.find((t) => t.id === "help")).toMatchObject({ chapter: "browse" });
-    useHelpContext.setState({ byTab: {} });
   });
 
   it("opens the guide from the sidebar", () => {

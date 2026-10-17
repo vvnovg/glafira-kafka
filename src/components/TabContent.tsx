@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Component, lazy, type ReactNode, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import type { Tab } from "../state/workspace";
 import { ConnectionFormTab } from "./connections/ConnectionFormTab";
@@ -16,12 +16,25 @@ import { TopicDetails } from "./topics/TopicDetails";
 // Справка (react-markdown и главы) грузится отдельным чанком при первом открытии.
 const HelpPanel = lazy(() => import("./help/HelpPanel").then((m) => ({ default: m.HelpPanel })));
 
+/** Сбой чанка или рендера справки показывает «Не удалось загрузить руководство», не роняя окно. */
+class HelpBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 function LazyHelp({ tab }: { tab: Extract<Tab, { kind: "help" }> }) {
   const { t } = useTranslation();
   return (
-    <Suspense fallback={<p className="empty">{t("common.loading")}</p>}>
-      <HelpPanel spec={tab} />
-    </Suspense>
+    <HelpBoundary fallback={<p className="empty">{t("help.loadFailed")}</p>}>
+      <Suspense fallback={<p className="empty">{t("common.loading")}</p>}>
+        <HelpPanel spec={tab} />
+      </Suspense>
+    </HelpBoundary>
   );
 }
 

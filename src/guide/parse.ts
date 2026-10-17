@@ -73,14 +73,21 @@ export function parseChapter(id: ChapterId, text: string, label: (key: string) =
   return { id, title, sections };
 }
 
-/** Текст раздела без разметки Markdown — для поиска и фрагментов. */
+/** Экранированный символ `\\X` на время разбора заменяется символом из области частного использования. */
+const MARKS = "\\`*_[]<>#|~!";
+const PLACEHOLDER = /[\uE000-\uE00B]/g;
+const hide = (_m: string, c: string) => String.fromCharCode(0xe000 + MARKS.indexOf(c));
+const restore = (c: string) => MARKS[c.charCodeAt(0) - 0xe000];
+
+/** Текст раздела без разметки Markdown — для поиска и фрагментов. Без lookbehind: старый WebKit его не разбирает. */
 function plain(markdown: string): string {
   return markdown
-    .replace(/(?<!\\)!?\[((?:[^\]\\]|\\.)*)\]\([^)]*\)/g, "$1")
+    .replace(ESCAPED, hide)
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/^\s*(```|~~~).*$/gm, "")
     .replace(/^\s{0,3}(#{1,6}\s+|>\s?|[-*+]\s+|\d+\.\s+)/gm, "")
-    .replace(/(?<!\\)(\*\*|__|`|\*|_)/g, "")
-    .replace(ESCAPED, "$1")
+    .replace(/(\*\*|__|`|\*|_)/g, "")
+    .replace(PLACEHOLDER, restore)
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -390,7 +390,12 @@ Co-Authored-By: <модель исполнителя>"
 4. Проверки: `pnpm i18n:check` (в том числе «не используется ни в одном <Hint>» — значит, ключ забыт в коде), `pnpm vitest run <тесты экрана>`, `pnpm test`, `pnpm build`.
 5. Отчёт о длине: `node scripts/i18n-check.mjs --lengths --no-cyrillic-scan | grep "hints\."` — подсказки длиннее en в ×1.6 и больше перечислить в отчёте задачи (сокращать, только если смысл не теряется).
 
-Значок внутри `<label>` ставится после текста подписи: `<label htmlFor="cf-bootstrap">{t("connections.form.bootstrap")}<Hint k="hints.connections.bootstrap" label={t("connections.form.bootstrap")} /></label>`. Клик по кнопке внутри `<label>` не активирует связанный элемент — так и задумано.
+Значок **никогда не ставится внутри `<label>`**: кнопка внутри подписи попадает в доступное имя поля (скринридер прочитает «Bootstrap-серверы Подсказка: …», а существующие `getByLabelText` сломаются). Правила:
+- подпись в сетке формы (`<label htmlFor>` + поле) — обернуть: `<span className="field-label"><label htmlFor="cf-bootstrap">{t("connections.form.bootstrap")}</label><Hint k="hints.connections.bootstrap" label={t("connections.form.bootstrap")} /></span>` (обёртка занимает ячейку сетки вместо `<label>`);
+- подпись, оборачивающая поле (`<label><input …/> текст</label>` или `<label>текст <select/></label>`), — значок сразу после закрывающего `</label>`;
+- `<legend>`, `<h4>`, заголовок колонки, абзац — значок внутри после текста;
+- кнопка — значок сразу после кнопки.
+Где в таблицах задач написано «label …, после текста» или «внутри label», читать по этим правилам. Существующие тесты с `getByLabelText` должны проходить без изменений.
 
 ### Task 3: Подключение (14 подсказок)
 

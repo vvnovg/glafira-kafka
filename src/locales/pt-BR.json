@@ -46,7 +46,7 @@
       "typeToConfirm": "Digite “{{expected}}” para confirmar"
     },
     "diagnostics": {
-      "noFile": "Nenhum arquivo selecionado para o diagnóstico",
+      "noFile": "Nenhum local selecionado para salvar o arquivo de diagnóstico",
       "writeFailed": "Não foi possível gravar o arquivo de diagnóstico"
     },
     "updates": {
@@ -657,7 +657,7 @@
   },
   "browse": {
     "form": {
-      "from": "Início",
+      "from": "Ler a partir de",
       "startPosition": "Posição inicial",
       "startLatest": "Últimas N",
       "startEarliest": "Do início",
@@ -680,8 +680,8 @@
       "valueContains": "O valor contém",
       "header": "Cabeçalho",
       "headerValue": "Valor do cabeçalho",
-      "timeFrom": "Data/hora de",
-      "timeTo": "Data/hora até"
+      "timeFrom": "Data/hora inicial",
+      "timeTo": "Data/hora final"
     },
     "panel": {
       "restart": "Reiniciar",
@@ -858,7 +858,7 @@
     "actions": {
       "connect": "Entrar no grupo",
       "commitSelected": "Fazer commit até o selecionado",
-      "commitAll": "Fazer commit do que foi lido"
+      "commitAll": "Fazer commit de tudo o que foi lido"
     },
     "status": {
       "counters": "lidas {{consumed}} · encontradas {{matched}} · na tabela {{shown}}",

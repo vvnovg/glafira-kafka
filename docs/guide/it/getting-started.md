@@ -1,1 +1,112 @@
 # Getting started
+
+Glafira for Apache Kafka is a desktop client for Kafka clusters. It lets you browse topics and consumer groups, read and send messages, and reset offsets. This chapter covers installation, the first launch, a local Kafka for practice, and the interface language.
+
+## Install on macOS {#install-macos}
+
+Glafira runs on macOS 11 or later. Download the installer from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+
+Pick the file for your Mac: `aarch64` for Apple silicon (M1 and later), `x64` for Intel.
+
+1. Open the `.dmg` file.
+2. Drag Glafira for Apache Kafka to the Applications folder.
+3. Start the app from Applications or Launchpad.
+
+You can also use the `.pkg` installer. It puts the app in `/Applications` for all users.
+
+Beta builds are not signed by Apple yet, so macOS may refuse to open the app. Remove the quarantine flag once in Terminal:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Glafira for Apache Kafka.app"
+```
+
+If the downloaded `.dmg` itself does not open, remove the flag from it first:
+
+```bash
+xattr -d com.apple.quarantine ~/Downloads/Glafira_for_Apache_Kafka_*.dmg
+```
+
+Another way: right-click the app, choose "Open", then "Open" again. Or go to System Settings → Privacy & Security and click "Open Anyway". Updates installed from inside the app do not need this step.
+
+## Install on Windows {#install-windows}
+
+Download the `.msi` installer (`x64`) from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+
+1. Run the `.msi` file.
+2. Confirm the installation in the Windows prompt. The app is installed for all users of the computer, so administrator rights are needed.
+3. Start Glafira for Apache Kafka from the Start menu.
+
+Beta builds are not signed yet. If SmartScreen blocks the installer, click "More info", then "Run anyway". You can also unblock the file in PowerShell before running it:
+
+```powershell
+Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en-US.msi"
+```
+
+## Install on Linux {#install-linux}
+
+Builds are available for `x86_64` in three formats. Download the one that suits your distribution from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+
+- Debian, Ubuntu and derivatives: `sudo apt install ./<file>.deb`
+- Fedora, RHEL and derivatives: `sudo dnf install ./<file>.rpm`
+- Any distribution: make the AppImage executable with `chmod +x <file>.AppImage` and run it.
+
+After installing a package, start the app from the applications menu or run `glafira-kafka` in a terminal.
+
+Glafira stores passwords in the Secret Service (for example, GNOME Keyring or KWallet). Make sure one of them runs in your session. Otherwise the app cannot save passwords for connections.
+
+## First run {#first-run}
+
+The window has two parts. On the left is the [[ui:sidebar.connections]] panel. On the right are tabs: each screen you open, such as a topic list or the Producer, gets its own tab.
+
+When there are no connections yet, the panel shows a short hint, and the tab area suggests adding a connection. To start:
+
+1. Click `+` ( [[ui:sidebar.newConnection]] ) in the header of the [[ui:sidebar.connections]] panel.
+2. Fill in [[ui:connections.form.name]] and [[ui:connections.form.bootstrap]], for example `localhost:9092`.
+3. Click [[ui:connections.form.test]] to check the settings, then [[ui:common.save]].
+
+After saving, the cluster overview opens. Under each connection in the panel there are links to [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] and [[ui:sidebar.consumer]]. Details on all connection settings are in [Connections](connections.md#create).
+
+At the bottom of the panel there are links to [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] and [[ui:sidebar.about]]. The `?` sign next to a field shows a short hint about it. Press `F1` anywhere in the window to open the guide chapter for the current screen. On macOS the guide is also in the Help menu.
+
+If you used Kafka Explorer (the earlier name of the app), Glafira copies its connections, templates, send history and license on the first launch. Passwords are copied from the system secret store too. Nothing that already exists is overwritten, and the old data is not deleted. macOS may ask once for access to the old Keychain items.
+
+## Local Kafka for practice {#local-cluster}
+
+To try the app without a shared cluster, start Kafka on your computer in Docker. One broker is enough:
+
+```bash
+docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
+```
+
+Then create a connection with bootstrap server `localhost:9092`, protocol `PLAINTEXT` and environment `local`. When you no longer need the broker, remove it with `docker rm -f kafka`.
+
+The hint in the empty [[ui:sidebar.connections]] panel mentions `docker compose -f dev/docker-compose.yml up -d`. This file is part of the Glafira source code. If you have the source code, this command starts a broker with three listeners:
+
+- `localhost:9092` — `PLAINTEXT`.
+- `localhost:9094` — `SASL_PLAINTEXT` with `PLAIN` (users `tester` / `tester-secret` and `admin` / `admin-secret`) and SCRAM (`scram-user` / `scram-secret` for `SCRAM-SHA-256` and `SCRAM-SHA-512`).
+- `localhost:9095` — `SSL` with client certificates (mTLS). The test certificates are in `dev/certs/out`.
+
+These users and certificates are for local tests only.
+
+## Interface language {#language}
+
+The interface is available in English, Russian, German, French, Spanish, Italian, Polish and Portuguese (Brazil). English and Russian are free. The other languages need Pro.
+
+To change the language:
+
+1. Click [[ui:sidebar.settings]] at the bottom of the left panel.
+2. Choose a language in [[ui:settings.language.label]].
+
+The change applies at once, including this guide and the macOS menu. [[ui:settings.language.systemUnknown]] (the default) follows the language of your operating system. If that language is not in the list, or it needs Pro and Pro is not active, the interface is in English.
+
+Without Pro, the Pro languages are shown in the list but cannot be selected. If you chose a Pro language and the license later expires, the interface switches to English. Your choice is kept and comes back when Pro is active again.
+
+## Settings set by your organization {#managed-settings}
+
+In a company, administrators can set some options for all users through a policy. You cannot change these options in the app. A policy can:
+
+- set the interface language — the language list in [[ui:sidebar.settings]] is then unavailable, with a note that the language is set by your organization;
+- activate Pro with an organization license key — the [[ui:tabs.license]] screen then says that the license is managed by your organization;
+- turn off update checks, or point them to an internal mirror.
+
+To see whether a policy applies, open [[ui:sidebar.about]] and look at [[ui:about.policy]]. If the policy has an error, it is shown there and on the [[ui:tabs.license]] screen. For questions about the policy, contact your administrators. Licenses and updates are described in [License and updates](license-updates.md).

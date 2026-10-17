@@ -338,7 +338,8 @@
       "notGlafiraFile": "To nie jest plik połączeń Glafira",
       "incompatibleVersion": "Plik został utworzony w niezgodnej wersji Glafira — zaktualizuj aplikację",
       "invalidJson": "Plik jest uszkodzony lub nie jest w formacie JSON: {{error}}",
-      "unsupportedConnection": "Nieobsługiwane przez tę wersję Glafira (zaktualizuj aplikację): {{error}}"
+      "unsupportedConnection": "Nieobsługiwane przez tę wersję Glafira (zaktualizuj aplikację): {{error}}",
+      "duplicateId": "Powtórzony ID połączenia w pliku"
     }
   },
   "messages": {

@@ -268,9 +268,17 @@ pub fn parse_exchange(bytes: &[u8]) -> AppResult<ParsedExchange> {
             });
             continue;
         }
-        if seen.insert(c.profile.id.clone()) {
-            connections.push((c.profile, c.needs_password));
+        if !seen.insert(c.profile.id.clone()) {
+            skipped.push(Skipped {
+                name,
+                reason: ltext!(
+                    "errors.import.duplicateId",
+                    "Duplicate connection id in the file"
+                ),
+            });
+            continue;
         }
+        connections.push((c.profile, c.needs_password));
     }
     Ok(ParsedExchange {
         folders,
@@ -476,7 +484,10 @@ pub(crate) fn plan_import(
             profile.read_only = true;
         }
         if let Some(slot) = next.connections.iter_mut().find(|c| c.id == profile.id) {
-            if same_settings(slot, &profile) || !opts.update_existing {
+            // Во Free совпадение с файлом «как есть» — тоже «без изменений»: иначе локальный
+            // prod без readOnly выглядел бы обновлённым при каждом импорте того же файла.
+            let unchanged_settings = same_settings(slot, incoming) || same_settings(slot, &profile);
+            if unchanged_settings || !opts.update_existing {
                 unchanged.push((TreeItemKind::Connection, profile.id.clone()));
                 continue;
             }
@@ -1037,6 +1048,73 @@ mod tests {
         let p = plan(&StoreData::default(), &bytes, &opts(None));
         assert!(!conn(&p.next, "p").read_only);
         assert!(p.preview.warnings.is_empty());
+
+        // Pro: readOnly из файла сохраняется как есть.
+        let mut ro = conn_json("r", "R", None);
+        ro["environment"] = "prod".into();
+        ro["readOnly"] = true.into();
+        let p = plan(&StoreData::default(), &file(vec![], vec![ro]), &opts(None));
+        assert!(conn(&p.next, "r").read_only);
+    }
+
+    #[test]
+    fn identical_prod_in_free_is_unchanged_and_keeps_read_only() {
+        let mut local = sample_profile("p");
+        local.environment = Environment::Prod;
+        local.read_only = false;
+        let data = StoreData {
+            connections: vec![local.clone()],
+            ..Default::default()
+        };
+        let mut same = conn_json("p", "conn-p", None);
+        same["environment"] = "prod".into();
+        let free = ImportOptions {
+            is_pro: false,
+            ..opts(None)
+        };
+        let p = plan(&data, &file(vec![], vec![same]), &free);
+        assert_eq!(preview_ids(&p.preview.unchanged), ["p"]);
+        assert!(p.preview.updated.is_empty());
+        assert!(p.preview.warnings.is_empty());
+        assert_eq!(conn(&p.next, "p"), &local);
+    }
+
+    #[test]
+    fn duplicate_connection_ids_are_skipped_with_reason() {
+        let bytes = file(
+            vec![],
+            vec![
+                conn_json("a", "First", None),
+                conn_json("a", "Second", None),
+            ],
+        );
+        let parsed = parse_exchange(&bytes).unwrap();
+        assert_eq!(parsed.connections.len(), 1);
+        assert_eq!(parsed.connections[0].0.name, "First");
+        assert_eq!(parsed.skipped.len(), 1);
+        assert_eq!(parsed.skipped[0].name, "Second");
+        assert_eq!(parsed.skipped[0].reason.key, "errors.import.duplicateId");
+    }
+
+    #[test]
+    fn secrets_in_extra_properties_are_skipped() {
+        let mut leaky = conn_json("s", "Leaky", None);
+        leaky["extraProperties"] = serde_json::json!({"sasl.password": "x"});
+        let bytes = file(vec![], vec![leaky, conn_json("ok", "OK", None)]);
+        let parsed = parse_exchange(&bytes).unwrap();
+        assert_eq!(parsed.skipped.len(), 1);
+        assert_eq!(parsed.skipped[0].name, "Leaky");
+        assert_eq!(
+            parsed.skipped[0].reason.key,
+            "errors.connections.secretInExtraProperties"
+        );
+        let p = plan_import(&StoreData::default(), &parsed, &opts(None), &all_exist).unwrap();
+        assert!(p.next.connections.iter().all(|c| c.id != "s"));
+        assert!(
+            !serde_json::to_string(&p.next.connections)
+                .unwrap()
+                .contains("sasl.password")
+        );
     }
 
     #[test]
@@ -1065,6 +1143,22 @@ mod tests {
         assert_eq!(p.preview.warnings[0].params["count"], "2");
         let p = plan_import(&StoreData::default(), &parsed, &opts(None), &all_exist).unwrap();
         assert!(p.preview.warnings.is_empty());
+
+        // Обновлённое подключение тоже проверяется.
+        let data = StoreData {
+            connections: vec![sample_profile("t")],
+            ..Default::default()
+        };
+        let only_t = file(
+            vec![],
+            vec![serde_json::to_value(&parsed.connections[0].0).unwrap()],
+        );
+        let parsed = parse_exchange(&only_t).unwrap();
+        let p = plan_import(&data, &parsed, &opts(None), &missing).unwrap();
+        assert_eq!(preview_ids(&p.preview.updated), ["t"]);
+        assert_eq!(p.preview.warnings.len(), 1);
+        assert_eq!(p.preview.warnings[0].key, "warnings.import.missingFiles");
+        assert_eq!(p.preview.warnings[0].params["count"], "1");
     }
 
     #[test]

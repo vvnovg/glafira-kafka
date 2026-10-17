@@ -338,7 +338,8 @@
       "notGlafiraFile": "Это не файл подключений Glafira",
       "incompatibleVersion": "Файл создан в несовместимой версии Glafira — обновите приложение",
       "invalidJson": "Файл повреждён или это не JSON: {{error}}",
-      "unsupportedConnection": "Не поддерживается этой версией Glafira (обновите приложение): {{error}}"
+      "unsupportedConnection": "Не поддерживается этой версией Glafira (обновите приложение): {{error}}",
+      "duplicateId": "Повторяющийся id подключения в файле"
     }
   },
   "messages": {

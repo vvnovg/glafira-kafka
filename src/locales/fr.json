@@ -338,7 +338,8 @@
       "notGlafiraFile": "Ce n’est pas un fichier de connexions Glafira",
       "incompatibleVersion": "Le fichier a été créé par une version incompatible de Glafira — mettez à jour l’application",
       "invalidJson": "Le fichier est endommagé ou n’est pas au format JSON : {{error}}",
-      "unsupportedConnection": "Non pris en charge par cette version de Glafira (mettez à jour l’application) : {{error}}"
+      "unsupportedConnection": "Non pris en charge par cette version de Glafira (mettez à jour l’application) : {{error}}",
+      "duplicateId": "ID de connexion en double dans le fichier"
     }
   },
   "messages": {

@@ -236,3 +236,58 @@ test("отчёт о длине: только заметно длиннее en", 
   const r = lengthReport({ en: { a: "Delete topic", b: "OK", c: "Save" }, de: { a: "Das Topic endgültig löschen", b: "Einverstanden", c: "Speich" } });
   assert.deepEqual(r, ["de: a — 27 / 12 (×2.3) «Das Topic endgültig löschen»"]);
 });
+
+test("пустые и не строковые значения — ошибка", () => {
+  const en = { a: "Save", b: "Close" };
+  for (const bad of ["", "   ", null, 5, true, []]) {
+    const p = checkDictionaries({ en, de: { a: "Speichern", b: bad } });
+    assert.ok(p.some((x) => x.includes("de: b") && x.includes("пустое или не строковое")), `${JSON.stringify(bad)}: ${p.join("\n")}`);
+  }
+  assert.ok(checkDictionaries({ en: { a: "Save", b: "" }, de: { a: "Speichern", b: "Zu" } }).some((x) => x.includes("en: b")));
+  assert.deepEqual(checkDictionaries({ en, de: { a: "Speichern", b: "Schließen" } }), []);
+});
+
+test("{{count}} нужен во всех формах, кроме _one в языках, где one — ровно число 1", () => {
+  const en = { n_one: "{{count}} x", n_other: "{{count}} xs" };
+  // de: _one без count допустим, _other без count — ошибка
+  assert.deepEqual(checkDictionaries({ en, de: { n_one: "Ein Topic", n_other: "{{count}} Topics" } }), []);
+  const bad = checkDictionaries({ en, de: { n_one: "Ein Topic", n_other: "Topics" } });
+  assert.ok(bad.some((x) => x.includes("de: n_other") && x.includes("{{count}}")), bad.join("\n"));
+  // ru: _few/_many без count — ошибка; _one в ru покрывает 21, 31… — тоже нужен count
+  const ru = { n_one: "{{count}} х", n_few: "{{count}} х", n_many: "{{count}} х", n_other: "{{count}} х" };
+  assert.deepEqual(checkDictionaries({ en, ru }), []);
+  const ruBad = checkDictionaries({ en, ru: { ...ru, n_few: "х", n_one: "Один" } });
+  assert.ok(ruBad.some((x) => x.includes("ru: n_few")), ruBad.join("\n"));
+  assert.ok(ruBad.some((x) => x.includes("ru: n_one")), ruBad.join("\n"));
+  // fr и pt-BR: one выбирается и для 0 — count обязателен в _one
+  for (const code of ["fr", "pt-BR"]) {
+    const p = checkDictionaries({ en, [code]: { n_one: "Un", n_many: "{{count}} x", n_other: "{{count}} x" } });
+    assert.ok(p.some((x) => x.includes(`${code}: n_one`) && x.includes("{{count}}")), p.join("\n"));
+  }
+});
+
+test("теги: парные не перепутаны, а одиночные могут менять порядок", () => {
+  const en = { a: "<code>{{x}}</code> <total/>" };
+  assert.deepEqual(checkDictionaries({ en, de: { a: "<total/> <code>{{x}}</code>" } }), []);
+  const p = checkDictionaries({ en, de: { a: "</code>{{x}}<code> <total/>" } });
+  assert.ok(p.some((x) => x.includes("de: a") && x.includes("парн")), p.join("\n"));
+  const nested = checkDictionaries({ en: { a: "<b>x</b>" }, de: { a: "<b>x</b></b><b>" } });
+  assert.ok(nested.some((x) => x.includes("парн")) || nested.some((x) => x.includes("теги")), nested.join("\n"));
+});
+
+test("allow-list: ключ, которого нет в en, и неизвестный язык — ошибка", () => {
+  const en = { a: "Kafka", n_one: "{{count}} x", n_other: "{{count}} xs" };
+  const de = { a: "Kafka", n_one: "{{count}} x", n_other: "{{count}} xs" };
+  assert.deepEqual(checkSameAsEn({ en, de }, { de: ["a", "n_one", "n_other"] }), []);
+  const p = checkSameAsEn({ en, de }, { de: ["a", "n_one", "n_other", "gone"], pt_BR: ["a"] });
+  assert.ok(p.some((x) => x.includes("de: gone") && x.includes("нет в en")), p.join("\n"));
+  assert.ok(p.some((x) => x.includes("pt_BR") && x.includes("нет словаря")), p.join("\n"));
+});
+
+test("лишняя плюральная форма и голый ключ рядом с плюральными", () => {
+  const en = { n_one: "{{count}} x", n_other: "{{count}} xs" };
+  const p = checkDictionaries({ en, de: { n_one: "{{count}} x", n_other: "{{count}} x", n_few: "{{count}} x" } });
+  assert.ok(p.some((x) => x.includes("de: n_few") && x.includes("лишняя форма")), p.join("\n"));
+  const bare = checkDictionaries({ en, de: { n: "x", n_one: "{{count}} x", n_other: "{{count}} x" } });
+  assert.ok(bare.some((x) => x.includes("de: n ") || x.includes("de: лишний ключ n")), bare.join("\n"));
+});

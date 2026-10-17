@@ -26,14 +26,53 @@ export function tags(text) {
   return [...text.matchAll(TAG)].map((m) => m[0].replace(/\s+/g, "")).sort();
 }
 
+/**
+ * Пары открывающий/закрывающий тег (`<code>…</code>`) должны быть парными и вложенными правильно.
+ * Порядок остальных тегов (`<offset/>`, `<total/>`) не сравниваем: в разных языках слова стоят по-разному.
+ * Тег без закрывающего в этой же строке (буквальный `<file>`) не парный. Возвращает текст проблемы или null.
+ */
+export function pairedTagsProblem(text) {
+  const found = [...text.matchAll(TAG)].map((m) => m[0].replace(/\s+/g, ""));
+  const nameOf = (t) => t.replace(/^<\/?|\/?>$/g, "");
+  const closing = new Set(found.filter((t) => t.startsWith("</")).map(nameOf));
+  const stack = [];
+  for (const t of found) {
+    if (t.endsWith("/>")) continue;
+    const name = nameOf(t);
+    if (!t.startsWith("</")) {
+      if (closing.has(name)) stack.push(name);
+    } else if (stack.pop() !== name) return `парные теги не сходятся (${found.join(" ")})`;
+  }
+  return stack.length ? `парные теги не сходятся (${found.join(" ")})` : null;
+}
+
 function pluralForms(code) {
   const rules = new Intl.PluralRules(code);
   return rules.resolvedOptions().pluralCategories;
 }
 
+/** Форма `one` языка покрывает ровно число 1 (в fr и pt-BR — ещё 0, в ru — 21, 31…) — тогда {{count}} в `_one` можно не писать. */
+export function oneMeansExactlyOne(code) {
+  const rules = new Intl.PluralRules(code);
+  for (let n = 0; n <= 1000; n++) if ((rules.select(n) === "one") !== (n === 1)) return false;
+  return true;
+}
+
+/** Ключи словаря (в точечной записи) со значением, которое не непустая строка. */
+export function badValues(obj, prefix = "", out = []) {
+  for (const [k, v] of Object.entries(obj)) {
+    const key = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === "object" && !Array.isArray(v)) badValues(v, key, out);
+    else if (typeof v !== "string" || v.trim() === "") out.push(key);
+  }
+  return out;
+}
+
 /** dicts: { en: {...}, ru: {...} } — первый (en) эталон. Возвращает список проблем. */
 export function checkDictionaries(dicts) {
   const problems = [];
+  for (const [code, d] of Object.entries(dicts))
+    for (const k of badValues(d)) problems.push(`${code}: ${k} — пустое или не строковое значение`);
   const flat = Object.fromEntries(Object.entries(dicts).map(([c, d]) => [c, flatten(d)]));
   const base = flat.en;
   // Базовые ключи без плюрального суффикса и их параметры (по форме _other или самому ключу).
@@ -51,6 +90,7 @@ export function checkDictionaries(dicts) {
   for (const [code, map] of Object.entries(flat)) {
     if (code === "en") continue;
     const forms = pluralForms(code);
+    const oneExact = oneMeansExactlyOne(code);
     for (const [stem, info] of baseKeys) {
       const keys = info.plural ? forms.map((f) => `${stem}_${f}`) : [stem];
       for (const key of keys) {
@@ -59,18 +99,29 @@ export function checkDictionaries(dicts) {
           continue;
         }
         const got = new Set(placeholders(map.get(key)));
-        // В плюральных формах «count» может отсутствовать в _one у некоторых языков — требуем остальные параметры.
+        // «count» можно опустить только в _one и только там, где one — ровно число 1 (не fr, pt-BR, ru…).
+        const countOptional = oneExact && key === `${stem}_one`;
         for (const p of info.params) {
-          if (!got.has(p) && !(info.plural && p === "count")) problems.push(`${code}: ${key} без параметра {{${p}}}`);
+          if (!got.has(p) && !(info.plural && p === "count" && countOptional)) problems.push(`${code}: ${key} без параметра {{${p}}}`);
         }
         for (const p of got) if (!info.params.has(p)) problems.push(`${code}: ${key} с лишним параметром {{${p}}}`);
         const gotTags = tags(map.get(key));
         if (gotTags.join(" ") !== info.tags.join(" "))
           problems.push(`${code}: ${key} — теги ${gotTags.join(" ") || "(нет)"}, в en ${info.tags.join(" ") || "(нет)"}`);
+        else {
+          const paired = pairedTagsProblem(map.get(key));
+          if (paired) problems.push(`${code}: ${key} — ${paired}`);
+        }
       }
     }
     for (const k of map.keys()) {
-      if (!baseKeys.has(k.replace(PLURAL, ""))) problems.push(`${code}: лишний ключ ${k} (нет в en)`);
+      const stem = k.replace(PLURAL, "");
+      const info = baseKeys.get(stem);
+      if (!info) problems.push(`${code}: лишний ключ ${k} (нет в en)`);
+      else if (PLURAL.test(k) && !info.plural) problems.push(`${code}: лишний ключ ${k} (в en нет плюральных форм)`);
+      else if (!PLURAL.test(k) && info.plural) problems.push(`${code}: лишний ключ ${k} (в en только плюральные формы)`);
+      else if (info.plural && !forms.includes(k.slice(stem.length + 1)))
+        problems.push(`${code}: ${k} — лишняя форма (язык не использует ${k.slice(stem.length + 1)})`);
     }
   }
   return problems;
@@ -83,10 +134,19 @@ export function checkSameAsEn(dicts, allow = {}) {
   const problems = [];
   const en = flatten(dicts.en);
   const enOf = (k) => en.get(k) ?? en.get(`${k.replace(PLURAL, "")}_other`);
+  for (const code of Object.keys(allow))
+    if (!(code in dicts)) problems.push(`${code}: в docs/i18n/same-as-en.json есть язык, для которого нет словаря`);
   for (const [code, dict] of Object.entries(dicts)) {
     if (code === "en") continue;
     const map = flatten(dict);
     const ok = new Set(allow[code] ?? []);
+    const forms = pluralForms(code);
+    for (const k of ok) {
+      const stem = k.replace(PLURAL, "");
+      const form = PLURAL.test(k) ? k.slice(stem.length + 1) : null;
+      const inEn = form ? [...en.keys()].some((e) => e.replace(PLURAL, "") === stem && PLURAL.test(e)) && forms.includes(form) : en.has(k);
+      if (!inEn) problems.push(`${code}: ${k} в docs/i18n/same-as-en.json, но такого ключа (или формы для языка) нет в en — уберите из списка`);
+    }
     for (const [k, v] of map) {
       if (v === enOf(k) && hasLetters(v) && !ok.has(k))
         problems.push(`${code}: ${k} совпадает с en «${v}» — переведите или добавьте ключ в docs/i18n/same-as-en.json`);

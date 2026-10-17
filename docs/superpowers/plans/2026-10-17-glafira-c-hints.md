@@ -404,7 +404,7 @@ Co-Authored-By: <модель исполнителя>"
 
 **Interfaces:**
 - Consumes: `Hint` (Task 1), `checkHints` (Task 2).
-- В `TlsSection.tsx` у `PathRow`, `FormatRow`, `PasswordRow` добавить необязательный проп `hint?: ReactNode`, который рендерится внутри их `<label>` после текста.
+- В `TlsSection.tsx` у `PathRow`, `FormatRow`, `PasswordRow` добавить необязательный проп `hint?: ReactNode`, который рендерится рядом с их `<label>` (не внутри: через `RowLabel` с обёрткой `.field-label`), чтобы не менять доступное имя поля.
 
 | Ключ `hints.connections.…` | Где (label) | en | ru |
 |---|---|---|---|

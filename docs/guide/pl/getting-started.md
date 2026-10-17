@@ -14,7 +14,15 @@ Pick the file for your Mac: `aarch64` for Apple silicon (M1 and later), `x64` fo
 
 You can also use the `.pkg` installer. It puts the app in `/Applications` for all users.
 
-Beta builds are not signed by Apple yet, so macOS may refuse to open the app. Remove the quarantine flag once in Terminal:
+Beta builds are not signed by Apple yet, so macOS blocks the first launch. To allow it:
+
+1. Try to open the app once and close the warning.
+2. Open System Settings → Privacy & Security.
+3. Scroll down to the message about Glafira for Apache Kafka and click "Open Anyway". Confirm with your password if asked.
+
+On macOS 14 and earlier you can instead right-click the app, choose "Open", then "Open" again.
+
+If this does not help, remove the quarantine flag once in Terminal:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Glafira for Apache Kafka.app"
@@ -26,7 +34,7 @@ If the downloaded `.dmg` itself does not open, remove the flag from it first:
 xattr -d com.apple.quarantine ~/Downloads/Glafira_for_Apache_Kafka_*.dmg
 ```
 
-Another way: right-click the app, choose "Open", then "Open" again. Or go to System Settings → Privacy & Security and click "Open Anyway". Updates installed from inside the app do not need this step.
+Updates installed from inside the app do not need these steps.
 
 ## Install on Windows {#install-windows}
 

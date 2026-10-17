@@ -86,7 +86,7 @@ Two kinds of files need converting first:
 keytool -importkeystore -srcstoretype JCEKS -srckeystore client.jceks -deststoretype PKCS12 -destkeystore client.p12
 ```
 
-- PKCS#12 stores encrypted with legacy algorithms (RC2, 3DES) cannot be read. Recreate them with AES:
+- PKCS#12 stores encrypted with legacy algorithms (RC2, 3DES) may fail to open. If the app reports a legacy algorithm, recreate the file with AES:
 
 ```bash
 openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -inkey tls.key -out client.p12
@@ -104,7 +104,7 @@ If the app cannot access the secret store, an error is shown when you save. On L
 
 [[ui:connections.form.environment]] marks the connection: `local`, `dev`, `test`, `stage` or `prod`. The environment is shown as a colored badge next to the name in the panel, so you always see which cluster you work with.
 
-`prod` adds protection. Any change on a prod connection, such as creating a topic, sending a message or resetting offsets, asks you to type the connection name. Deleting and purging ask for the name of the object on any connection, and on prod you type both. These confirmations appear inside the app window.
+`prod` adds protection. Any change on a prod connection, such as creating a topic, sending a message, resetting offsets or starting a consumer session, asks you to type the connection name. Deleting and purging ask for the name of the object on any connection (deleting several topics asks for their count), and on prod you type both. These confirmations appear inside the app window.
 
 Creating prod connections and switching connections to prod need Pro. In Free, this option is shown as [[ui:connections.form.prodPro]] and cannot be selected. Prod connections created earlier keep working in Free, with the same confirmations.
 
@@ -112,9 +112,9 @@ A new prod connection starts as [[ui:common.readOnly]]. Clear the box if you nee
 
 ## Read-only {#read-only}
 
-[[ui:common.readOnly]] blocks everything that changes the cluster: creating, changing, purging and deleting topics, sending messages, resetting offsets, deleting groups and consumer sessions. The buttons for these actions are hidden, and the app core rejects such operations as well. Browsing and reading stay available. A lock icon next to the name in the panel marks read-only connections.
+[[ui:common.readOnly]] blocks everything that changes the cluster: creating, changing, purging and deleting topics, sending messages, resetting offsets, deleting groups and starting consumer sessions. The buttons for these actions are hidden or disabled, and the app core rejects such operations as well. Browsing and reading stay available. A lock icon next to the name in the panel marks read-only connections.
 
-Use this mode when you only need to look at the data, especially on shared clusters. Kafka permissions for writing are not needed in this mode.
+Use this mode when you only need to look at the data, especially on shared clusters. Read-only is a protection inside the app: it does not replace access rights (ACLs) in Kafka.
 
 In Free, the box cannot be cleared on a read-only prod connection: lifting this protection needs Pro.
 

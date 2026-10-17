@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
 import { tr } from "../../i18n/text";
-import { useLicense } from "../../lib/useLicense";
+import { proHint, useLicense } from "../../lib/useLicense";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
+import { ProLock } from "../common/ProLock";
 import { formatProps, parseProps, withProtocol } from "./profile";
 import { folderPaths } from "./tree/folderTree";
 import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./TlsSection";
@@ -39,6 +40,8 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const closeForConnection = useWorkspace((s) => s.closeForConnection);
   const isNew = initial.id === "";
   const { locked } = useLicense();
+  // Снять read-only с prod-подключения можно только с Pro (Rust проверяет то же при сохранении).
+  const readOnlyLocked = locked && initial.environment === "prod" && initial.readOnly && profile.environment === "prod";
   const sec = profile.security;
 
   const update = (patch: Partial<ConnectionProfile>) => setProfile((p) => ({ ...p, ...patch }));
@@ -127,7 +130,8 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           value={profile.environment}
           onChange={(e) => {
             const environment = e.target.value as Environment;
-            update({ environment, readOnly: isNew && environment === "prod" ? true : profile.readOnly });
+            const forceReadOnly = environment === "prod" && (isNew || (locked && initial.environment === "prod" && initial.readOnly));
+            update({ environment, readOnly: forceReadOnly ? true : profile.readOnly });
           }}
         >
           {ENVIRONMENTS.map((env) => {
@@ -144,7 +148,22 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           <label htmlFor="cf-ro">{t("common.readOnly")}</label>
           <Hint k="hints.connections.readOnly" label={t("common.readOnly")} />
         </span>
-        <input id="cf-ro" type="checkbox" checked={profile.readOnly} onChange={(e) => update({ readOnly: e.target.checked })} />
+        <span>
+          <input
+            id="cf-ro"
+            type="checkbox"
+            checked={profile.readOnly}
+            disabled={readOnlyLocked}
+            title={readOnlyLocked ? proHint() : undefined}
+            onChange={(e) => update({ readOnly: e.target.checked })}
+          />
+          {readOnlyLocked && (
+            <>
+              {" "}
+              <ProLock />
+            </>
+          )}
+        </span>
 
         <label htmlFor="cf-color">{t("connections.form.color")}</label>
         <input id="cf-color" type="color" value={profile.color} onChange={(e) => update({ color: e.target.value })} />

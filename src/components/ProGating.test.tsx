@@ -59,4 +59,27 @@ describe("Free / Pro", () => {
     await user.selectOptions(screen.getByLabelText("Окружение"), "prod");
     expect(screen.getByLabelText("Окружение")).toHaveValue("prod");
   });
+
+  it("Free: у read-only prod-профиля флажок «Только чтение» снять нельзя", async () => {
+    vi.mocked(api.getLicenseStatus).mockResolvedValue(FREE);
+    renderWithClient(<ConnectionForm initial={{ ...newProfile(), id: "p", name: "p", environment: "prod", readOnly: true }} tabId="t" />);
+    const box = screen.getByLabelText("Только чтение");
+    await vi.waitFor(() => expect(box).toBeDisabled());
+    expect(box).toBeChecked();
+    expect(screen.getByText("🔒 Pro")).toBeInTheDocument();
+  });
+
+  it("Free: доступный для записи prod-профиль и Pro — флажок доступен", async () => {
+    vi.mocked(api.getLicenseStatus).mockResolvedValue(FREE);
+    const { unmount } = renderWithClient(
+      <ConnectionForm initial={{ ...newProfile(), id: "p", name: "p", environment: "prod", readOnly: false }} tabId="t" />,
+    );
+    await screen.findByRole("option", { name: "prod" });
+    expect(screen.getByLabelText("Только чтение")).toBeEnabled();
+    unmount();
+    vi.mocked(api.getLicenseStatus).mockResolvedValue(PRO);
+    renderWithClient(<ConnectionForm initial={{ ...newProfile(), id: "p", name: "p", environment: "prod", readOnly: true }} tabId="t" />);
+    await vi.waitFor(() => expect(api.getLicenseStatus).toHaveBeenCalledTimes(2));
+    expect(screen.getByLabelText("Только чтение")).toBeEnabled();
+  });
 });

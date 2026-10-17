@@ -119,10 +119,15 @@ pub fn save_connection_blocking(
         profile.id = uuid::Uuid::new_v4().to_string();
     }
     let previous = st.connections.get(&profile.id).ok();
-    // Перевод в prod — функция Pro; уже существующие prod-профили остаются редактируемыми (и защищёнными guard).
-    let becomes_prod = profile.environment == Environment::Prod
-        && previous.as_ref().map(|p| p.environment) != Some(Environment::Prod);
-    if becomes_prod {
+    // Перевод в prod и снятие read-only с prod — функции Pro. Уже доступный для записи
+    // prod-профиль (например, со времён Pro) остаётся редактируемым и защищённым guard.
+    let was_prod = previous.as_ref().map(|p| p.environment) == Some(Environment::Prod);
+    let becomes_prod = profile.environment == Environment::Prod && !was_prod;
+    let becomes_writable = profile.environment == Environment::Prod
+        && was_prod
+        && previous.as_ref().is_some_and(|p| p.read_only)
+        && !profile.read_only;
+    if becomes_prod || becomes_writable {
         st.license.require_pro()?;
     }
     // upsert валидирует профиль — секрет трогаем только после успешного сохранения.
@@ -434,6 +439,52 @@ mod tests {
         let mut renamed = prod(sample_profile("c"));
         renamed.name = "новое имя".into();
         save_connection_blocking(&st, input(renamed, None)).unwrap();
+    }
+
+    #[test]
+    fn free_cannot_lift_read_only_of_imported_prod_profile() {
+        let (_d, st) = state(Arc::new(MemoryStore::default()));
+        // Так prod-подключение попадает в хранилище при импорте во Free.
+        let mut imported = prod(sample_profile("p"));
+        imported.read_only = true;
+        st.connections.upsert(imported.clone()).unwrap();
+        let mut writable = imported.clone();
+        writable.read_only = false;
+        let e = save_connection_blocking(&st, input(writable, None)).unwrap_err();
+        assert_eq!(e.code, ErrorCode::ProRequired);
+        assert!(st.connections.get("p").unwrap().read_only);
+        // Остальные правки read-only prod-профиля по-прежнему сохраняются.
+        let mut renamed = imported;
+        renamed.name = "новое имя".into();
+        save_connection_blocking(&st, input(renamed, None)).unwrap();
+        assert!(st.connections.get("p").unwrap().read_only);
+    }
+
+    #[test]
+    fn free_keeps_writable_prod_profile_editable() {
+        let (_d, st) = state(Arc::new(MemoryStore::default()));
+        // Профиль создан во времена Pro, лицензия с тех пор истекла.
+        st.connections.upsert(prod(sample_profile("p"))).unwrap();
+        let mut renamed = prod(sample_profile("p"));
+        renamed.name = "новое имя".into();
+        let saved = save_connection_blocking(&st, input(renamed, None)).unwrap();
+        assert!(!saved.read_only);
+        assert_eq!(saved.name, "новое имя");
+    }
+
+    #[test]
+    fn pro_can_lift_read_only_of_prod_profile() {
+        let (d, mut st) = state(Arc::new(MemoryStore::default()));
+        st.license = Arc::new(crate::license::pro_for_tests(d.path()));
+        let mut p = prod(sample_profile("p"));
+        p.read_only = true;
+        st.connections.upsert(p.clone()).unwrap();
+        p.read_only = false;
+        assert!(
+            !save_connection_blocking(&st, input(p, None))
+                .unwrap()
+                .read_only
+        );
     }
 
     #[test]

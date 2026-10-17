@@ -372,8 +372,12 @@
       "rename": "Cambiar nombre",
       "delete": "Eliminar",
       "deleteConfirm": "¿Eliminar la carpeta “{{name}}”?",
-      "namePlaceholder": "Nombre de la carpeta"
-    }
+      "namePlaceholder": "Nombre de la carpeta",
+      "export": "Exportar carpeta…",
+      "importHere": "Importar aquí…"
+    },
+    "exportAll": "Exportar todo…",
+    "import": "Importar…"
   },
   "tabs": {
     "settings": "Ajustes",
@@ -1005,6 +1009,27 @@
       "missingFiles_other": "No se encontraron en este equipo los archivos de certificado de {{count}} conexiones — revisa las rutas"
     }
   },
+  "exchange": {
+    "exported": "Guardado: conexiones {{connections}}, carpetas {{folders}}",
+    "imported": "Importado: añadidos {{added}}, actualizados {{updated}}",
+    "passwordsNeeded_one": "Introduce las contraseñas de {{count}} conexión",
+    "passwordsNeeded_many": "Introduce las contraseñas de {{count}} de conexiones",
+    "passwordsNeeded_other": "Introduce las contraseñas de {{count}} conexiones",
+    "import": {
+      "title": "Importar conexiones",
+      "target": "Importar en",
+      "updateExisting": "Actualizar las conexiones existentes",
+      "summary": "Añadidos: {{added}} · Actualizados: {{updated}} · Sin cambios: {{unchanged}} · Omitidos: {{skipped}}",
+      "groupAdded": "Nuevos",
+      "groupUpdated": "Se actualizarán",
+      "groupUnchanged": "Sin cambios",
+      "groupSkipped": "Omitidos",
+      "passwords_one": "Tras la importación, introduce las contraseñas de {{count}} conexión",
+      "passwords_many": "Tras la importación, introduce las contraseñas de {{count}} de conexiones",
+      "passwords_other": "Tras la importación, introduce las contraseñas de {{count}} conexiones",
+      "apply": "Importar"
+    }
+  },
   "hints": {
     "label": "Ayuda: {{name}}",
     "connections": {
@@ -1099,6 +1124,10 @@
       "preallocate": "Reserva de antemano en disco el espacio del archivo de segmento al crearlo. Puede ayudar en algunos sistemas de archivos; rara vez se cambia.",
       "leader_replication_throttled_replicas": "Réplicas cuya replicación está limitada en el lado del leader, como <code>partition:broker</code> o <code>*</code>. Lo establecen las herramientas de reasignación; normalmente no se edita a mano.",
       "follower_replication_throttled_replicas": "Réplicas cuya replicación está limitada en el lado del follower, como <code>partition:broker</code> o <code>*</code>. Lo establecen las herramientas de reasignación; normalmente no se edita a mano."
+    },
+    "import": {
+      "target": "Dónde se colocan las carpetas y conexiones nuevas. Las existentes se quedan donde están.",
+      "updateExisting": "Las conexiones existentes reciben la configuración del archivo; se conservan tus contraseñas y su lugar en el árbol."
     }
   }
 }

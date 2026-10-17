@@ -372,8 +372,12 @@
       "rename": "Renomear",
       "delete": "Excluir",
       "deleteConfirm": "Excluir a pasta “{{name}}”?",
-      "namePlaceholder": "Nome da pasta"
-    }
+      "namePlaceholder": "Nome da pasta",
+      "export": "Exportar pasta…",
+      "importHere": "Importar aqui…"
+    },
+    "exportAll": "Exportar tudo…",
+    "import": "Importar…"
   },
   "tabs": {
     "settings": "Configurações",
@@ -1005,6 +1009,27 @@
       "missingFiles_other": "Os arquivos de certificado de {{count}} conexões não foram encontrados neste computador — verifique os caminhos"
     }
   },
+  "exchange": {
+    "exported": "Salvo: conexões {{connections}}, pastas {{folders}}",
+    "imported": "Importado: adicionados {{added}}, atualizados {{updated}}",
+    "passwordsNeeded_one": "Insira as senhas de {{count}} conexão",
+    "passwordsNeeded_many": "Insira as senhas de {{count}} de conexões",
+    "passwordsNeeded_other": "Insira as senhas de {{count}} conexões",
+    "import": {
+      "title": "Importar conexões",
+      "target": "Importar para",
+      "updateExisting": "Atualizar conexões existentes",
+      "summary": "Adicionados: {{added}} · Atualizados: {{updated}} · Sem alterações: {{unchanged}} · Ignorados: {{skipped}}",
+      "groupAdded": "Novos",
+      "groupUpdated": "Serão atualizados",
+      "groupUnchanged": "Sem alterações",
+      "groupSkipped": "Ignorados",
+      "passwords_one": "Após a importação, insira as senhas de {{count}} conexão",
+      "passwords_many": "Após a importação, insira as senhas de {{count}} de conexões",
+      "passwords_other": "Após a importação, insira as senhas de {{count}} conexões",
+      "apply": "Importar"
+    }
+  },
   "hints": {
     "label": "Dica: {{name}}",
     "connections": {
@@ -1099,6 +1124,10 @@
       "preallocate": "Pré-aloca o arquivo de segmento no disco ao criá-lo. Pode ajudar em alguns sistemas de arquivos; raramente alterado.",
       "leader_replication_throttled_replicas": "Réplicas cuja replicação é limitada no lado do leader, no formato <code>partition:broker</code> ou <code>*</code>. Definido por ferramentas de reatribuição; geralmente não é editado à mão.",
       "follower_replication_throttled_replicas": "Réplicas cuja replicação é limitada no lado do follower, no formato <code>partition:broker</code> ou <code>*</code>. Definido por ferramentas de reatribuição; geralmente não é editado à mão."
+    },
+    "import": {
+      "target": "Onde ficam as novas pastas e conexões. As existentes permanecem onde estão.",
+      "updateExisting": "As conexões existentes recebem as configurações do arquivo; suas senhas e o lugar delas na árvore são mantidos."
     }
   }
 }

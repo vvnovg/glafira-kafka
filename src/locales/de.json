@@ -372,8 +372,12 @@
       "rename": "Umbenennen",
       "delete": "Löschen",
       "deleteConfirm": "Ordner „{{name}}“ löschen?",
-      "namePlaceholder": "Ordnername"
-    }
+      "namePlaceholder": "Ordnername",
+      "export": "Ordner exportieren…",
+      "importHere": "Hierher importieren…"
+    },
+    "exportAll": "Alles exportieren…",
+    "import": "Importieren…"
   },
   "tabs": {
     "settings": "Einstellungen",
@@ -999,6 +1003,25 @@
       "missingFiles_other": "Zertifikatsdateien von {{count}} Verbindungen wurden auf diesem Computer nicht gefunden — prüfen Sie die Pfade"
     }
   },
+  "exchange": {
+    "exported": "Gespeichert: Verbindungen {{connections}}, Ordner {{folders}}",
+    "imported": "Importiert: hinzugefügt {{added}}, aktualisiert {{updated}}",
+    "passwordsNeeded_one": "Passwörter für {{count}} Verbindung eingeben",
+    "passwordsNeeded_other": "Passwörter für {{count}} Verbindungen eingeben",
+    "import": {
+      "title": "Verbindungen importieren",
+      "target": "Importieren nach",
+      "updateExisting": "Vorhandene Verbindungen aktualisieren",
+      "summary": "Hinzugefügt: {{added}} · Aktualisiert: {{updated}} · Unverändert: {{unchanged}} · Übersprungen: {{skipped}}",
+      "groupAdded": "Neu",
+      "groupUpdated": "Werden aktualisiert",
+      "groupUnchanged": "Unverändert",
+      "groupSkipped": "Übersprungen",
+      "passwords_one": "Nach dem Import Passwörter für {{count}} Verbindung eingeben",
+      "passwords_other": "Nach dem Import Passwörter für {{count}} Verbindungen eingeben",
+      "apply": "Importieren"
+    }
+  },
   "hints": {
     "label": "Hinweis: {{name}}",
     "connections": {
@@ -1093,6 +1116,10 @@
       "preallocate": "Reserviert beim Anlegen einer Segmentdatei vorab Platz auf der Platte. Kann auf manchen Dateisystemen helfen; selten geändert.",
       "leader_replication_throttled_replicas": "Replikate, deren Replikation auf Leader-Seite gedrosselt wird, als <code>partition:broker</code> oder <code>*</code>. Wird von Tools zur Neuzuweisung gesetzt; meist nicht von Hand bearbeitet.",
       "follower_replication_throttled_replicas": "Replikate, deren Replikation auf Follower-Seite gedrosselt wird, als <code>partition:broker</code> oder <code>*</code>. Wird von Tools zur Neuzuweisung gesetzt; meist nicht von Hand bearbeitet."
+    },
+    "import": {
+      "target": "Wohin neue Ordner und Verbindungen kommen. Vorhandene bleiben an ihrem Platz.",
+      "updateExisting": "Vorhandene Verbindungen übernehmen die Einstellungen aus der Datei; gespeicherte Passwörter und ihr Platz im Baum bleiben erhalten."
     }
   }
 }

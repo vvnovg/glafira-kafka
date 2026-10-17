@@ -372,8 +372,12 @@
       "rename": "Zmień nazwę",
       "delete": "Usuń",
       "deleteConfirm": "Usunąć folder „{{name}}”?",
-      "namePlaceholder": "Nazwa folderu"
-    }
+      "namePlaceholder": "Nazwa folderu",
+      "export": "Eksportuj folder…",
+      "importHere": "Importuj tutaj…"
+    },
+    "exportAll": "Eksportuj wszystko…",
+    "import": "Importuj…"
   },
   "tabs": {
     "settings": "Ustawienia",
@@ -1011,6 +1015,29 @@
       "missingFiles_other": "Nie znaleziono na tym komputerze plików certyfikatów {{count}} połączenia — sprawdź ścieżki"
     }
   },
+  "exchange": {
+    "exported": "Zapisano: połączenia {{connections}}, foldery {{folders}}",
+    "imported": "Zaimportowano: dodano {{added}}, zaktualizowano {{updated}}",
+    "passwordsNeeded_one": "Należy wprowadzić hasła dla {{count}} połączenia",
+    "passwordsNeeded_few": "Należy wprowadzić hasła dla {{count}} połączeń",
+    "passwordsNeeded_many": "Należy wprowadzić hasła dla {{count}} połączeń",
+    "passwordsNeeded_other": "Należy wprowadzić hasła dla {{count}} połączenia",
+    "import": {
+      "title": "Import połączeń",
+      "target": "Importuj do",
+      "updateExisting": "Aktualizuj istniejące połączenia",
+      "summary": "Dodane: {{added}} · Zaktualizowane: {{updated}} · Bez zmian: {{unchanged}} · Pominięte: {{skipped}}",
+      "groupAdded": "Nowe",
+      "groupUpdated": "Zostaną zaktualizowane",
+      "groupUnchanged": "Bez zmian",
+      "groupSkipped": "Pominięte",
+      "passwords_one": "Po imporcie należy wprowadzić hasła dla {{count}} połączenia",
+      "passwords_few": "Po imporcie należy wprowadzić hasła dla {{count}} połączeń",
+      "passwords_many": "Po imporcie należy wprowadzić hasła dla {{count}} połączeń",
+      "passwords_other": "Po imporcie należy wprowadzić hasła dla {{count}} połączenia",
+      "apply": "Importuj"
+    }
+  },
   "hints": {
     "label": "Podpowiedź: {{name}}",
     "connections": {
@@ -1105,6 +1132,10 @@
       "preallocate": "Rezerwuje z góry miejsce na dysku dla pliku segmentu przy jego tworzeniu. Może pomóc w niektórych systemach plików; zmieniany rzadko.",
       "leader_replication_throttled_replicas": "Repliki, dla których ograniczono szybkość replikacji po stronie leadera, w postaci <code>partition:broker</code> lub <code>*</code>. Ustawiają je narzędzia do ponownego przydziału; zwykle nie zmienia się tego ręcznie.",
       "follower_replication_throttled_replicas": "Repliki, dla których ograniczono szybkość replikacji po stronie followera, w postaci <code>partition:broker</code> lub <code>*</code>. Ustawiają je narzędzia do ponownego przydziału; zwykle nie zmienia się tego ręcznie."
+    },
+    "import": {
+      "target": "Gdzie trafią nowe foldery i połączenia. Istniejące pozostaną na swoich miejscach.",
+      "updateExisting": "Istniejące połączenia otrzymają ustawienia z pliku; zapisane hasła i ich miejsce w drzewie zostaną zachowane."
     }
   }
 }

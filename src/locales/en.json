@@ -372,8 +372,12 @@
       "rename": "Rename",
       "delete": "Delete",
       "deleteConfirm": "Delete folder “{{name}}”?",
-      "namePlaceholder": "Folder name"
-    }
+      "namePlaceholder": "Folder name",
+      "export": "Export folder…",
+      "importHere": "Import here…"
+    },
+    "exportAll": "Export all…",
+    "import": "Import…"
   },
   "tabs": {
     "settings": "Settings",
@@ -999,6 +1003,25 @@
       "missingFiles_other": "Certificate files of {{count}} connections are not found on this computer — check the paths"
     }
   },
+  "exchange": {
+    "exported": "Saved: connections {{connections}}, folders {{folders}}",
+    "imported": "Imported: added {{added}}, updated {{updated}}",
+    "passwordsNeeded_one": "Enter passwords for {{count}} connection",
+    "passwordsNeeded_other": "Enter passwords for {{count}} connections",
+    "import": {
+      "title": "Import connections",
+      "target": "Import into",
+      "updateExisting": "Update existing connections",
+      "summary": "Added: {{added}} · Updated: {{updated}} · Unchanged: {{unchanged}} · Skipped: {{skipped}}",
+      "groupAdded": "New",
+      "groupUpdated": "Will be updated",
+      "groupUnchanged": "Unchanged",
+      "groupSkipped": "Skipped",
+      "passwords_one": "Enter passwords for {{count}} connection after import",
+      "passwords_other": "Enter passwords for {{count}} connections after import",
+      "apply": "Import"
+    }
+  },
   "hints": {
     "label": "Hint: {{name}}",
     "connections": {
@@ -1093,6 +1116,10 @@
       "preallocate": "Preallocate the segment file on disk when it is created. May help on some file systems; rarely changed.",
       "leader_replication_throttled_replicas": "Replicas whose replication is throttled on the leader side, as <code>partition:broker</code> or <code>*</code>. Set by reassignment tools; usually not edited by hand.",
       "follower_replication_throttled_replicas": "Replicas whose replication is throttled on the follower side, as <code>partition:broker</code> or <code>*</code>. Set by reassignment tools; usually not edited by hand."
+    },
+    "import": {
+      "target": "Where new folders and connections go. Existing ones stay where they are.",
+      "updateExisting": "Connections that already exist get the settings from the file; your passwords and their place in the tree are kept."
     }
   }
 }

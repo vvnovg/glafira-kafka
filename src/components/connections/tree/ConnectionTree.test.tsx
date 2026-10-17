@@ -1,4 +1,4 @@
-import { createEvent, fireEvent, screen, within } from "@testing-library/react";
+import { createEvent, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionFolder, ConnectionProfile } from "../../../api/types";
@@ -17,10 +17,15 @@ vi.mock("../../../api/client", async (importOriginal) => {
       renameFolder: vi.fn(),
       deleteFolder: vi.fn(),
       moveItems: vi.fn(),
+      exportConnections: vi.fn(),
+      previewImport: vi.fn(),
+      applyImport: vi.fn(),
     },
   };
 });
+vi.mock("@tauri-apps/plugin-dialog", () => ({ save: vi.fn(), open: vi.fn() }));
 
+import { open as openDialog, save } from "@tauri-apps/plugin-dialog";
 import { api } from "../../../api/client";
 import { useWorkspace } from "../../../state/workspace";
 import { ConnectionTree } from "./ConnectionTree";
@@ -186,6 +191,8 @@ describe("ConnectionTree", () => {
       "Новое подключение здесь",
       "Переименовать",
       "Удалить",
+      "Экспортировать папку…",
+      "Импортировать сюда…",
     ]);
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
@@ -446,5 +453,95 @@ describe("ConnectionTree", () => {
     await user.type(screen.getByRole("textbox", { name: "Имя папки" }), "x");
     fireEvent.blur(screen.getByRole("textbox", { name: "Имя папки" }));
     expect(screen.getByRole("textbox", { name: "Имя папки" })).toHaveValue("x");
+  });
+  describe("экспорт и импорт", () => {
+    const EMPTY_PREVIEW = { added: [], updated: [], unchanged: [], skipped: [], warnings: [], needsPasswords: 0 };
+
+    async function openHeaderMenu() {
+      const user = userEvent.setup();
+      await screen.findByText("local");
+      const header = screen.getByText("Подключения").closest(".sidebar-header") as HTMLElement;
+      await user.click(within(header).getByRole("button", { name: "Ещё действия" }));
+      return { user, menu: screen.getByRole("menu") };
+    }
+
+    it("«Экспортировать папку…» сохраняет папку и сообщает итог", async () => {
+      vi.mocked(save).mockResolvedValue("/tmp/a.json");
+      vi.mocked(api.exportConnections).mockResolvedValue({ connections: 1, folders: 2 });
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("kafka-ift");
+      const { user, menu } = await openFolderMenu("Проект А");
+      await user.click(within(menu).getByRole("menuitem", { name: "Экспортировать папку…" }));
+      expect(save).toHaveBeenCalledWith({
+        defaultPath: "Проект А.glafira-connections.json",
+        filters: [{ name: "Glafira", extensions: ["json"] }],
+      });
+      expect(api.exportConnections).toHaveBeenCalledWith("/tmp/a.json", "a");
+      expect(await screen.findByRole("status")).toHaveTextContent("Сохранено: подключений 1, папок 2");
+    });
+
+    it("«Экспортировать всё…» передаёт null и имя файла с датой", async () => {
+      vi.mocked(save).mockResolvedValue("/tmp/all.json");
+      vi.mocked(api.exportConnections).mockResolvedValue({ connections: 2, folders: 2 });
+      renderWithClient(<ConnectionTree />);
+      const { user, menu } = await openHeaderMenu();
+      await user.click(within(menu).getByRole("menuitem", { name: "Экспортировать всё…" }));
+      const arg = vi.mocked(save).mock.calls[0][0];
+      expect(arg?.defaultPath).toMatch(/^glafira-connections-\d{4}-\d{2}-\d{2}\.glafira-connections\.json$/);
+      expect(api.exportConnections).toHaveBeenCalledWith("/tmp/all.json", null);
+    });
+
+    it("отмена диалога сохранения ничего не вызывает", async () => {
+      vi.mocked(save).mockResolvedValue(null);
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("kafka-ift");
+      const { user, menu } = await openFolderMenu("ИФТ");
+      await user.click(within(menu).getByRole("menuitem", { name: "Экспортировать папку…" }));
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(api.exportConnections).not.toHaveBeenCalled();
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it("ошибка экспорта показывается баннером", async () => {
+      vi.mocked(save).mockResolvedValue("/tmp/a.json");
+      vi.mocked(api.exportConnections).mockRejectedValue({ code: "INTERNAL", message: "disk full", retryable: false });
+      renderWithClient(<ConnectionTree />);
+      const { user, menu } = await openHeaderMenu();
+      await user.click(within(menu).getByRole("menuitem", { name: "Экспортировать всё…" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("disk full");
+    });
+
+    it("«Импортировать сюда…» открывает диалог с этой папкой и сообщает итог", async () => {
+      vi.mocked(openDialog).mockResolvedValue("/tmp/in.json");
+      vi.mocked(api.previewImport).mockResolvedValue(EMPTY_PREVIEW);
+      vi.mocked(api.applyImport).mockResolvedValue({
+        ...EMPTY_PREVIEW,
+        added: [{ kind: "connection", id: "n", name: "n", path: [] }],
+        needsPasswords: 1,
+      });
+      renderWithClient(<ConnectionTree />);
+      await screen.findByText("kafka-ift");
+      const { user, menu } = await openFolderMenu("ИФТ");
+      await user.click(within(menu).getByRole("menuitem", { name: "Импортировать сюда…" }));
+      expect(openDialog).toHaveBeenCalledWith({ multiple: false, directory: false, filters: [{ name: "Glafira", extensions: ["json"] }] });
+      const dialog = await screen.findByRole("dialog", { name: "Импорт подключений" });
+      await waitFor(() => expect(api.previewImport).toHaveBeenCalledWith("/tmp/in.json", "b", true));
+      await user.click(within(dialog).getByRole("button", { name: "Импортировать" }));
+      expect(api.applyImport).toHaveBeenCalledWith("/tmp/in.json", "b", true);
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      const status = screen.getByRole("status");
+      expect(status).toHaveTextContent("Импортировано: добавлено 1, обновлено 0");
+      expect(status).toHaveTextContent("Введите пароли для 1 подключения");
+    });
+
+    it("«Импортировать…» в заголовке: отмена выбора файла не открывает диалог", async () => {
+      vi.mocked(openDialog).mockResolvedValue(null);
+      renderWithClient(<ConnectionTree />);
+      const { user, menu } = await openHeaderMenu();
+      await user.click(within(menu).getByRole("menuitem", { name: "Импортировать…" }));
+      await waitFor(() => expect(openDialog).toHaveBeenCalled());
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(api.previewImport).not.toHaveBeenCalled();
+    });
   });
 });

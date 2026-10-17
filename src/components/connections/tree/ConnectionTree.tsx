@@ -1,13 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { open as openDialog, save } from "@tauri-apps/plugin-dialog";
 import { type DragEvent, type KeyboardEvent, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { api, toAppError } from "../../../api/client";
-import type { AppError, ConnectionFolder, TreeItemRef } from "../../../api/types";
+import type { AppError, ConnectionFolder, ImportPreview, TreeItemRef } from "../../../api/types";
 import { tr } from "../../../i18n/text";
 import { useWorkspace } from "../../../state/workspace";
 import { ErrorBanner } from "../../common/ErrorBanner";
 import { ConnectionNode } from "./ConnectionNode";
 import { FolderMenu, type FolderMenuItem } from "./FolderMenu";
+import { ImportDialog } from "./ImportDialog";
 import { buildTree, canMoveFolder, filterTree, type TreeNode } from "./folderTree";
 
 const COLLAPSED_KEY = "glafira.tree.collapsed";
@@ -15,6 +17,17 @@ const COLLAPSED_KEY = "glafira.tree.collapsed";
 const DRAG_TYPE = "application/x-glafira-tree-item";
 /** Доля высоты строки папки сверху, где бросок означает «перед папкой». */
 const BEFORE_ZONE = 0.3;
+/** Фильтр диалогов сохранения и открытия файла экспорта. */
+const EXCHANGE_FILTERS = [{ name: "Glafira", extensions: ["json"] }];
+const EXCHANGE_SUFFIX = ".glafira-connections.json";
+
+/** Имя файла экспорта по умолчанию: имя папки (без недопустимых в именах файлов символов) или дата. */
+function exportFileName(folder: ConnectionFolder | null): string {
+  if (folder) return `${folder.name.replace(/[\\/:*?"<>|]/g, "_")}${EXCHANGE_SUFFIX}`;
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `glafira-connections-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}${EXCHANGE_SUFFIX}`;
+}
 
 function readCollapsed(): Set<string> {
   try {
@@ -142,6 +155,11 @@ export function ConnectionTree() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [moveError, setMoveError] = useState<unknown>(null);
+  /** Итог последнего экспорта или импорта — сообщение в панели. */
+  const [notice, setNotice] = useState<string | null>(null);
+  const [exchangeError, setExchangeError] = useState<unknown>(null);
+  /** Открытый диалог импорта: выбранный файл и начальная цель. */
+  const [importing, setImporting] = useState<{ path: string; targetId: string | null } | null>(null);
   const dragged = useRef<TreeItemRef | null>(null);
 
   const connections = connectionsQ.data;
@@ -196,6 +214,43 @@ export function ConnectionTree() {
     await refresh();
   };
 
+  const exportTree = async (folder: ConnectionFolder | null) => {
+    setNotice(null);
+    setExchangeError(null);
+    try {
+      const path = await save({ defaultPath: exportFileName(folder), filters: EXCHANGE_FILTERS });
+      if (!path) return;
+      const summary = await api.exportConnections(path, folder ? folder.id : null);
+      setNotice(t("exchange.exported", { connections: summary.connections, folders: summary.folders }));
+    } catch (err) {
+      setExchangeError(err);
+    }
+  };
+
+  const startImport = async (targetId: string | null) => {
+    setNotice(null);
+    setExchangeError(null);
+    try {
+      const path = await openDialog({ multiple: false, directory: false, filters: EXCHANGE_FILTERS });
+      if (typeof path === "string") setImporting({ path, targetId });
+    } catch (err) {
+      setExchangeError(err);
+    }
+  };
+
+  const onImported = (result: ImportPreview) => {
+    setImporting(null);
+    const parts = [t("exchange.imported", { added: result.added.length, updated: result.updated.length })];
+    if (result.needsPasswords > 0) parts.push(t("exchange.passwordsNeeded", { count: result.needsPasswords }));
+    setNotice(parts.join(". "));
+  };
+
+  const headerMenuItems: FolderMenuItem[] = [
+    { label: t("sidebar.newFolder"), onSelect: () => startCreate(null) },
+    { label: t("sidebar.exportAll"), onSelect: () => void exportTree(null) },
+    { label: t("sidebar.import"), onSelect: () => void startImport(null) },
+  ];
+
   const folderMenuItems = (folder: ConnectionFolder): FolderMenuItem[] => [
     { label: t("sidebar.newFolder"), onSelect: () => startCreate(folder.id) },
     { label: t("sidebar.folder.newConnection"), onSelect: () => open({ kind: "connection-form", connectionId: null, folderId: folder.id }) },
@@ -213,6 +268,8 @@ export function ConnectionTree() {
         setDeleting(folder.id);
       },
     },
+    { label: t("sidebar.folder.export"), onSelect: () => void exportTree(folder) },
+    { label: t("sidebar.folder.importHere"), onSelect: () => void startImport(folder.id) },
   ];
 
   // --- Перетаскивание ---
@@ -423,13 +480,19 @@ export function ConnectionTree() {
               ⋯
             </button>
             {menu === "header" && (
-              <FolderMenu label={t("sidebar.menu")} items={[{ label: t("sidebar.newFolder"), onSelect: () => startCreate(null) }]} onClose={() => setMenu(null)} />
+              <FolderMenu label={t("sidebar.menu")} items={headerMenuItems} onClose={() => setMenu(null)} />
             )}
           </span>
         </span>
       </div>
       {error && <ErrorBanner error={error} />}
       {moveError != null && <ErrorBanner error={moveError} />}
+      {exchangeError != null && <ErrorBanner error={exchangeError} />}
+      {notice && (
+        <p className="tree-notice" role="status">
+          {notice}
+        </p>
+      )}
       {empty && !editing && (
         <p className="empty">
           <Trans i18nKey="sidebar.emptyHint" components={{ code: <code /> }} />
@@ -451,6 +514,9 @@ export function ConnectionTree() {
         {renderNodes(visible, null)}
       </ul>
       <div className={rootHighlight ? "tree-root-drop drop-into" : "tree-root-drop"} aria-hidden="true" {...rootTarget} />
+      {importing && (
+        <ImportDialog path={importing.path} initialTargetId={importing.targetId} onClose={() => setImporting(null)} onImported={onImported} />
+      )}
     </>
   );
 }

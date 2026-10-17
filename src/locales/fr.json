@@ -372,8 +372,12 @@
       "rename": "Renommer",
       "delete": "Supprimer",
       "deleteConfirm": "Supprimer le dossier « {{name}} » ?",
-      "namePlaceholder": "Nom du dossier"
-    }
+      "namePlaceholder": "Nom du dossier",
+      "export": "Exporter le dossier…",
+      "importHere": "Importer ici…"
+    },
+    "exportAll": "Tout exporter…",
+    "import": "Importer…"
   },
   "tabs": {
     "settings": "Paramètres",
@@ -1005,6 +1009,27 @@
       "missingFiles_other": "Les fichiers de certificat de {{count}} connexions sont introuvables sur cet ordinateur — vérifiez les chemins"
     }
   },
+  "exchange": {
+    "exported": "Enregistré : connexions {{connections}}, dossiers {{folders}}",
+    "imported": "Importé : ajouts {{added}}, mises à jour {{updated}}",
+    "passwordsNeeded_one": "Saisissez les mots de passe de {{count}} connexion",
+    "passwordsNeeded_many": "Saisissez les mots de passe de {{count}} de connexions",
+    "passwordsNeeded_other": "Saisissez les mots de passe de {{count}} connexions",
+    "import": {
+      "title": "Importer des connexions",
+      "target": "Importer dans",
+      "updateExisting": "Mettre à jour les connexions existantes",
+      "summary": "Ajouts : {{added}} · Mises à jour : {{updated}} · Sans changement : {{unchanged}} · Ignorés : {{skipped}}",
+      "groupAdded": "Nouveaux",
+      "groupUpdated": "Seront mis à jour",
+      "groupUnchanged": "Sans changement",
+      "groupSkipped": "Ignorés",
+      "passwords_one": "Après l’import, saisissez les mots de passe de {{count}} connexion",
+      "passwords_many": "Après l’import, saisissez les mots de passe de {{count}} de connexions",
+      "passwords_other": "Après l’import, saisissez les mots de passe de {{count}} connexions",
+      "apply": "Importer"
+    }
+  },
   "hints": {
     "label": "Aide : {{name}}",
     "connections": {
@@ -1099,6 +1124,10 @@
       "preallocate": "Préalloue le fichier de segment sur le disque à sa création. Peut aider sur certains systèmes de fichiers ; rarement modifié.",
       "leader_replication_throttled_replicas": "Répliques dont la réplication est limitée côté leader, sous la forme <code>partition:broker</code> ou <code>*</code>. Défini par les outils de réaffectation ; généralement pas modifié à la main.",
       "follower_replication_throttled_replicas": "Répliques dont la réplication est limitée côté follower, sous la forme <code>partition:broker</code> ou <code>*</code>. Défini par les outils de réaffectation ; généralement pas modifié à la main."
+    },
+    "import": {
+      "target": "Emplacement des nouveaux dossiers et connexions. Les éléments existants restent à leur place.",
+      "updateExisting": "Les connexions existantes reçoivent les paramètres du fichier ; vos mots de passe et leur place dans l’arborescence sont conservés."
     }
   }
 }

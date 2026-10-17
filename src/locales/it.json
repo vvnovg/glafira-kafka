@@ -372,8 +372,12 @@
       "rename": "Rinomina",
       "delete": "Elimina",
       "deleteConfirm": "Eliminare la cartella “{{name}}”?",
-      "namePlaceholder": "Nome della cartella"
-    }
+      "namePlaceholder": "Nome della cartella",
+      "export": "Esporta cartella…",
+      "importHere": "Importa qui…"
+    },
+    "exportAll": "Esporta tutto…",
+    "import": "Importa…"
   },
   "tabs": {
     "settings": "Impostazioni",
@@ -1005,6 +1009,27 @@
       "missingFiles_other": "I file dei certificati di {{count}} connessioni non sono stati trovati su questo computer — controlla i percorsi"
     }
   },
+  "exchange": {
+    "exported": "Salvato: connessioni {{connections}}, cartelle {{folders}}",
+    "imported": "Importato: aggiunti {{added}}, aggiornati {{updated}}",
+    "passwordsNeeded_one": "Inserisci le password per {{count}} connessione",
+    "passwordsNeeded_many": "Inserisci le password per {{count}} di connessioni",
+    "passwordsNeeded_other": "Inserisci le password per {{count}} connessioni",
+    "import": {
+      "title": "Importa connessioni",
+      "target": "Importa in",
+      "updateExisting": "Aggiorna le connessioni esistenti",
+      "summary": "Aggiunti: {{added}} · Aggiornati: {{updated}} · Invariati: {{unchanged}} · Saltati: {{skipped}}",
+      "groupAdded": "Nuovi",
+      "groupUpdated": "Verranno aggiornati",
+      "groupUnchanged": "Invariati",
+      "groupSkipped": "Saltati",
+      "passwords_one": "Dopo l’importazione, inserisci le password per {{count}} connessione",
+      "passwords_many": "Dopo l’importazione, inserisci le password per {{count}} di connessioni",
+      "passwords_other": "Dopo l’importazione, inserisci le password per {{count}} connessioni",
+      "apply": "Importa"
+    }
+  },
   "hints": {
     "label": "Suggerimento: {{name}}",
     "connections": {
@@ -1099,6 +1124,10 @@
       "preallocate": "Prealloca su disco il file di segmento quando viene creato. Può aiutare su alcuni file system; si cambia raramente.",
       "leader_replication_throttled_replicas": "Repliche la cui replicazione è limitata lato leader, nella forma <code>partition:broker</code> o <code>*</code>. Viene impostato dagli strumenti di riassegnazione; di solito non si modifica a mano.",
       "follower_replication_throttled_replicas": "Repliche la cui replicazione è limitata lato follower, nella forma <code>partition:broker</code> o <code>*</code>. Viene impostato dagli strumenti di riassegnazione; di solito non si modifica a mano."
+    },
+    "import": {
+      "target": "Dove finiscono le nuove cartelle e connessioni. Quelle esistenti restano al loro posto.",
+      "updateExisting": "Le connessioni esistenti ricevono le impostazioni dal file; le tue password e la loro posizione nell’albero vengono mantenute."
     }
   }
 }

@@ -34,6 +34,7 @@ export function AboutPanel() {
       <div className="toolbar">
         <h2>{i.name}</h2>
       </div>
+      <p className="about-summary">{t("about.summary")}</p>
       <dl className="stats">
         <div><dt>{t("about.version")}</dt><dd>{i.version}</dd></div>
         <div><dt>{t("about.build")}</dt><dd>{i.commit}</dd></div>

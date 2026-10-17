@@ -930,6 +930,7 @@
     }
   },
   "about": {
+    "summary": "Glafira est un client de bureau Apache Kafka pour les testeurs et les développeurs. Connexion aux clusters via PLAINTEXT, SASL ou mTLS, consultation des topics et des consumer groups, recherche de messages, envoi unitaire ou par lots depuis un fichier, réinitialisation des offsets. Pro ajoute les sessions consumer, les connexions prod et d’autres langues d’interface.",
     "version": "Version",
     "build": "Build",
     "system": "Système",

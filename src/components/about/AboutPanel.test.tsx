@@ -28,6 +28,7 @@ describe("AboutPanel", () => {
     const user = userEvent.setup();
     renderWithClient(<AboutPanel />);
     expect(await screen.findByText("0.2.0")).toBeInTheDocument();
+    expect(screen.getByText(/настольный клиент Apache Kafka/)).toBeInTheDocument();
     expect(screen.getByText("abc123")).toBeInTheDocument();
     expect(screen.getByText("/l")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Собрать диагностику" }));

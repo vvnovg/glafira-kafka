@@ -1025,7 +1025,7 @@
     },
     "topicConfig": {
       "cleanup_policy": "<code>delete</code> elimina los segmentos antiguos por tiempo o tamaño, <code>compact</code> conserva solo el último valor de cada clave, <code>compact,delete</code> hace ambas cosas.",
-      "retention_ms": "Cuánto tiempo se conservan los mensajes, en ms. Valor predeterminado: 604800000 (7 días); <code>-1</code> los conserva indefinidamente. Se aplica con <code>cleanup.policy=delete</code>.",
+      "retention_ms": "Cuánto tiempo se conservan los mensajes, en ms. Valor predeterminado: 604800000 (7 días); <code>-1</code> los conserva indefinidamente. Se aplica cuando <code>cleanup.policy</code> incluye <code>delete</code>.",
       "retention_bytes": "Tamaño máximo de cada partición antes de eliminar los segmentos antiguos. Valor predeterminado <code>-1</code>: sin límite de tamaño, solo por tiempo.",
       "delete_retention_ms": "Cuánto tiempo permanecen las marcas de eliminación (valores null) en un topic compactado para que los lectores vean la eliminación. Valor predeterminado: 1 día.",
       "min_compaction_lag_ms": "Antigüedad mínima de un mensaje antes de que la compactación pueda eliminarlo. Valor predeterminado: 0.",
@@ -1033,11 +1033,11 @@
       "min_cleanable_dirty_ratio": "La compactación empieza cuando esta proporción del log está sin compactar. Un valor menor implica compactación más frecuente y menos duplicados, pero más carga de disco. Valor predeterminado: 0.5.",
       "segment_ms": "Cada cuánto se inicia un nuevo segmento del log, aunque el actual no esté lleno. La retención y la compactación trabajan con segmentos completos. Valor predeterminado: 7 días.",
       "segment_bytes": "Tamaño de un archivo de segmento del log. La retención y la compactación trabajan con segmentos completos. Valor predeterminado: 1 GiB.",
-      "segment_jitter_ms": "Un incremento aleatorio de <code>segment.ms</code> para que muchas particiones no inicien nuevos segmentos en el mismo momento. Valor predeterminado: 0.",
+      "segment_jitter_ms": "Se resta de <code>segment.ms</code> un tiempo aleatorio de hasta este valor, para que muchas particiones no inicien nuevos segmentos en el mismo momento. Valor predeterminado: 0.",
       "file_delete_delay_ms": "Cuánto tiempo permanece en disco un archivo de segmento eliminado antes de borrarse realmente. Valor predeterminado: 1 minuto.",
       "local_retention_ms": "Con tiered storage: cuánto tiempo permanecen los segmentos en el disco local del broker antes de que solo quede la copia remota. <code>-2</code> equivale a <code>retention.ms</code>.",
       "local_retention_bytes": "Con tiered storage: límite de tamaño local por partición; los segmentos más antiguos quedan solo en el almacenamiento remoto. <code>-2</code> equivale a <code>retention.bytes</code>.",
-      "remote_storage_enable": "Activa tiered storage: los segmentos antiguos se trasladan a un almacenamiento remoto (por ejemplo, S3). El clúster debe admitirlo.",
+      "remote_storage_enable": "Activa tiered storage: los segmentos cerrados se copian a un almacenamiento remoto (por ejemplo, S3) y más tarde se eliminan localmente. El clúster debe admitirlo.",
       "remote_log_copy_disable": "Detiene la copia de nuevos segmentos al almacenamiento remoto; los datos que ya están allí siguen siendo legibles. Se usa para desactivar tiered storage paso a paso.",
       "remote_log_delete_on_disable": "Al desactivar tiered storage para el topic, elimina sus datos del almacenamiento remoto. Debe ser <code>true</code> para desactivar tiered storage."
     }

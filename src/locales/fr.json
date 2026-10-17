@@ -1025,7 +1025,7 @@
     },
     "topicConfig": {
       "cleanup_policy": "<code>delete</code> supprime les anciens segments selon l’âge ou la taille, <code>compact</code> ne conserve que la dernière valeur de chaque clé, <code>compact,delete</code> fait les deux.",
-      "retention_ms": "Durée de rétention des messages, en ms. Par défaut 604800000 (7 jours) ; <code>-1</code> les conserve indéfiniment. S’applique avec <code>cleanup.policy=delete</code>.",
+      "retention_ms": "Durée de rétention des messages, en ms. Par défaut 604800000 (7 jours) ; <code>-1</code> les conserve indéfiniment. S’applique quand <code>cleanup.policy</code> contient <code>delete</code>.",
       "retention_bytes": "Taille maximale de chaque partition avant la suppression des anciens segments. Par défaut <code>-1</code> : pas de limite de taille, seulement de durée.",
       "delete_retention_ms": "Durée pendant laquelle les marqueurs de suppression (valeurs null) restent dans un topic compacté, pour que les lecteurs voient la suppression. Par défaut : 1 jour.",
       "min_compaction_lag_ms": "Âge minimal d’un message avant que la compaction puisse le supprimer. Par défaut : 0.",
@@ -1033,11 +1033,11 @@
       "min_cleanable_dirty_ratio": "La compaction démarre quand cette part du log n’est pas encore compactée. Plus bas : compactions plus fréquentes et moins de doublons, mais plus de charge disque. Par défaut : 0.5.",
       "segment_ms": "Fréquence de création d’un nouveau segment de log, même si l’actuel n’est pas plein. La rétention et la compaction portent sur des segments entiers. Par défaut : 7 jours.",
       "segment_bytes": "Taille d’un fichier de segment de log. La rétention et la compaction portent sur des segments entiers. Par défaut : 1 GiB.",
-      "segment_jitter_ms": "Ajout aléatoire à <code>segment.ms</code> pour que de nombreuses partitions ne créent pas de nouveaux segments au même moment. Par défaut : 0.",
+      "segment_jitter_ms": "Une durée aléatoire allant jusqu’à cette valeur est soustraite de <code>segment.ms</code>, pour que de nombreuses partitions ne créent pas de nouveaux segments au même moment. Par défaut : 0.",
       "file_delete_delay_ms": "Durée pendant laquelle un fichier de segment supprimé reste sur le disque avant d’être réellement effacé. Par défaut : 1 minute.",
       "local_retention_ms": "Avec le tiered storage : durée pendant laquelle les segments restent sur le disque local du broker avant qu’il ne reste que la copie distante. <code>-2</code> équivaut à <code>retention.ms</code>.",
       "local_retention_bytes": "Avec le tiered storage : limite de taille locale par partition ; les segments plus anciens ne restent que dans le stockage distant. <code>-2</code> équivaut à <code>retention.bytes</code>.",
-      "remote_storage_enable": "Active le tiered storage : les anciens segments sont déplacés vers un stockage distant (par exemple S3). Le cluster doit le prendre en charge.",
+      "remote_storage_enable": "Active le tiered storage : les segments fermés sont copiés vers un stockage distant (par exemple S3), puis supprimés localement. Le cluster doit le prendre en charge.",
       "remote_log_copy_disable": "Arrête la copie des nouveaux segments vers le stockage distant ; les données déjà présentes restent lisibles. Sert à désactiver le tiered storage par étapes.",
       "remote_log_delete_on_disable": "À la désactivation du tiered storage pour le topic, supprime ses données dans le stockage distant. Doit valoir <code>true</code> pour désactiver le tiered storage."
     }

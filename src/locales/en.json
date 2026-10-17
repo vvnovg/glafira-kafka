@@ -1021,7 +1021,7 @@
     },
     "topicConfig": {
       "cleanup_policy": "<code>delete</code> removes old segments by time or size, <code>compact</code> keeps only the latest value per key, <code>compact,delete</code> does both.",
-      "retention_ms": "How long messages are kept, in ms. Default 604800000 (7 days); <code>-1</code> keeps them forever. Applies with <code>cleanup.policy=delete</code>.",
+      "retention_ms": "How long messages are kept, in ms. Default 604800000 (7 days); <code>-1</code> keeps them forever. Applies when <code>cleanup.policy</code> includes <code>delete</code>.",
       "retention_bytes": "Maximum size of each partition before old segments are deleted. Default <code>-1</code>: no size limit, only time.",
       "delete_retention_ms": "How long delete markers (null values) stay in a compacted topic so that readers can see the deletion. Default 1 day.",
       "min_compaction_lag_ms": "The minimum age of a message before compaction may remove it. Default 0.",
@@ -1029,11 +1029,11 @@
       "min_cleanable_dirty_ratio": "Compaction starts when this share of the log is uncompacted. Lower means more frequent compaction and fewer duplicates, but more disk load. Default 0.5.",
       "segment_ms": "How often a new log segment is started, even if the current one is not full. Retention and compaction work on whole segments. Default 7 days.",
       "segment_bytes": "Size of one log segment file. Retention and compaction work on whole segments. Default 1 GiB.",
-      "segment_jitter_ms": "A random addition to <code>segment.ms</code> so that many partitions do not start new segments at the same moment. Default 0.",
+      "segment_jitter_ms": "Up to this much random time is subtracted from <code>segment.ms</code>, so that many partitions do not start new segments at the same moment. Default 0.",
       "file_delete_delay_ms": "How long a deleted segment file stays on disk before it is actually removed. Default 1 minute.",
       "local_retention_ms": "With tiered storage: how long segments stay on the broker's local disk before only the remote copy remains. <code>-2</code> means the same as <code>retention.ms</code>.",
       "local_retention_bytes": "With tiered storage: local size limit per partition; older segments remain only in remote storage. <code>-2</code> means the same as <code>retention.bytes</code>.",
-      "remote_storage_enable": "Enables tiered storage: old segments are moved to remote storage (for example, S3). The cluster must support it.",
+      "remote_storage_enable": "Enables tiered storage: closed segments are copied to remote storage (for example, S3) and later removed locally. The cluster must support it.",
       "remote_log_copy_disable": "Stops copying new segments to remote storage; data already there stays readable. Used to turn tiered storage off step by step.",
       "remote_log_delete_on_disable": "When tiered storage is turned off for the topic, delete its data in remote storage. Must be <code>true</code> to turn tiered storage off."
     }

@@ -67,6 +67,36 @@ describe("Hint", () => {
     expect(tips[0]).toHaveTextContent("Вторая");
   });
 
+  it("закреплённая A не гасится блюром: фокус на B — открыта одна, и это B (стор)", async () => {
+    const user = setup();
+    render(
+      <>
+        <Hint k="hints.test.a" label="A" />
+        <Hint k="hints.test.b" label="B" />
+      </>,
+    );
+    await user.click(screen.getByRole("button", { name: "Подсказка: A" }));
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Первая");
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Подсказка: B" })).toHaveFocus();
+    const tips = screen.getAllByRole("tooltip");
+    expect(tips).toHaveLength(1);
+    expect(tips[0]).toHaveTextContent("Вторая");
+  });
+
+  it("клик по значку и по подсказке не всплывает к предкам", async () => {
+    const user = setup();
+    const spy = vi.fn();
+    render(
+      <div onClick={spy}>
+        <Hint k="hints.test.a" label="acks" />
+      </div>,
+    );
+    await user.click(screen.getByRole("button", { name: "Подсказка: acks" }));
+    await user.click(screen.getByRole("tooltip"));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it("aria-describedby указывает на подсказку, <code> сохраняется", async () => {
     const user = setup();
     render(<Hint k="hints.test.a" label="acks" />);

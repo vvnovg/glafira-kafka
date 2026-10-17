@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
   FloatingPortal,
@@ -28,7 +28,9 @@ export function Hint({ k, label }: { k: string; label: string }) {
     setOpen(false);
   };
   const closeRef = useRef(close);
-  closeRef.current = close;
+  useLayoutEffect(() => {
+    closeRef.current = close;
+  });
   const self = useRef(() => closeRef.current());
 
   const { refs, floatingStyles, context } = useFloating({
@@ -58,7 +60,8 @@ export function Hint({ k, label }: { k: string; label: string }) {
     };
   }, [open]);
 
-  const onClick = () => {
+  const onClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (pinned) close();
     else {
       setPinned(true);
@@ -79,7 +82,7 @@ export function Hint({ k, label }: { k: string; label: string }) {
       </button>
       {open && (
         <FloatingPortal>
-          <div ref={refs.setFloating} className="hint-tooltip" style={floatingStyles} {...getFloatingProps()}>
+          <div ref={refs.setFloating} className="hint-tooltip" style={floatingStyles} {...getFloatingProps({ onClick: (e: React.MouseEvent) => e.stopPropagation() })}>
             <Trans i18nKey={k} components={{ code: <code /> }} />
           </div>
         </FloatingPortal>

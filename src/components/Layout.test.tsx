@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionProfile } from "../api/types";
 import { useWorkspace } from "../state/workspace";
@@ -50,5 +50,28 @@ describe("Layout tabs", () => {
     fireEvent.click(tabs[1]);
     expect(tabs[1].getAttribute("aria-selected")).toBe("true");
     expect(tabs[0].getAttribute("aria-selected")).toBe("false");
+  });
+
+  it("F1 opens the guide chapter of the active screen", () => {
+    useWorkspace.setState({
+      tabs: [{ kind: "producer", connectionId: "c1", id: "producer:c1" }],
+      activeId: "producer:c1",
+    });
+    renderWithClient(<Layout />);
+    const ev = new KeyboardEvent("keydown", { key: "F1", bubbles: true, cancelable: true });
+    act(() => {
+      window.dispatchEvent(ev);
+    });
+    expect(ev.defaultPrevented).toBe(true);
+    const { tabs, activeId } = useWorkspace.getState();
+    expect(activeId).toBe("help");
+    expect(tabs.find((t) => t.id === "help")).toMatchObject({ kind: "help", chapter: "producer" });
+    expect(within(screen.getByRole("tablist")).getByRole("tab", { name: "Справка" })).toBeInTheDocument();
+  });
+
+  it("opens the guide from the sidebar", () => {
+    renderWithClient(<Layout />);
+    fireEvent.click(screen.getByRole("button", { name: "Справка" }));
+    expect(useWorkspace.getState().activeId).toBe("help");
   });
 });

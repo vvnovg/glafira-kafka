@@ -18,6 +18,8 @@ export type TabSpec =
   | { kind: "connection-form"; connectionId: string | null; folderId?: string | null }
   | { kind: "license" }
   | { kind: "about" }
+  /** Справка: глава и раздел руководства (F1, ссылки). */
+  | { kind: "help"; chapter?: string; anchor?: string }
   | { kind: "settings" };
 
 export type Tab = TabSpec & { id: string };
@@ -36,6 +38,8 @@ export function tabId(spec: TabSpec): string {
       return "license";
     case "about":
       return "about";
+    case "help":
+      return "help";
     case "settings":
       return "settings";
     default:

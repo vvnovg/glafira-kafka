@@ -18,6 +18,9 @@ export function Sidebar() {
         <button type="button" className="link" onClick={() => open({ kind: "license" })}>
           {t("sidebar.license", { tier: status ? (status.tier === "pro" ? "Pro" : "Free") : "…" })}
         </button>
+        <button type="button" className="link" onClick={() => open({ kind: "help" })}>
+          {t("sidebar.help")}
+        </button>
         <button type="button" className="link" onClick={() => open({ kind: "about" })}>
           {t("sidebar.about")}
         </button>

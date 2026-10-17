@@ -10,6 +10,7 @@ import { UpdateNotice } from "./about/UpdateNotice";
 import { Sidebar } from "./Sidebar";
 import { i18n } from "../i18n";
 import { TabContent } from "./TabContent";
+import { useHelpShortcut } from "../lib/useHelpShortcut";
 
 function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
   const connId = "connectionId" in tab ? tab.connectionId : null;
@@ -21,6 +22,8 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
       return i18n.t("tabs.license");
     case "about":
       return i18n.t("tabs.about");
+    case "help":
+      return i18n.t("tabs.help");
     case "connection-form":
       return tab.connectionId ? i18n.t("tabs.connection", { name: conn }) : i18n.t("tabs.newConnection");
     case "cluster":
@@ -43,6 +46,7 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
 export function Layout() {
   const { t } = useTranslation(); // заодно перерисовывает заголовки вкладок при смене языка
   const { tabs, activeId, activate, close } = useWorkspace();
+  useHelpShortcut();
   const { data: connections = [] } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const byId = new Map(connections.map((c) => [c.id, c]));
   const active = tabs.find((x) => x.id === activeId);

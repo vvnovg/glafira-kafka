@@ -361,6 +361,7 @@
     "producer": "Producer",
     "consumer": "Consumer session",
     "license": "License: {{tier}}",
+    "help": "Help",
     "about": "About",
     "filter": "Filter connections",
     "folderToggle": "Expand or collapse {{name}}",
@@ -383,6 +384,7 @@
     "settings": "Settings",
     "license": "License",
     "about": "About",
+    "help": "Help",
     "connection": "Connection: {{name}}",
     "newConnection": "New connection",
     "cluster": "{{conn}} · Overview",
@@ -1021,6 +1023,12 @@
       "passwords_other": "Enter passwords for {{count}} connections after import",
       "apply": "Import"
     }
+  },
+  "help": {
+    "search": "Search the guide",
+    "noResults": "Nothing found",
+    "contents": "Contents",
+    "loadFailed": "Could not load the guide"
   },
   "hints": {
     "label": "Hint: {{name}}",

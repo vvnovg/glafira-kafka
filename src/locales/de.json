@@ -361,6 +361,7 @@
     "producer": "Producer",
     "consumer": "Consumer-Session",
     "license": "Lizenz: {{tier}}",
+    "help": "Hilfe",
     "about": "Über Glafira",
     "filter": "Verbindungen filtern",
     "folderToggle": "Ordner „{{name}}“ auf- oder zuklappen",
@@ -383,6 +384,7 @@
     "settings": "Einstellungen",
     "license": "Lizenz",
     "about": "Über Glafira",
+    "help": "Hilfe",
     "connection": "Verbindung: {{name}}",
     "newConnection": "Neue Verbindung",
     "cluster": "{{conn}} · Übersicht",
@@ -1021,6 +1023,12 @@
       "passwords_other": "Nach dem Import Passwörter für {{count}} Verbindungen eingeben",
       "apply": "Importieren"
     }
+  },
+  "help": {
+    "search": "Im Handbuch suchen",
+    "noResults": "Nichts gefunden",
+    "contents": "Inhalt",
+    "loadFailed": "Das Handbuch konnte nicht geladen werden"
   },
   "hints": {
     "label": "Hinweis: {{name}}",

@@ -361,6 +361,7 @@
     "producer": "Producer",
     "consumer": "Session consumer",
     "license": "Licence : {{tier}}",
+    "help": "Aide",
     "about": "À propos",
     "filter": "Filtrer les connexions",
     "folderToggle": "Développer ou réduire le dossier « {{name}} »",
@@ -383,6 +384,7 @@
     "settings": "Paramètres",
     "license": "Licence",
     "about": "À propos",
+    "help": "Aide",
     "connection": "Connexion : {{name}}",
     "newConnection": "Nouvelle connexion",
     "cluster": "{{conn}} · Aperçu",
@@ -1029,6 +1031,12 @@
       "passwords_other": "Après l’import, saisissez les mots de passe de {{count}} connexions",
       "apply": "Importer"
     }
+  },
+  "help": {
+    "search": "Rechercher dans le guide",
+    "noResults": "Aucun résultat",
+    "contents": "Sommaire",
+    "loadFailed": "Impossible de charger le guide"
   },
   "hints": {
     "label": "Aide : {{name}}",

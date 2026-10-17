@@ -7,6 +7,7 @@ import { GroupList } from "./groups/GroupList";
 import { GroupDetails } from "./groups/GroupDetails";
 import { ProducerPanel } from "./producer/ProducerPanel";
 import { AboutPanel } from "./about/AboutPanel";
+import { HelpPanel } from "./help/HelpPanel";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { LicensePanel } from "./license/LicensePanel";
 import { TopicDetails } from "./topics/TopicDetails";
@@ -15,6 +16,8 @@ export function TabContent({ tab }: { tab: Tab }) {
   switch (tab.kind) {
     case "about":
       return <AboutPanel />;
+    case "help":
+      return <HelpPanel spec={tab} />;
     case "settings":
       return <SettingsPanel />;
     case "license":

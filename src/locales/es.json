@@ -361,6 +361,7 @@
     "producer": "Producer",
     "consumer": "Sesión de consumer",
     "license": "Licencia: {{tier}}",
+    "help": "Ayuda",
     "about": "Acerca de",
     "filter": "Filtrar conexiones",
     "folderToggle": "Expandir o contraer la carpeta “{{name}}”",
@@ -383,6 +384,7 @@
     "settings": "Ajustes",
     "license": "Licencia",
     "about": "Acerca de",
+    "help": "Ayuda",
     "connection": "Conexión: {{name}}",
     "newConnection": "Nueva conexión",
     "cluster": "{{conn}} · Resumen",
@@ -1029,6 +1031,12 @@
       "passwords_other": "Tras la importación, introduce las contraseñas de {{count}} conexiones",
       "apply": "Importar"
     }
+  },
+  "help": {
+    "search": "Buscar en la guía",
+    "noResults": "No se encontró nada",
+    "contents": "Contenido",
+    "loadFailed": "No se pudo cargar la guía"
   },
   "hints": {
     "label": "Ayuda: {{name}}",

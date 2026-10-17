@@ -624,6 +624,7 @@
       "scopePartitions": "Partitions",
       "title": "Réinitialisation des offsets du groupe « {{groupId}} »",
       "onlyEmpty": "La réinitialisation n’est possible que pour un groupe sans membres actifs (Empty).",
+      "onlyEmptyLabel": "Membres actifs du groupe",
       "strategy": "Stratégie",
       "timestamp": "Date et heure (locales)",
       "offset": "Offset",
@@ -749,6 +750,7 @@
     "keyFormat": "Format de la clé",
     "valueFormat": "Format de la valeur",
     "placeholders": "Variables : {{list}}",
+    "placeholdersLabel": "Variables",
     "settings": {
       "legend": "Paramètres du producteur",
       "compression": "compression",
@@ -833,6 +835,7 @@
   },
   "consumer": {
     "warn": "La session rejoint le groupe et agit sur le cluster : les autres membres du groupe subiront un rééquilibrage et les commits modifieront les offsets du groupe.",
+    "joinLabel": "Entrée dans le groupe",
     "proOnly": "Les sessions consumer sont disponibles dans Pro.",
     "readOnlyBlocked": "Les sessions consumer sont indisponibles pour les connexions en lecture seule : rejoindre un groupe modifie son état.",
     "disconnect": "Se déconnecter",

@@ -625,6 +625,7 @@
       "scopePartitions": "Partycje",
       "title": "Reset offsetów grupy „{{groupId}}”",
       "onlyEmpty": "Reset jest możliwy tylko dla grupy bez aktywnych członków (Empty).",
+      "onlyEmptyLabel": "Aktywni członkowie grupy",
       "strategy": "Strategia",
       "timestamp": "Data i godzina (czas lokalny)",
       "offset": "Offset",
@@ -751,6 +752,7 @@
     "keyFormat": "Format klucza",
     "valueFormat": "Format wartości",
     "placeholders": "Symbole zastępcze: {{list}}",
+    "placeholdersLabel": "Symbole zastępcze",
     "settings": {
       "legend": "Ustawienia producenta",
       "compression": "kompresja",
@@ -835,6 +837,7 @@
   },
   "consumer": {
     "warn": "Sesja dołącza do grupy i wpływa na klaster: u pozostałych członków grupy nastąpi rebalans, a zatwierdzenia zmieniają offsety grupy.",
+    "joinLabel": "Dołączanie do grupy",
     "proOnly": "Sesje konsumenta są dostępne w Pro.",
     "readOnlyBlocked": "Sesje konsumenta są niedostępne dla połączeń tylko do odczytu: dołączenie do grupy zmienia jej stan.",
     "disconnect": "Rozłącz",

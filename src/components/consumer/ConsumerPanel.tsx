@@ -143,7 +143,7 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
   return (
     <div className="page browse">
       <p className="warn">
-        {t("consumer.warn")} <Hint k="hints.consumer.join" label={t("consumer.form.groupTopics")} />
+        {t("consumer.warn")} <Hint k="hints.consumer.join" label={t("consumer.joinLabel")} />
       </p>
       <div className="browse-form">
         <fieldset disabled={running}>

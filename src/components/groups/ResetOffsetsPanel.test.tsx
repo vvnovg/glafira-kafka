@@ -105,7 +105,7 @@ describe("ResetOffsetsPanel", () => {
   it("подсказки «?»: текст стратегии зависит от выбранной стратегии", async () => {
     const user = userEvent.setup();
     renderWithClient(<ResetOffsetsPanel connection={prod} groupId="g" onApplied={() => {}} onClose={() => {}} />);
-    for (const label of ["Стратегия", "Область", "Сброс оффсетов группы «g»", "Предпросмотр"]) {
+    for (const label of ["Стратегия", "Область", "Активные участники группы", "Предпросмотр"]) {
       expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
     }
     // Значок рядом с подписью, а не внутри: доступное имя поля не меняется.

@@ -624,6 +624,7 @@
       "scopePartitions": "Partizioni",
       "title": "Reimposta gli offset del gruppo “{{groupId}}”",
       "onlyEmpty": "La reimpostazione è possibile solo per un gruppo senza membri attivi (Empty).",
+      "onlyEmptyLabel": "Membri attivi del gruppo",
       "strategy": "Strategia",
       "timestamp": "Data e ora (locale)",
       "offset": "Offset",
@@ -749,6 +750,7 @@
     "keyFormat": "Formato della chiave",
     "valueFormat": "Formato del valore",
     "placeholders": "Segnaposto: {{list}}",
+    "placeholdersLabel": "Segnaposto",
     "settings": {
       "legend": "Impostazioni del producer",
       "compression": "compressione",
@@ -833,6 +835,7 @@
   },
   "consumer": {
     "warn": "La sessione si unisce al gruppo e influisce sul cluster: gli altri membri del gruppo eseguiranno un ribilanciamento e i commit modificano gli offset del gruppo.",
+    "joinLabel": "Ingresso nel gruppo",
     "proOnly": "Le sessioni consumer sono disponibili in Pro.",
     "readOnlyBlocked": "Le sessioni consumer non sono disponibili per le connessioni in sola lettura: unirsi a un gruppo ne modifica lo stato.",
     "disconnect": "Disconnetti",

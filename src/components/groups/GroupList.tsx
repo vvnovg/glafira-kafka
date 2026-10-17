@@ -111,7 +111,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
           <span>{t("groups.list.colMembers")}</span>
           <span>Assignor</span>
           <span>
-            {t("groups.list.colLag")}
+            {t("groups.list.colLag")}{" "}
             <Hint k="hints.groups.lag" label={t("groups.list.colLag")} />
           </span>
           <span>{t("groups.list.colTopics")}</span>

@@ -623,6 +623,7 @@
       "scopePartitions": "Partitions",
       "title": "Reset offsets of group “{{groupId}}”",
       "onlyEmpty": "Reset is only possible for a group with no active members (Empty).",
+      "onlyEmptyLabel": "Active group members",
       "strategy": "Strategy",
       "timestamp": "Date and time (local)",
       "offset": "Offset",
@@ -747,6 +748,7 @@
     "keyFormat": "Key format",
     "valueFormat": "Value format",
     "placeholders": "Placeholders: {{list}}",
+    "placeholdersLabel": "Placeholders",
     "settings": {
       "legend": "Producer settings",
       "compression": "compression",
@@ -831,6 +833,7 @@
   },
   "consumer": {
     "warn": "The session joins the group and affects the cluster: other group members will rebalance, and commits change the group's offsets.",
+    "joinLabel": "Joining the group",
     "proOnly": "Consumer sessions are available in Pro.",
     "readOnlyBlocked": "Consumer sessions are unavailable for read-only connections: joining a group changes its state.",
     "disconnect": "Disconnect",

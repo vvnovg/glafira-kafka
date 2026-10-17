@@ -624,6 +624,7 @@
       "scopePartitions": "Partições",
       "title": "Redefinir os offsets do grupo “{{groupId}}”",
       "onlyEmpty": "Só é possível redefinir um grupo sem membros ativos (Empty).",
+      "onlyEmptyLabel": "Membros ativos do grupo",
       "strategy": "Estratégia",
       "timestamp": "Data e hora (local)",
       "offset": "Offset",
@@ -749,6 +750,7 @@
     "keyFormat": "Formato da chave",
     "valueFormat": "Formato do valor",
     "placeholders": "Marcadores: {{list}}",
+    "placeholdersLabel": "Marcadores",
     "settings": {
       "legend": "Configurações do produtor",
       "compression": "compressão",
@@ -833,6 +835,7 @@
   },
   "consumer": {
     "warn": "A sessão entra no grupo e afeta o cluster: os demais membros do grupo passarão por um rebalanceamento, e os commits alteram os offsets do grupo.",
+    "joinLabel": "Entrada no grupo",
     "proOnly": "As sessões de consumer estão disponíveis no Pro.",
     "readOnlyBlocked": "As sessões de consumer não estão disponíveis para conexões somente leitura: entrar em um grupo altera o estado dele.",
     "disconnect": "Desconectar",

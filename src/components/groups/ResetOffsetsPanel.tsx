@@ -90,8 +90,8 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
     <div className="panel">
       <h3>{t("groups.reset.title", { groupId })}</h3>
       <p className="muted">
-        {t("groups.reset.onlyEmpty")}
-        <Hint k="hints.groups.onlyEmpty" label={t("groups.reset.title", { groupId })} />
+        {t("groups.reset.onlyEmpty")}{" "}
+        <Hint k="hints.groups.onlyEmpty" label={t("groups.reset.onlyEmptyLabel")} />
       </p>
       <fieldset className="form" disabled={apply.isPending} style={{ border: 0, padding: 0 }}>
         <span className="field-label">

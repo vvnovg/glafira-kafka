@@ -146,7 +146,7 @@ describe("ProducerPanel", () => {
     screen.getByRole("button", { name: "Подсказка: Формат ключа" });
     screen.getByRole("button", { name: "Подсказка: Формат значения" });
     expect(screen.getAllByRole("button", { name: /^Подсказка: Формат (ключа|значения)$/ })).toHaveLength(2);
-    screen.getByRole("button", { name: "Подсказка: Параметры продюсера" });
+    screen.getByRole("button", { name: "Подсказка: Плейсхолдеры" });
     screen.getByRole("button", { name: "Подсказка: сжатие" });
     screen.getByRole("button", { name: "Подсказка: идемпотентность" });
     await user.click(screen.getByRole("button", { name: "Подсказка: acks" }));

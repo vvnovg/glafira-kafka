@@ -624,6 +624,7 @@
       "scopePartitions": "Particiones",
       "title": "Restablecer los offsets del grupo “{{groupId}}”",
       "onlyEmpty": "Solo se puede restablecer un grupo sin miembros activos (Empty).",
+      "onlyEmptyLabel": "Miembros activos del grupo",
       "strategy": "Estrategia",
       "timestamp": "Fecha y hora (local)",
       "offset": "Offset",
@@ -749,6 +750,7 @@
     "keyFormat": "Formato de clave",
     "valueFormat": "Formato de valor",
     "placeholders": "Marcadores: {{list}}",
+    "placeholdersLabel": "Marcadores",
     "settings": {
       "legend": "Ajustes del productor",
       "compression": "compresión",
@@ -833,6 +835,7 @@
   },
   "consumer": {
     "warn": "La sesión se une al grupo y afecta al clúster: los demás miembros del grupo harán un rebalanceo y los commits cambian los offsets del grupo.",
+    "joinLabel": "Unión al grupo",
     "proOnly": "Las sesiones de consumer están disponibles en Pro.",
     "readOnlyBlocked": "Las sesiones de consumer no están disponibles para conexiones de solo lectura: unirse a un grupo cambia su estado.",
     "disconnect": "Desconectar",

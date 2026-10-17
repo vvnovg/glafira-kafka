@@ -156,7 +156,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
       <HeadersEditor headers={form.headers} onChange={(headers) => set({ headers })} />
       <p className="muted">
         {t("producer.placeholders", { list: "{{uuid}} {{now}} {{nowMillis}} {{seq}} {{randomInt 1 100}} {{randomString 8}} {{env NAME}}" })}{" "}
-        <Hint k="hints.producer.placeholders" label={t("producer.settings.legend")} />
+        <Hint k="hints.producer.placeholders" label={t("producer.placeholdersLabel")} />
       </p>
       <fieldset className="toolbar">
         <legend>{t("producer.settings.legend")}</legend>

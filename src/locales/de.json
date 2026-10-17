@@ -623,6 +623,7 @@
       "scopePartitions": "Partitionen",
       "title": "Offsets der Gruppe „{{groupId}}“ zurücksetzen",
       "onlyEmpty": "Zurücksetzen ist nur für eine Gruppe ohne aktive Mitglieder (Empty) möglich.",
+      "onlyEmptyLabel": "Aktive Gruppenmitglieder",
       "strategy": "Strategie",
       "timestamp": "Datum und Uhrzeit (lokal)",
       "offset": "Offset",
@@ -747,6 +748,7 @@
     "keyFormat": "Schlüsselformat",
     "valueFormat": "Wertformat",
     "placeholders": "Platzhalter: {{list}}",
+    "placeholdersLabel": "Platzhalter",
     "settings": {
       "legend": "Producer-Einstellungen",
       "compression": "Komprimierung",
@@ -831,6 +833,7 @@
   },
   "consumer": {
     "warn": "Die Session tritt der Gruppe bei und wirkt sich auf den Cluster aus: bei den anderen Gruppenmitgliedern findet ein Rebalance statt, und Commits ändern die Offsets der Gruppe.",
+    "joinLabel": "Beitritt zur Gruppe",
     "proOnly": "Consumer-Sessions sind in Pro verfügbar.",
     "readOnlyBlocked": "Consumer-Sessions sind für schreibgeschützte Verbindungen nicht verfügbar: der Beitritt zu einer Gruppe ändert deren Status.",
     "disconnect": "Trennen",

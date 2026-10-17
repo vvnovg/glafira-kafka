@@ -1043,7 +1043,27 @@
       "local_retention_bytes": "Przy tiered storage: limit lokalnego rozmiaru partycji; starsze segmenty pozostają tylko w magazynie zdalnym. <code>-2</code> oznacza to samo co <code>retention.bytes</code>.",
       "remote_storage_enable": "Włącza tiered storage: zamknięte segmenty są kopiowane do magazynu zdalnego (na przykład S3), a lokalnie później usuwane. Klaster musi to obsługiwać.",
       "remote_log_copy_disable": "Wstrzymuje kopiowanie nowych segmentów do magazynu zdalnego; dane już tam przeniesione pozostają dostępne do odczytu. Służy do stopniowego wyłączania tiered storage.",
-      "remote_log_delete_on_disable": "Przy wyłączaniu tiered storage dla topiku usuwa jego dane z magazynu zdalnego. Musi mieć wartość <code>true</code>, aby wyłączyć tiered storage."
+      "remote_log_delete_on_disable": "Przy wyłączaniu tiered storage dla topiku usuwa jego dane z magazynu zdalnego. Musi mieć wartość <code>true</code>, aby wyłączyć tiered storage.",
+      "compression_type": "Jak broker przechowuje wiadomości: <code>producer</code> zachowuje kompresję producenta; w przeciwnym razie broker ponownie kompresuje je do formatu <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, <code>zstd</code> lub <code>uncompressed</code>.",
+      "compression_gzip_level": "Poziom gzip przy ponownej kompresji przez brokera: 1 — najszybciej, 9 — najmniejszy rozmiar. Kafka 3.8+.",
+      "compression_lz4_level": "Poziom lz4 przy ponownej kompresji przez brokera: wyższy oznacza mniejszy rozmiar, ale wolniejszą kompresję. Kafka 3.8+.",
+      "compression_zstd_level": "Poziom zstd przy ponownej kompresji przez brokera: wyższy oznacza mniejszy rozmiar, ale wolniejszą kompresję. Kafka 3.8+.",
+      "max_message_bytes": "Największa paczka, jaką broker przyjmie dla tego topiku; większe wiadomości są odrzucane. Producenci i konsumenci muszą dopuszczać taki sam rozmiar. Domyślnie około 1 MB.",
+      "min_insync_replicas": "Ile replik musi potwierdzić zapis przy <code>acks=all</code>, w przeciwnym razie producent otrzyma błąd. Zwykle 2 przy współczynniku replikacji 3.",
+      "unclean_leader_election_enable": "Pozwala niezsynchronizowanej replice zostać leaderem, gdy nie została żadna zsynchronizowana. Topik pozostaje dostępny, ale wiadomości mogą zostać utracone.",
+      "message_timestamp_type": "<code>CreateTime</code>: znacznik czasu ustawiony przez producenta. <code>LogAppendTime</code>: czas zapisania wiadomości przez brokera.",
+      "message_timestamp_before_max_ms": "Jak daleko w przeszłości może być znacznik czasu producenta przy <code>CreateTime</code>; starsze wiadomości są odrzucane.",
+      "message_timestamp_after_max_ms": "Jak daleko w przyszłości może być znacznik czasu producenta przy <code>CreateTime</code>; wiadomości wykraczające poza ten limit są odrzucane.",
+      "message_timestamp_difference_max_ms": "Przestarzały, zastąpiony dwoma ustawieniami <code>message.timestamp.*.max.ms</code>: dopuszczalna różnica między czasem producenta a czasem brokera. Usunięty w wersji Kafka 4.0.",
+      "message_format_version": "Przestarzały: format wiadomości dla starych klientów. Ignorowany od wersji Kafka 3.0, usunięty w 4.0.",
+      "message_downconversion_enable": "Przestarzały: pozwala brokerowi konwertować wiadomości dla bardzo starych konsumentów. Zużywa CPU; usunięty w wersji Kafka 4.0.",
+      "flush_messages": "Wymusza zapis na dysk co N wiadomości. Zwykle zostawia się wartość domyślną: Kafka polega na replikacji i pamięci podręcznej stron systemu operacyjnego.",
+      "flush_ms": "Wymusza zapis na dysk co N milisekund. Zwykle zostawia się wartość domyślną: Kafka polega na replikacji i pamięci podręcznej stron systemu operacyjnego.",
+      "index_interval_bytes": "Jak często dodawać wpis do indeksu offsetów, w bajtach logu. Mniejsza wartość oznacza szybsze wyszukiwanie, ale większy indeks. Zmieniany rzadko.",
+      "segment_index_bytes": "Maksymalny rozmiar pliku indeksu offsetów segmentu. Zmieniany rzadko.",
+      "preallocate": "Rezerwuje z góry miejsce na dysku dla pliku segmentu przy jego tworzeniu. Może pomóc w niektórych systemach plików; zmieniany rzadko.",
+      "leader_replication_throttled_replicas": "Repliki, dla których ograniczono szybkość replikacji po stronie leadera, w postaci <code>partition:broker</code> lub <code>*</code>. Ustawiają je narzędzia do ponownego przydziału; zwykle nie zmienia się tego ręcznie.",
+      "follower_replication_throttled_replicas": "Repliki, dla których ograniczono szybkość replikacji po stronie followera, w postaci <code>partition:broker</code> lub <code>*</code>. Ustawiają je narzędzia do ponownego przydziału; zwykle nie zmienia się tego ręcznie."
     }
   }
 }

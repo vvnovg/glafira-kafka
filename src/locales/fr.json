@@ -1039,7 +1039,27 @@
       "local_retention_bytes": "Avec le tiered storage : limite de taille locale par partition ; les segments plus anciens ne restent que dans le stockage distant. <code>-2</code> équivaut à <code>retention.bytes</code>.",
       "remote_storage_enable": "Active le tiered storage : les segments fermés sont copiés vers un stockage distant (par exemple S3), puis supprimés localement. Le cluster doit le prendre en charge.",
       "remote_log_copy_disable": "Arrête la copie des nouveaux segments vers le stockage distant ; les données déjà présentes restent lisibles. Sert à désactiver le tiered storage par étapes.",
-      "remote_log_delete_on_disable": "À la désactivation du tiered storage pour le topic, supprime ses données dans le stockage distant. Doit valoir <code>true</code> pour désactiver le tiered storage."
+      "remote_log_delete_on_disable": "À la désactivation du tiered storage pour le topic, supprime ses données dans le stockage distant. Doit valoir <code>true</code> pour désactiver le tiered storage.",
+      "compression_type": "Mode de stockage des messages par le broker : <code>producer</code> conserve la compression du producteur ; sinon, il recompresse en <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, <code>zstd</code> ou <code>uncompressed</code>.",
+      "compression_gzip_level": "Niveau gzip lorsque le broker recompresse en gzip : 1 est le plus rapide, 9 le plus compact. Kafka 3.8+.",
+      "compression_lz4_level": "Niveau lz4 lorsque le broker recompresse en lz4 : une valeur plus élevée compresse davantage, mais plus lentement. Kafka 3.8+.",
+      "compression_zstd_level": "Niveau zstd lorsque le broker recompresse en zstd : une valeur plus élevée compresse davantage, mais plus lentement. Kafka 3.8+.",
+      "max_message_bytes": "Plus grand lot que le broker accepte pour ce topic ; les messages plus volumineux sont rejetés. Les producteurs et les consommateurs doivent autoriser la même taille. Par défaut : environ 1 MB.",
+      "min_insync_replicas": "Nombre de réplicas qui doivent confirmer une écriture avec <code>acks=all</code> ; sinon, le producteur reçoit une erreur. Généralement 2 avec un facteur de réplication de 3.",
+      "unclean_leader_election_enable": "Permet à une réplica non synchronisée de devenir leader quand il ne reste aucune réplica synchronisée. Le topic reste disponible, mais des messages peuvent être perdus.",
+      "message_timestamp_type": "<code>CreateTime</code> : l’horodatage défini par le producteur. <code>LogAppendTime</code> : l’heure à laquelle le broker a écrit le message.",
+      "message_timestamp_before_max_ms": "Écart maximal dans le passé autorisé pour l’horodatage du producteur avec <code>CreateTime</code> ; les messages plus anciens sont rejetés.",
+      "message_timestamp_after_max_ms": "Écart maximal dans le futur autorisé pour l’horodatage du producteur avec <code>CreateTime</code> ; les messages au-delà sont rejetés.",
+      "message_timestamp_difference_max_ms": "Obsolète, remplacé par les deux paramètres <code>message.timestamp.*.max.ms</code> : écart autorisé entre l’heure du producteur et celle du broker. Supprimé dans Kafka 4.0.",
+      "message_format_version": "Obsolète : format des messages pour les anciens clients. Ignoré depuis Kafka 3.0 et supprimé dans la 4.0.",
+      "message_downconversion_enable": "Obsolète : permet au broker de convertir les messages pour de très anciens consommateurs. Consomme du CPU ; supprimé dans Kafka 4.0.",
+      "flush_messages": "Force l’écriture sur disque tous les N messages. Généralement laissé par défaut : Kafka s’appuie sur la réplication et le cache de pages du système d’exploitation.",
+      "flush_ms": "Force l’écriture sur disque toutes les N millisecondes. Généralement laissé par défaut : Kafka s’appuie sur la réplication et le cache de pages du système d’exploitation.",
+      "index_interval_bytes": "Fréquence d’ajout d’une entrée à l’index des offsets, en octets de log. Plus petit : recherches plus rapides, mais index plus gros. Rarement modifié.",
+      "segment_index_bytes": "Taille maximale du fichier d’index des offsets d’un segment. Rarement modifié.",
+      "preallocate": "Préalloue le fichier de segment sur le disque à sa création. Peut aider sur certains systèmes de fichiers ; rarement modifié.",
+      "leader_replication_throttled_replicas": "Réplicas dont la réplication est limitée côté leader, sous la forme <code>partition:broker</code> ou <code>*</code>. Défini par les outils de réaffectation ; généralement pas modifié à la main.",
+      "follower_replication_throttled_replicas": "Réplicas dont la réplication est limitée côté follower, sous la forme <code>partition:broker</code> ou <code>*</code>. Défini par les outils de réaffectation ; généralement pas modifié à la main."
     }
   }
 }

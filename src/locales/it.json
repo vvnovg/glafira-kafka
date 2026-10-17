@@ -1039,7 +1039,27 @@
       "local_retention_bytes": "Con il tiered storage: limite di dimensione locale per partizione; i segmenti più vecchi restano solo nello storage remoto. <code>-2</code> equivale a <code>retention.bytes</code>.",
       "remote_storage_enable": "Attiva il tiered storage: i segmenti chiusi vengono copiati in uno storage remoto (ad esempio S3) e in seguito rimossi in locale. Il cluster deve supportarlo.",
       "remote_log_copy_disable": "Interrompe la copia dei nuovi segmenti nello storage remoto; i dati già presenti restano leggibili. Serve a disattivare il tiered storage per gradi.",
-      "remote_log_delete_on_disable": "Quando il tiered storage viene disattivato per il topic, ne elimina i dati nello storage remoto. Deve essere <code>true</code> per disattivare il tiered storage."
+      "remote_log_delete_on_disable": "Quando il tiered storage viene disattivato per il topic, ne elimina i dati nello storage remoto. Deve essere <code>true</code> per disattivare il tiered storage.",
+      "compression_type": "Come il broker memorizza i messaggi: <code>producer</code> mantiene la compressione del producer; altrimenti li ricomprime in <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, <code>zstd</code> o <code>uncompressed</code>.",
+      "compression_gzip_level": "Livello gzip quando il broker ricomprime in gzip: 1 è il più veloce, 9 il più compatto. Kafka 3.8+.",
+      "compression_lz4_level": "Livello lz4 quando il broker ricomprime in lz4: un valore più alto comprime di più, ma più lentamente. Kafka 3.8+.",
+      "compression_zstd_level": "Livello zstd quando il broker ricomprime in zstd: un valore più alto comprime di più, ma più lentamente. Kafka 3.8+.",
+      "max_message_bytes": "Batch più grande che il broker accetta per questo topic; i messaggi più grandi vengono rifiutati. Producer e consumer devono consentire la stessa dimensione. Predefinito: circa 1 MB.",
+      "min_insync_replicas": "Quante repliche devono confermare una scrittura con <code>acks=all</code>, altrimenti il producer riceve un errore. Di solito 2 con fattore di replica 3.",
+      "unclean_leader_election_enable": "Consente a una replica non sincronizzata di diventare leader quando non resta alcuna replica sincronizzata. Il topic resta disponibile, ma i messaggi possono andare persi.",
+      "message_timestamp_type": "<code>CreateTime</code>: il timestamp impostato dal producer. <code>LogAppendTime</code>: il momento in cui il broker ha scritto il messaggio.",
+      "message_timestamp_before_max_ms": "Quanto nel passato può trovarsi il timestamp del producer con <code>CreateTime</code>; i messaggi più vecchi vengono rifiutati.",
+      "message_timestamp_after_max_ms": "Quanto nel futuro può trovarsi il timestamp del producer con <code>CreateTime</code>; i messaggi oltre questo limite vengono rifiutati.",
+      "message_timestamp_difference_max_ms": "Deprecato, sostituito dalle due impostazioni <code>message.timestamp.*.max.ms</code>: lo scarto consentito tra l’ora del producer e quella del broker. Rimosso in Kafka 4.0.",
+      "message_format_version": "Deprecato: il formato dei messaggi per i client vecchi. Ignorato da Kafka 3.0 e rimosso nella 4.0.",
+      "message_downconversion_enable": "Deprecato: consente al broker di convertire i messaggi per consumer molto vecchi. Costa CPU; rimosso in Kafka 4.0.",
+      "flush_messages": "Forza la scrittura su disco ogni N messaggi. Di solito si lascia il valore predefinito: Kafka si affida alla replica e alla page cache del sistema operativo.",
+      "flush_ms": "Forza la scrittura su disco ogni N millisecondi. Di solito si lascia il valore predefinito: Kafka si affida alla replica e alla page cache del sistema operativo.",
+      "index_interval_bytes": "Ogni quanto viene scritta una voce nell’indice degli offset, in byte di log. Più piccolo significa ricerche più rapide, ma un indice più grande. Si cambia raramente.",
+      "segment_index_bytes": "Dimensione massima del file di indice degli offset di un segmento. Si cambia raramente.",
+      "preallocate": "Prealloca su disco il file di segmento quando viene creato. Può aiutare su alcuni file system; si cambia raramente.",
+      "leader_replication_throttled_replicas": "Repliche la cui replicazione è limitata lato leader, nella forma <code>partition:broker</code> o <code>*</code>. Viene impostato dagli strumenti di riassegnazione; di solito non si modifica a mano.",
+      "follower_replication_throttled_replicas": "Repliche la cui replicazione è limitata lato follower, nella forma <code>partition:broker</code> o <code>*</code>. Viene impostato dagli strumenti di riassegnazione; di solito non si modifica a mano."
     }
   }
 }

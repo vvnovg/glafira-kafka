@@ -1035,7 +1035,27 @@
       "local_retention_bytes": "With tiered storage: local size limit per partition; older segments remain only in remote storage. <code>-2</code> means the same as <code>retention.bytes</code>.",
       "remote_storage_enable": "Enables tiered storage: closed segments are copied to remote storage (for example, S3) and later removed locally. The cluster must support it.",
       "remote_log_copy_disable": "Stops copying new segments to remote storage; data already there stays readable. Used to turn tiered storage off step by step.",
-      "remote_log_delete_on_disable": "When tiered storage is turned off for the topic, delete its data in remote storage. Must be <code>true</code> to turn tiered storage off."
+      "remote_log_delete_on_disable": "When tiered storage is turned off for the topic, delete its data in remote storage. Must be <code>true</code> to turn tiered storage off.",
+      "compression_type": "How the broker stores messages: <code>producer</code> keeps the producer's compression; otherwise it recompresses to <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, <code>zstd</code> or <code>uncompressed</code>.",
+      "compression_gzip_level": "gzip level when the broker recompresses to gzip: 1 is the fastest, 9 the smallest. Kafka 3.8+.",
+      "compression_lz4_level": "lz4 level when the broker recompresses to lz4: higher is smaller and slower. Kafka 3.8+.",
+      "compression_zstd_level": "zstd level when the broker recompresses to zstd: higher is smaller and slower. Kafka 3.8+.",
+      "max_message_bytes": "Largest batch the broker accepts for this topic; larger messages are rejected. Producers and consumers must allow the same size. Default about 1 MB.",
+      "min_insync_replicas": "How many replicas must confirm a write with <code>acks=all</code>, otherwise the producer gets an error. Usually 2 with replication factor 3.",
+      "unclean_leader_election_enable": "Lets an out-of-sync replica become leader when no in-sync replica is left. The topic stays available, but messages may be lost.",
+      "message_timestamp_type": "<code>CreateTime</code>: the timestamp set by the producer. <code>LogAppendTime</code>: the time the broker wrote the message.",
+      "message_timestamp_before_max_ms": "How far in the past a producer timestamp may be with <code>CreateTime</code>; older messages are rejected.",
+      "message_timestamp_after_max_ms": "How far in the future a producer timestamp may be with <code>CreateTime</code>; messages beyond it are rejected.",
+      "message_timestamp_difference_max_ms": "Deprecated, replaced by the two <code>message.timestamp.*.max.ms</code> settings: the allowed gap between producer and broker time. Removed in Kafka 4.0.",
+      "message_format_version": "Deprecated: the message format for old clients. Ignored since Kafka 3.0 and removed in 4.0.",
+      "message_downconversion_enable": "Deprecated: lets the broker convert messages for very old consumers. Costs CPU; removed in Kafka 4.0.",
+      "flush_messages": "Force a disk flush every N messages. Usually left at the default: Kafka relies on replication and the OS page cache.",
+      "flush_ms": "Force a disk flush every N milliseconds. Usually left at the default: Kafka relies on replication and the OS page cache.",
+      "index_interval_bytes": "How often an offset index entry is written, in bytes of log. Smaller means faster seeks but a larger index. Rarely changed.",
+      "segment_index_bytes": "Maximum size of a segment's offset index file. Rarely changed.",
+      "preallocate": "Preallocate the segment file on disk when it is created. May help on some file systems; rarely changed.",
+      "leader_replication_throttled_replicas": "Replicas whose replication is throttled on the leader side, as <code>partition:broker</code> or <code>*</code>. Set by reassignment tools; usually not edited by hand.",
+      "follower_replication_throttled_replicas": "Replicas whose replication is throttled on the follower side, as <code>partition:broker</code> or <code>*</code>. Set by reassignment tools; usually not edited by hand."
     }
   }
 }

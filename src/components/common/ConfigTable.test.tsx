@@ -45,4 +45,16 @@ describe("ConfigTable", () => {
     render(<ConfigTable entries={entries} />);
     expect(screen.queryByRole("button", { name: /^Подсказка:/ })).toBeNull();
   });
+
+  it("подсказки параметров: все 36 параметров, min.insync.replicas открывает текст", async () => {
+    expect(Object.keys(TOPIC_CONFIG_HINTS)).toHaveLength(36);
+    const entries: ConfigEntry[] = [
+      { name: "min.insync.replicas", value: "1", source: "DEFAULT_CONFIG", isDefault: true, isReadOnly: false, isSensitive: false },
+    ];
+    render(<ConfigTable entries={entries} hints={TOPIC_CONFIG_HINTS} />);
+    await userEvent.click(screen.getByRole("button", { name: "Подсказка: min.insync.replicas" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Сколько реплик должны подтвердить запись при acks=all, иначе producer получит ошибку. Обычно 2 при факторе репликации 3.",
+    );
+  });
 });

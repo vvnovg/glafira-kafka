@@ -1038,6 +1038,13 @@
     "contents": "Contenido",
     "loadFailed": "No se pudo cargar la guía"
   },
+  "menu": {
+    "help": "Ayuda",
+    "guide": "Guía de Glafira",
+    "troubleshooting": "Solución de problemas",
+    "about": "Acerca de Glafira",
+    "diagnostics": "Recopilar diagnóstico…"
+  },
   "hints": {
     "label": "Ayuda: {{name}}",
     "connections": {

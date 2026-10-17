@@ -21,6 +21,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 
 import { save } from "@tauri-apps/plugin-dialog";
 import { api } from "../../api/client";
+import { useDiagnosticsRequest } from "../../state/diagnosticsRequest";
 import { AboutPanel } from "./AboutPanel";
 
 describe("AboutPanel", () => {
@@ -45,6 +46,17 @@ describe("AboutPanel", () => {
     expect(api.exportDiagnostics).not.toHaveBeenCalled();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText(/Архив сохранён/)).not.toBeInTheDocument();
+  });
+
+  it("запрос из меню Help запускает сбор диагностики один раз", async () => {
+    vi.mocked(save).mockClear();
+    vi.mocked(api.exportDiagnostics).mockClear();
+    useDiagnosticsRequest.getState().request();
+    renderWithClient(<AboutPanel />);
+    expect(await screen.findByText(/Архив сохранён/)).toBeInTheDocument();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(api.exportDiagnostics).toHaveBeenCalledWith("/tmp/diag.zip");
+    expect(useDiagnosticsRequest.getState().pending).toBe(false);
   });
 
   it("обновление доступно; при активных сессиях — подтверждение", async () => {

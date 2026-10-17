@@ -1030,6 +1030,13 @@
     "contents": "Contents",
     "loadFailed": "Could not load the guide"
   },
+  "menu": {
+    "help": "Help",
+    "guide": "Glafira Guide",
+    "troubleshooting": "Troubleshooting",
+    "about": "About Glafira",
+    "diagnostics": "Collect Diagnostics…"
+  },
   "hints": {
     "label": "Hint: {{name}}",
     "connections": {

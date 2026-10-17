@@ -1046,6 +1046,13 @@
     "contents": "Spis treści",
     "loadFailed": "Nie udało się wczytać podręcznika"
   },
+  "menu": {
+    "help": "Pomoc",
+    "guide": "Podręcznik Glafira",
+    "troubleshooting": "Rozwiązywanie problemów",
+    "about": "O programie",
+    "diagnostics": "Zbierz diagnostykę…"
+  },
   "hints": {
     "label": "Podpowiedź: {{name}}",
     "connections": {

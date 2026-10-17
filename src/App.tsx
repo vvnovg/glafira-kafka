@@ -1,9 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Layout } from "./components/Layout";
+import { useAppMenu } from "./lib/useAppMenu";
 import { useLanguageSync } from "./lib/useLanguageSync";
 
 function LanguageSync() {
   useLanguageSync();
+  return null;
+}
+
+/** Меню Help на macOS (на других системах ничего не делает). */
+function AppMenu() {
+  useAppMenu();
   return null;
 }
 
@@ -17,6 +24,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageSync />
+      <AppMenu />
       <Layout />
     </QueryClientProvider>
   );

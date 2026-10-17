@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { save } from "@tauri-apps/plugin-dialog";
 import { api, toAppError } from "../../api/client";
 import { tr } from "../../i18n/text";
+import { useDiagnosticsRequest } from "../../state/diagnosticsRequest";
 import { ErrorBanner } from "../common/ErrorBanner";
 
 export function AboutPanel() {
@@ -25,6 +26,12 @@ export function AboutPanel() {
       if (path) setSaved(path);
     },
   });
+  // «Собрать диагностику…» из меню Help: тот же сбор, что и по кнопке; запрос забирается один раз.
+  const diagRequested = useDiagnosticsRequest((s) => s.pending);
+  const { mutate: collect } = diag;
+  useEffect(() => {
+    if (diagRequested && useDiagnosticsRequest.getState().consume()) collect();
+  }, [diagRequested, collect]);
 
   if (info.error) return <ErrorBanner error={info.error} onRetry={() => info.refetch()} />;
   const i = info.data;

@@ -1038,6 +1038,13 @@
     "contents": "Indice",
     "loadFailed": "Impossibile caricare la guida"
   },
+  "menu": {
+    "help": "Aiuto",
+    "guide": "Guida di Glafira",
+    "troubleshooting": "Risoluzione dei problemi",
+    "about": "Informazioni su Glafira",
+    "diagnostics": "Raccogli diagnostica…"
+  },
   "hints": {
     "label": "Suggerimento: {{name}}",
     "connections": {

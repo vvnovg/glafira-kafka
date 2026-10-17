@@ -1046,6 +1046,13 @@
     "contents": "Содержание",
     "loadFailed": "Не удалось загрузить руководство"
   },
+  "menu": {
+    "help": "Справка",
+    "guide": "Руководство Glafira",
+    "troubleshooting": "Решение проблем",
+    "about": "О программе",
+    "diagnostics": "Собрать диагностику…"
+  },
   "hints": {
     "label": "Подсказка: {{name}}",
     "connections": {

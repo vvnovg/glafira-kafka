@@ -1030,6 +1030,13 @@
     "contents": "Inhalt",
     "loadFailed": "Das Handbuch konnte nicht geladen werden"
   },
+  "menu": {
+    "help": "Hilfe",
+    "guide": "Glafira-Handbuch",
+    "troubleshooting": "Fehlerbehebung",
+    "about": "Über Glafira",
+    "diagnostics": "Diagnose erstellen…"
+  },
   "hints": {
     "label": "Hinweis: {{name}}",
     "connections": {

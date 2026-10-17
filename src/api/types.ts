@@ -90,6 +90,12 @@ export interface ConnectionFolder {
   order: number;
 }
 
+/** Итог экспорта подключений: сколько записано в файл. */
+export interface ExportSummary {
+  connections: number;
+  folders: number;
+}
+
 /** Ссылка на элемент дерева подключений для перемещения. */
 export interface TreeItemRef {
   kind: "folder" | "connection";

@@ -37,6 +37,7 @@ import type {
   ClusterOverview,
   ConfigEntry,
   ConnectionFolder,
+  ExportSummary,
   ConnectionProfile,
   TestReport,
   TlsPasswordsInput,
@@ -93,6 +94,8 @@ export const api = {
   deleteFolder: (id: string) => call<void>("delete_folder", { id }),
   moveItems: (items: TreeItemRef[], parentId: string | null, before: TreeItemRef | null) =>
     call<void>("move_items", { items, parentId, before }),
+  exportConnections: (path: string, folderId: string | null) =>
+    call<ExportSummary>("export_connections", { path, folderId }),
 
   getClusterOverview: (connectionId: string) => call<ClusterOverview>("get_cluster_overview", { connectionId }),
   getBrokerConfig: (connectionId: string, brokerId: number) =>

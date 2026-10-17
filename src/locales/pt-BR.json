@@ -1022,6 +1022,24 @@
       "autoCommit": "Faz commit dos offsets lidos automaticamente em segundo plano. Sem ele, faça commit manualmente com os botões de commit.",
       "commit": "“Fazer commit até o selecionado” faz commit do offset após a mensagem selecionada; “Fazer commit de tudo o que foi lido” faz commit de todas as mensagens lidas até agora.",
       "pause": "Pausar interrompe a leitura de uma partição sem sair do grupo, então não ocorre rebalanceamento."
+    },
+    "topicConfig": {
+      "cleanup_policy": "<code>delete</code> exclui segmentos antigos por tempo ou tamanho, <code>compact</code> mantém apenas o último valor de cada chave, <code>compact,delete</code> faz as duas coisas.",
+      "retention_ms": "Por quanto tempo as mensagens são mantidas, em ms. Padrão: 604800000 (7 dias); <code>-1</code> as mantém para sempre. Vale com <code>cleanup.policy=delete</code>.",
+      "retention_bytes": "Tamanho máximo de cada partição antes que os segmentos antigos sejam excluídos. Padrão <code>-1</code>: sem limite de tamanho, apenas por tempo.",
+      "delete_retention_ms": "Por quanto tempo os marcadores de exclusão (valores null) ficam em um tópico compactado, para que os leitores vejam a exclusão. Padrão: 1 dia.",
+      "min_compaction_lag_ms": "Idade mínima de uma mensagem antes que a compactação possa removê-la. Padrão: 0.",
+      "max_compaction_lag_ms": "Tempo máximo que uma mensagem pode ficar sem compactação, para garantir que valores antigos sejam removidos a tempo. Padrão: ilimitado.",
+      "min_cleanable_dirty_ratio": "A compactação começa quando essa fração do log ainda não foi compactada. Valores menores significam compactação mais frequente e menos duplicatas, mas mais carga no disco. Padrão: 0.5.",
+      "segment_ms": "Com que frequência um novo segmento do log é iniciado, mesmo que o atual não esteja cheio. A retenção e a compactação trabalham com segmentos inteiros. Padrão: 7 dias.",
+      "segment_bytes": "Tamanho de um arquivo de segmento do log. A retenção e a compactação trabalham com segmentos inteiros. Padrão: 1 GiB.",
+      "segment_jitter_ms": "Um acréscimo aleatório a <code>segment.ms</code> para que muitas partições não iniciem novos segmentos no mesmo momento. Padrão: 0.",
+      "file_delete_delay_ms": "Por quanto tempo um arquivo de segmento excluído fica no disco antes de ser realmente removido. Padrão: 1 minuto.",
+      "local_retention_ms": "Com tiered storage: por quanto tempo os segmentos ficam no disco local do broker antes que reste apenas a cópia remota. <code>-2</code> equivale a <code>retention.ms</code>.",
+      "local_retention_bytes": "Com tiered storage: limite de tamanho local por partição; segmentos mais antigos ficam apenas no armazenamento remoto. <code>-2</code> equivale a <code>retention.bytes</code>.",
+      "remote_storage_enable": "Ativa o tiered storage: segmentos antigos são movidos para um armazenamento remoto (por exemplo, S3). O cluster precisa oferecer suporte a isso.",
+      "remote_log_copy_disable": "Interrompe a cópia de novos segmentos para o armazenamento remoto; os dados que já estão lá continuam legíveis. Usado para desativar o tiered storage aos poucos.",
+      "remote_log_delete_on_disable": "Ao desativar o tiered storage do tópico, exclui os dados dele no armazenamento remoto. Precisa ser <code>true</code> para desativar o tiered storage."
     }
   }
 }

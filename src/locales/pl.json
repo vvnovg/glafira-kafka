@@ -1026,6 +1026,24 @@
       "autoCommit": "Automatycznie zatwierdza odczytane offsety w tle. Bez tej opcji zatwierdzanie odbywa się ręcznie, przyciskami zatwierdzania.",
       "commit": "„Zatwierdź do zaznaczonej” zatwierdza offset następny po zaznaczonej wiadomości; „Zatwierdź wszystkie odczytane” zatwierdza wszystkie dotąd odczytane wiadomości.",
       "pause": "Wstrzymanie zatrzymuje odczyt partycji bez opuszczania grupy, więc rebalans nie nastąpi."
+    },
+    "topicConfig": {
+      "cleanup_policy": "<code>delete</code> usuwa stare segmenty według czasu lub rozmiaru, <code>compact</code> zachowuje tylko ostatnią wartość każdego klucza, <code>compact,delete</code> robi jedno i drugie.",
+      "retention_ms": "Jak długo przechowywać wiadomości, w ms. Domyślnie 604800000 (7 dni); <code>-1</code> — bezterminowo. Działa przy <code>cleanup.policy=delete</code>.",
+      "retention_bytes": "Maksymalny rozmiar każdej partycji, po którego przekroczeniu usuwane są stare segmenty. Domyślnie <code>-1</code> — bez limitu rozmiaru, tylko według czasu.",
+      "delete_retention_ms": "Jak długo znaczniki usunięcia (wartości null) pozostają w topiku z kompaktowaniem, aby czytające aplikacje zdążyły zobaczyć usunięcie. Domyślnie 1 dzień.",
+      "min_compaction_lag_ms": "Minimalny wiek wiadomości, zanim kompaktowanie będzie mogło ją usunąć. Domyślnie 0.",
+      "max_compaction_lag_ms": "Maksymalny czas, przez jaki wiadomość może pozostać bez kompaktowania, aby stare wartości były na pewno usuwane na czas. Domyślnie bez limitu.",
+      "min_cleanable_dirty_ratio": "Kompaktowanie startuje, gdy taka część logu nie jest jeszcze skompaktowana. Mniej oznacza częstsze kompaktowanie i mniej duplikatów, ale większe obciążenie dysku. Domyślnie 0.5.",
+      "segment_ms": "Jak często zaczynać nowy segment logu, nawet jeśli bieżący nie jest pełny. Retencja i kompaktowanie działają na całych segmentach. Domyślnie 7 dni.",
+      "segment_bytes": "Rozmiar jednego pliku segmentu logu. Retencja i kompaktowanie działają na całych segmentach. Domyślnie 1 GiB.",
+      "segment_jitter_ms": "Losowy dodatek do <code>segment.ms</code>, aby wiele partycji nie zaczynało nowego segmentu w tej samej chwili. Domyślnie 0.",
+      "file_delete_delay_ms": "Jak długo usunięty plik segmentu pozostaje na dysku przed faktycznym usunięciem. Domyślnie 1 minuta.",
+      "local_retention_ms": "Przy tiered storage: jak długo segmenty są przechowywane na lokalnym dysku brokera, zanim zostanie tylko kopia zdalna. <code>-2</code> oznacza to samo co <code>retention.ms</code>.",
+      "local_retention_bytes": "Przy tiered storage: limit lokalnego rozmiaru partycji; starsze segmenty pozostają tylko w magazynie zdalnym. <code>-2</code> oznacza to samo co <code>retention.bytes</code>.",
+      "remote_storage_enable": "Włącza tiered storage: stare segmenty są przenoszone do magazynu zdalnego (na przykład S3). Klaster musi to obsługiwać.",
+      "remote_log_copy_disable": "Wstrzymuje kopiowanie nowych segmentów do magazynu zdalnego; dane już tam przeniesione pozostają dostępne do odczytu. Służy do stopniowego wyłączania tiered storage.",
+      "remote_log_delete_on_disable": "Przy wyłączaniu tiered storage dla topiku usuwa jego dane z magazynu zdalnego. Musi mieć wartość <code>true</code>, aby wyłączyć tiered storage."
     }
   }
 }

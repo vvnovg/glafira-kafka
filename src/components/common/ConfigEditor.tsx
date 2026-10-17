@@ -15,9 +15,11 @@ interface Props {
   onDone: () => void;
   /** Есть несохранённые правки (для блокировки закрытия редактора). */
   onDirtyChange?: (dirty: boolean) => void;
+  /** Подсказки к параметрам: имя → ключ словаря; без него значков нет. */
+  hints?: Record<string, string>;
 }
 
-export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange }: Props) {
+export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange, hints }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [edits, setEdits] = useState<Record<string, ConfigEdit>>({});
@@ -123,7 +125,10 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
         <tbody>
           {visible.map((e) => (
             <tr key={e.name}>
-              <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>{e.name}</td>
+              <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>
+                {e.name}
+                {hints?.[e.name] && <Hint k={hints[e.name]} label={e.name} />}
+              </td>
               <td>
                 <input
                   aria-label={t("common.config.valueAria", { name: e.name })}

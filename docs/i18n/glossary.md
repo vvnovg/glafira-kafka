@@ -19,7 +19,7 @@
 Kafka, Glafira, Pro, Free, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
 DNS, TCP, ID, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»), Leader (лидер партиции); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
 команды, пути, адреса (`docker compose -f dev/docker-compose.yml up -d`, `keytool …`, `localhost:9092`);
-название экрана «Producer» (как в ru).
+название экрана «Producer» (как в ru); значения CreateTime / LogAppendTime, producer / uncompressed в compression.type.
 
 ## Стиль по языкам
 
@@ -66,6 +66,10 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | rebalance | ребалансировка | Rebalance (das) | rééquilibrage | rebalanceo | ribilanciamento | rebalans | rebalanceamento |
 | placeholder (Producer) | плейсхолдер | Platzhalter | variable | marcador | segnaposto | symbol zastępczy | marcador |
 | hint (значок «?») | подсказка | Hinweis | aide | ayuda | suggerimento | podpowiedź | dica |
+| segment (лога) | сегмент | Segment | segment | segmento | segmento | segment | segmento |
+| compaction | compaction | Compaction (die) | compaction (f.) | compactación | compattazione | kompaktowanie | compactação |
+| tiered storage | tiered storage | Tiered Storage | tiered storage | tiered storage | tiered storage | tiered storage | tiered storage |
+| follower (реплика) | фолловер | Follower | follower | follower | follower | follower | follower |
 | license | лицензия | Lizenz | licence | licencia | licenza | licencja | licença |
 | settings | настройки | Einstellungen | Paramètres | Ajustes | Impostazioni | Ustawienia | Configurações |
 | about | о программе | Über Glafira | À propos | Acerca de | Informazioni | O programie | Sobre |

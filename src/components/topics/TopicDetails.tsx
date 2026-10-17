@@ -12,6 +12,7 @@ import { BrowsePanel } from "../browse/BrowsePanel";
 import { ProLock } from "../common/ProLock";
 import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
+import { TOPIC_CONFIG_HINTS } from "../common/topicConfigHints";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { TopicActions } from "./TopicActions";
 import { TopicGroups } from "./TopicGroups";
@@ -173,9 +174,9 @@ function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: st
         </div>
       )}
       {editing && canEdit && connection ? (
-        <ConfigEditor connection={connection} topic={topic} entries={q.data} onDone={() => setEditing(false)} onDirtyChange={setDirty} />
+        <ConfigEditor connection={connection} topic={topic} entries={q.data} onDone={() => setEditing(false)} onDirtyChange={setDirty} hints={TOPIC_CONFIG_HINTS} />
       ) : (
-        <ConfigTable entries={q.data} />
+        <ConfigTable entries={q.data} hints={TOPIC_CONFIG_HINTS} />
       )}
     </>
   );

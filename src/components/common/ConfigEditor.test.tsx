@@ -12,6 +12,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 
 import { api } from "../../api/client";
 import { ConfigEditor } from "./ConfigEditor";
+import { TOPIC_CONFIG_HINTS } from "./topicConfigHints";
 
 const dev: ConnectionProfile = { ...newProfile(), id: "c", name: "dev-1", environment: "dev" };
 const entries: ConfigEntry[] = [
@@ -77,5 +78,24 @@ describe("ConfigEditor", () => {
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
       "«к default» удаляет переопределение — действует значение брокера. Ничего не меняется, пока вы не проверите и не подтвердите изменения.",
     );
+  });
+
+  it("подсказки параметров в режиме редактирования: значок только у известных", async () => {
+    const user = userEvent.setup();
+    const withUnknown: ConfigEntry[] = [
+      ...entries,
+      { name: "x.unknown", value: "1", source: "Default", isDefault: true, isReadOnly: false, isSensitive: false },
+    ];
+    renderWithClient(<ConfigEditor connection={dev} topic="t" entries={withUnknown} onDone={() => {}} hints={TOPIC_CONFIG_HINTS} />);
+    expect(screen.getByRole("button", { name: "Подсказка: retention.ms" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Подсказка: segment.bytes" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Подсказка: x.unknown" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Подсказка: retention.ms" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Сколько хранить сообщения, в мс.");
+  });
+
+  it("без hints значков параметров нет", () => {
+    renderWithClient(<ConfigEditor connection={dev} topic="t" entries={entries} onDone={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Подсказка: retention.ms" })).toBeNull();
   });
 });

@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConfigEntry } from "../../api/types";
+import { Hint } from "./Hint";
 
 export function filterConfigs(entries: ConfigEntry[], query: string, onlyChanged: boolean): ConfigEntry[] {
   const q = query.trim().toLowerCase();
   return entries.filter((e) => (!onlyChanged || !e.isDefault) && (!q || e.name.toLowerCase().includes(q)));
 }
 
-export function ConfigTable({ entries }: { entries: ConfigEntry[] }) {
+/** `hints` — подсказки к параметрам (имя → ключ словаря); без него значков нет. */
+export function ConfigTable({ entries, hints }: { entries: ConfigEntry[]; hints?: Record<string, string> }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [onlyChanged, setOnlyChanged] = useState(false);
@@ -37,6 +39,7 @@ export function ConfigTable({ entries }: { entries: ConfigEntry[] }) {
               <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>
                 {e.name}
                 {e.isReadOnly && <span className="muted" role="img" aria-label={t("common.readOnly")} title={t("common.readOnly")}> 🔒</span>}
+                {hints?.[e.name] && <Hint k={hints[e.name]} label={e.name} />}
               </td>
               <td>
                 <code>{e.isSensitive ? "••••••" : (e.value ?? "—")}</code>

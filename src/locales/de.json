@@ -1018,6 +1018,24 @@
       "autoCommit": "Committet gelesene Offsets automatisch im Hintergrund. Ohne diese Option wird manuell über die Commit-Schaltflächen committet.",
       "commit": "„Bis zur Auswahl committen“ committet den Offset nach der ausgewählten Nachricht; „Alles Gelesene committen“ committet alle bisher gelesenen Nachrichten.",
       "pause": "Pausieren stoppt das Lesen einer Partition, ohne die Gruppe zu verlassen. Dadurch findet kein Rebalance statt."
+    },
+    "topicConfig": {
+      "cleanup_policy": "<code>delete</code> löscht alte Segmente nach Zeit oder Größe, <code>compact</code> behält nur den neuesten Wert je Schlüssel, <code>compact,delete</code> macht beides.",
+      "retention_ms": "Wie lange Nachrichten aufbewahrt werden, in ms. Standardwert 604800000 (7 Tage); <code>-1</code> bewahrt sie unbegrenzt auf. Gilt bei <code>cleanup.policy=delete</code>.",
+      "retention_bytes": "Maximale Größe jeder Partition, bevor alte Segmente gelöscht werden. Standardwert <code>-1</code>: keine Größenbegrenzung, nur nach Zeit.",
+      "delete_retention_ms": "Wie lange Löschmarkierungen (null-Werte) in einem Topic mit Compaction bleiben, damit Leser die Löschung sehen können. Standardwert: 1 Tag.",
+      "min_compaction_lag_ms": "Mindestalter einer Nachricht, bevor die Compaction sie entfernen darf. Standardwert: 0.",
+      "max_compaction_lag_ms": "Maximale Zeit, die eine Nachricht ohne Compaction bleiben darf, damit alte Werte garantiert rechtzeitig entfernt werden. Standardwert: unbegrenzt.",
+      "min_cleanable_dirty_ratio": "Die Compaction startet, wenn dieser Anteil des Logs noch nicht kompaktiert ist. Niedriger heißt häufigere Compaction und weniger Duplikate, aber mehr Plattenlast. Standardwert: 0.5.",
+      "segment_ms": "Wie oft ein neues Log-Segment begonnen wird, auch wenn das aktuelle nicht voll ist. Aufbewahrung und Compaction arbeiten mit ganzen Segmenten. Standardwert: 7 Tage.",
+      "segment_bytes": "Größe einer Log-Segmentdatei. Aufbewahrung und Compaction arbeiten mit ganzen Segmenten. Standardwert: 1 GiB.",
+      "segment_jitter_ms": "Ein zufälliger Zuschlag zu <code>segment.ms</code>, damit nicht viele Partitionen im selben Moment neue Segmente beginnen. Standardwert: 0.",
+      "file_delete_delay_ms": "Wie lange eine gelöschte Segmentdatei auf der Platte bleibt, bevor sie tatsächlich entfernt wird. Standardwert: 1 Minute.",
+      "local_retention_ms": "Bei Tiered Storage: wie lange Segmente auf der lokalen Platte des Brokers bleiben, bevor nur noch die Remote-Kopie existiert. <code>-2</code> bedeutet dasselbe wie <code>retention.ms</code>.",
+      "local_retention_bytes": "Bei Tiered Storage: lokale Größengrenze je Partition; ältere Segmente bleiben nur im Remote-Speicher. <code>-2</code> bedeutet dasselbe wie <code>retention.bytes</code>.",
+      "remote_storage_enable": "Aktiviert Tiered Storage: Alte Segmente werden in einen Remote-Speicher (zum Beispiel S3) verschoben. Der Cluster muss das unterstützen.",
+      "remote_log_copy_disable": "Beendet das Kopieren neuer Segmente in den Remote-Speicher; dort vorhandene Daten bleiben lesbar. Dient zum schrittweisen Abschalten von Tiered Storage.",
+      "remote_log_delete_on_disable": "Löscht beim Abschalten von Tiered Storage für den Topic dessen Daten im Remote-Speicher. Muss <code>true</code> sein, um Tiered Storage abzuschalten."
     }
   }
 }

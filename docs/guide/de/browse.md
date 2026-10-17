@@ -1,104 +1,104 @@
-# Browsing messages
+# Nachrichten durchsuchen
 
-You browse messages on the [[ui:topics.details.tabMessages]] tab of a topic. Browsing does not join a consumer group and commits nothing, so the cluster does not change. It also works on [[ui:common.readOnly]] connections. To read as a member of a group, use a [consumer session](consumer-sessions.md).
+Nachrichten durchsuchen Sie im Tab [[ui:topics.details.tabMessages]] eines Topics. Dabei tritt die App keiner Consumer Group bei und committet nichts, der Cluster bleibt also unverändert. Das funktioniert auch bei Verbindungen mit [[ui:common.readOnly]]. Um als Mitglied einer Gruppe zu lesen, verwenden Sie eine [Consumer-Session](consumer-sessions.md).
 
-## Start reading {#start-reading}
+## Lesen starten {#start-reading}
 
-1. Open a topic from the [[ui:sidebar.topics]] list. The [[ui:topics.details.tabMessages]] tab opens first.
-2. Choose where to start in [[ui:browse.form.from]]. See [Start position](browse.md#start-position).
-3. Optionally, set the formats and the filters.
-4. Click [[ui:browse.panel.read]].
+1. Öffnen Sie ein Topic aus der Liste [[ui:sidebar.topics]]. Zuerst öffnet sich der Tab [[ui:topics.details.tabMessages]].
+2. Wählen Sie unter [[ui:browse.form.from]], wo das Lesen beginnen soll. Siehe [Startposition](browse.md#start-position).
+3. Legen Sie optional Formate und Filter fest.
+4. Klicken Sie auf [[ui:browse.panel.read]].
 
-Messages appear in the table as they arrive. The line next to the buttons shows how many messages were scanned, how many matched the filters and how many are in the table. It also shows the state: [[ui:browse.panel.reading]], [[ui:browse.panel.finishLimit]], [[ui:browse.panel.finishEnd]] or [[ui:browse.panel.finishCancelled]].
+Die Nachrichten erscheinen in der Tabelle, sobald sie eintreffen. Die Zeile neben den Schaltflächen zeigt, wie viele Nachrichten durchsucht wurden, wie viele zu den Filtern passen und wie viele in der Tabelle stehen. Außerdem zeigt sie den Status: [[ui:browse.panel.reading]], [[ui:browse.panel.finishLimit]], [[ui:browse.panel.finishEnd]] oder [[ui:browse.panel.finishCancelled]].
 
-Without `Live tail`, reading stops at the end of the topic as it was when you clicked [[ui:browse.panel.read]], or earlier when the [[ui:browse.form.limit]] is reached. The limit counts messages that match the filters. It can be from 1 to 100000; large values make reading slower.
+Ohne `Live tail` endet das Lesen am Ende des Topics, wie es beim Klick auf [[ui:browse.panel.read]] war, oder früher, wenn das [[ui:browse.form.limit]] erreicht ist. Das Limit zählt Nachrichten, die zu den Filtern passen. Es kann zwischen 1 und 100000 liegen; große Werte verlangsamen das Lesen.
 
-With `Live tail` on, reading does not stop at the end: new messages are added as they are written. When all old messages are read, the state shows [[ui:browse.panel.waiting]]. The table keeps the last messages up to the limit and drops the oldest ones.
+Mit aktiviertem `Live tail` endet das Lesen nicht am Ende: Neue Nachrichten werden hinzugefügt, sobald sie geschrieben werden. Sind alle alten Nachrichten gelesen, zeigt der Status [[ui:browse.panel.waiting]]. Die Tabelle behält die letzten Nachrichten bis zum Limit und verwirft die ältesten.
 
-[[ui:browse.panel.stop]] stops reading and keeps the table. While reading runs, the [[ui:browse.panel.read]] button becomes [[ui:browse.panel.restart]]: it starts again with the current settings and clears the table. If the connection to the broker is lost, the app reconnects by itself and shows that in the state line.
+[[ui:browse.panel.stop]] beendet das Lesen und behält die Tabelle. Während gelesen wird, wird aus der Schaltfläche [[ui:browse.panel.read]] die Schaltfläche [[ui:browse.panel.restart]]: Sie beginnt mit den aktuellen Einstellungen von vorn und leert die Tabelle. Bricht die Verbindung zum Broker ab, verbindet sich die App selbst neu und zeigt das in der Statuszeile an.
 
-Messages from different partitions are mixed in the table. Kafka keeps the order only within one partition. The `P` column shows the partition, and `Offset` shows the position in it. Select `UTC` to show times in UTC instead of local time.
+Nachrichten aus verschiedenen Partitionen stehen in der Tabelle gemischt. Kafka garantiert die Reihenfolge nur innerhalb einer Partition. Die Spalte `P` zeigt die Partition, `Offset` die Position darin. Wählen Sie `UTC`, um Zeiten in UTC statt in Ortszeit anzuzeigen.
 
-## Start position {#start-position}
+## Startposition {#start-position}
 
-[[ui:browse.form.startPosition]] sets where reading begins in each partition:
+[[ui:browse.form.startPosition]] legt fest, wo das Lesen in jeder Partition beginnt:
 
-- [[ui:browse.form.startLatest]] — the last N messages. N is split evenly between the partitions, so with 100 messages and 4 partitions the app takes up to 25 from each.
-- [[ui:browse.form.startEarliest]] — from the oldest message that is still stored.
-- [[ui:browse.form.startOffset]] — from the same offset in each partition. If a partition has no such offset, reading starts at its beginning or end. This mode is most useful with one partition.
-- [[ui:browse.form.startTimestamp]] — from the first message with a timestamp at or after the given local time. In partitions without newer messages, reading starts at the end.
-- [[ui:browse.form.startLastMinutes]] — the same, counted back from now.
+- [[ui:browse.form.startLatest]] — die letzten N Nachrichten. N wird gleichmäßig auf die Partitionen verteilt: Bei 100 Nachrichten und 4 Partitionen nimmt die App bis zu 25 aus jeder.
+- [[ui:browse.form.startEarliest]] — ab der ältesten noch gespeicherten Nachricht.
+- [[ui:browse.form.startOffset]] — ab demselben Offset in jeder Partition. Hat eine Partition keinen solchen Offset, beginnt das Lesen an ihrem Anfang oder Ende. Dieser Modus ist vor allem bei einer einzigen Partition nützlich.
+- [[ui:browse.form.startTimestamp]] — ab der ersten Nachricht mit einem Zeitstempel zur angegebenen Ortszeit oder danach. In Partitionen ohne neuere Nachrichten beginnt das Lesen am Ende.
+- [[ui:browse.form.startLastMinutes]] — dasselbe, ab jetzt zurückgerechnet.
 
-The field with [[ui:browse.form.partitionsPlaceholder]] limits reading to some partitions. Enter partition numbers separated by commas, for example `0,2`. Leave it empty to read all partitions.
+Das Feld mit [[ui:browse.form.partitionsPlaceholder]] beschränkt das Lesen auf bestimmte Partitionen. Geben Sie die Partitionsnummern durch Kommas getrennt ein, zum Beispiel `0,2`. Lassen Sie das Feld leer, um alle Partitionen zu lesen.
 
-## Filters {#filters}
+## Filter {#filters}
 
-Filters show only matching messages. The app still reads all messages from the start position and checks each one, so filters do not make reading faster. All filled fields must match.
+Filter zeigen nur passende Nachrichten. Die App liest trotzdem alle Nachrichten ab der Startposition und prüft jede, Filter beschleunigen das Lesen also nicht. Alle ausgefüllten Felder müssen zutreffen.
 
-- [[ui:browse.filters.keyContains]] and [[ui:browse.filters.valueContains]] — text in the key or the value.
-- `regex` — treat these fields, and the header value, as regular expressions.
-- `Aa` — match case. By default, case does not matter.
-- [[ui:browse.filters.header]] — the message has a header with this exact name. [[ui:browse.filters.headerValue]] also checks its value.
-- `JSONPath` — a condition on a JSON value, for example `$.order.status == "FAILED"`. Without `==` or `!=`, the path must simply exist, for example `$.error`. Messages whose value is not valid JSON do not match.
-- [[ui:browse.filters.timeFrom]] and [[ui:browse.filters.timeTo]] — the message timestamp is within this range, in local time. Both ends are included.
+- [[ui:browse.filters.keyContains]] und [[ui:browse.filters.valueContains]] — Text im Schlüssel oder im Wert.
+- `regex` — diese Felder und den Header-Wert als reguläre Ausdrücke behandeln.
+- `Aa` — Groß- und Kleinschreibung beachten. Standardmäßig spielt sie keine Rolle.
+- [[ui:browse.filters.header]] — die Nachricht hat einen Header mit genau diesem Namen. [[ui:browse.filters.headerValue]] prüft zusätzlich seinen Wert.
+- `JSONPath` — eine Bedingung für einen JSON-Wert, zum Beispiel `$.order.status == "FAILED"`. Ohne `==` oder `!=` muss der Pfad nur existieren, zum Beispiel `$.error`. Nachrichten, deren Wert kein gültiges JSON ist, passen nicht.
+- [[ui:browse.filters.timeFrom]] und [[ui:browse.filters.timeTo]] — der Zeitstempel der Nachricht liegt in diesem Bereich, in Ortszeit. Beide Grenzen sind eingeschlossen.
 
-Filters check the text shown in the table, after decoding. If the value format is `hex`, the value filter searches the hex text. Filters apply when you click [[ui:browse.panel.read]]; after changing them, read again.
+Filter prüfen den in der Tabelle angezeigten Text nach dem Dekodieren. Ist das Wertformat `hex`, durchsucht der Wertfilter den Hex-Text. Filter gelten beim Klick auf [[ui:browse.panel.read]]; lesen Sie nach einer Änderung erneut.
 
-A filter does not move the start position. For example, [[ui:browse.form.startLatest]] with a filter finds matches only among the last N messages. To search the whole topic, start from [[ui:browse.form.startEarliest]].
+Ein Filter verschiebt die Startposition nicht. [[ui:browse.form.startLatest]] mit Filter findet Treffer beispielsweise nur unter den letzten N Nachrichten. Um das ganze Topic zu durchsuchen, beginnen Sie mit [[ui:browse.form.startEarliest]].
 
-## Formats {#formats}
+## Formate {#formats}
 
-[[ui:browse.form.format]] sets how keys and values are decoded, separately for the [[ui:browse.form.key]] and the [[ui:browse.form.value]]. Only the display changes, not the data.
+[[ui:browse.form.format]] legt fest, wie Schlüssel und Werte dekodiert werden, getrennt für [[ui:browse.form.key]] und [[ui:browse.form.value]]. Nur die Anzeige ändert sich, nicht die Daten.
 
-- `auto` — the default. Valid JSON objects and arrays are shown as JSON, other UTF-8 text as a string, binary data as hex.
-- `string` — text in UTF-8. Bytes that are not valid UTF-8 are replaced with `�`.
-- `json` — JSON with indents in the message details. If the value is not valid JSON, the details show the error.
-- `hex` — every byte as two hex digits.
-- `base64` — the bytes in Base64.
+- `auto` — der Standard. Gültige JSON-Objekte und -Arrays werden als JSON angezeigt, anderer UTF-8-Text als Zeichenkette, Binärdaten als Hex.
+- `string` — Text in UTF-8. Bytes, die kein gültiges UTF-8 sind, werden durch `�` ersetzt.
+- `json` — JSON mit Einrückungen in den Nachrichtendetails. Ist der Wert kein gültiges JSON, zeigen die Details den Fehler.
+- `hex` — jedes Byte als zwei Hex-Ziffern.
+- `base64` — die Bytes in Base64.
 
-The details show which format was actually used, for example `json` when `auto` detected JSON. Header values are shown as text; binary header values are shown as `0x` followed by hex. A missing key or value is shown as `null`.
+Die Details zeigen, welches Format tatsächlich verwendet wurde, zum Beispiel `json`, wenn `auto` JSON erkannt hat. Header-Werte werden als Text angezeigt; binäre Header-Werte als `0x`, gefolgt von Hex. Ein fehlender Schlüssel oder Wert wird als `null` angezeigt.
 
-Very large keys and values are shown only partly, about the first 1 MB of text. This also applies to `hex` and `base64`. The message details then show a warning.
+Sehr große Schlüssel und Werte werden nur teilweise angezeigt, etwa das erste 1 MB Text. Das gilt auch für `hex` und `base64`. Die Nachrichtendetails zeigen dann eine Warnung.
 
-## Message details {#message-details}
+## Nachrichtendetails {#message-details}
 
-Click a row to open the message details next to the table. At the top are the partition, the offset and the time. Below:
+Klicken Sie auf eine Zeile, um die Details der Nachricht neben der Tabelle zu öffnen. Oben stehen Partition, Offset und Zeit. Darunter:
 
-- [[ui:browse.details.value]] and [[ui:browse.details.key]] — the full text, with the format and size in bytes. JSON is shown with indents. [[ui:browse.details.copy]] copies the text.
-- [[ui:browse.table.colHeaders]] — a table of header names and values.
+- [[ui:browse.details.value]] und [[ui:browse.details.key]] — der vollständige Text mit Format und Größe in Bytes. JSON wird mit Einrückungen angezeigt. [[ui:browse.details.copy]] kopiert den Text.
+- [[ui:browse.table.colHeaders]] — eine Tabelle mit Namen und Werten der Header.
 
-The table columns are `P`, `Offset`, [[ui:browse.table.colTime]], [[ui:browse.table.colKey]], [[ui:browse.table.colValue]], [[ui:browse.table.colHeaders]] (their number) and [[ui:browse.table.colSize]] (the key and value size in bytes). The time is the message timestamp. Depending on the topic setting `message.timestamp.type`, it is set by the producer or by the broker.
+Die Tabellenspalten sind `P`, `Offset`, [[ui:browse.table.colTime]], [[ui:browse.table.colKey]], [[ui:browse.table.colValue]], [[ui:browse.table.colHeaders]] (ihre Anzahl) und [[ui:browse.table.colSize]] (Größe von Schlüssel und Wert in Bytes). Die Zeit ist der Zeitstempel der Nachricht. Je nach Topic-Einstellung `message.timestamp.type` setzt ihn der Producer oder der Broker.
 
-## Copy messages {#export-messages}
+## Nachrichten kopieren {#export-messages}
 
-Glafira does not save browsed messages to a file. To take a message out of the app, copy it:
+Glafira speichert durchsuchte Nachrichten nicht in einer Datei. Um eine Nachricht aus der App zu übernehmen, kopieren Sie sie:
 
-- [[ui:browse.details.copyJson]] copies the whole message as JSON: topic, partition, offset, timestamp, key, value, headers and size. Key and value are included as decoded, with their format.
-- [[ui:browse.details.copy]] next to [[ui:browse.details.value]] or [[ui:browse.details.key]] copies only that text.
+- [[ui:browse.details.copyJson]] kopiert die ganze Nachricht als JSON: Topic, Partition, Offset, Zeitstempel, Schlüssel, Wert, Header und Größe. Schlüssel und Wert werden dekodiert und mit ihrem Format übernommen.
+- [[ui:browse.details.copy]] neben [[ui:browse.details.value]] oder [[ui:browse.details.key]] kopiert nur diesen Text.
 
-The copied text uses the format chosen for reading. To copy binary data exactly, read it as `hex` or `base64`. Very large keys and values are copied only partly, as shown, even in `hex` and `base64`. See [Formats](browse.md#formats).
+Der kopierte Text verwendet das zum Lesen gewählte Format. Um Binärdaten exakt zu kopieren, lesen Sie sie als `hex` oder `base64`. Sehr große Schlüssel und Werte werden wie angezeigt nur teilweise kopiert, auch in `hex` und `base64`. Siehe [Formate](browse.md#formats).
 
-## Open in Producer {#open-in-producer}
+## Im Producer öffnen {#open-in-producer}
 
-[[ui:browse.details.resend]] opens the message in the [[ui:sidebar.producer]] of the same connection. The form gets the topic, key, value, headers and formats of the message. The partition is left to Kafka. Placeholders in the message text are not replaced: the copy is sent as it was read.
+[[ui:browse.details.resend]] öffnet die Nachricht im [[ui:sidebar.producer]] derselben Verbindung. Das Formular übernimmt Topic, Schlüssel, Wert, Header und Formate der Nachricht. Die Partition wählt Kafka. Platzhalter im Nachrichtentext werden nicht ersetzt: Die Kopie wird so gesendet, wie sie gelesen wurde.
 
-Nothing is sent right away. Check the form, change it if needed, and send it from the Producer. See [Producer](producer.md).
+Es wird nicht sofort gesendet. Prüfen Sie das Formular, ändern Sie es bei Bedarf und senden Sie es aus dem Producer. Siehe [Producer](producer.md).
 
-The button is disabled in two cases, and the reason is shown:
+Die Schaltfläche ist in zwei Fällen deaktiviert, der Grund wird angezeigt:
 
-- the key or value was shown only partly because it is too large;
-- the text was decoded with losses because it is not valid UTF-8. Read it as `hex` or `base64` to send an exact copy.
+- der Schlüssel oder Wert wurde nur teilweise angezeigt, weil er zu groß ist;
+- der Text wurde verlustbehaftet dekodiert, weil er kein gültiges UTF-8 ist. Lesen Sie ihn als `hex` oder `base64`, um eine exakte Kopie zu senden.
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+Bei Verbindungen mit [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.
 
-## Reset a group to a message {#reset-group-here}
+## Gruppe auf eine Nachricht zurücksetzen {#reset-group-here}
 
-[[ui:browse.details.resetHere]] prepares an offset reset so that a consumer group starts reading from this message.
+[[ui:browse.details.resetHere]] bereitet ein Zurücksetzen der Offsets vor, sodass eine Consumer Group ab dieser Nachricht liest.
 
-1. In the message details, click [[ui:browse.details.resetHere]].
-2. Choose a group in the list. Only existing groups are listed.
-3. Click [[ui:browse.details.goToReset]].
+1. Klicken Sie in den Nachrichtendetails auf [[ui:browse.details.resetHere]].
+2. Wählen Sie eine Gruppe aus der Liste. Es werden nur vorhandene Gruppen aufgeführt.
+3. Klicken Sie auf [[ui:browse.details.goToReset]].
 
-The group tab opens with the reset form filled in. [[ui:groups.reset.strategy]] is [[ui:groups.reset.strategyOffset]] with the offset of the message. [[ui:groups.reset.scope]] is [[ui:groups.reset.scopePartitions]] with the topic and partition of the message. Nothing changes yet: click [[ui:groups.reset.preview]] to see the new offsets, then apply the reset there. The group must have no active members. See [Consumer groups](groups.md).
+Der Tab der Gruppe öffnet sich mit ausgefülltem Formular zum Zurücksetzen. Als [[ui:groups.reset.strategy]] ist [[ui:groups.reset.strategyOffset]] mit dem Offset der Nachricht gesetzt, als [[ui:groups.reset.scope]] [[ui:groups.reset.scopePartitions]] mit Topic und Partition der Nachricht. Noch ändert sich nichts: Klicken Sie auf [[ui:groups.reset.preview]], um die neuen Offsets zu sehen, und wenden Sie das Zurücksetzen dort an. Die Gruppe darf keine aktiven Mitglieder haben. Siehe [Consumer Groups](groups.md).
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+Bei Verbindungen mit [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.

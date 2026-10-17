@@ -1,120 +1,120 @@
-# Getting started
+# Erste Schritte
 
-Glafira for Apache Kafka is a desktop client for Kafka clusters. It lets you browse topics and consumer groups, read and send messages, and reset offsets. This chapter covers installation, the first launch, a local Kafka for practice, and the interface language.
+Glafira for Apache Kafka ist ein Desktop-Client für Kafka-Cluster. Damit können Sie Topics und Consumer Groups durchsuchen, Nachrichten lesen und senden sowie Offsets zurücksetzen. Dieses Kapitel behandelt die Installation, den ersten Start, ein lokales Kafka zum Üben und die Sprache der Oberfläche.
 
-## Install on macOS {#install-macos}
+## Installation unter macOS {#install-macos}
 
-Glafira runs on macOS 11 or later. Download the installer from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+Glafira läuft unter macOS 11 oder neuer. Das Installationsprogramm finden Sie auf der Release-Seite: https://github.com/vvnovg/glafira-kafka-releases/releases
 
-Pick the file for your Mac: `aarch64` for Apple silicon (M1 and later), `x64` for Intel.
+Wählen Sie die passende Datei für Ihren Mac: `aarch64` für Apple Silicon (M1 und neuer), `x64` für Intel.
 
-1. Open the `.dmg` file.
-2. Drag Glafira for Apache Kafka to the Applications folder.
-3. Start the app from Applications or Launchpad.
+1. Öffnen Sie die `.dmg`-Datei.
+2. Ziehen Sie Glafira for Apache Kafka in den Ordner „Programme“.
+3. Starten Sie die App aus „Programme“ oder dem Launchpad.
 
-You can also use the `.pkg` installer. It puts the app in `/Applications` for all users.
+Alternativ können Sie das `.pkg`-Installationsprogramm verwenden. Es installiert die App für alle Benutzer in `/Applications`.
 
-Beta builds are not signed by Apple yet, so macOS blocks the first launch. To allow it:
+Beta-Builds sind noch nicht von Apple signiert, daher blockiert macOS den ersten Start. So erlauben Sie ihn:
 
-1. Try to open the app once and close the warning.
-2. Open System Settings → Privacy & Security.
-3. Scroll down to the message about Glafira for Apache Kafka and click "Open Anyway". Confirm with your password if asked.
+1. Versuchen Sie einmal, die App zu öffnen, und schließen Sie die Warnung.
+2. Öffnen Sie „Systemeinstellungen“ → „Datenschutz & Sicherheit“.
+3. Scrollen Sie nach unten zur Meldung über Glafira for Apache Kafka und klicken Sie auf „Dennoch öffnen“. Bestätigen Sie bei Bedarf mit Ihrem Passwort.
 
-On macOS 14 and earlier you can instead right-click the app, choose "Open", then "Open" again.
+Unter macOS 14 und älter können Sie stattdessen mit der rechten Maustaste auf die App klicken, „Öffnen“ wählen und danach erneut „Öffnen“.
 
-If this does not help, remove the quarantine flag once in Terminal:
+Hilft das nicht, entfernen Sie einmalig das Quarantäne-Attribut im Terminal:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Glafira for Apache Kafka.app"
 ```
 
-If the downloaded `.dmg` itself does not open, remove the flag from it first:
+Lässt sich schon die heruntergeladene `.dmg` nicht öffnen, entfernen Sie das Attribut zuerst dort:
 
 ```bash
 xattr -d com.apple.quarantine ~/Downloads/Glafira_for_Apache_Kafka_*.dmg
 ```
 
-Updates installed from inside the app do not need these steps.
+Für Updates, die aus der App heraus installiert werden, sind diese Schritte nicht nötig.
 
-## Install on Windows {#install-windows}
+## Installation unter Windows {#install-windows}
 
-Download the `.msi` installer (`x64`) from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+Laden Sie das `.msi`-Installationsprogramm (`x64`) von der Release-Seite herunter: https://github.com/vvnovg/glafira-kafka-releases/releases
 
-1. Run the `.msi` file.
-2. Confirm the installation in the Windows prompt. The app is installed for all users of the computer, so administrator rights are needed.
-3. Start Glafira for Apache Kafka from the Start menu.
+1. Führen Sie die `.msi`-Datei aus.
+2. Bestätigen Sie die Installation in der Windows-Abfrage. Die App wird für alle Benutzer des Computers installiert, daher sind Administratorrechte erforderlich.
+3. Starten Sie Glafira for Apache Kafka über das Startmenü.
 
-Beta builds are not signed yet. If SmartScreen blocks the installer, click "More info", then "Run anyway". You can also unblock the file in PowerShell before running it:
+Beta-Builds sind noch nicht signiert. Blockiert SmartScreen das Installationsprogramm, klicken Sie auf „Weitere Informationen“ und dann auf „Trotzdem ausführen“. Sie können die Datei auch vorab in PowerShell entsperren:
 
 ```powershell
 Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en-US.msi"
 ```
 
-## Install on Linux {#install-linux}
+## Installation unter Linux {#install-linux}
 
-Builds are available for `x86_64` in three formats. Download the one that suits your distribution from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+Builds für `x86_64` gibt es in drei Formaten. Laden Sie das für Ihre Distribution passende von der Release-Seite herunter: https://github.com/vvnovg/glafira-kafka-releases/releases
 
-- Debian, Ubuntu and derivatives: `sudo apt install ./<file>.deb`
-- Fedora, RHEL and derivatives: `sudo dnf install ./<file>.rpm`
-- Any distribution: make the AppImage executable with `chmod +x <file>.AppImage` and run it.
+- Debian, Ubuntu und Derivate: `sudo apt install ./<file>.deb`
+- Fedora, RHEL und Derivate: `sudo dnf install ./<file>.rpm`
+- Beliebige Distribution: Machen Sie das AppImage mit `chmod +x <file>.AppImage` ausführbar und starten Sie es.
 
-After installing a package, start the app from the applications menu or run `glafira-kafka` in a terminal.
+Starten Sie die App nach der Installation eines Pakets über das Anwendungsmenü oder mit `glafira-kafka` im Terminal.
 
-Glafira stores passwords in the Secret Service (for example, GNOME Keyring or KWallet). Make sure one of them runs in your session. Otherwise the app cannot save passwords for connections.
+Glafira speichert Passwörter im Secret Service (zum Beispiel GNOME Keyring oder KWallet). Stellen Sie sicher, dass einer davon in Ihrer Sitzung läuft. Andernfalls kann die App keine Passwörter für Verbindungen speichern.
 
-## First run {#first-run}
+## Erster Start {#first-run}
 
-The window has two parts. On the left is the [[ui:sidebar.connections]] panel. On the right are tabs: each screen you open, such as a topic list or the Producer, gets its own tab.
+Das Fenster besteht aus zwei Bereichen. Links befindet sich der Bereich [[ui:sidebar.connections]]. Rechts liegen Tabs: Jeder geöffnete Bildschirm, etwa eine Topic-Liste oder der Producer, erhält einen eigenen Tab.
 
-When there are no connections yet, the panel shows a short hint, and the tab area suggests adding a connection. To start:
+Solange es keine Verbindungen gibt, zeigt der Bereich einen kurzen Hinweis, und der Tab-Bereich schlägt vor, eine Verbindung hinzuzufügen. So beginnen Sie:
 
-1. Click `+` ( [[ui:sidebar.newConnection]] ) in the header of the [[ui:sidebar.connections]] panel.
-2. Fill in [[ui:connections.form.name]] and [[ui:connections.form.bootstrap]], for example `localhost:9092`.
-3. Click [[ui:connections.form.test]] to check the settings, then [[ui:common.save]].
+1. Klicken Sie im Kopf des Bereichs [[ui:sidebar.connections]] auf `+` ( [[ui:sidebar.newConnection]] ).
+2. Füllen Sie [[ui:connections.form.name]] und [[ui:connections.form.bootstrap]] aus, zum Beispiel `localhost:9092`.
+3. Klicken Sie auf [[ui:connections.form.test]], um die Einstellungen zu prüfen, und dann auf [[ui:common.save]].
 
-After saving, the cluster overview opens. Under each connection in the panel there are links to [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] and [[ui:sidebar.consumer]]. Details on all connection settings are in [Connections](connections.md#create).
+Nach dem Speichern öffnet sich die Cluster-Übersicht. Unter jeder Verbindung im Bereich gibt es Links zu [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] und [[ui:sidebar.consumer]]. Alle Verbindungseinstellungen sind unter [Verbindungen](connections.md#create) beschrieben.
 
-At the bottom of the panel there are links to [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] and [[ui:sidebar.about]]. The `?` sign next to a field shows a short hint about it. Press `F1` anywhere in the window to open the guide chapter for the current screen. On macOS the guide is also in the Help menu.
+Unten im Bereich befinden sich Links zu [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] und [[ui:sidebar.about]]. Das Zeichen `?` neben einem Feld zeigt einen kurzen Hinweis dazu. Mit `F1` öffnen Sie an jeder Stelle des Fensters das Kapitel der Anleitung zum aktuellen Bildschirm. Unter macOS ist die Anleitung auch im Menü „Hilfe“ zu finden.
 
-If you used Kafka Explorer (the earlier name of the app), Glafira copies its connections, templates, send history and license on the first launch. Passwords are copied from the system secret store too. Nothing that already exists is overwritten, and the old data is not deleted. macOS may ask once for access to the old Keychain items.
+Wenn Sie Kafka Explorer (den früheren Namen der App) verwendet haben, übernimmt Glafira beim ersten Start dessen Verbindungen, Vorlagen, Sendeverlauf und Lizenz. Auch die Passwörter werden aus dem Schlüsselbund des Systems kopiert. Bereits Vorhandenes wird nicht überschrieben, und die alten Daten werden nicht gelöscht. macOS fragt möglicherweise einmal nach Zugriff auf die alten Schlüsselbundeinträge.
 
-## Local Kafka for practice {#local-cluster}
+## Lokales Kafka zum Üben {#local-cluster}
 
-To try the app without a shared cluster, start Kafka on your computer in Docker. One broker is enough:
+Um die App ohne gemeinsamen Cluster auszuprobieren, starten Sie Kafka in Docker auf Ihrem Computer. Ein Broker genügt:
 
 ```bash
 docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
 ```
 
-Then create a connection with bootstrap server `localhost:9092`, protocol `PLAINTEXT` and environment `local`. When you no longer need the broker, remove it with `docker rm -f kafka`.
+Legen Sie dann eine Verbindung mit dem Bootstrap-Server `localhost:9092`, dem Protokoll `PLAINTEXT` und der Umgebung `local` an. Wenn Sie den Broker nicht mehr brauchen, entfernen Sie ihn mit `docker rm -f kafka`.
 
-The hint in the empty [[ui:sidebar.connections]] panel mentions `docker compose -f dev/docker-compose.yml up -d`. This file is part of the Glafira source code. If you have the source code, this command starts a broker with three listeners:
+Der Hinweis im leeren Bereich [[ui:sidebar.connections]] erwähnt `docker compose -f dev/docker-compose.yml up -d`. Diese Datei gehört zum Quellcode von Glafira. Wenn Sie den Quellcode haben, startet dieser Befehl einen Broker mit drei Listenern:
 
 - `localhost:9092` — `PLAINTEXT`.
-- `localhost:9094` — `SASL_PLAINTEXT` with `PLAIN` (users `tester` / `tester-secret` and `admin` / `admin-secret`) and SCRAM (`scram-user` / `scram-secret` for `SCRAM-SHA-256` and `SCRAM-SHA-512`).
-- `localhost:9095` — `SSL` with client certificates (mTLS). The test certificates are in `dev/certs/out`.
+- `localhost:9094` — `SASL_PLAINTEXT` mit `PLAIN` (Benutzer `tester` / `tester-secret` und `admin` / `admin-secret`) und SCRAM (`scram-user` / `scram-secret` für `SCRAM-SHA-256` und `SCRAM-SHA-512`).
+- `localhost:9095` — `SSL` mit Client-Zertifikaten (mTLS). Die Testzertifikate liegen in `dev/certs/out`.
 
-These users and certificates are for local tests only.
+Diese Benutzer und Zertifikate sind nur für lokale Tests gedacht.
 
-## Interface language {#language}
+## Sprache der Oberfläche {#language}
 
-The interface is available in English, Russian, German, French, Spanish, Italian, Polish and Portuguese (Brazil). English and Russian are free. The other languages need Pro.
+Die Oberfläche ist auf Englisch, Russisch, Deutsch, Französisch, Spanisch, Italienisch, Polnisch und Portugiesisch (Brasilien) verfügbar. Englisch und Russisch sind kostenlos, die übrigen Sprachen erfordern Pro.
 
-To change the language:
+So ändern Sie die Sprache:
 
-1. Click [[ui:sidebar.settings]] at the bottom of the left panel.
-2. Choose a language in [[ui:settings.language.label]].
+1. Klicken Sie unten im linken Bereich auf [[ui:sidebar.settings]].
+2. Wählen Sie unter [[ui:settings.language.label]] eine Sprache.
 
-The change applies at once, including this guide and the macOS menu. [[ui:settings.language.systemUnknown]] (the default) follows the language of your operating system. If that language is not in the list, or it needs Pro and Pro is not active, the interface is in English.
+Die Änderung gilt sofort, auch für diese Anleitung und das macOS-Menü. [[ui:settings.language.systemUnknown]] (die Standardeinstellung) folgt der Sprache Ihres Betriebssystems. Ist diese Sprache nicht in der Liste oder erfordert sie Pro, ohne dass Pro aktiv ist, erscheint die Oberfläche auf Englisch.
 
-Without Pro, the Pro languages are shown in the list but cannot be selected. If you chose a Pro language and the license later expires, the interface switches to English. Your choice is kept and comes back when Pro is active again.
+Ohne Pro werden die Pro-Sprachen in der Liste angezeigt, lassen sich aber nicht auswählen. Haben Sie eine Pro-Sprache gewählt und läuft die Lizenz später ab, wechselt die Oberfläche auf Englisch. Ihre Auswahl bleibt erhalten und gilt wieder, sobald Pro erneut aktiv ist.
 
-## Settings set by your organization {#managed-settings}
+## Von Ihrer Organisation festgelegte Einstellungen {#managed-settings}
 
-In a company, administrators can set some options for all users through a policy. You cannot change these options in the app. A policy can:
+In Unternehmen können Administratoren einige Optionen per Richtlinie für alle Benutzer festlegen. Diese Optionen lassen sich in der App nicht ändern. Eine Richtlinie kann:
 
-- set the interface language — the language list in [[ui:sidebar.settings]] is then unavailable, with a note that the language is set by your organization;
-- activate Pro with an organization license key — the [[ui:tabs.license]] screen then says that the license is managed by your organization;
-- turn off update checks, or point them to an internal mirror.
+- die Sprache der Oberfläche festlegen — die Sprachliste unter [[ui:sidebar.settings]] ist dann nicht verfügbar, mit dem Vermerk, dass die Sprache von Ihrer Organisation festgelegt ist;
+- Pro mit einem Organisations-Lizenzschlüssel aktivieren — der Bildschirm [[ui:tabs.license]] zeigt dann an, dass die Lizenz von Ihrer Organisation verwaltet wird;
+- die Suche nach Updates abschalten oder auf einen internen Mirror umleiten.
 
-To see whether a policy applies, open [[ui:sidebar.about]] and look at [[ui:about.policy]]. If the policy has an error, it is shown there and on the [[ui:tabs.license]] screen. For questions about the policy, contact your administrators. Licenses and updates are described in [License and updates](license-updates.md).
+Ob eine Richtlinie gilt, sehen Sie unter [[ui:sidebar.about]] in der Zeile [[ui:about.policy]]. Enthält die Richtlinie einen Fehler, wird er dort und auf dem Bildschirm [[ui:tabs.license]] angezeigt. Bei Fragen zur Richtlinie wenden Sie sich an Ihre Administratoren. Lizenzen und Updates sind unter [Lizenz und Updates](license-updates.md) beschrieben.

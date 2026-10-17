@@ -100,3 +100,11 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | Copy | Kopieren | Copier | Copiar | Copia | Kopiuj | Copiar |
 | Export | Exportieren | Exporter | Exportar | Esporta | Eksportuj | Exportar |
 | Import | Importieren | Importer | Importar | Importa | Importuj | Importar |
+
+## Слова руководства (de)
+
+Термины, которые часто встречаются в `docs/guide/de` и отсутствуют в словаре интерфейса:
+tab — Tab (der, Pl. Tabs); screen — Bildschirm; panel (левая панель) — Bereich; button — Schaltfläche;
+checkbox — Kontrollkästchen; logs — Protokolle (Protokolldateien); batch send — Stapelversand, Stapel;
+release page — Release-Seite; installer — Installationsprogramm; support request — Supportanfrage;
+macOS menu Help — Menü „Hilfe“.

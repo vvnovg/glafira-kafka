@@ -1,105 +1,105 @@
-# License and updates
+# Lizenz und Updates
 
-This chapter covers what Pro adds, how to activate a license key, what happens when the license expires, how to update the app, the [[ui:sidebar.about]] screen and the diagnostics archive.
+Dieses Kapitel beschreibt, was Pro bietet, wie Sie einen Lizenzschlüssel aktivieren, was beim Ablauf der Lizenz geschieht, wie Sie die App aktualisieren, den Bildschirm [[ui:sidebar.about]] und das Diagnosearchiv.
 
-## Free and Pro {#free-and-pro}
+## Free und Pro {#free-and-pro}
 
-Free covers everyday work with Kafka: all security protocols including mTLS, the cluster overview and topics, browsing messages, the Producer with batch sending, consumer groups and offset reset. The interface is available in English and Russian.
+Free deckt die tägliche Arbeit mit Kafka ab: alle Sicherheitsprotokolle einschließlich mTLS, Cluster-Übersicht und Topics, Durchsuchen von Nachrichten, den Producer mit Stapelversand, Consumer Groups und das Zurücksetzen von Offsets. Die Oberfläche ist auf Englisch und Russisch verfügbar.
 
-Pro adds:
+Pro bietet zusätzlich:
 
-- consumer sessions: reading as a group member, committing offsets, pausing partitions. See [Consumer sessions](consumer-sessions.md#what-is);
-- prod mode: creating prod connections, switching connections to prod and clearing [[ui:common.readOnly]] on a prod connection. See [Environments and prod](connections.md#environments);
-- six more interface languages: German, French, Spanish, Italian, Polish and Portuguese (Brazil). See [Interface language](getting-started.md#language).
+- Consumer-Sessions: Lesen als Gruppenmitglied, Committen von Offsets, Pausieren von Partitionen. Siehe [Consumer-Sessions](consumer-sessions.md#what-is);
+- den Prod-Modus: Prod-Verbindungen anlegen, Verbindungen auf Prod umstellen und [[ui:common.readOnly]] bei einer Prod-Verbindung aufheben. Siehe [Umgebungen und Prod](connections.md#environments);
+- sechs weitere Sprachen der Oberfläche: Deutsch, Französisch, Spanisch, Italienisch, Polnisch und Portugiesisch (Brasilien). Siehe [Sprache der Oberfläche](getting-started.md#language).
 
-In Free, these features are visible but unavailable. The consumer session commands are disabled and marked with a lock and `Pro`. The prod option is shown as [[ui:connections.form.prodPro]]. Pro languages are marked `Pro` in the language list. If an action needs Pro, the error says [[ui:errors.license.proRequired]] and offers the [[ui:common.openLicense]] button.
+In Free sind diese Funktionen sichtbar, aber nicht verfügbar. Die Befehle für Consumer-Sessions sind deaktiviert und mit einem Schloss und `Pro` gekennzeichnet. Die Prod-Option wird als [[ui:connections.form.prodPro]] angezeigt. Pro-Sprachen sind in der Sprachliste mit `Pro` gekennzeichnet. Erfordert eine Aktion Pro, lautet der Fehler [[ui:errors.license.proRequired]], und die Schaltfläche [[ui:common.openLicense]] wird angeboten.
 
-The [[ui:tabs.license]] screen lists consumer sessions and prod mode under [[ui:license.whatProGives]]. The extra languages are not in that list.
+Der Bildschirm [[ui:tabs.license]] führt Consumer-Sessions und den Prod-Modus unter [[ui:license.whatProGives]] auf. Die zusätzlichen Sprachen stehen nicht in dieser Liste.
 
-## Activate a key {#activate}
+## Schlüssel aktivieren {#activate}
 
-A license key is a line of text issued to a person or to an organization. The app checks the key on your computer and does not contact any server.
+Ein Lizenzschlüssel ist eine Textzeile, die für eine Person oder eine Organisation ausgestellt wird. Die App prüft den Schlüssel auf Ihrem Computer und kontaktiert keinen Server.
 
-1. Click [[ui:tabs.license]] at the bottom of the left panel.
-2. Paste the whole key into [[ui:license.keyLabel]].
-3. Click [[ui:license.activate]].
+1. Klicken Sie unten im linken Bereich auf [[ui:tabs.license]].
+2. Fügen Sie den vollständigen Schlüssel unter [[ui:license.keyLabel]] ein.
+3. Klicken Sie auf [[ui:license.activate]].
 
-Pro features become available at once. The screen shows [[ui:license.tier]] (Pro), [[ui:license.licensee]], [[ui:license.kind]] ( [[ui:license.kindPersonal]] or [[ui:license.kindOrganization]] ) and [[ui:license.expires]]: a date, or [[ui:license.perpetual]]. The key is saved in the app data folder, so it stays after a restart or an update. A new key replaces the previous one.
+Die Pro-Funktionen sind sofort verfügbar. Der Bildschirm zeigt [[ui:license.tier]] (Pro), [[ui:license.licensee]], [[ui:license.kind]] ( [[ui:license.kindPersonal]] oder [[ui:license.kindOrganization]] ) und [[ui:license.expires]]: ein Datum oder [[ui:license.perpetual]]. Der Schlüssel wird im Datenordner der App gespeichert und bleibt daher nach einem Neustart oder Update erhalten. Ein neuer Schlüssel ersetzt den vorherigen.
 
-If the key is not accepted, the reason is shown under the field:
+Wird der Schlüssel nicht akzeptiert, steht der Grund unter dem Feld:
 
-- [[ui:errors.license.malformed]] — part of the key is missing or changed. Copy the key again as one line, without extra characters.
-- [[ui:errors.license.badSignature]] — the key was not issued for Glafira, or it was edited.
-- The key has expired — the message gives its end date. Ask for a new key.
-- The key needs a newer version of the app — the message gives the key version. Update the app first, see [Updates](license-updates.md#updates).
+- [[ui:errors.license.malformed]] — ein Teil des Schlüssels fehlt oder wurde verändert. Kopieren Sie den Schlüssel erneut als eine Zeile, ohne zusätzliche Zeichen.
+- [[ui:errors.license.badSignature]] — der Schlüssel wurde nicht für Glafira ausgestellt oder wurde bearbeitet.
+- Der Schlüssel ist abgelaufen — die Meldung nennt sein Enddatum. Fordern Sie einen neuen Schlüssel an.
+- Der Schlüssel erfordert eine neuere Version der App — die Meldung nennt die Schlüsselversion. Aktualisieren Sie zuerst die App, siehe [Updates](license-updates.md#updates).
 
-To remove the key, click [[ui:license.removeKey]]. The app asks [[ui:license.removeQuestion]] Click [[ui:license.removeYes]] to confirm. Your data stays.
+Um den Schlüssel zu entfernen, klicken Sie auf [[ui:license.removeKey]]. Die App fragt: [[ui:license.removeQuestion]] Klicken Sie zur Bestätigung auf [[ui:license.removeYes]]. Ihre Daten bleiben erhalten.
 
-An organization can activate Pro for all users through a policy. The key field and buttons are then hidden, and the screen says [[ui:license.managed]] A key that you entered yourself is not used while the policy key is set. The [[ui:license.policyTitle]] section shows where the policy comes from and lists its errors. If the organization key is invalid, the reason is shown on the [[ui:tabs.license]] screen. Contact your administrators in this case. Administrators find the policy settings in `docs/admin.md` in the Glafira source code.
+Eine Organisation kann Pro per Richtlinie für alle Benutzer aktivieren. Das Schlüsselfeld und die Schaltflächen sind dann ausgeblendet, und der Bildschirm zeigt: [[ui:license.managed]] Ein selbst eingegebener Schlüssel wird nicht verwendet, solange der Richtlinienschlüssel gesetzt ist. Der Abschnitt [[ui:license.policyTitle]] zeigt, woher die Richtlinie stammt, und listet ihre Fehler auf. Ist der Organisationsschlüssel ungültig, wird der Grund auf dem Bildschirm [[ui:tabs.license]] angezeigt. Wenden Sie sich in diesem Fall an Ihre Administratoren. Administratoren finden die Richtlinieneinstellungen in `docs/admin.md` im Quellcode von Glafira.
 
-## Expiry {#expiry}
+## Ablauf {#expiry}
 
-A key can have an end date, shown in [[ui:license.expires]]. The license is valid until the end of that day.
+Ein Schlüssel kann ein Enddatum haben, das unter [[ui:license.expires]] angezeigt wird. Die Lizenz gilt bis zum Ende dieses Tages.
 
-When fewer than 14 days are left, a notice above the tabs says how many days remain, and the [[ui:tabs.license]] screen shows the end date. [[ui:license.notice.more]] in the notice opens the [[ui:tabs.license]] screen. The `×` button hides the notice until the app restarts.
+Sind es weniger als 14 Tage, zeigt ein Hinweis über den Tabs, wie viele Tage verbleiben, und der Bildschirm [[ui:tabs.license]] zeigt das Enddatum. [[ui:license.notice.more]] im Hinweis öffnet den Bildschirm [[ui:tabs.license]]. Die Schaltfläche `×` blendet den Hinweis bis zum nächsten Start der App aus.
 
-After the end date, the plan switches to Free. The notice and the [[ui:tabs.license]] screen say that the license has expired and that Pro features are disabled. What changes:
+Nach dem Enddatum wechselt der Tarif zu Free. Der Hinweis und der Bildschirm [[ui:tabs.license]] melden, dass die Lizenz abgelaufen ist und die Pro-Funktionen deaktiviert sind. Was sich ändert:
 
-- New consumer sessions cannot be started. In a session that is already running, commits and pausing partitions are refused with an error that gives the end date.
-- Prod connections keep working with the same confirmations. New prod connections cannot be created, and [[ui:common.readOnly]] cannot be cleared on a prod connection.
-- If a Pro language was selected, the interface switches to English. Your choice is kept.
+- Neue Consumer-Sessions lassen sich nicht starten. In einer bereits laufenden Session werden Commits und das Pausieren von Partitionen mit einem Fehler abgelehnt, der das Enddatum nennt.
+- Prod-Verbindungen funktionieren mit denselben Bestätigungen weiter. Neue Prod-Verbindungen lassen sich nicht anlegen, und [[ui:common.readOnly]] lässt sich bei einer Prod-Verbindung nicht aufheben.
+- War eine Pro-Sprache ausgewählt, wechselt die Oberfläche auf Englisch. Ihre Auswahl bleibt erhalten.
 
-Connections, passwords, templates and send history are kept. To continue with Pro, activate a new key as described in [Activate a key](license-updates.md#activate).
+Verbindungen, Passwörter, Vorlagen und Sendeverlauf bleiben erhalten. Um mit Pro weiterzuarbeiten, aktivieren Sie einen neuen Schlüssel wie unter [Schlüssel aktivieren](license-updates.md#activate) beschrieben.
 
 ## Updates {#updates}
 
-When it starts, the app checks once whether a new version is available. If there is one, a notice above the tabs gives its version. [[ui:license.notice.more]] opens the [[ui:sidebar.about]] screen. If the check fails, for example without internet access, no message is shown.
+Beim Start prüft die App einmal, ob eine neue Version verfügbar ist. Gibt es eine, nennt ein Hinweis über den Tabs ihre Version. [[ui:license.notice.more]] öffnet den Bildschirm [[ui:sidebar.about]]. Schlägt die Prüfung fehl, etwa ohne Internetzugang, erscheint keine Meldung.
 
-To check manually:
+So suchen Sie manuell:
 
-1. Open [[ui:sidebar.about]] at the bottom of the left panel.
-2. In [[ui:about.updates.title]], click [[ui:about.updates.check]].
-3. If a new version is available, the screen shows its number and release notes. Click [[ui:about.updates.install]].
+1. Öffnen Sie unten im linken Bereich [[ui:sidebar.about]].
+2. Klicken Sie unter [[ui:about.updates.title]] auf [[ui:about.updates.check]].
+3. Ist eine neue Version verfügbar, zeigt der Bildschirm ihre Nummer und die Versionshinweise. Klicken Sie auf [[ui:about.updates.install]].
 
-The app downloads the update, checks its signature, installs it and restarts. A download interrupted by a network problem is retried automatically, up to three attempts in total. If all three attempts fail, the app reports [[ui:errors.updates.downloadInterrupted]]. If the signature check fails, the app reports [[ui:errors.updates.badSignature]].
+Die App lädt das Update herunter, prüft seine Signatur, installiert es und startet neu. Ein durch ein Netzwerkproblem unterbrochener Download wird automatisch wiederholt, insgesamt bis zu drei Versuche. Schlagen alle drei Versuche fehl, meldet die App [[ui:errors.updates.downloadInterrupted]]. Schlägt die Signaturprüfung fehl, meldet die App [[ui:errors.updates.badSignature]].
 
-Installing may ask for an administrator password, because the app is installed for all users of the computer: by the `.pkg` installer on macOS, the `.msi` installer on Windows, or a `.deb` or `.rpm` package on Linux. Users without administrator rights cannot update such an installation.
+Die Installation kann ein Administratorpasswort verlangen, weil die App für alle Benutzer des Computers installiert ist: über das `.pkg`-Installationsprogramm unter macOS, das `.msi`-Installationsprogramm unter Windows oder ein `.deb`- bzw. `.rpm`-Paket unter Linux. Benutzer ohne Administratorrechte können eine solche Installation nicht aktualisieren.
 
-If messages are being read, a consumer session is running or a batch is being sent, the app asks first and says how many sessions are active. Click [[ui:about.updates.stopAndUpdate]] to stop them and continue, or [[ui:common.cancel]]. Connections, settings, the license key and other data are kept after an update.
+Werden gerade Nachrichten gelesen, läuft eine Consumer-Session oder wird ein Stapel gesendet, fragt die App zuerst nach und nennt die Anzahl der aktiven Sessions. Klicken Sie auf [[ui:about.updates.stopAndUpdate]], um sie zu beenden und fortzufahren, oder auf [[ui:common.cancel]]. Verbindungen, Einstellungen, Lizenzschlüssel und andere Daten bleiben nach einem Update erhalten.
 
-Updates are downloaded from the releases page on GitHub. If the check fails with [[ui:errors.updates.checkFailed]], check your network or proxy. [[ui:errors.updates.notConfigured]] means that this build was made without the updater key, for example a development or test build. In that case, download new versions from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+Updates werden von der Release-Seite auf GitHub heruntergeladen. Schlägt die Prüfung mit [[ui:errors.updates.checkFailed]] fehl, prüfen Sie Ihr Netzwerk oder Ihren Proxy. [[ui:errors.updates.notConfigured]] bedeutet, dass dieser Build ohne den Updater-Schlüssel erstellt wurde, etwa ein Entwicklungs- oder Test-Build. Laden Sie neue Versionen in diesem Fall von der Release-Seite herunter: https://github.com/vvnovg/glafira-kafka-releases/releases
 
-An organization can turn off update checks through a policy, or point them to an internal mirror. When checks are turned off, the [[ui:about.updates.title]] section says [[ui:errors.updates.managed]] after you click [[ui:about.updates.check]]. Like [[ui:errors.updates.notConfigured]], this message appears only after the click; the check at startup shows nothing in these cases.
+Eine Organisation kann die Suche nach Updates per Richtlinie abschalten oder auf einen internen Mirror umleiten. Ist die Suche abgeschaltet, zeigt der Abschnitt [[ui:about.updates.title]] nach einem Klick auf [[ui:about.updates.check]] die Meldung [[ui:errors.updates.managed]]. Wie [[ui:errors.updates.notConfigured]] erscheint diese Meldung erst nach dem Klick; die Prüfung beim Start zeigt in diesen Fällen nichts an.
 
-## About {#about}
+## Über Glafira {#about}
 
-Open [[ui:sidebar.about]] at the bottom of the left panel. On macOS, it is also in the Help menu as [[ui:menu.about]].
+Öffnen Sie unten im linken Bereich [[ui:sidebar.about]]. Unter macOS finden Sie den Bildschirm auch im Menü „Hilfe“ als [[ui:menu.about]].
 
-The screen shows a short description of the app and:
+Der Bildschirm zeigt eine kurze Beschreibung der App sowie:
 
-- [[ui:about.version]] — the version number, and [[ui:about.build]] — the identifier of the source code it was built from. Include both in a support request.
-- [[ui:about.system]] — the operating system and processor architecture.
-- [[ui:about.tier]] — Free or Pro.
-- [[ui:about.policy]] — [[ui:about.policySet]] or [[ui:about.policyNone]]. Errors in the policy are listed below.
-- [[ui:about.dataDir]] — the folder with connection profiles, templates, history, settings and the license key.
-- [[ui:about.logDir]] — the folder with log files. See [Logs](troubleshooting.md#logs).
+- [[ui:about.version]] — die Versionsnummer, und [[ui:about.build]] — die Kennung des Quellcodes, aus dem die App gebaut wurde. Geben Sie beides in einer Supportanfrage an.
+- [[ui:about.system]] — Betriebssystem und Prozessorarchitektur.
+- [[ui:about.tier]] — Free oder Pro.
+- [[ui:about.policy]] — [[ui:about.policySet]] oder [[ui:about.policyNone]]. Fehler in der Richtlinie werden darunter aufgeführt.
+- [[ui:about.dataDir]] — der Ordner mit Verbindungsprofilen, Vorlagen, Verlauf, Einstellungen und Lizenzschlüssel.
+- [[ui:about.logDir]] — der Ordner mit den Protokolldateien. Siehe [Protokolle](troubleshooting.md#logs).
 
-The [[ui:about.updates.title]] and [[ui:about.diagnostics.title]] sections are also on this screen.
+Auch die Abschnitte [[ui:about.updates.title]] und [[ui:about.diagnostics.title]] befinden sich auf diesem Bildschirm.
 
-## Diagnostics archive {#diagnostics}
+## Diagnosearchiv {#diagnostics}
 
-The diagnostics archive collects what support needs to understand a problem. To create it:
+Das Diagnosearchiv sammelt, was der Support braucht, um ein Problem zu verstehen. So erstellen Sie es:
 
-1. Open [[ui:sidebar.about]].
-2. In [[ui:about.diagnostics.title]], click [[ui:about.diagnostics.collect]]. On macOS, you can also choose [[ui:menu.diagnostics]] in the Help menu.
-3. Choose where to save the file. The suggested name is `diagnostics-<date>.zip`.
+1. Öffnen Sie [[ui:sidebar.about]].
+2. Klicken Sie unter [[ui:about.diagnostics.title]] auf [[ui:about.diagnostics.collect]]. Unter macOS können Sie auch im Menü „Hilfe“ [[ui:menu.diagnostics]] wählen.
+3. Wählen Sie den Speicherort. Vorgeschlagen wird `diagnostics-<date>.zip`.
 
-When the archive is saved, the screen shows its path. The ZIP file contains:
+Nach dem Speichern zeigt der Bildschirm den Pfad des Archivs. Die ZIP-Datei enthält:
 
-- `info.json` — the app version and build, the operating system, the data and log folder paths, the policy status and the license status (plan, licensee, type, end date);
-- `connections.json` — connection profiles: names, environments, bootstrap servers, protocols, SASL usernames, certificate file paths, extra properties and timeouts;
-- `logs/` — the app log files.
+- `info.json` — Version und Build der App, Betriebssystem, Pfade des Daten- und Protokollordners, Status der Richtlinie und der Lizenz (Tarif, Lizenznehmer, Typ, Enddatum);
+- `connections.json` — Verbindungsprofile: Namen, Umgebungen, Bootstrap-Server, Protokolle, SASL-Benutzernamen, Pfade der Zertifikatsdateien, zusätzliche Eigenschaften und Timeouts;
+- `logs/` — die Protokolldateien der App.
 
-The archive contains no passwords: they are kept in the system secret store, and extra properties with passwords and secrets are refused when a connection is saved. The license key and certificate files are not included either. Host names, usernames and file paths are stored as plain text, and the logs contain broker addresses from Kafka error messages. Look through the archive before you send it outside your company.
+Das Archiv enthält keine Passwörter: Sie liegen im Schlüsselbund des Systems, und zusätzliche Eigenschaften mit Passwörtern und Geheimnissen werden beim Speichern einer Verbindung abgelehnt. Auch Lizenzschlüssel und Zertifikatsdateien sind nicht enthalten. Hostnamen, Benutzernamen und Dateipfade stehen im Klartext darin, und die Protokolle enthalten Broker-Adressen aus Kafka-Fehlermeldungen. Sehen Sie das Archiv durch, bevor Sie es außerhalb Ihres Unternehmens versenden.
 
-The app sends nothing by itself. Attach the archive to your support request yourself, see [Contact support](troubleshooting.md#support).
+Die App sendet nichts von sich aus. Hängen Sie das Archiv selbst an Ihre Supportanfrage an, siehe [Support kontaktieren](troubleshooting.md#support).

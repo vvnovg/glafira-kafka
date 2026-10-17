@@ -1,163 +1,163 @@
-# Connections
+# Verbindungen
 
-A connection is a saved profile of one Kafka cluster: addresses, security settings and passwords. Connections are listed in the [[ui:sidebar.connections]] panel on the left. You can sort them into folders and move them to another computer with export and import.
+Eine Verbindung ist ein gespeichertes Profil eines Kafka-Clusters: Adressen, Sicherheitseinstellungen und Passwörter. Die Verbindungen stehen links im Bereich [[ui:sidebar.connections]]. Sie lassen sich in Ordner einsortieren und per Export und Import auf einen anderen Computer übertragen.
 
-## Create a connection {#create}
+## Verbindung anlegen {#create}
 
-1. Click `+` ( [[ui:sidebar.newConnection]] ) in the header of the [[ui:sidebar.connections]] panel. To create the connection right in a folder, open the folder menu and choose [[ui:sidebar.folder.newConnection]].
-2. Enter a [[ui:connections.form.name]]. It is shown in the panel and in tab titles.
-3. In [[ui:connections.form.bootstrap]], enter one or more addresses in `host:port` format, separated by commas, for example `kafka1:9092,kafka2:9092`. One reachable broker is enough: the client discovers the others by itself.
-4. Choose a [[ui:connections.form.protocol]] and fill in the fields it adds. See [Security protocols](connections.md#security).
-5. Optionally, choose a [[ui:connections.form.folder]], an [[ui:connections.form.environment]] and a [[ui:connections.form.color]] for the dot next to the name.
-6. Click [[ui:connections.form.test]], then [[ui:common.save]].
+1. Klicken Sie im Kopf des Bereichs [[ui:sidebar.connections]] auf `+` ( [[ui:sidebar.newConnection]] ). Um die Verbindung direkt in einem Ordner anzulegen, öffnen Sie das Ordnermenü und wählen [[ui:sidebar.folder.newConnection]].
+2. Geben Sie unter [[ui:connections.form.name]] einen Namen ein. Er erscheint im Bereich und in den Tab-Titeln.
+3. Geben Sie unter [[ui:connections.form.bootstrap]] eine oder mehrere Adressen im Format `host:port` ein, getrennt durch Kommas, zum Beispiel `kafka1:9092,kafka2:9092`. Ein erreichbarer Broker genügt: Die übrigen findet der Client selbst.
+4. Wählen Sie ein [[ui:connections.form.protocol]] und füllen Sie die zusätzlichen Felder aus. Siehe [Sicherheitsprotokolle](connections.md#security).
+5. Optional wählen Sie [[ui:connections.form.folder]], [[ui:connections.form.environment]] und [[ui:connections.form.color]] für den Punkt neben dem Namen.
+6. Klicken Sie auf [[ui:connections.form.test]] und dann auf [[ui:common.save]].
 
-After saving, the form closes and the cluster overview opens.
+Nach dem Speichern schließt sich das Formular, und die Cluster-Übersicht öffnet sich.
 
-Two more fields are for special cases. [[ui:connections.form.timeout]] is how long to wait for a broker response. The default is `30000` ms, the minimum is `1000`. Increase it for slow networks and VPNs. [[ui:connections.form.props]] takes any librdkafka setting as `key=value`, one per line. Lines that start with `#` are ignored. Passwords and keys are not allowed there: properties whose names contain `password` or `secret`, `sasl.jaas.config`, `ssl.key.pem` and `ssl.keystore.key` are rejected on save.
+Zwei weitere Felder sind für Sonderfälle gedacht. [[ui:connections.form.timeout]] legt fest, wie lange auf eine Antwort des Brokers gewartet wird. Standard ist `30000` ms, Minimum `1000`. Erhöhen Sie den Wert bei langsamen Netzen und VPNs. [[ui:connections.form.props]] nimmt beliebige librdkafka-Einstellungen als `key=value` auf, eine pro Zeile. Zeilen, die mit `#` beginnen, werden ignoriert. Passwörter und Schlüssel sind dort nicht erlaubt: Eigenschaften, deren Name `password` oder `secret` enthält, sowie `sasl.jaas.config`, `ssl.key.pem` und `ssl.keystore.key` werden beim Speichern abgelehnt.
 
-To change a connection later, click `✎` ( [[ui:sidebar.editConnection]] ) next to its name. To delete it, open the form, click [[ui:common.delete]] and confirm with [[ui:connections.form.deleteYes]].
+Um eine Verbindung später zu ändern, klicken Sie neben ihrem Namen auf `✎` ( [[ui:sidebar.editConnection]] ). Zum Löschen öffnen Sie das Formular, klicken auf [[ui:common.delete]] und bestätigen mit [[ui:connections.form.deleteYes]].
 
-## Test the connection {#test}
+## Verbindung testen {#test}
 
-[[ui:connections.form.test]] checks the settings in the form step by step and stops at the first failed step:
+[[ui:connections.form.test]] prüft die Einstellungen im Formular Schritt für Schritt und hält beim ersten fehlgeschlagenen Schritt an:
 
-1. [[ui:connections.form.step.config]] — the addresses, certificate files, passwords and the SASL username.
-2. [[ui:connections.form.step.tcp]] — the host names resolve, and a TCP connection to at least one bootstrap server opens.
-3. [[ui:connections.form.step.kafka]] — the TLS handshake and SASL login succeed, and the broker returns metadata. On success, the step shows the number of brokers and topics.
+1. [[ui:connections.form.step.config]] — Adressen, Zertifikatsdateien, Passwörter und SASL-Benutzername.
+2. [[ui:connections.form.step.tcp]] — die Hostnamen werden aufgelöst, und zu mindestens einem Bootstrap-Server lässt sich eine TCP-Verbindung öffnen.
+3. [[ui:connections.form.step.kafka]] — TLS-Handshake und SASL-Anmeldung gelingen, und der Broker liefert Metadaten. Bei Erfolg zeigt der Schritt die Anzahl der Broker und Topics.
 
-The test uses the values currently in the form, including passwords you typed but have not saved. Nothing is saved or changed in the cluster. If a step fails, its error text and details are shown under it. Common errors are explained in [Cannot connect](troubleshooting.md#cannot-connect).
+Der Test verwendet die aktuellen Werte im Formular, auch eingegebene, aber noch nicht gespeicherte Passwörter. Es wird nichts gespeichert und im Cluster nichts geändert. Schlägt ein Schritt fehl, erscheinen darunter Fehlertext und Details. Häufige Fehler sind unter [Keine Verbindung möglich](troubleshooting.md#cannot-connect) erklärt.
 
-## Security protocols {#security}
+## Sicherheitsprotokolle {#security}
 
-The [[ui:connections.form.protocol]] must match the broker listener you connect to. Your Kafka administrators know which one to use.
+Das [[ui:connections.form.protocol]] muss zum Listener des Brokers passen, mit dem Sie sich verbinden. Welches das ist, wissen Ihre Kafka-Administratoren.
 
-- `PLAINTEXT` — no encryption and no login. Typical for local and test clusters.
-- `SSL` — traffic is encrypted with TLS. With a client certificate, this is mTLS.
-- `SASL_PLAINTEXT` — login with a username and password, without encryption.
-- `SASL_SSL` — login with a username and password over TLS.
+- `PLAINTEXT` — keine Verschlüsselung, keine Anmeldung. Typisch für lokale und Test-Cluster.
+- `SSL` — der Datenverkehr wird per TLS verschlüsselt. Mit Client-Zertifikat ist das mTLS.
+- `SASL_PLAINTEXT` — Anmeldung mit Benutzername und Passwort, ohne Verschlüsselung.
+- `SASL_SSL` — Anmeldung mit Benutzername und Passwort über TLS.
 
-When you change the protocol, the form shows only the fields that the protocol needs. All protocols, including mTLS, are available in Free.
+Wenn Sie das Protokoll wechseln, zeigt das Formular nur die Felder, die dieses Protokoll braucht. Alle Protokolle, einschließlich mTLS, sind in Free verfügbar.
 
 ## SASL {#sasl}
 
-For `SASL_PLAINTEXT` and `SASL_SSL`, fill in three fields:
+Für `SASL_PLAINTEXT` und `SASL_SSL` füllen Sie drei Felder aus:
 
-- [[ui:connections.form.saslMechanism]] — `PLAIN`, `SCRAM-SHA-256` or `SCRAM-SHA-512`. The cluster defines which one works.
+- [[ui:connections.form.saslMechanism]] — `PLAIN`, `SCRAM-SHA-256` oder `SCRAM-SHA-512`. Welcher funktioniert, bestimmt der Cluster.
 - [[ui:connections.form.username]].
-- [[ui:connections.form.password]]. It is saved in the system secret store, not in the profile. See [Passwords](connections.md#passwords).
+- [[ui:connections.form.password]]. Es wird im Schlüsselbund des Systems gespeichert, nicht im Profil. Siehe [Passwörter](connections.md#passwords).
 
-SCRAM never sends the password itself. `PLAIN` sends it as is, so over `SASL_PLAINTEXT` the password travels in clear text. Use `SASL_SSL` for clusters outside your computer when possible.
+SCRAM überträgt nie das Passwort selbst. `PLAIN` sendet es unverändert, daher geht das Passwort über `SASL_PLAINTEXT` im Klartext übers Netz. Verwenden Sie für Cluster außerhalb Ihres Computers nach Möglichkeit `SASL_SSL`.
 
-## SSL and the trusted CA {#tls}
+## SSL und vertrauenswürdige CA {#tls}
 
-For `SSL` and `SASL_SSL`, the form adds TLS settings.
+Für `SSL` und `SASL_SSL` ergänzt das Formular die TLS-Einstellungen.
 
-[[ui:connections.tls.ca]] is the certificate of the authority (CA) that signed the broker certificates. Leave it empty if the operating system already trusts this CA: the system root certificates are then used. Otherwise enter the full path to the file or click [[ui:connections.tls.pick]]. After you choose a file, the [[ui:connections.tls.caFormat]] field appears. For PKCS#12 and JKS, there is also a [[ui:connections.tls.truststorePassword]] field.
+[[ui:connections.tls.ca]] ist das Zertifikat der Zertifizierungsstelle (CA), die die Broker-Zertifikate signiert hat. Lassen Sie das Feld leer, wenn das Betriebssystem dieser CA bereits vertraut: Dann werden die Stammzertifikate des Systems verwendet. Andernfalls geben Sie den vollständigen Pfad zur Datei ein oder klicken auf [[ui:connections.tls.pick]]. Nach der Auswahl einer Datei erscheint das Feld [[ui:connections.tls.caFormat]]. Für PKCS#12 und JKS gibt es zusätzlich das Feld [[ui:connections.tls.truststorePassword]].
 
-[[ui:connections.tls.verifyHostname]] is on by default. It checks that the broker certificate was issued for the host name you connect to. Turn it off only in test environments, for example when brokers use self-signed certificates with other names.
+[[ui:connections.tls.verifyHostname]] ist standardmäßig aktiviert. Es prüft, ob das Broker-Zertifikat für den Hostnamen ausgestellt wurde, mit dem Sie sich verbinden. Deaktivieren Sie die Option nur in Testumgebungen, etwa wenn Broker selbstsignierte Zertifikate mit anderen Namen verwenden.
 
-## Client certificate (mTLS) {#mtls}
+## Client-Zertifikat (mTLS) {#mtls}
 
-If brokers authenticate clients by certificate, turn on [[ui:connections.tls.mtls]]. Your Kafka administrators issue the certificate and key. Then fill in:
+Authentifizieren die Broker Clients per Zertifikat, aktivieren Sie [[ui:connections.tls.mtls]]. Zertifikat und Schlüssel stellen Ihre Kafka-Administratoren aus. Füllen Sie dann aus:
 
-- [[ui:connections.tls.cert]] — the path to the certificate file.
-- [[ui:connections.tls.certFormat]] — PEM, PKCS#12 or JKS.
-- For PEM: [[ui:connections.tls.key]] — the path to the private key file, and [[ui:connections.tls.keyPasswordPem]] if the key is encrypted.
-- For PKCS#12: [[ui:connections.tls.keystorePassword]].
-- For JKS: [[ui:connections.tls.keystorePassword]], [[ui:connections.tls.keyPasswordJks]] if the key has its own password, and [[ui:connections.tls.alias]] if the store has several keys.
+- [[ui:connections.tls.cert]] — Pfad zur Zertifikatsdatei.
+- [[ui:connections.tls.certFormat]] — PEM, PKCS#12 oder JKS.
+- Für PEM: [[ui:connections.tls.key]] — Pfad zur Datei mit dem privaten Schlüssel, sowie [[ui:connections.tls.keyPasswordPem]], wenn der Schlüssel verschlüsselt ist.
+- Für PKCS#12: [[ui:connections.tls.keystorePassword]].
+- Für JKS: [[ui:connections.tls.keystorePassword]], [[ui:connections.tls.keyPasswordJks]], wenn der Schlüssel ein eigenes Passwort hat, und [[ui:connections.tls.alias]], wenn der Keystore mehrere Schlüssel enthält.
 
-Paths must be absolute. The files are read every time the app connects, so after the certificate is renewed you only need to reconnect. The app checks that the key matches the certificate and that the certificate has not expired.
+Pfade müssen absolut sein. Die Dateien werden bei jedem Verbindungsaufbau gelesen, nach einer Erneuerung des Zertifikats genügt es also, sich neu zu verbinden. Die App prüft, ob der Schlüssel zum Zertifikat passt und ob das Zertifikat noch gültig ist.
 
-A common case is a cluster in Kubernetes, where the client secret holds `tls.crt`, `tls.key` and `ca.crt`. Save them to files, choose protocol `SSL`, set [[ui:connections.tls.ca]] to `ca.crt`, and use `tls.crt` and `tls.key` as a PEM client certificate and key with empty passwords.
+Ein häufiger Fall ist ein Cluster in Kubernetes, bei dem das Client-Secret `tls.crt`, `tls.key` und `ca.crt` enthält. Speichern Sie sie als Dateien, wählen Sie das Protokoll `SSL`, setzen Sie [[ui:connections.tls.ca]] auf `ca.crt` und verwenden Sie `tls.crt` und `tls.key` als PEM-Client-Zertifikat und -Schlüssel mit leeren Passwörtern.
 
-## Certificate formats {#certificate-formats}
+## Zertifikatsformate {#certificate-formats}
 
-Glafira reads three formats. The format is chosen automatically by the file extension; check it in the format field and change it if needed.
+Glafira liest drei Formate. Das Format wird automatisch anhand der Dateiendung gewählt; prüfen Sie es im Formatfeld und ändern Sie es bei Bedarf.
 
-- PEM — a text file that starts with `-----BEGIN`. Extensions `.pem`, `.crt`, `.cer`, `.key`. For a client certificate, the key is a separate file. The trusted CA can also be a binary DER certificate.
-- PKCS#12 — a binary store with a certificate and key. Extensions `.p12`, `.pfx`.
-- JKS — a Java keystore. Extensions `.jks`, `.keystore`, `.truststore`.
+- PEM — eine Textdatei, die mit `-----BEGIN` beginnt. Endungen `.pem`, `.crt`, `.cer`, `.key`. Bei einem Client-Zertifikat liegt der Schlüssel in einer separaten Datei. Die vertrauenswürdige CA kann auch ein binäres DER-Zertifikat sein.
+- PKCS#12 — ein binärer Speicher mit Zertifikat und Schlüssel. Endungen `.p12`, `.pfx`.
+- JKS — ein Java-Keystore. Endungen `.jks`, `.keystore`, `.truststore`.
 
-Two kinds of files need converting first:
+Zwei Arten von Dateien müssen vorher konvertiert werden:
 
-- JCEKS stores are not supported. Convert them to PKCS#12:
+- JCEKS-Keystores werden nicht unterstützt. Konvertieren Sie sie nach PKCS#12:
 
 ```bash
 keytool -importkeystore -srcstoretype JCEKS -srckeystore client.jceks -deststoretype PKCS12 -destkeystore client.p12
 ```
 
-- PKCS#12 stores encrypted with legacy algorithms (RC2, 3DES) may fail to open. If the app reports a legacy algorithm, recreate the file with AES:
+- PKCS#12-Dateien, die mit veralteten Algorithmen (RC2, 3DES) verschlüsselt sind, lassen sich möglicherweise nicht öffnen. Meldet die App einen veralteten Algorithmus, erstellen Sie die Datei mit AES neu:
 
 ```bash
 openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -inkey tls.key -out client.p12
 ```
 
-## Passwords {#passwords}
+## Passwörter {#passwords}
 
-The SASL password and the passwords of keys and stores are saved in the system secret store: Keychain on macOS, Credential Manager on Windows, Secret Service on Linux. They are never written to the connection profile, export files or the diagnostics archive.
+Das SASL-Passwort sowie die Passwörter von Schlüsseln und Keystores werden im Schlüsselbund des Systems gespeichert: in der Keychain unter macOS, in der Anmeldeinformationsverwaltung unter Windows, im Secret Service unter Linux. Sie werden nie in das Verbindungsprofil, in Exportdateien oder in das Diagnosearchiv geschrieben.
 
-When you edit a saved connection, password fields are empty and show [[ui:connections.form.passwordKeep]]. Leave a field empty to keep the saved password, or type a new one to replace it. To delete a saved certificate password, select [[ui:connections.tls.clear]] next to the field. When you save, passwords that the connection no longer uses are deleted, for example after switching the protocol to `PLAINTEXT`.
+Wenn Sie eine gespeicherte Verbindung bearbeiten, sind die Passwortfelder leer und zeigen [[ui:connections.form.passwordKeep]]. Lassen Sie ein Feld leer, um das gespeicherte Passwort beizubehalten, oder geben Sie ein neues ein, um es zu ersetzen. Um ein gespeichertes Zertifikatspasswort zu löschen, wählen Sie neben dem Feld [[ui:connections.tls.clear]]. Beim Speichern werden Passwörter gelöscht, die die Verbindung nicht mehr verwendet, etwa nach einem Wechsel des Protokolls auf `PLAINTEXT`.
 
-If the app cannot access the secret store, an error is shown when you save. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+Kann die App nicht auf den Schlüsselbund zugreifen, erscheint beim Speichern ein Fehler. Prüfen Sie unter Linux, ob GNOME Keyring, KWallet oder ein anderer Secret-Service-Anbieter in Ihrer Sitzung läuft.
 
-## Environments and prod {#environments}
+## Umgebungen und Prod {#environments}
 
-[[ui:connections.form.environment]] marks the connection: `local`, `dev`, `test`, `stage` or `prod`. The environment is shown as a colored badge next to the name in the panel, so you always see which cluster you work with.
+[[ui:connections.form.environment]] kennzeichnet die Verbindung: `local`, `dev`, `test`, `stage` oder `prod`. Die Umgebung erscheint als farbiges Badge neben dem Namen im Bereich, sodass Sie immer sehen, mit welchem Cluster Sie arbeiten.
 
-`prod` adds protection. Any change on a prod connection, such as creating a topic, sending a message, resetting offsets or starting a consumer session, asks you to type the connection name. Deleting and purging ask for the name of the object on any connection (deleting several topics asks for their count), and on prod you type both. These confirmations appear inside the app window.
+`prod` bietet zusätzlichen Schutz. Jede Änderung über eine Prod-Verbindung, etwa das Erstellen eines Topics, das Senden einer Nachricht, das Zurücksetzen von Offsets oder das Starten einer Consumer-Session, verlangt die Eingabe des Verbindungsnamens. Löschen und Leeren verlangen bei jeder Verbindung den Namen des Objekts (beim Löschen mehrerer Topics deren Anzahl), bei Prod geben Sie beides ein. Diese Bestätigungen erscheinen im App-Fenster.
 
-Creating prod connections and switching connections to prod need Pro. In Free, this option is shown as [[ui:connections.form.prodPro]] and cannot be selected. Prod connections created earlier keep working in Free, with the same confirmations.
+Prod-Verbindungen anzulegen und Verbindungen auf Prod umzustellen erfordert Pro. In Free wird diese Option als [[ui:connections.form.prodPro]] angezeigt und lässt sich nicht auswählen. Früher angelegte Prod-Verbindungen funktionieren in Free weiter, mit denselben Bestätigungen.
 
-A new prod connection starts as [[ui:common.readOnly]]. Clear the box if you need to make changes.
+Eine neue Prod-Verbindung ist zunächst [[ui:common.readOnly]]. Deaktivieren Sie das Kontrollkästchen, wenn Sie Änderungen vornehmen müssen.
 
-## Read-only {#read-only}
+## Schreibgeschützt {#read-only}
 
-[[ui:common.readOnly]] blocks everything that changes the cluster: creating, changing, purging and deleting topics, sending messages, resetting offsets, deleting groups and starting consumer sessions. The buttons for these actions are hidden or disabled, and the app core rejects such operations as well. Browsing and reading stay available. A lock icon next to the name in the panel marks read-only connections.
+[[ui:common.readOnly]] sperrt alles, was den Cluster verändert: Erstellen, Ändern, Leeren und Löschen von Topics, Senden von Nachrichten, Zurücksetzen von Offsets, Löschen von Gruppen und Starten von Consumer-Sessions. Die Schaltflächen für diese Aktionen sind ausgeblendet oder deaktiviert, und auch der Kern der App lehnt solche Vorgänge ab. Durchsuchen und Lesen bleiben möglich. Ein Schloss-Symbol neben dem Namen im Bereich kennzeichnet schreibgeschützte Verbindungen.
 
-Use this mode when you only need to look at the data, especially on shared clusters. Read-only is a protection inside the app: it does not replace access rights (ACLs) in Kafka.
+Verwenden Sie diesen Modus, wenn Sie Daten nur ansehen wollen, besonders auf gemeinsam genutzten Clustern. Der Schreibschutz ist ein Schutz innerhalb der App: Er ersetzt keine Zugriffsrechte (ACLs) in Kafka.
 
-In Free, the box cannot be cleared on a read-only prod connection: lifting this protection needs Pro.
+In Free lässt sich das Kontrollkästchen bei einer schreibgeschützten Prod-Verbindung nicht deaktivieren: Diesen Schutz aufzuheben erfordert Pro.
 
-## Folders {#folders}
+## Ordner {#folders}
 
-Folders help to sort connections, for example by project or by environment. Folders can be nested.
+Ordner helfen beim Sortieren von Verbindungen, etwa nach Projekt oder Umgebung. Ordner lassen sich verschachteln.
 
-- To create a folder at the top level, click `+📁` ( [[ui:sidebar.newFolder]] ) in the panel header. To create a subfolder, open the folder menu and choose [[ui:sidebar.newFolder]]. Type the name and press `Enter`, or press `Esc` to cancel.
-- To open the folder menu, click `⋯` ( [[ui:sidebar.menu]] ) on the folder row or right-click the folder. The menu has [[ui:sidebar.folder.rename]], [[ui:sidebar.folder.delete]] and the export and import commands.
-- Only an empty folder can be deleted. Move or delete its connections and subfolders first.
-- Folder names must be unique within one level and at most 100 characters long.
+- Um einen Ordner auf oberster Ebene anzulegen, klicken Sie im Kopf des Bereichs auf `+📁` ( [[ui:sidebar.newFolder]] ). Für einen Unterordner öffnen Sie das Ordnermenü und wählen [[ui:sidebar.newFolder]]. Geben Sie den Namen ein und drücken Sie `Enter`, oder brechen Sie mit `Esc` ab.
+- Um das Ordnermenü zu öffnen, klicken Sie in der Zeile des Ordners auf `⋯` ( [[ui:sidebar.menu]] ) oder klicken mit der rechten Maustaste auf den Ordner. Das Menü enthält [[ui:sidebar.folder.rename]], [[ui:sidebar.folder.delete]] sowie die Befehle für Export und Import.
+- Nur ein leerer Ordner kann gelöscht werden. Verschieben oder löschen Sie zuerst seine Verbindungen und Unterordner.
+- Ordnernamen müssen innerhalb einer Ebene eindeutig und höchstens 100 Zeichen lang sein.
 
-To move a connection, drag it onto a folder, or onto another connection to place it before that one. To move it to the top level, drop it onto the panel header or the empty space below the list. You can also choose a [[ui:connections.form.folder]] in the connection form; [[ui:connections.form.folderRoot]] means the top level. Folders are dragged the same way. Drop a folder onto the upper edge of another folder to place it before that folder. A folder cannot be moved into its own subfolder.
+Um eine Verbindung zu verschieben, ziehen Sie sie auf einen Ordner oder auf eine andere Verbindung, um sie davor einzuordnen. Um sie auf die oberste Ebene zu verschieben, legen Sie sie auf dem Kopf des Bereichs oder im leeren Platz unter der Liste ab. Sie können auch im Verbindungsformular einen [[ui:connections.form.folder]] wählen; [[ui:connections.form.folderRoot]] steht für die oberste Ebene. Ordner werden auf dieselbe Weise gezogen. Legen Sie einen Ordner am oberen Rand eines anderen Ordners ab, um ihn davor einzuordnen. Ein Ordner lässt sich nicht in einen eigenen Unterordner verschieben.
 
-Click a folder name to collapse or expand it. The app remembers which folders are collapsed. Use [[ui:sidebar.filter]] above the tree to find connections and folders by name. Matching folders are shown with all their contents.
+Ein Klick auf den Ordnernamen klappt den Ordner ein oder aus. Die App merkt sich, welche Ordner eingeklappt sind. Mit [[ui:sidebar.filter]] über dem Baum finden Sie Verbindungen und Ordner nach Namen. Passende Ordner werden mit ihrem gesamten Inhalt angezeigt.
 
 ## Export {#export}
 
-Export saves connections and folders to a file, for example to share them with colleagues or move them to another computer.
+Der Export speichert Verbindungen und Ordner in einer Datei, etwa um sie mit Kollegen zu teilen oder auf einen anderen Computer zu übertragen.
 
-1. To export everything, open the panel header menu `⋯` and choose [[ui:sidebar.exportAll]]. To export one folder with its subfolders, choose [[ui:sidebar.folder.export]] in its menu.
-2. Choose where to save the file. The suggested name is `glafira-connections-<date>.glafira-connections.json` or `<folder>.glafira-connections.json`.
+1. Um alles zu exportieren, öffnen Sie das Menü `⋯` im Kopf des Bereichs und wählen [[ui:sidebar.exportAll]]. Um einen Ordner mit seinen Unterordnern zu exportieren, wählen Sie in seinem Menü [[ui:sidebar.folder.export]].
+2. Wählen Sie den Speicherort. Vorgeschlagen wird `glafira-connections-<date>.glafira-connections.json` oder `<folder>.glafira-connections.json`.
 
-When the file is saved, the panel shows how many connections and folders it contains.
+Nach dem Speichern zeigt der Bereich an, wie viele Verbindungen und Ordner die Datei enthält.
 
-The file has the connection settings and the folder structure. It does not contain passwords or secret properties. Certificate files are not included either: the file only keeps their paths. Hosts, usernames and paths are stored as plain text, so share the file only with people who may see them.
+Die Datei enthält die Verbindungseinstellungen und die Ordnerstruktur. Passwörter und geheime Eigenschaften enthält sie nicht. Auch Zertifikatsdateien sind nicht enthalten: Die Datei speichert nur deren Pfade. Hosts, Benutzernamen und Pfade stehen im Klartext darin, teilen Sie die Datei also nur mit Personen, die sie sehen dürfen.
 
 ## Import {#import}
 
-1. Open the panel header menu `⋯` and choose [[ui:sidebar.import]]. To import straight into a folder, choose [[ui:sidebar.folder.importHere]] in its menu.
-2. Choose a `.glafira-connections.json` file. The [[ui:exchange.import.title]] dialog opens.
-3. In [[ui:exchange.import.target]], choose where new folders and connections go. [[ui:connections.form.folderRoot]] is the top level.
-4. Leave [[ui:exchange.import.updateExisting]] on to update connections that already exist from the file. Turn it off to keep them as they are.
-5. Check the preview and click [[ui:exchange.import.apply]], or [[ui:common.cancel]] to close the dialog without changes.
+1. Öffnen Sie das Menü `⋯` im Kopf des Bereichs und wählen Sie [[ui:sidebar.import]]. Um direkt in einen Ordner zu importieren, wählen Sie in seinem Menü [[ui:sidebar.folder.importHere]].
+2. Wählen Sie eine `.glafira-connections.json`-Datei. Der Dialog [[ui:exchange.import.title]] öffnet sich.
+3. Wählen Sie unter [[ui:exchange.import.target]], wohin neue Ordner und Verbindungen kommen. [[ui:connections.form.folderRoot]] ist die oberste Ebene.
+4. Lassen Sie [[ui:exchange.import.updateExisting]] aktiviert, um bereits vorhandene Verbindungen aus der Datei zu aktualisieren. Deaktivieren Sie die Option, um sie unverändert zu lassen.
+5. Prüfen Sie die Vorschau und klicken Sie auf [[ui:exchange.import.apply]] oder auf [[ui:common.cancel]], um den Dialog ohne Änderungen zu schließen.
 
-The preview updates after each change in the dialog. It shows the totals and expandable lists: [[ui:exchange.import.groupAdded]], [[ui:exchange.import.groupUpdated]], [[ui:exchange.import.groupUnchanged]] and [[ui:exchange.import.groupSkipped]] with the reason for each skipped connection.
+Die Vorschau wird nach jeder Änderung im Dialog aktualisiert. Sie zeigt die Summen und aufklappbare Listen: [[ui:exchange.import.groupAdded]], [[ui:exchange.import.groupUpdated]], [[ui:exchange.import.groupUnchanged]] und [[ui:exchange.import.groupSkipped]] mit dem Grund für jede übersprungene Verbindung.
 
-How the app matches the file with your connections:
+So ordnet die App die Datei Ihren Verbindungen zu:
 
-- Connections are matched by an internal ID, not by name. A connection counts as existing if the file contains the same connection: for example, it was exported from this computer, or imported from the same source before.
-- An updated connection gets the settings from the file. Your passwords and its place in the tree are kept.
-- Existing folders are not renamed or moved. New connections from the file still go into them.
-- If a new connection has the same name as another one in the same folder, a number is added, for example `kafka-dev (2)`.
-- Connections that this version of Glafira does not support, or that contain secrets in extra properties, are skipped.
+- Verbindungen werden über eine interne ID zugeordnet, nicht über den Namen. Eine Verbindung gilt als vorhanden, wenn die Datei dieselbe Verbindung enthält: etwa weil sie von diesem Computer exportiert oder früher aus derselben Quelle importiert wurde.
+- Eine aktualisierte Verbindung übernimmt die Einstellungen aus der Datei. Ihre Passwörter und ihr Platz im Baum bleiben erhalten.
+- Vorhandene Ordner werden nicht umbenannt oder verschoben. Neue Verbindungen aus der Datei landen trotzdem darin.
+- Hat eine neue Verbindung denselben Namen wie eine andere im selben Ordner, wird eine Nummer angehängt, zum Beispiel `kafka-dev (2)`.
+- Verbindungen, die diese Version von Glafira nicht unterstützt oder die Geheimnisse in zusätzlichen Eigenschaften enthalten, werden übersprungen.
 
-The preview also warns when certificate files are not found on this computer, and when prod connections will become read-only because Pro is not active. Passwords are not in the file, so after import the panel says how many connections need them. Open each of these connections, enter the passwords and save.
+Die Vorschau warnt außerdem, wenn Zertifikatsdateien auf diesem Computer nicht gefunden werden und wenn Prod-Verbindungen schreibgeschützt werden, weil Pro nicht aktiv ist. Passwörter sind nicht in der Datei, daher zeigt der Bereich nach dem Import an, wie viele Verbindungen welche benötigen. Öffnen Sie jede dieser Verbindungen, geben Sie die Passwörter ein und speichern Sie.

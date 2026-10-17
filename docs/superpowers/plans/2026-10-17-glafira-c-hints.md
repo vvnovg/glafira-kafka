@@ -714,7 +714,200 @@ Co-Authored-By: <модель исполнителя>"
 
 ---
 
+### Задачи 10–11: подсказки к параметрам топика
+
+Общая процедура — как в задачах 3–8 (п. 1, 3–5), с отличиями:
+- ключи — в подразделе `hints.topicConfig` (после `consumer`), имя ключа — имя параметра с `_` вместо `.` (`retention.ms` → `retention_ms`), в порядке таблицы задачи;
+- значки ставит не каждая задача отдельно, а таблица `TOPIC_CONFIG_HINTS` (Task 10 создаёт механизм, Task 11 только дополняет таблицу и словари);
+- `<code>` — для значений и имён параметров, как в en; числа, единицы (`ms`, `MB`, `GiB`) и названия Kafka-версий — как в en.
+
+Глоссарий (Task 10, шаг 1) — добавить в таблицу «Термины» перед строкой `| license |`:
+
+```markdown
+| segment (лога) | сегмент | Segment | segment | segmento | segmento | segment | segmento |
+| compaction | compaction | Compaction (die) | compaction (f.) | compactación | compattazione | kompaktowanie | compactação |
+| tiered storage | tiered storage | Tiered Storage | tiered storage | tiered storage | tiered storage | tiered storage | tiered storage |
+| follower (реплика) | фолловер | Follower | follower | follower | follower | follower | follower |
+```
+
+и в «Не переводится» дописать: `значения CreateTime / LogAppendTime, producer / uncompressed в compression.type`.
+
+### Task 10: Механизм и параметры хранения (16 подсказок)
+
+**Files:**
+- Create: `src/components/common/topicConfigHints.ts`
+- Modify: `src/components/common/ConfigTable.tsx`, `src/components/common/ConfigTable.test.tsx`, `src/components/common/ConfigEditor.tsx`, `src/components/common/ConfigEditor.test.tsx`, `src/components/topics/TopicDetails.tsx`, `src/locales/*.json`, `docs/i18n/glossary.md`
+
+**Interfaces:**
+- Consumes: `Hint` (Task 1), `checkHints`/`hintKeys` (Task 2 — литералы в таблице считаются использованием).
+- Produces: `export const TOPIC_CONFIG_HINTS: Record<string, string>`; проп `hints?: Record<string, string>` у `ConfigTable` и `ConfigEditor`.
+
+- [ ] **Step 1: Глоссарий** (блок выше).
+
+- [ ] **Step 2: Падающие тесты.** В `ConfigTable.test.tsx`:
+
+```tsx
+it("подсказки параметров: значок только у известных, только при переданном hints", async () => {
+  const entries = [
+    { name: "retention.ms", value: "604800000", isDefault: true, isReadOnly: false, isSensitive: false, source: "DEFAULT_CONFIG" },
+    { name: "x.unknown", value: "1", isDefault: true, isReadOnly: false, isSensitive: false, source: "DEFAULT_CONFIG" },
+  ];
+  const { unmount } = render(<ConfigTable entries={entries} hints={TOPIC_CONFIG_HINTS} />);
+  expect(screen.getByRole("button", { name: "Подсказка: retention.ms" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Подсказка: x.unknown" })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Подсказка: retention.ms" }));
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Сколько хранить сообщения, в мс.");
+  unmount();
+  render(<ConfigTable entries={entries} />);
+  expect(screen.queryByRole("button", { name: /^Подсказка:/ })).toBeNull();
+});
+```
+
+(поля `ConfigEntry` сверить с `src/api/types.ts` и существующими тестами файла; импорт `TOPIC_CONFIG_HINTS` из `./topicConfigHints`). В `ConfigEditor.test.tsx` — тот же сценарий для режима редактирования (значок у `retention.ms`, нет у неизвестного).
+
+- [ ] **Step 3: Убедиться, что тесты падают**
+
+Run: `pnpm vitest run src/components/common/ConfigTable.test.tsx src/components/common/ConfigEditor.test.tsx`
+Expected: FAIL — нет модуля `./topicConfigHints`.
+
+- [ ] **Step 4: Реализовать.** `src/components/common/topicConfigHints.ts`:
+
+```ts
+/** Подсказки к параметрам уровня топика: имя параметра → ключ словаря. Параметр не из списка — без значка. */
+export const TOPIC_CONFIG_HINTS: Record<string, string> = {
+  "cleanup.policy": "hints.topicConfig.cleanup_policy",
+  "retention.ms": "hints.topicConfig.retention_ms",
+  "retention.bytes": "hints.topicConfig.retention_bytes",
+  "delete.retention.ms": "hints.topicConfig.delete_retention_ms",
+  "min.compaction.lag.ms": "hints.topicConfig.min_compaction_lag_ms",
+  "max.compaction.lag.ms": "hints.topicConfig.max_compaction_lag_ms",
+  "min.cleanable.dirty.ratio": "hints.topicConfig.min_cleanable_dirty_ratio",
+  "segment.ms": "hints.topicConfig.segment_ms",
+  "segment.bytes": "hints.topicConfig.segment_bytes",
+  "segment.jitter.ms": "hints.topicConfig.segment_jitter_ms",
+  "file.delete.delay.ms": "hints.topicConfig.file_delete_delay_ms",
+  "local.retention.ms": "hints.topicConfig.local_retention_ms",
+  "local.retention.bytes": "hints.topicConfig.local_retention_bytes",
+  "remote.storage.enable": "hints.topicConfig.remote_storage_enable",
+  "remote.log.copy.disable": "hints.topicConfig.remote_log_copy_disable",
+  "remote.log.delete.on.disable": "hints.topicConfig.remote_log_delete_on_disable",
+};
+```
+
+В `ConfigTable` и `ConfigEditor` — проп `hints?: Record<string, string>`; в ячейке имени после `{e.name}` (и после значка 🔒 в `ConfigTable`): `{hints?.[e.name] && <Hint k={hints[e.name]} label={e.name} />}`. В `TopicDetails.tsx` передать `hints={TOPIC_CONFIG_HINTS}` обоим (строки с `<ConfigEditor` и `<ConfigTable entries={q.data} />`). `ClusterOverview.tsx` не менять.
+
+- [ ] **Step 5: Тексты во всех 8 словарях** (`hints.topicConfig`, порядок таблицы):
+
+| Ключ | en | ru |
+|---|---|---|
+| `cleanup_policy` | <code>delete</code> removes old segments by time or size, <code>compact</code> keeps only the latest value per key, <code>compact,delete</code> does both. | <code>delete</code> удаляет старые сегменты по времени или размеру, <code>compact</code> хранит только последнее значение каждого ключа, <code>compact,delete</code> — и то и другое. |
+| `retention_ms` | How long messages are kept, in ms. Default 604800000 (7 days); <code>-1</code> keeps them forever. Applies with <code>cleanup.policy=delete</code>. | Сколько хранить сообщения, в мс. По умолчанию 604800000 (7 дней); <code>-1</code> — бессрочно. Действует при <code>cleanup.policy=delete</code>. |
+| `retention_bytes` | Maximum size of each partition before old segments are deleted. Default <code>-1</code>: no size limit, only time. | Максимальный размер каждой партиции, после которого удаляются старые сегменты. По умолчанию <code>-1</code> — без ограничения, только по времени. |
+| `delete_retention_ms` | How long delete markers (null values) stay in a compacted topic so that readers can see the deletion. Default 1 day. | Сколько хранить метки удаления (значения null) в compacted-топике, чтобы читающие приложения успели увидеть удаление. По умолчанию 1 день. |
+| `min_compaction_lag_ms` | The minimum age of a message before compaction may remove it. Default 0. | Минимальный возраст сообщения, раньше которого compaction его не удалит. По умолчанию 0. |
+| `max_compaction_lag_ms` | The maximum time a message may stay uncompacted, to guarantee that old values are removed in time. Default: unlimited. | Максимальное время до compaction сообщения — чтобы старые значения гарантированно удалялись вовремя. По умолчанию не ограничено. |
+| `min_cleanable_dirty_ratio` | Compaction starts when this share of the log is uncompacted. Lower means more frequent compaction and fewer duplicates, but more disk load. Default 0.5. | Compaction запускается, когда такая доля лога ещё не обработана. Меньше — чаще compaction и меньше дублей, но больше нагрузка на диск. По умолчанию 0.5. |
+| `segment_ms` | How often a new log segment is started, even if the current one is not full. Retention and compaction work on whole segments. Default 7 days. | Как часто начинать новый сегмент лога, даже если текущий не заполнен. Хранение и compaction работают целыми сегментами. По умолчанию 7 дней. |
+| `segment_bytes` | Size of one log segment file. Retention and compaction work on whole segments. Default 1 GiB. | Размер одного файла сегмента лога. Хранение и compaction работают целыми сегментами. По умолчанию 1 GiB. |
+| `segment_jitter_ms` | A random addition to <code>segment.ms</code> so that many partitions do not start new segments at the same moment. Default 0. | Случайная добавка к <code>segment.ms</code>, чтобы множество партиций не начинали новый сегмент одновременно. По умолчанию 0. |
+| `file_delete_delay_ms` | How long a deleted segment file stays on disk before it is actually removed. Default 1 minute. | Сколько удалённый файл сегмента остаётся на диске до физического удаления. По умолчанию 1 минута. |
+| `local_retention_ms` | With tiered storage: how long segments stay on the broker's local disk before only the remote copy remains. <code>-2</code> means the same as <code>retention.ms</code>. | При tiered storage: сколько сегменты хранятся на локальном диске брокера, прежде чем останется только удалённая копия. <code>-2</code> — как <code>retention.ms</code>. |
+| `local_retention_bytes` | With tiered storage: local size limit per partition; older segments remain only in remote storage. <code>-2</code> means the same as <code>retention.bytes</code>. | При tiered storage: предел локального размера партиции; более старые сегменты остаются только во внешнем хранилище. <code>-2</code> — как <code>retention.bytes</code>. |
+| `remote_storage_enable` | Enables tiered storage: old segments are moved to remote storage (for example, S3). The cluster must support it. | Включает tiered storage: старые сегменты переносятся во внешнее хранилище (например, S3). Кластер должен это поддерживать. |
+| `remote_log_copy_disable` | Stops copying new segments to remote storage; data already there stays readable. Used to turn tiered storage off step by step. | Прекращает копирование новых сегментов во внешнее хранилище; уже перенесённые данные остаются доступны. Нужен для поэтапного отключения tiered storage. |
+| `remote_log_delete_on_disable` | When tiered storage is turned off for the topic, delete its data in remote storage. Must be <code>true</code> to turn tiered storage off. | При отключении tiered storage для топика удалить его данные во внешнем хранилище. Для отключения tiered storage должен быть <code>true</code>. |
+
+- [ ] **Step 6: Проверки**
+
+Run: `pnpm i18n:check && pnpm vitest run src/components/common src/components/topics && pnpm test && pnpm build`
+Expected: PASS.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/components/common src/components/topics src/locales docs/i18n/glossary.md
+git commit -m "feat(hints): подсказки к параметрам топика — механизм, хранение и compaction
+
+Co-Authored-By: <модель исполнителя>"
+```
+
+### Task 11: Остальные параметры топика (20 подсказок)
+
+**Files:**
+- Modify: `src/components/common/topicConfigHints.ts`, `src/components/common/ConfigTable.test.tsx`, `src/locales/*.json`
+
+**Interfaces:**
+- Consumes: `TOPIC_CONFIG_HINTS` и проп `hints` (Task 10).
+
+- [ ] **Step 1: Дополнить таблицу** `TOPIC_CONFIG_HINTS` (после `remote.log.delete.on.disable`, в этом порядке):
+
+```ts
+  "compression.type": "hints.topicConfig.compression_type",
+  "compression.gzip.level": "hints.topicConfig.compression_gzip_level",
+  "compression.lz4.level": "hints.topicConfig.compression_lz4_level",
+  "compression.zstd.level": "hints.topicConfig.compression_zstd_level",
+  "max.message.bytes": "hints.topicConfig.max_message_bytes",
+  "min.insync.replicas": "hints.topicConfig.min_insync_replicas",
+  "unclean.leader.election.enable": "hints.topicConfig.unclean_leader_election_enable",
+  "message.timestamp.type": "hints.topicConfig.message_timestamp_type",
+  "message.timestamp.before.max.ms": "hints.topicConfig.message_timestamp_before_max_ms",
+  "message.timestamp.after.max.ms": "hints.topicConfig.message_timestamp_after_max_ms",
+  "message.timestamp.difference.max.ms": "hints.topicConfig.message_timestamp_difference_max_ms",
+  "message.format.version": "hints.topicConfig.message_format_version",
+  "message.downconversion.enable": "hints.topicConfig.message_downconversion_enable",
+  "flush.messages": "hints.topicConfig.flush_messages",
+  "flush.ms": "hints.topicConfig.flush_ms",
+  "index.interval.bytes": "hints.topicConfig.index_interval_bytes",
+  "segment.index.bytes": "hints.topicConfig.segment_index_bytes",
+  "preallocate": "hints.topicConfig.preallocate",
+  "leader.replication.throttled.replicas": "hints.topicConfig.leader_replication_throttled_replicas",
+  "follower.replication.throttled.replicas": "hints.topicConfig.follower_replication_throttled_replicas",
+```
+
+- [ ] **Step 2: Тексты во всех 8 словарях** (после ключей Task 10):
+
+| Ключ | en | ru |
+|---|---|---|
+| `compression_type` | How the broker stores messages: <code>producer</code> keeps the producer's compression; otherwise it recompresses to <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, <code>zstd</code> or <code>uncompressed</code>. | Как брокер хранит сообщения: <code>producer</code> — сжатие как у producer; иначе пересжимает в <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, <code>zstd</code> или <code>uncompressed</code>. |
+| `compression_gzip_level` | gzip level when the broker recompresses to gzip: 1 is the fastest, 9 the smallest. Kafka 3.8+. | Уровень gzip при пересжатии брокером: 1 — быстрее, 9 — компактнее. Kafka 3.8+. |
+| `compression_lz4_level` | lz4 level when the broker recompresses to lz4: higher is smaller and slower. Kafka 3.8+. | Уровень lz4 при пересжатии брокером: выше — компактнее и медленнее. Kafka 3.8+. |
+| `compression_zstd_level` | zstd level when the broker recompresses to zstd: higher is smaller and slower. Kafka 3.8+. | Уровень zstd при пересжатии брокером: выше — компактнее и медленнее. Kafka 3.8+. |
+| `max_message_bytes` | Largest batch the broker accepts for this topic; larger messages are rejected. Producers and consumers must allow the same size. Default about 1 MB. | Максимальный пакет, который брокер примет для топика; более крупные сообщения отклоняются. Producer и consumer должны допускать такой же размер. По умолчанию около 1 MB. |
+| `min_insync_replicas` | How many replicas must confirm a write with <code>acks=all</code>, otherwise the producer gets an error. Usually 2 with replication factor 3. | Сколько реплик должны подтвердить запись при <code>acks=all</code>, иначе producer получит ошибку. Обычно 2 при факторе репликации 3. |
+| `unclean_leader_election_enable` | Lets an out-of-sync replica become leader when no in-sync replica is left. The topic stays available, but messages may be lost. | Разрешает несинхронной реплике стать лидером, если синхронных не осталось. Топик остаётся доступен, но сообщения могут потеряться. |
+| `message_timestamp_type` | <code>CreateTime</code>: the timestamp set by the producer. <code>LogAppendTime</code>: the time the broker wrote the message. | <code>CreateTime</code> — метка времени от producer, <code>LogAppendTime</code> — время записи сообщения брокером. |
+| `message_timestamp_before_max_ms` | How far in the past a producer timestamp may be with <code>CreateTime</code>; older messages are rejected. | Насколько в прошлом может быть метка времени producer при <code>CreateTime</code>; более старые сообщения отклоняются. |
+| `message_timestamp_after_max_ms` | How far in the future a producer timestamp may be with <code>CreateTime</code>; messages beyond it are rejected. | Насколько в будущем может быть метка времени producer при <code>CreateTime</code>; сообщения дальше отклоняются. |
+| `message_timestamp_difference_max_ms` | Deprecated, replaced by the two <code>message.timestamp.*.max.ms</code> settings: the allowed gap between producer and broker time. Removed in Kafka 4.0. | Устаревший, заменён двумя <code>message.timestamp.*.max.ms</code>: допустимое расхождение времени producer и брокера. Удалён в Kafka 4.0. |
+| `message_format_version` | Deprecated: the message format for old clients. Ignored since Kafka 3.0 and removed in 4.0. | Устаревший: формат сообщений для старых клиентов. Игнорируется с Kafka 3.0, удалён в 4.0. |
+| `message_downconversion_enable` | Deprecated: lets the broker convert messages for very old consumers. Costs CPU; removed in Kafka 4.0. | Устаревший: брокер переводит сообщения в формат очень старых consumer. Расходует CPU; удалён в Kafka 4.0. |
+| `flush_messages` | Force a disk flush every N messages. Usually left at the default: Kafka relies on replication and the OS page cache. | Принудительно сбрасывать данные на диск каждые N сообщений. Обычно не меняют: Kafka полагается на репликацию и кэш ОС. |
+| `flush_ms` | Force a disk flush every N milliseconds. Usually left at the default: Kafka relies on replication and the OS page cache. | Принудительно сбрасывать данные на диск каждые N миллисекунд. Обычно не меняют: Kafka полагается на репликацию и кэш ОС. |
+| `index_interval_bytes` | How often an offset index entry is written, in bytes of log. Smaller means faster seeks but a larger index. Rarely changed. | Как часто добавлять запись в индекс оффсетов, в байтах лога. Меньше — быстрее поиск, но больше индекс. Меняют редко. |
+| `segment_index_bytes` | Maximum size of a segment's offset index file. Rarely changed. | Максимальный размер файла индекса оффсетов сегмента. Меняют редко. |
+| `preallocate` | Preallocate the segment file on disk when it is created. May help on some file systems; rarely changed. | Заранее выделять место под файл сегмента при его создании. Может помочь на некоторых файловых системах; меняют редко. |
+| `leader_replication_throttled_replicas` | Replicas whose replication is throttled on the leader side, as <code>partition:broker</code> or <code>*</code>. Set by reassignment tools; usually not edited by hand. | Реплики, для которых ограничена скорость репликации на стороне лидера: <code>partition:broker</code> или <code>*</code>. Задают инструменты переназначения; вручную обычно не меняют. |
+| `follower_replication_throttled_replicas` | Replicas whose replication is throttled on the follower side, as <code>partition:broker</code> or <code>*</code>. Set by reassignment tools; usually not edited by hand. | Реплики, для которых ограничена скорость репликации на стороне фолловера: <code>partition:broker</code> или <code>*</code>. Задают инструменты переназначения; вручную обычно не меняют. |
+
+- [ ] **Step 3: Тест.** В `ConfigTable.test.tsx` добавить проверку: все 36 ключей таблицы есть у `TOPIC_CONFIG_HINTS` (`expect(Object.keys(TOPIC_CONFIG_HINTS)).toHaveLength(36)`), и значок у `min.insync.replicas` открывает ru-текст «Сколько реплик должны подтвердить запись при acks=all, иначе producer получит ошибку. Обычно 2 при факторе репликации 3.»
+
+- [ ] **Step 4: Проверки**
+
+Run: `pnpm i18n:check && pnpm vitest run src/components/common && pnpm test && pnpm build`
+Expected: PASS; отчёт `--lengths` по `hints.topicConfig` — в отчёт задачи.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/components/common src/locales
+git commit -m "feat(hints): подсказки к остальным параметрам топика
+
+Co-Authored-By: <модель исполнителя>"
+```
+
+---
+
 ## После плана
 
 - Финальное ревью ветки (`superpowers:requesting-code-review`): поведение `Hint` по спеке §2, 43 подсказки на месте, тексты en/ru из плана, переводы по глоссарию, проверки `i18n-check`.
-- Ручной смоук пользователем по `docs/smoke/c.md`.
+- Ручной смоук пользователем по `docs/smoke/c.md` (п. 10 — подсказки параметров топика: вкладка конфигурации топика, просмотр и редактирование; на обзоре кластера значков нет).

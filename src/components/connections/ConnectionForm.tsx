@@ -34,7 +34,11 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   // Ссылка на несуществующую папку означает корень (так её показывает и дерево).
   const knownFolder = (id: string | null | undefined): string | null =>
     !id || (foldersQ.isSuccess && !paths.some((p) => p.id === id)) ? null : id;
-  const folderId = knownFolder(profile.folderId);
+  // Папка, с которой форма открылась: перенос — только если пользователь сменил её в списке.
+  // Пока список не трогали, показывается текущая папка из дерева (её могли сменить перетаскиванием).
+  const [loadedFolderId] = useState(initial.folderId);
+  const [folderTouched, setFolderTouched] = useState(false);
+  const folderId = knownFolder(folderTouched ? profile.folderId : initial.folderId);
   const open = useWorkspace((s) => s.open);
   const close = useWorkspace((s) => s.close);
   const closeForConnection = useWorkspace((s) => s.closeForConnection);
@@ -79,7 +83,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
       const saved = await api.saveConnection(current(), password || undefined, tlsPasswords());
       // save_connection не меняет место существующего подключения в дереве — перенос отдельной командой.
       try {
-        if (!isNew && folderId !== knownFolder(initial.folderId)) {
+        if (!isNew && folderTouched && folderId !== knownFolder(loadedFolderId)) {
           await api.moveItems([{ kind: "connection", id: saved.id }], folderId, null);
         }
       } finally {
@@ -112,7 +116,14 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         <input id="cf-name" value={profile.name} onChange={(e) => update({ name: e.target.value })} />
 
         <label htmlFor="cf-folder">{t("connections.form.folder")}</label>
-        <select id="cf-folder" value={folderId ?? ""} onChange={(e) => update({ folderId: e.target.value || null })}>
+        <select
+          id="cf-folder"
+          value={folderId ?? ""}
+          onChange={(e) => {
+            setFolderTouched(true);
+            update({ folderId: e.target.value || null });
+          }}
+        >
           <option value="">{t("connections.form.folderRoot")}</option>
           {paths.map((p) => (
             <option key={p.id} value={p.id}>

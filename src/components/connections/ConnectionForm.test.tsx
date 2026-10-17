@@ -1,3 +1,4 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -312,6 +313,27 @@ describe("ConnectionForm", () => {
     const user = userEvent.setup();
     renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
     await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    await vi.waitFor(() => expect(api.saveConnection).toHaveBeenCalled());
+    expect(api.moveItems).not.toHaveBeenCalled();
+  });
+
+  it("поле «Папка»: перенос в дереве при открытой форме не откатывается сохранением", async () => {
+    vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
+    const initial = { ...newProfile(), id: "c1", name: "x", folderId: "a", order: 0 };
+    vi.mocked(api.saveConnection).mockResolvedValue({ ...initial, folderId: "b" });
+    const user = userEvent.setup();
+    const { rerender, client } = renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    // Подключение перетащили в «ИФТ»: после обновления списка форма получает новый initial.
+    rerender(
+      <QueryClientProvider client={client}>
+        <ConnectionForm initial={{ ...initial, folderId: "b" }} tabId="t" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByLabelText("Папка")).toHaveValue("b");
+    await user.clear(screen.getByLabelText("Имя"));
+    await user.type(screen.getByLabelText("Имя"), "y");
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
     await vi.waitFor(() => expect(api.saveConnection).toHaveBeenCalled());
     expect(api.moveItems).not.toHaveBeenCalled();

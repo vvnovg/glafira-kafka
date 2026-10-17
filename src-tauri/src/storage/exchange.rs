@@ -6,11 +6,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::AppResult;
 use crate::kafka::config::{
-    SASL_PASSWORD, SSL_KEY_PASSWORD, SSL_KEYSTORE_PASSWORD, SSL_TRUSTSTORE_PASSWORD,
+    SASL_PASSWORD, SSL_KEY_PASSWORD, SSL_KEYSTORE_PASSWORD, SSL_TRUSTSTORE_PASSWORD, uses_secret,
 };
 use crate::secrets::{SecretStore, secret_key};
 use crate::storage::connections::{
-    ConnectionFolder, ConnectionProfile, ConnectionStore, SecurityConfig, folder_not_found,
+    ConnectionFolder, ConnectionProfile, ConnectionStore, folder_not_found, is_secret_property,
 };
 
 pub const EXCHANGE_FORMAT: &str = "glafira-connections";
@@ -54,41 +54,34 @@ pub struct ExportSummary {
     pub folders: usize,
 }
 
-fn has_secret(secrets: &dyn SecretStore, id: &str, field: &str) -> AppResult<bool> {
-    Ok(secrets
-        .get(&secret_key(id, field))?
-        .is_some_and(|v| !v.is_empty()))
-}
-
-/// Флаги учитывают только пароли, которые профиль использует: устаревшие записи keychain
-/// (например, SASL-пароль после перехода на SSL) не требуют ввода у получателя.
+/// Флаг поднимается, только если пароль сохранён и профиль его действительно использует
+/// (матрица `uses_secret`, та же, что при подключении и сохранении): устаревшие записи keychain
+/// не требуют ввода у получателя.
 fn needs_password(secrets: &dyn SecretStore, p: &ConnectionProfile) -> AppResult<NeedsPassword> {
-    let uses_tls = matches!(
-        p.security,
-        SecurityConfig::Ssl { .. } | SecurityConfig::SaslSsl { .. }
-    );
-    let check = |used: bool, field: &str| -> AppResult<bool> {
-        if used {
-            has_secret(secrets, &p.id, field)
-        } else {
-            Ok(false)
+    let check = |field: &str| -> AppResult<bool> {
+        if !uses_secret(&p.security, field) {
+            return Ok(false);
         }
+        Ok(secrets
+            .get(&secret_key(&p.id, field))?
+            .is_some_and(|v| !v.is_empty()))
     };
     Ok(NeedsPassword {
-        sasl: check(p.security.uses_sasl(), SASL_PASSWORD)?,
-        truststore: check(uses_tls, SSL_TRUSTSTORE_PASSWORD)?,
-        keystore: check(uses_tls, SSL_KEYSTORE_PASSWORD)?,
-        key: check(uses_tls, SSL_KEY_PASSWORD)?,
+        sasl: check(SASL_PASSWORD)?,
+        truststore: check(SSL_TRUSTSTORE_PASSWORD)?,
+        keystore: check(SSL_KEYSTORE_PASSWORD)?,
+        key: check(SSL_KEY_PASSWORD)?,
     })
 }
 
 /// Собирает файл экспорта: всё дерево или поддерево `root` (сама папка становится корнем).
-/// Секреты не попадают в файл; неизвестные локальные поля (`extra`) не выносятся.
+/// Секреты (keychain и секретные `extraProperties`) не попадают в файл; неизвестные локальные
+/// поля (`extra`) не выносятся.
 pub fn build_export(
     store: &ConnectionStore,
     secrets: &dyn SecretStore,
     root: Option<&str>,
-    app_version: &str,
+    app_version: &'static str,
     now: &str,
 ) -> AppResult<ExchangeFileOut<'static>> {
     let all_folders = store.list_folders();
@@ -137,6 +130,10 @@ pub fn build_export(
         .filter(|p| in_scope(p.folder_id.as_deref()))
         .map(|mut profile| {
             profile.extra.clear();
+            // Профили с диска не валидируются: секреты в дополнительных свойствах не выносим.
+            profile
+                .extra_properties
+                .retain(|k, _| !is_secret_property(k));
             let needs_password = needs_password(secrets, &profile)?;
             Ok(ExportedConnection {
                 profile,
@@ -149,26 +146,19 @@ pub fn build_export(
         format: EXCHANGE_FORMAT,
         version: EXCHANGE_VERSION,
         exported_at: now.to_string(),
-        app_version: leak_version(app_version),
+        app_version,
         folders,
         connections,
     })
-}
-
-/// `app_version` в рабочем коде — `env!("CARGO_PKG_VERSION")`; для него утечки нет.
-fn leak_version(v: &str) -> &'static str {
-    if v == env!("CARGO_PKG_VERSION") {
-        env!("CARGO_PKG_VERSION")
-    } else {
-        Box::leak(v.to_string().into_boxed_str())
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::secrets::MemoryStore;
-    use crate::storage::connections::{SaslConfig, SaslMechanism, sample_profile};
+    use crate::storage::connections::{
+        CertFormat, SaslConfig, SaslMechanism, SecurityConfig, TlsConfig, sample_profile,
+    };
 
     fn store() -> (tempfile::TempDir, ConnectionStore) {
         let d = tempfile::tempdir().unwrap();
@@ -313,6 +303,65 @@ mod tests {
         let out = build_export(&s, &MemoryStore::default(), None, "1", "now").unwrap();
         assert!(out.connections[0].profile.extra.is_empty());
         assert!(!serde_json::to_string(&out).unwrap().contains("futureField"));
+    }
+
+    #[test]
+    fn secret_extra_properties_are_not_exported() {
+        let (_d, s) = store();
+        s.upsert(sample_profile("a")).unwrap();
+        // Профили с диска не валидируются: старый или правленый вручную файл может содержать секреты.
+        s.update(|data| {
+            let props = &mut data.connections[0].extra_properties;
+            props.insert(
+                "sasl.jaas.config".into(),
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"u\" password=\"s3cr3t\";".into(),
+            );
+            props.insert("ssl.key.password".into(), "s3cr3t".into());
+            props.insert("linger.ms".into(), "5".into());
+            Ok(())
+        })
+        .unwrap();
+        let out = build_export(&s, &MemoryStore::default(), None, "1", "now").unwrap();
+        let json = serde_json::to_string(&out).unwrap();
+        assert!(!json.contains("s3cr3t"));
+        assert!(!json.contains("sasl.jaas.config"));
+        assert!(!json.contains("ssl.key.password"));
+        assert_eq!(
+            out.connections[0].profile.extra_properties.get("linger.ms"),
+            Some(&"5".to_string())
+        );
+    }
+
+    #[test]
+    fn leftover_truststore_password_of_pem_ca_is_not_flagged() {
+        let (_d, s) = store();
+        let mut p = sample_profile("t");
+        p.security = SecurityConfig::Ssl {
+            tls: TlsConfig {
+                ca_location: Some(
+                    if cfg!(windows) {
+                        "C:\\ca.pem"
+                    } else {
+                        "/ca.pem"
+                    }
+                    .into(),
+                ),
+                ca_format: CertFormat::Pem,
+                verify_hostname: true,
+                client_cert: None,
+            },
+        };
+        s.upsert(p).unwrap();
+        let secrets = MemoryStore::default();
+        for f in [
+            SSL_TRUSTSTORE_PASSWORD,
+            SSL_KEYSTORE_PASSWORD,
+            SSL_KEY_PASSWORD,
+        ] {
+            secrets.set(&secret_key("t", f), "old").unwrap();
+        }
+        let out = build_export(&s, &secrets, None, "1", "now").unwrap();
+        assert_eq!(out.connections[0].needs_password, NeedsPassword::default());
     }
 
     #[test]

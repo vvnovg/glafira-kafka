@@ -11,6 +11,35 @@ pub const SSL_KEY_PASSWORD: &str = "ssl.key.password";
 pub const SSL_KEYSTORE_PASSWORD: &str = "ssl.keystore.password";
 pub const SSL_TRUSTSTORE_PASSWORD: &str = "ssl.truststore.password";
 
+/// Нужен ли TLS-секрет `field` при этих настройках TLS. Единая матрица для подключения
+/// (`apply_tls`), сохранения (`secret_ops`) и экспорта (`needsPassword`).
+pub fn tls_uses_secret(tls: &TlsConfig, field: &str) -> bool {
+    let client = tls.client_cert.as_ref().map(|c| c.format);
+    match field {
+        SSL_TRUSTSTORE_PASSWORD => {
+            tls.ca_format != CertFormat::Pem
+                && tls
+                    .ca_location
+                    .as_deref()
+                    .is_some_and(|s| !s.trim().is_empty())
+        }
+        SSL_KEY_PASSWORD => matches!(client, Some(CertFormat::Pem | CertFormat::Jks)),
+        SSL_KEYSTORE_PASSWORD => matches!(client, Some(CertFormat::Pkcs12 | CertFormat::Jks)),
+        _ => false,
+    }
+}
+
+/// Нужен ли секрет `field` (одна из констант выше) профилю с такими настройками безопасности.
+pub fn uses_secret(security: &SecurityConfig, field: &str) -> bool {
+    match (field, security) {
+        (SASL_PASSWORD, _) => security.uses_sasl(),
+        (_, SecurityConfig::Ssl { tls } | SecurityConfig::SaslSsl { tls, .. }) => {
+            tls_uses_secret(tls, field)
+        }
+        _ => false,
+    }
+}
+
 pub fn build_client_config(
     p: &ConnectionProfile,
     secrets: &dyn SecretStore,
@@ -76,7 +105,11 @@ fn apply_tls(
             let pem = crate::tls::load_ca(
                 tls.ca_format,
                 path,
-                secret(tls.ca_format != CertFormat::Pem, SSL_TRUSTSTORE_PASSWORD)?.as_deref(),
+                secret(
+                    tls_uses_secret(tls, SSL_TRUSTSTORE_PASSWORD),
+                    SSL_TRUSTSTORE_PASSWORD,
+                )?
+                .as_deref(),
             )?;
             c.set("ssl.ca.pem", pem);
         }
@@ -84,13 +117,9 @@ fn apply_tls(
     if let Some(cert) = &tls.client_cert {
         let id_pem = crate::tls::load_identity(
             cert,
+            secret(tls_uses_secret(tls, SSL_KEY_PASSWORD), SSL_KEY_PASSWORD)?.as_deref(),
             secret(
-                matches!(cert.format, CertFormat::Pem | CertFormat::Jks),
-                SSL_KEY_PASSWORD,
-            )?
-            .as_deref(),
-            secret(
-                matches!(cert.format, CertFormat::Pkcs12 | CertFormat::Jks),
+                tls_uses_secret(tls, SSL_KEYSTORE_PASSWORD),
                 SSL_KEYSTORE_PASSWORD,
             )?
             .as_deref(),

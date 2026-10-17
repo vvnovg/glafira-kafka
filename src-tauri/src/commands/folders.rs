@@ -4,7 +4,7 @@ use tauri::State;
 use time::format_description::well_known::Rfc3339;
 
 use super::blocking;
-use crate::error::AppResult;
+use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 use crate::storage::connections::ConnectionFolder;
 use crate::storage::exchange::{ExportSummary, build_export};
@@ -68,7 +68,7 @@ pub async fn export_connections(
     blocking(move || {
         let now = time::OffsetDateTime::now_utc()
             .format(&Rfc3339)
-            .unwrap_or_default();
+            .map_err(|e| AppError::internal_with(format!("exportedAt: {e}")))?;
         export_to_file(&st, Path::new(&path), folder_id.as_deref(), &now)
     })
     .await

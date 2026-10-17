@@ -7,7 +7,7 @@ use tauri::State;
 use super::blocking;
 use crate::error::AppResult;
 use crate::kafka::config::{
-    SASL_PASSWORD, SSL_KEY_PASSWORD, SSL_KEYSTORE_PASSWORD, SSL_TRUSTSTORE_PASSWORD,
+    SASL_PASSWORD, SSL_KEY_PASSWORD, SSL_KEYSTORE_PASSWORD, SSL_TRUSTSTORE_PASSWORD, uses_secret,
 };
 use crate::kafka::connectivity::{self, TestReport};
 use crate::secrets::{OverlayStore, SecretStore, secret_key};
@@ -50,24 +50,13 @@ fn secret_ops(
     sasl_password: Option<&str>,
     pw: Option<&TlsPasswordsInput>,
 ) -> Vec<(&'static str, SecretOp)> {
-    use crate::storage::connections::{CertFormat, SecurityConfig};
-    let tls = match &profile.security {
-        SecurityConfig::Ssl { tls } | SecurityConfig::SaslSsl { tls, .. } => Some(tls),
-        _ => None,
-    };
-    let tls_op = |used: bool, v: Option<&String>| match (used, v) {
+    let tls_op = |field: &str, v: Option<&String>| match (uses_secret(&profile.security, field), v)
+    {
         (false, _) => SecretOp::Delete,
         (true, None) => SecretOp::Keep,
         (true, Some(s)) if s.is_empty() => SecretOp::Delete,
         (true, Some(s)) => SecretOp::Set(s.clone()),
     };
-    let client = tls.and_then(|t| t.client_cert.as_ref()).map(|c| c.format);
-    let ca_store = tls.is_some_and(|t| {
-        t.ca_format != CertFormat::Pem
-            && t.ca_location
-                .as_deref()
-                .is_some_and(|s| !s.trim().is_empty())
-    });
     vec![
         (
             SASL_PASSWORD,
@@ -82,21 +71,21 @@ fn secret_ops(
         ),
         (
             SSL_KEY_PASSWORD,
-            tls_op(
-                matches!(client, Some(CertFormat::Pem | CertFormat::Jks)),
-                pw.and_then(|p| p.key_password.as_ref()),
-            ),
+            tls_op(SSL_KEY_PASSWORD, pw.and_then(|p| p.key_password.as_ref())),
         ),
         (
             SSL_KEYSTORE_PASSWORD,
             tls_op(
-                matches!(client, Some(CertFormat::Pkcs12 | CertFormat::Jks)),
+                SSL_KEYSTORE_PASSWORD,
                 pw.and_then(|p| p.keystore_password.as_ref()),
             ),
         ),
         (
             SSL_TRUSTSTORE_PASSWORD,
-            tls_op(ca_store, pw.and_then(|p| p.truststore_password.as_ref())),
+            tls_op(
+                SSL_TRUSTSTORE_PASSWORD,
+                pw.and_then(|p| p.truststore_password.as_ref()),
+            ),
         ),
     ]
 }

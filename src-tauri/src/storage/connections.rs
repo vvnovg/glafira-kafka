@@ -183,7 +183,7 @@ pub fn parse_bootstrap(s: &str) -> AppResult<Vec<(String, u16)>> {
     Ok(out)
 }
 
-fn is_secret_property(key: &str) -> bool {
+pub(crate) fn is_secret_property(key: &str) -> bool {
     let k = key.to_ascii_lowercase();
     k.contains("password")
         || k.contains("secret")

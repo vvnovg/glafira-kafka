@@ -52,6 +52,7 @@ DNS, TCP, ID, Build (сборка в «О программе»), Leader (лид�
 | bootstrap server | bootstrap-сервер | Bootstrap-Server | serveur bootstrap | servidor bootstrap | server bootstrap | serwer bootstrap | servidor bootstrap |
 | consumer session | consumer-сессия | Consumer-Sitzung | session consumer | sesión de consumer | sessione consumer | sesja konsumenta | sessão de consumer |
 | read-only | только чтение | Schreibgeschützt | Lecture seule | Solo lectura | Sola lettura | Tylko do odczytu | Somente leitura |
+| committed offset | закоммиченный оффсет | committeter Offset | offset commité | offset con commit | offset sottoposto a commit | zatwierdzony offset | offset com commit |
 | reset offsets | сбросить оффсеты | Offsets zurücksetzen | Réinitialiser les offsets | Restablecer offsets | Reimposta gli offset | Zresetuj offsety | Redefinir offsets |
 | retention | хранение (retention) | Aufbewahrung | rétention | retención | conservazione | retencja | retenção |
 | replication factor | фактор репликации | Replikationsfaktor | facteur de réplication | factor de replicación | fattore di replica | współczynnik replikacji | fator de replicação |

@@ -89,7 +89,7 @@
       "topicsAndRegex": "Entweder eine Topic-Liste oder einen regulären Ausdruck angeben"
     },
     "app": {
-      "taskPanicked": "Hintergrundaufgabe abgebrochen: {{error}}"
+      "taskPanicked": "Hintergrundaufgabe fehlgeschlagen: {{error}}"
     },
     "produce": {
       "threadFailed": "Sende-Thread konnte nicht gestartet werden: {{error}}",
@@ -242,10 +242,10 @@
       "keyAbsolutePath": "Client-Schlüssel: absoluten Pfad angeben (aktuell „{{path}}“)",
       "keyReadFailed": "Client-Schlüssel: „{{path}}“ konnte nicht gelesen werden: {{error}}",
       "caNoPemOrDer": "Vertrauenswürdige CA: „{{path}}“ enthält keine PEM- oder DER-Zertifikate",
-      "caNotPkcs12": "Vertrauenswürdige CA: die Datei ist kein PKCS#12-Keystore",
-      "caPkcs12BadPassword": "Vertrauenswürdige CA: falsches Passwort für den PKCS#12-Keystore",
-      "caPkcs12Legacy": "Vertrauenswürdige CA: der PKCS#12-Keystore ist mit einem veralteten Algorithmus (RC2/3DES) verschlüsselt, der nicht verfügbar ist. Mit AES neu erstellen: openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC …",
-      "caPkcs12ReadFailed": "Vertrauenswürdige CA: PKCS#12-Keystore konnte nicht gelesen werden",
+      "caNotPkcs12": "Vertrauenswürdige CA: die Datei ist kein PKCS#12-Truststore",
+      "caPkcs12BadPassword": "Vertrauenswürdige CA: falsches Passwort für den PKCS#12-Truststore",
+      "caPkcs12Legacy": "Vertrauenswürdige CA: der PKCS#12-Truststore ist mit einem veralteten Algorithmus (RC2/3DES) verschlüsselt, der nicht verfügbar ist. Mit AES neu erstellen: openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC …",
+      "caPkcs12ReadFailed": "Vertrauenswürdige CA: PKCS#12-Truststore konnte nicht gelesen werden",
       "clientNoPemOrDer": "Client-Zertifikat: „{{path}}“ enthält keine PEM- oder DER-Zertifikate",
       "clientNotPkcs12": "Client-Zertifikat: die Datei ist kein PKCS#12-Keystore",
       "clientPkcs12BadPassword": "Client-Zertifikat: falsches Passwort für den PKCS#12-Keystore",
@@ -687,7 +687,7 @@
       "stop": "Stoppen",
       "summary": "gescannt {{scanned}} · Treffer {{matched}} · in Tabelle {{shown}}",
       "reconnecting": "Neuverbindung: {{reason}}…",
-      "waiting": "warte auf neue Nachrichten…",
+      "waiting": "Warten auf neue Nachrichten…",
       "reading": "wird gelesen…",
       "finishLimit": "Limit erreicht",
       "finishEnd": "Ende des Topics erreicht",
@@ -707,7 +707,7 @@
       "copyKeyAria": "Schlüssel kopieren",
       "copyValueAria": "Wert kopieren",
       "copy": "Kopieren",
-      "truncated": "Angezeigt wird das erste 1 MiB des Werts.",
+      "truncated": "Angezeigt werden die ersten 1 MiB des Werts.",
       "select": "Nachricht auswählen",
       "meta": "Partition {{partition}} · Offset {{offset}} · {{time}}",
       "copyJsonAria": "Nachricht als JSON kopieren",

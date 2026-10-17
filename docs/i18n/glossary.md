@@ -50,7 +50,7 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | prod connection | prod-подключение | Prod-Verbindung | connexion prod | conexión prod | connessione prod | połączenie prod | conexão prod |
 | cluster | кластер | Cluster | cluster | clúster | cluster | klaster | cluster |
 | bootstrap server | bootstrap-сервер | Bootstrap-Server | serveur bootstrap | servidor bootstrap | server bootstrap | serwer bootstrap | servidor bootstrap |
-| consumer session | consumer-сессия | Consumer-Sitzung | session consumer | sesión de consumer | sessione consumer | sesja konsumenta | sessão de consumer |
+| consumer session | consumer-сессия | Consumer-Session (die, Pl. Sessions) | session consumer | sesión de consumer | sessione consumer | sesja konsumenta | sessão de consumer |
 | read-only | только чтение | Schreibgeschützt | Lecture seule | Solo lectura | Sola lettura | Tylko do odczytu | Somente leitura |
 | preset (набор настроек при создании топика) | пресет | Voreinstellung | préréglage | preajuste | profilo | profil (не «szablon» — так названы шаблоны продюсера) | predefinição |
 | committed offset | закоммиченный оффсет | committeter Offset | offset commité | offset con commit | offset sottoposto a commit | zatwierdzony offset | offset com commit |

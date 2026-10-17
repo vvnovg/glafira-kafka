@@ -59,7 +59,7 @@
       "downloadInterrupted": "Der Download des Updates wurde unterbrochen — Netzwerk prüfen und erneut versuchen",
       "badSignature": "Die Signatur des Updates konnte nicht verifiziert werden — das Update wurde nicht installiert",
       "installFailed": "Update konnte nicht installiert werden",
-      "sessionsActive": "Aktive Sitzungen: {{active}} (Lesen, Consumer oder Stapelversand). Das Update beendet sie.",
+      "sessionsActive": "Aktive Sessions: {{active}} (Lesen, Consumer oder Stapelversand). Das Update beendet sie.",
       "none": "Keine Updates verfügbar"
     },
     "browse": {
@@ -76,11 +76,11 @@
       "timestampOffsetFailed": "Offset nach Zeit für Partition {{partition}} konnte nicht ermittelt werden"
     },
     "consume": {
-      "threadFailed": "Thread der Consumer-Sitzung konnte nicht gestartet werden: {{error}}",
-      "sessionGone": "Die Consumer-Sitzung wurde nicht gefunden oder ist bereits beendet",
-      "sessionTimeout": "Die Consumer-Sitzung hat nicht rechtzeitig geantwortet",
+      "threadFailed": "Thread der Consumer-Session konnte nicht gestartet werden: {{error}}",
+      "sessionGone": "Die Consumer-Session wurde nicht gefunden oder ist bereits beendet",
+      "sessionTimeout": "Die Consumer-Session hat nicht rechtzeitig geantwortet",
       "noPartitions": "Keine Partitionen ausgewählt",
-      "notAssigned": "Partitionen sind dieser Sitzung nicht zugewiesen: {{partitions}}",
+      "notAssigned": "Partitionen sind dieser Session nicht zugewiesen: {{partitions}}",
       "badOffset": "Ungültiger Offset der Nachricht",
       "nothingToCommit": "Keine gelesenen Nachrichten zum Committen",
       "groupIdMissing": "group.id angeben",
@@ -344,7 +344,7 @@
     "topics": "Topics",
     "groups": "Consumer Groups",
     "producer": "Producer",
-    "consumer": "Consumer-Sitzung",
+    "consumer": "Consumer-Session",
     "license": "Lizenz: {{tier}}",
     "about": "Über Glafira"
   },
@@ -358,7 +358,7 @@
     "topics": "{{conn}} · Topics",
     "groups": "{{conn}} · Gruppen",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · Sitzung {{target}}"
+    "consumer": "{{conn}} · Session {{target}}"
   },
   "settings": {
     "title": "Einstellungen",
@@ -830,9 +830,9 @@
     }
   },
   "consumer": {
-    "warn": "Die Sitzung tritt der Gruppe bei und wirkt sich auf den Cluster aus: bei den anderen Gruppenmitgliedern findet ein Rebalance statt, und Commits ändern die Offsets der Gruppe.",
-    "proOnly": "Consumer-Sitzungen sind in Pro verfügbar.",
-    "readOnlyBlocked": "Consumer-Sitzungen sind für schreibgeschützte Verbindungen nicht verfügbar: der Beitritt zu einer Gruppe ändert deren Status.",
+    "warn": "Die Session tritt der Gruppe bei und wirkt sich auf den Cluster aus: bei den anderen Gruppenmitgliedern findet ein Rebalance statt, und Commits ändern die Offsets der Gruppe.",
+    "proOnly": "Consumer-Sessions sind in Pro verfügbar.",
+    "readOnlyBlocked": "Consumer-Sessions sind für schreibgeschützte Verbindungen nicht verfügbar: der Beitritt zu einer Gruppe ändert deren Status.",
     "disconnect": "Trennen",
     "form": {
       "groupTopics": "Gruppe und Topics",
@@ -867,7 +867,7 @@
     },
     "missingTopic": "Topic im Cluster nicht gefunden. Namen prüfen: {{topics}}.",
     "missingTopicOrGroup": "Topic oder Gruppe im Cluster nicht gefunden.",
-    "commitTimeout": "Unklar, ob der Commit angewendet wurde: die Sitzung hat nicht rechtzeitig geantwortet, die Anfrage kann aber durchgegangen sein. Offsets der Gruppe prüfen.",
+    "commitTimeout": "Unklar, ob der Commit angewendet wurde: die Session hat nicht rechtzeitig geantwortet, die Anfrage kann aber durchgegangen sein. Offsets der Gruppe prüfen.",
     "committed": "Committet: {{offsets}}",
     "validation": {
       "groupId": "group.id angeben",
@@ -912,7 +912,7 @@
     "removeYes": "Ja, entfernen",
     "removeKey": "Schlüssel entfernen",
     "whatProGives": "Was Pro bietet",
-    "proConsumer": "Consumer-Sitzungen: als Gruppenmitglied lesen, Offsets committen, Partitionen pausieren.",
+    "proConsumer": "Consumer-Sessions: als Gruppenmitglied lesen, Offsets committen, Partitionen pausieren.",
     "proProd": "Prod-Modus: Verbindungen anlegen und auf Prod umstellen (jede Änderung wird durch Eingabe des Verbindungsnamens bestätigt).",
     "policyTitle": "Organisationsrichtlinie",
     "policySource": "Quelle: {{source}}",
@@ -948,7 +948,7 @@
       "upToDate": "Sie haben die neueste Version",
       "available": "Version {{version}} ist verfügbar",
       "confirmAria": "Update bestätigen",
-      "stopAndUpdate": "Sitzungen beenden und aktualisieren",
+      "stopAndUpdate": "Sessions beenden und aktualisieren",
       "install": "Installieren und neu starten",
       "installing": "Update wird heruntergeladen und installiert…"
     },

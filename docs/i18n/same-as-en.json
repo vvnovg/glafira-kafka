@@ -49,6 +49,7 @@
     "settings.language.proSuffix",
     "sidebar.producer",
     "sidebar.topics",
+    "tabs.consumer",
     "tabs.producer",
     "tabs.topics",
     "topics.actions.partitionAria",

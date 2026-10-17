@@ -185,5 +185,30 @@
     "tabs.producer",
     "topics.details.colLeader",
     "topics.groups.colLag"
+  ],
+  "pl": [
+    "about.build",
+    "about.system",
+    "about.tier",
+    "browse.form.format",
+    "browse.form.limit",
+    "browse.form.offsetAria",
+    "connections.form.prodPro",
+    "connections.form.step.tcp",
+    "consumer.form.formatLegend",
+    "errors.source.csv",
+    "groups.details.colHost",
+    "groups.details.colLag",
+    "groups.list.colLag",
+    "groups.reset.offset",
+    "license.tier",
+    "producer.headers.colFormat",
+    "producer.partitionAuto",
+    "settings.language.proSuffix",
+    "sidebar.producer",
+    "tabs.producer",
+    "topics.create.preset",
+    "topics.details.colLeader",
+    "topics.groups.colLag"
   ]
 }

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { open as openDialog, save } from "@tauri-apps/plugin-dialog";
-import { type DragEvent, type KeyboardEvent, useMemo, useRef, useState } from "react";
+import { type DragEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { api, toAppError } from "../../../api/client";
 import type { AppError, ConnectionFolder, ImportPreview, TreeItemRef } from "../../../api/types";
@@ -174,11 +174,13 @@ export function ConnectionTree() {
       queryClient.invalidateQueries({ queryKey: ["connections"] }),
     ]);
 
+  // Запись в localStorage — эффектом, а не внутри updater: updater должен быть чистым.
+  useEffect(() => writeCollapsed(collapsed), [collapsed]);
+
   const setCollapsedAndSave = (update: (next: Set<string>) => void) =>
     setCollapsed((prev) => {
       const next = new Set(prev);
       update(next);
-      writeCollapsed(next);
       return next;
     });
 
@@ -408,6 +410,8 @@ export function ConnectionTree() {
               className={folderRowClass(folder, parentId, folder.id === last, node.children)}
               {...dragSource({ kind: "folder", id: folder.id })}
               {...folderRowTarget(folder, parentId)}
+              // Пока открыто меню папки, строку не перетаскивают (выделение текста пунктов не начинает перенос).
+              draggable={menu !== folder.id}
               onContextMenu={(e) => {
                 e.preventDefault();
                 setMenu(folder.id);
@@ -455,7 +459,8 @@ export function ConnectionTree() {
 
   const error = connectionsQ.error ?? foldersQ.error;
   const rootHighlight = dropKey === "root" || (dropKey === foldersEndKey(null) && lastFolderId(visible) === null);
-  const empty = connectionsQ.isSuccess && (connections ?? []).length === 0 && (folders ?? []).length === 0;
+  // Пока не загружены и подключения, и папки, подсказку о пустом списке не показываем.
+  const empty = connectionsQ.isSuccess && foldersQ.isSuccess && (connections ?? []).length === 0 && (folders ?? []).length === 0;
 
   return (
     <>

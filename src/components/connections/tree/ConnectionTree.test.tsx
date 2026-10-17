@@ -1,5 +1,6 @@
 import { createEvent, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionFolder, ConnectionProfile } from "../../../api/types";
 import { renderWithClient } from "../../../test/render";
@@ -99,6 +100,41 @@ describe("ConnectionTree", () => {
     renderWithClient(<ConnectionTree />);
     expect(await screen.findByText("local")).toBeInTheDocument();
     expect(screen.queryByText("kafka-ift")).not.toBeInTheDocument();
+  });
+
+  it("сворачивание пишет localStorage один раз (без побочных эффектов в updater)", async () => {
+    const user = userEvent.setup();
+    renderWithClient(
+      <StrictMode>
+        <ConnectionTree />
+      </StrictMode>,
+    );
+    await screen.findByText("kafka-ift");
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    await user.click(screen.getByRole("button", { name: "Развернуть или свернуть Проект А" }));
+    expect(setItem.mock.calls.filter(([k]) => k === "glafira.tree.collapsed")).toEqual([["glafira.tree.collapsed", '["a"]']]);
+    setItem.mockRestore();
+  });
+
+  it("подсказка о пустом списке не мелькает, пока папки загружаются", async () => {
+    let resolveFolders: (f: ConnectionFolder[]) => void = () => {};
+    vi.mocked(api.listFolders).mockReturnValue(new Promise((r) => (resolveFolders = r)));
+    vi.mocked(api.listConnections).mockResolvedValue([]);
+    renderWithClient(<ConnectionTree />);
+    await waitFor(() => expect(api.listConnections).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText(/Добавьте первое подключение/)).not.toBeInTheDocument();
+    resolveFolders([]);
+    expect(await screen.findByText(/Добавьте первое подключение/)).toBeInTheDocument();
+  });
+
+  it("строка папки с открытым меню не перетаскивается", async () => {
+    renderWithClient(<ConnectionTree />);
+    await screen.findByText("kafka-ift");
+    expect(folderRow("Проект А")).toHaveAttribute("draggable", "true");
+    await openFolderMenu("Проект А");
+    expect(folderRow("Проект А")).toHaveAttribute("draggable", "false");
+    expect(folderRow("ИФТ")).toHaveAttribute("draggable", "true");
   });
 
   it("испорченное значение в localStorage не ломает дерево", async () => {

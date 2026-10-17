@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,8 @@ export function HelpPanel({ spec }: { spec: HelpRequest }) {
     queryKey: ["guide", lang],
     queryFn: () => loadGuide(lang),
     staleTime: Infinity,
+    // При смене языка показываем прежние главы, пока грузятся новые, — без мигания «Загрузка…».
+    placeholderData: keepPreviousData,
   });
 
   const [target, setTarget] = useState<Target>(() => ({
@@ -57,7 +59,7 @@ export function HelpPanel({ spec }: { spec: HelpRequest }) {
   useEffect(() => {
     const root = contentRef.current;
     if (!root || !chapter) return;
-    const el = target.anchor ? root.querySelector(`[id="${target.anchor}"]`) : null;
+    const el = target.anchor ? root.querySelector(`#${CSS.escape(target.anchor)}`) : null;
     if (el) el.scrollIntoView?.({ block: "start" });
     else root.scrollTop = 0;
   }, [target, chapter]);
@@ -88,9 +90,9 @@ export function HelpPanel({ spec }: { spec: HelpRequest }) {
             <ul className="help-hits">
               {hits.map((h) => {
                 const ch = chapters.find((c) => c.id === h.chapter);
-                const name = h.section === null ? ch?.title : `${ch?.title} › ${h.title}`;
+                const name = h.title === ch?.title ? ch.title : `${ch?.title} › ${h.title}`;
                 return (
-                  <li key={`${h.chapter}#${h.section ?? ""}`}>
+                  <li key={`${h.chapter}#${h.section ?? h.title}`}>
                     <button type="button" className="link" onClick={() => go(h.chapter, h.section)}>
                       <span className="help-hit-title">{name}</span>
                       <span className="help-muted">{h.snippet}</span>
@@ -134,10 +136,11 @@ export function HelpPanel({ spec }: { spec: HelpRequest }) {
       </div>
       <article className="help-content" ref={contentRef}>
         <h1>{chapter.title}</h1>
-        {chapter.sections.map((s) => (
-          <section key={s.id ?? ""}>
-            {s.id !== null && <h2 id={s.id}>{s.title}</h2>}
-            <Markdown skipHtml components={components}>
+        {chapter.sections.map((s, i) => (
+          <section key={i}>
+            {s.heading && <h2 id={s.id ?? undefined}>{s.title}</h2>}
+            {/* Картинки не показываем: справка работает без сети. */}
+            <Markdown skipHtml disallowedElements={["img"]} components={components}>
               {s.markdown}
             </Markdown>
           </section>

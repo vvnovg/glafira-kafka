@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionProfile } from "../api/types";
+import { useHelpContext } from "../state/helpContext";
 import { useWorkspace } from "../state/workspace";
 import { renderWithClient } from "../test/render";
 import { Layout } from "./Layout";
@@ -67,6 +68,18 @@ describe("Layout tabs", () => {
     expect(activeId).toBe("help");
     expect(tabs.find((t) => t.id === "help")).toMatchObject({ kind: "help", chapter: "producer" });
     expect(within(screen.getByRole("tablist")).getByRole("tab", { name: "Справка" })).toBeInTheDocument();
+  });
+
+  it("F1 prefers the chapter the active screen reports", () => {
+    useWorkspace.setState({
+      tabs: [{ kind: "topic", connectionId: "c1", topic: "orders", id: "topic:c1:orders" }],
+      activeId: "topic:c1:orders",
+    });
+    useHelpContext.setState({ byTab: { "topic:c1:orders": "browse" } });
+    renderWithClient(<Layout />);
+    fireEvent.keyDown(window, { key: "F1" });
+    expect(useWorkspace.getState().tabs.find((t) => t.id === "help")).toMatchObject({ chapter: "browse" });
+    useHelpContext.setState({ byTab: {} });
   });
 
   it("opens the guide from the sidebar", () => {

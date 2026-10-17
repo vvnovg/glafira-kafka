@@ -28,6 +28,7 @@ describe("parseChapter", () => {
     expect(ch.title).toBe("Подключения");
     expect(ch.sections.map((s) => s.id)).toEqual([null, "plain", "mtls"]);
     expect(ch.sections[0].title).toBe("Подключения");
+    expect(ch.sections.map((s) => s.heading)).toEqual([false, true, true]);
     expect(ch.sections[1].title).toBe("Простое подключение");
     expect(ch.sections[1].markdown).toContain("## не заголовок {#nope}");
     expect(ch.sections[2].title).toBe("Взаимный TLS");
@@ -38,6 +39,22 @@ describe("parseChapter", () => {
     expect(ch.sections[0].markdown).toContain("**Настройки**");
     expect(ch.sections[2].markdown).toContain("**О программе**");
     expect(ch.sections[0].markdown).not.toContain("[[ui:");
+  });
+
+  it("escapes markdown in label values", () => {
+    const tricky = () => "<code>x</code> [a](b) *z* \\ # | ~ ! _u_";
+    const ch = parseChapter("topics", "# T [[ui:k]]\n\nСм. [[ui:k]].\n", tricky);
+    expect(ch.title).toBe("T <code>x</code> [a](b) *z* \\ # | ~ ! _u_");
+    expect(ch.sections[0].markdown).toBe(
+      "См. **\\<code\\>x\\</code\\> \\[a\\](b) \\*z\\* \\\\ \\# \\| \\~ \\! \\_u\\_**.",
+    );
+    const [hit] = searchGuide([ch], "[a](b) *z*");
+    expect(hit.snippet).toBe("См. <code>x</code> [a](b) *z* \\ # | ~ ! _u_.");
+  });
+
+  it("keeps a heading without an anchor as a titled section", () => {
+    const ch = parseChapter("topics", "# T\n\n## Без якоря\n\nТекст\n", label);
+    expect(ch.sections).toEqual([{ id: null, title: "Без якоря", markdown: "Текст", heading: true }]);
   });
 
   it("omits an empty intro", () => {

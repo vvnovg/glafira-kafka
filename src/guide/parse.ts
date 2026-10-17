@@ -1,10 +1,14 @@
 import type { ChapterId } from "./chapters";
 
-/** Раздел главы; id null — вступление до первого `##` (его title — заголовок главы). */
+/**
+ * Раздел главы. heading false — вступление до первого `##` (его title — заголовок главы);
+ * id null — вступление или `##` без `{#id}`.
+ */
 export interface GuideSection {
   id: string | null;
   title: string;
   markdown: string;
+  heading: boolean;
 }
 
 export interface GuideChapter {
@@ -24,8 +28,14 @@ const LABEL = /\[\[ui:([A-Za-z0-9_.-]+)\]\]/g;
 const SECTION = /^##\s+(.*?)\s*(?:\{#([a-z0-9-]+)\})?\s*$/;
 const FENCE = /^\s*(```|~~~)/;
 
+/** Символы Markdown, которые в значении метки должны остаться текстом. */
+const SPECIAL = /[\\`*_[\]<>#|~!]/g;
+const ESCAPED = /\\([\\`*_[\]<>#|~!])/g;
+
+const escapeMarkdown = (value: string) => value.replace(SPECIAL, (c) => `\\${c}`);
+
 function withLabels(text: string, label: (key: string) => string, bold: boolean): string {
-  return text.replace(LABEL, (_m, key: string) => (bold ? `**${label(key)}**` : label(key)));
+  return text.replace(LABEL, (_m, key: string) => (bold ? `**${escapeMarkdown(label(key))}**` : label(key)));
 }
 
 /** Разбирает главу: `# Заголовок`, разделы `## Заголовок {#id}`, метки `[[ui:ключ]]` → `**значение**`. */
@@ -34,12 +44,14 @@ export function parseChapter(id: ChapterId, text: string, label: (key: string) =
   let title: string = id;
   const sections: GuideSection[] = [];
   let current: { id: string | null; title: string | null; body: string[] } = { id: null, title: null, body: [] };
+  // title null — вступление до первого `##`.
   let inFence = false;
   let titleSeen = false;
 
   const flush = () => {
     const markdown = current.body.join("\n").trim();
-    if (current.title !== null || markdown) sections.push({ id: current.id, title: current.title ?? title, markdown });
+    if (current.title !== null || markdown)
+      sections.push({ id: current.id, title: current.title ?? title, markdown, heading: current.title !== null });
   };
 
   for (const line of lines) {
@@ -64,10 +76,11 @@ export function parseChapter(id: ChapterId, text: string, label: (key: string) =
 /** Текст раздела без разметки Markdown — для поиска и фрагментов. */
 function plain(markdown: string): string {
   return markdown
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/(?<!\\)!?\[((?:[^\]\\]|\\.)*)\]\([^)]*\)/g, "$1")
     .replace(/^\s*(```|~~~).*$/gm, "")
     .replace(/^\s{0,3}(#{1,6}\s+|>\s?|[-*+]\s+|\d+\.\s+)/gm, "")
-    .replace(/(\*\*|__|`|\*|_)/g, "")
+    .replace(/(?<!\\)(\*\*|__|`|\*|_)/g, "")
+    .replace(ESCAPED, "$1")
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -7,6 +7,7 @@ import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { proHint, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
+import { useHelpChapter } from "../../state/helpContext";
 import { newConsumerKey, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
 import { ProLock } from "../common/ProLock";
@@ -28,6 +29,7 @@ const SUBTABS: { id: SubTab; labelKey: string }[] = [
 export function TopicDetails({ connectionId, topic }: { connectionId: string; topic: string }) {
   const { t: tt } = useTranslation();
   const [sub, setSub] = useState<SubTab>("messages");
+  useHelpChapter(tabId({ kind: "topic", connectionId, topic }), sub === "messages" ? "browse" : "topics");
   const q = useQuery({ queryKey: ["topic", connectionId, topic], queryFn: () => api.getTopic(connectionId, topic) });
 
   const connection = useConnection(connectionId);

@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "../../i18n";
 import { renderWithClient } from "../../test/render";
+import { loadGuide } from "../../guide/chapters";
 import { HelpPanel } from "./HelpPanel";
 
 const openUrl = vi.fn();
@@ -13,13 +14,14 @@ vi.mock("../../guide/chapters", async (importOriginal) => {
     ...actual,
     loadGuide: vi.fn().mockResolvedValue({
       "getting-started":
-        "# Начало работы\n\nОткройте [[ui:sidebar.settings]].\n\n## Первое подключение {#first-connection}\n\nСм. [mTLS](connections.md#mtls), [сайт](https://example.com) и [файл](../admin.md).\n",
+        "# Начало работы\n\nОткройте [[ui:sidebar.settings]].\n\n## Первое подключение {#first-connection}\n\nСм. [mTLS](connections.md#mtls), [сайт](https://example.com) и [файл](../admin.md), [плохая](javascript:alert(1)).\n\nЗначение: [[ui:test.tricky]].\n\n![картинка](https://example.com/a.png)\n\n## Без якоря\n\nТекст без якоря.\n",
       connections: "# Подключения\n\n## Простое {#plain}\n\nАдрес брокера.\n\n## mTLS {#mtls}\n\nНужен сертификат клиента.\n",
     }),
   };
 });
 
 const EMPTY = {};
+i18n.addResource("ru", "translation", "test.tricky", "<code>x</code> [a](b) *z*");
 
 describe("HelpPanel", () => {
   beforeEach(() => {
@@ -60,6 +62,26 @@ describe("HelpPanel", () => {
     expect(openUrl).toHaveBeenCalledWith("https://example.com");
     expect(screen.queryByRole("link", { name: "файл" })).toBeNull();
     expect(screen.getByText("файл")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "плохая" })).toBeNull();
+    expect(screen.getByText("плохая")).toBeInTheDocument();
+  });
+
+  it("renders label values literally and never loads images", async () => {
+    const { container } = renderWithClient(<HelpPanel spec={EMPTY} />);
+    expect(await screen.findByText("<code>x</code> [a](b) *z*", { selector: "strong" })).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("code")).toBeNull();
+  });
+
+  it("renders a heading without an anchor", async () => {
+    renderWithClient(<HelpPanel spec={EMPTY} />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Без якоря" })).not.toHaveAttribute("id");
+  });
+
+  it("shows an error when the guide fails to load", async () => {
+    vi.mocked(loadGuide).mockRejectedValueOnce(new Error("boom"));
+    renderWithClient(<HelpPanel spec={EMPTY} />);
+    expect(await screen.findByText("Не удалось загрузить руководство")).toBeInTheDocument();
   });
 
   it("searches and jumps to a result", async () => {
@@ -81,6 +103,7 @@ describe("HelpPanel", () => {
       await i18n.changeLanguage("en");
     });
     expect(await screen.findByText("Settings")).toBeInTheDocument();
+    expect(loadGuide).toHaveBeenCalledWith("en");
     await act(async () => {
       await i18n.changeLanguage("ru");
     });

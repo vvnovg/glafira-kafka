@@ -987,6 +987,17 @@
       "preset": "<code>delete</code> elimina los mensajes antiguos por tiempo, <code>compact</code> conserva el último valor de cada clave, <code>compact + delete</code> hace ambas cosas, <code>test</code> conserva los mensajes 1 hora.",
       "extraConfigs": "Cualquier ajuste del topic como <code>key=value</code>, uno por línea, por ejemplo <code>retention.ms=86400000</code>. Tiene prioridad sobre el preajuste.",
       "config": "“restablecer” elimina el valor personalizado y se aplica el valor predeterminado del broker. No cambia nada hasta que revises y confirmes los cambios."
+    },
+    "groups": {
+      "strategyEarliest": "El grupo volverá a leer todo lo que el topic aún conserva.",
+      "strategyLatest": "El grupo omite todo lo acumulado y empieza con los mensajes nuevos.",
+      "strategyTimestamp": "Cada partición pasa al primer mensaje escrito en la hora indicada o después.",
+      "strategyOffset": "Establece el offset exacto para cada partición seleccionada.",
+      "strategyShift": "Desplaza el offset actual: −N vuelve a leer N mensajes hacia atrás, +N omite N mensajes.",
+      "scope": "Todo el grupo, los topics seleccionados o particiones concretas en formato <code>topic:partition</code>.",
+      "onlyEmpty": "Los miembros activos sobrescribirían los nuevos offsets con sus propios commits. Detén primero las aplicaciones del grupo.",
+      "preview": "Muestra los offsets actuales y nuevos por partición. Nada cambia hasta que pulses “Aplicar”.",
+      "lag": "Cuántos mensajes aún no ha leído el grupo: el final del log menos el offset con commit."
     }
   }
 }

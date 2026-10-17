@@ -101,4 +101,23 @@ describe("ResetOffsetsPanel", () => {
     await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
     expect(await screen.findByText("Нет партиций для сброса")).toBeInTheDocument();
   });
+
+  it("подсказки «?»: текст стратегии зависит от выбранной стратегии", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ResetOffsetsPanel connection={prod} groupId="g" onApplied={() => {}} onClose={() => {}} />);
+    for (const label of ["Стратегия", "Область", "Сброс оффсетов группы «g»", "Предпросмотр"]) {
+      expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
+    }
+    // Значок рядом с подписью, а не внутри: доступное имя поля не меняется.
+    expect(screen.getByLabelText("Стратегия")).toHaveAttribute("id", "rs-strategy");
+    expect(screen.getByLabelText("Область")).toHaveAttribute("id", "rs-scope");
+    const icon = screen.getByRole("button", { name: "Подсказка: Стратегия" });
+    await user.click(icon);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Группа перечитает всё, что ещё хранится в топике.");
+    await user.selectOptions(screen.getByLabelText("Стратегия"), "latest");
+    // Клик по списку закрывает подсказку; снова открытая — уже с текстом новой стратегии.
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    await user.click(icon);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Группа пропустит всё накопленное и начнёт с новых сообщений.");
+  });
 });

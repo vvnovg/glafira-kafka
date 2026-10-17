@@ -7,6 +7,7 @@ import { tr } from "../../i18n/text";
 import type { ResetPrefill } from "../../state/workspace";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { buildResetRequest, defaultResetForm, type ResetForm, targetsFromPreview } from "./reset";
 
 const STRATEGIES = [
@@ -21,6 +22,14 @@ const SCOPES = [
   { id: "topics", labelKey: "groups.reset.scopeTopics" },
   { id: "partitions", labelKey: "groups.reset.scopePartitions" },
 ] as const satisfies readonly { id: ResetForm["scope"]; labelKey: string }[];
+// Подсказка подписи «Стратегия» зависит от выбранной стратегии; статические литералы нужны проверке i18n.
+const STRATEGY_HINTS: Record<ResetForm["strategy"], string> = {
+  earliest: "hints.groups.strategyEarliest",
+  latest: "hints.groups.strategyLatest",
+  timestamp: "hints.groups.strategyTimestamp",
+  offset: "hints.groups.strategyOffset",
+  shift: "hints.groups.strategyShift",
+};
 
 interface Props {
   connection: ConnectionProfile;
@@ -80,9 +89,15 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
   return (
     <div className="panel">
       <h3>{t("groups.reset.title", { groupId })}</h3>
-      <p className="muted">{t("groups.reset.onlyEmpty")}</p>
+      <p className="muted">
+        {t("groups.reset.onlyEmpty")}
+        <Hint k="hints.groups.onlyEmpty" label={t("groups.reset.title", { groupId })} />
+      </p>
       <fieldset className="form" disabled={apply.isPending} style={{ border: 0, padding: 0 }}>
-        <label htmlFor="rs-strategy">{t("groups.reset.strategy")}</label>
+        <span className="field-label">
+          <label htmlFor="rs-strategy">{t("groups.reset.strategy")}</label>
+          <Hint k={STRATEGY_HINTS[form.strategy]} label={t("groups.reset.strategy")} />
+        </span>
         <select id="rs-strategy" value={form.strategy} onChange={(e) => update({ strategy: e.target.value as ResetForm["strategy"], value: "" })}>
           {STRATEGIES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -102,7 +117,10 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
             <input id="rs-value" type="number" value={form.value} onChange={(e) => update({ value: e.target.value })} />
           </>
         )}
-        <label htmlFor="rs-scope">{t("groups.reset.scope")}</label>
+        <span className="field-label">
+          <label htmlFor="rs-scope">{t("groups.reset.scope")}</label>
+          <Hint k="hints.groups.scope" label={t("groups.reset.scope")} />
+        </span>
         <select id="rs-scope" value={form.scope} onChange={(e) => update({ scope: e.target.value as ResetForm["scope"] })}>
           {SCOPES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -122,6 +140,7 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
         <button type="button" className="primary" disabled={preview.isPending || apply.isPending} onClick={runPreview}>
           {t("groups.reset.preview")}
         </button>
+        <Hint k="hints.groups.preview" label={t("groups.reset.preview")} />
         <button type="button" disabled={apply.isPending} onClick={onClose}>
           {t("common.close")}
         </button>

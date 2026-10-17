@@ -11,6 +11,7 @@ import { formatCount } from "../../lib/format";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { visibleChunks } from "../topics/topicFilter";
 import { filterGroups, GROUP_CHUNK, groupStates } from "./groupFilter";
 
@@ -109,7 +110,10 @@ export function GroupList({ connectionId }: { connectionId: string }) {
           <span>{t("groups.list.colState")}</span>
           <span>{t("groups.list.colMembers")}</span>
           <span>Assignor</span>
-          <span>{t("groups.list.colLag")}</span>
+          <span>
+            {t("groups.list.colLag")}
+            <Hint k="hints.groups.lag" label={t("groups.list.colLag")} />
+          </span>
           <span>{t("groups.list.colTopics")}</span>
         </div>
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>

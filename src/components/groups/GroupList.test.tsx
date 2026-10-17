@@ -19,6 +19,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 });
 
 import { api } from "../../api/client";
+import { useWorkspace } from "../../state/workspace";
 import { GroupList } from "./GroupList";
 
 beforeEach(() => {
@@ -70,5 +71,17 @@ describe("GroupList", () => {
       expect(vi.mocked(api.getGroupsLag).mock.calls.length).toBe(l0 + 1);
       expect(vi.mocked(api.describeGroups).mock.calls.length).toBe(d0 + 1);
     });
+  });
+
+  it("подсказка «?» в заголовке колонки лага не открывает группу", async () => {
+    const user = userEvent.setup();
+    const tabs0 = useWorkspace.getState().tabs.length;
+    renderWithClient(<GroupList connectionId="c" />);
+    expect(await screen.findByText("orders")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Подсказка: Лаг" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Сколько сообщений группа ещё не прочитала: конец лога минус закоммиченный оффсет.",
+    );
+    expect(useWorkspace.getState().tabs).toHaveLength(tabs0);
   });
 });

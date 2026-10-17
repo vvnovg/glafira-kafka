@@ -983,6 +983,17 @@
       "preset": "<code>delete</code> removes old messages by time, <code>compact</code> keeps the latest value per key, <code>compact + delete</code> does both, <code>test</code> keeps messages for 1 hour.",
       "extraConfigs": "Any topic setting as <code>key=value</code>, one per line, for example <code>retention.ms=86400000</code>. Overrides the preset.",
       "config": "“reset to default” removes the override, and the broker default applies. Nothing changes until you review and confirm the changes."
+    },
+    "groups": {
+      "strategyEarliest": "The group will reread everything the topic still keeps.",
+      "strategyLatest": "The group skips everything accumulated and starts with new messages.",
+      "strategyTimestamp": "Each partition moves to the first message written at or after the given time.",
+      "strategyOffset": "Sets the exact offset for every selected partition.",
+      "strategyShift": "Moves the current offset: −N rereads N messages back, +N skips N messages.",
+      "scope": "Whole group, selected topics, or specific partitions as <code>topic:partition</code>.",
+      "onlyEmpty": "Active members would overwrite the new offsets with their own commits. Stop the group's applications first.",
+      "preview": "Shows current and new offsets per partition. Nothing changes until you apply.",
+      "lag": "How many messages the group has not read yet: the end of the log minus the committed offset."
     }
   }
 }

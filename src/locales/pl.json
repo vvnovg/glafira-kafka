@@ -991,6 +991,17 @@
       "preset": "<code>delete</code> usuwa stare wiadomości według czasu, <code>compact</code> zachowuje ostatnią wartość każdego klucza, <code>compact + delete</code> robi jedno i drugie, <code>test</code> przechowuje wiadomości przez 1 godzinę.",
       "extraConfigs": "Dowolne parametry topiku w postaci <code>key=value</code>, po jednym w wierszu, na przykład <code>retention.ms=86400000</code>. Mają pierwszeństwo przed profilem.",
       "config": "„przywróć wartość domyślną” usuwa nadpisanie — obowiązuje wartość domyślna brokera. Nic się nie zmieni, dopóki zmiany nie zostaną przejrzane i potwierdzone."
+    },
+    "groups": {
+      "strategyEarliest": "Grupa ponownie odczyta wszystko, co topik jeszcze przechowuje.",
+      "strategyLatest": "Grupa pominie wszystkie zgromadzone wiadomości i zacznie od nowych.",
+      "strategyTimestamp": "Każda partycja przechodzi do pierwszej wiadomości zapisanej we wskazanym czasie lub później.",
+      "strategyOffset": "Ustawia dokładny offset dla każdej wybranej partycji.",
+      "strategyShift": "Przesuwa bieżący offset: −N ponownie odczytuje N wiadomości wstecz, +N pomija N wiadomości.",
+      "scope": "Cała grupa, wybrane topiki lub konkretne partycje w postaci <code>topic:partition</code>.",
+      "onlyEmpty": "Aktywni członkowie nadpisaliby nowe offsety własnymi commitami. Najpierw należy zatrzymać aplikacje grupy.",
+      "preview": "Pokazuje bieżące i nowe offsety dla każdej partycji. Nic się nie zmienia do kliknięcia „Zastosuj”.",
+      "lag": "Ile wiadomości grupa jeszcze nie odczytała: koniec logu minus zatwierdzony offset."
     }
   }
 }

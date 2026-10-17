@@ -336,15 +336,34 @@ pub(crate) fn connection_not_found(id: &str) -> AppError {
 const CURRENT_SCHEMA_VERSION: u32 = 1;
 const FOLDER_NAME_MAX_CHARS: usize = 100;
 
+/// Папки и подключения читаются по одному: запись, которую эта версия не понимает
+/// (например, новое окружение или механизм аутентификации), не ломает весь файл.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ConnectionsFile {
     schema_version: u32,
     #[serde(default)]
-    folders: Vec<ConnectionFolder>,
-    connections: Vec<ConnectionProfile>,
+    folders: Vec<serde_json::Value>,
+    connections: Vec<serde_json::Value>,
     #[serde(flatten)]
     extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Список для записи: сначала разобранные записи, затем нечитаемые — как были в файле.
+struct WithRaw<'a, T>(&'a [T], &'a [serde_json::Value]);
+
+impl<T: Serialize> Serialize for WithRaw<'_, T> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeSeq;
+        let mut seq = s.serialize_seq(Some(self.0.len() + self.1.len()))?;
+        for item in self.0 {
+            seq.serialize_element(item)?;
+        }
+        for item in self.1 {
+            seq.serialize_element(item)?;
+        }
+        seq.end()
+    }
 }
 
 /// Запись файла без копирования данных кэша.
@@ -352,18 +371,47 @@ struct ConnectionsFile {
 #[serde(rename_all = "camelCase")]
 struct ConnectionsFileRef<'a> {
     schema_version: u32,
-    folders: &'a [ConnectionFolder],
-    connections: &'a [ConnectionProfile],
+    folders: WithRaw<'a, ConnectionFolder>,
+    connections: WithRaw<'a, ConnectionProfile>,
     #[serde(flatten)]
     extra: &'a serde_json::Map<String, serde_json::Value>,
 }
 
 /// Содержимое `connections.json` в памяти: подключения, папки и неизвестные поля файла.
+///
+/// `raw_connections` и `raw_folders` — записи, которые эта версия не смогла разобрать
+/// (из более новой Glafira). В приложении они не показываются, `check_tree` их не видит,
+/// ссылки на нечитаемую папку считаются корнем; при записи они возвращаются в файл без изменений.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct StoreData {
     pub connections: Vec<ConnectionProfile>,
     pub folders: Vec<ConnectionFolder>,
     pub extra: serde_json::Map<String, serde_json::Value>,
+    pub raw_connections: Vec<serde_json::Value>,
+    pub raw_folders: Vec<serde_json::Value>,
+}
+
+/// Разбирает записи по одной; нечитаемые уходят в `raw` с предупреждением в журнале.
+/// В журнал пишутся только номер и id записи: текст ошибки serde может содержать значения полей.
+fn parse_entries<T: serde::de::DeserializeOwned>(
+    kind: &str,
+    values: Vec<serde_json::Value>,
+    raw: &mut Vec<serde_json::Value>,
+) -> Vec<T> {
+    let mut out = Vec::with_capacity(values.len());
+    for (i, v) in values.into_iter().enumerate() {
+        match T::deserialize(&v) {
+            Ok(item) => out.push(item),
+            Err(_) => {
+                let id = v.get("id").and_then(|id| id.as_str()).unwrap_or("?");
+                tracing::warn!(
+                    "connections.json: {kind} #{i} (id {id}) is not supported by this version and is hidden; it is kept in the file"
+                );
+                raw.push(v);
+            }
+        }
+    }
+    out
 }
 
 pub(crate) fn folder_not_found(id: &str) -> AppError {
@@ -560,11 +608,21 @@ impl ConnectionStore {
                     file.schema_version,
                 ));
             }
-            Some(file) => StoreData {
-                connections: file.connections,
-                folders: file.folders,
-                extra: file.extra,
-            },
+            Some(file) => {
+                let mut raw_connections = Vec::new();
+                let mut raw_folders = Vec::new();
+                StoreData {
+                    connections: parse_entries(
+                        "connection",
+                        file.connections,
+                        &mut raw_connections,
+                    ),
+                    folders: parse_entries("folder", file.folders, &mut raw_folders),
+                    extra: file.extra,
+                    raw_connections,
+                    raw_folders,
+                }
+            }
             None => StoreData::default(),
         };
         repair_on_read(&mut data);
@@ -657,8 +715,8 @@ impl ConnectionStore {
             &self.path,
             &ConnectionsFileRef {
                 schema_version: CURRENT_SCHEMA_VERSION,
-                folders: &data.folders,
-                connections: &data.connections,
+                folders: WithRaw(&data.folders, &data.raw_folders),
+                connections: WithRaw(&data.connections, &data.raw_connections),
                 extra: &data.extra,
             },
         )
@@ -957,6 +1015,52 @@ mod tests {
         assert_eq!(raw["connections"][0]["pinned"], true);
         assert_eq!(raw["connections"][0]["name"], "A2");
         assert_eq!(raw["connections"][0]["folderId"], "f");
+    }
+
+    #[test]
+    fn unparseable_entries_are_kept_but_hidden() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("connections.json");
+        let qa = serde_json::json!({"id":"q","name":"QA","color":"#fff","environment":"qa","readOnly":false,
+            "bootstrapServers":"h:1","security":{"protocol":"PLAINTEXT"},"folderId":null,"order":0,"pinned":true});
+        let raw_folder =
+            serde_json::json!({"id":"rf","name":{"smart":"x"},"parentId":null,"order":1});
+        let file = serde_json::json!({"schemaVersion":1,
+            "folders":[raw_folder, {"id":"f","name":"F","parentId":"rf","order":0}],
+            "connections":[qa, {"id":"a","name":"A","color":"#fff","environment":"dev","readOnly":false,
+                "bootstrapServers":"h:1","security":{"protocol":"PLAINTEXT"},"folderId":"rf","order":1}]});
+        std::fs::write(&path, serde_json::to_vec(&file).unwrap()).unwrap();
+
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let list = store.list();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].id, "a");
+        // Ссылки на нечитаемую папку — корень.
+        assert_eq!(list[0].folder_id, None);
+        let folders = store.list_folders();
+        assert_eq!(folders.len(), 1);
+        assert_eq!(folders[0].parent_id, None);
+
+        let mut a = store.get("a").unwrap();
+        a.name = "A2".into();
+        store.upsert(a).unwrap();
+        let written: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        let conns = written["connections"].as_array().unwrap();
+        assert_eq!(conns.len(), 2);
+        assert!(conns.contains(&qa));
+        assert!(conns.iter().any(|c| c["id"] == "a" && c["name"] == "A2"));
+        let fl = written["folders"].as_array().unwrap();
+        assert_eq!(fl.len(), 2);
+        assert!(fl.contains(&raw_folder));
+
+        // После перезапуска то же самое: запись ничего не теряет.
+        let reopened = ConnectionStore::open(dir.path()).unwrap();
+        assert_eq!(reopened.list().len(), 1);
+        reopened.delete("a").unwrap();
+        let written: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        assert_eq!(written["connections"], serde_json::json!([qa]));
     }
 
     #[test]

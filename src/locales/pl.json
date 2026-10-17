@@ -361,7 +361,10 @@
     "producer": "Producer",
     "consumer": "Sesja konsumenta",
     "license": "Licencja: {{tier}}",
-    "about": "O programie"
+    "about": "O programie",
+    "filter": "Filtruj połączenia",
+    "folderToggle": "Rozwiń lub zwiń folder „{{name}}”",
+    "noMatches": "Nic nie znaleziono"
   },
   "tabs": {
     "settings": "Ustawienia",

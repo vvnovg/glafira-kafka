@@ -361,7 +361,10 @@
     "producer": "Producer",
     "consumer": "Session consumer",
     "license": "Licence : {{tier}}",
-    "about": "À propos"
+    "about": "À propos",
+    "filter": "Filtrer les connexions",
+    "folderToggle": "Développer ou réduire le dossier « {{name}} »",
+    "noMatches": "Aucun résultat"
   },
   "tabs": {
     "settings": "Paramètres",

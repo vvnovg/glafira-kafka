@@ -361,7 +361,10 @@
     "producer": "Producer",
     "consumer": "Consumer session",
     "license": "License: {{tier}}",
-    "about": "About"
+    "about": "About",
+    "filter": "Filter connections",
+    "folderToggle": "Expand or collapse {{name}}",
+    "noMatches": "Nothing found"
   },
   "tabs": {
     "settings": "Settings",

@@ -49,6 +49,11 @@ tr.clickable:hover, .row.clickable:hover { background: var(--bg-alt); }
 .tree-conn { display: flex; align-items: center; gap: 6px; }
 .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { width: 8px; height: 8px; border-radius: 50%; }
+.tree-filter { display: block; width: calc(100% - 24px); margin: 0 12px 4px; }
+.tree-folder { display: flex; align-items: center; gap: 6px; }
+.tree-folder-toggle { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; background: none; border: none; padding: 0; font-weight: 600; text-align: left; }
+.tree-caret { width: 8px; flex-shrink: 0; color: var(--muted); font-size: 10px; }
+.tree-folder + ul > li { padding-top: 4px; }
 .env-badge { color: #fff; font-size: 10px; padding: 0 4px; border-radius: 3px; }
 .workspace { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .env-stripe { height: 3px; flex-shrink: 0; }

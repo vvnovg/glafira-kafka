@@ -361,7 +361,10 @@
     "producer": "Producer",
     "consumer": "Sessão de consumer",
     "license": "Licença: {{tier}}",
-    "about": "Sobre"
+    "about": "Sobre",
+    "filter": "Filtrar conexões",
+    "folderToggle": "Expandir ou recolher a pasta “{{name}}”",
+    "noMatches": "Nada encontrado"
   },
   "tabs": {
     "settings": "Configurações",

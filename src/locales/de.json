@@ -361,7 +361,10 @@
     "producer": "Producer",
     "consumer": "Consumer-Session",
     "license": "Lizenz: {{tier}}",
-    "about": "Über Glafira"
+    "about": "Über Glafira",
+    "filter": "Verbindungen filtern",
+    "folderToggle": "Ordner „{{name}}“ auf- oder zuklappen",
+    "noMatches": "Nichts gefunden"
   },
   "tabs": {
     "settings": "Einstellungen",

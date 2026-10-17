@@ -18,7 +18,7 @@ vi.mock("../api/client", async (importOriginal) => {
     extraProperties: {},
     requestTimeoutMs: 5000,
   } as unknown as ConnectionProfile;
-  return { ...actual, api: { ...actual.api, listConnections: vi.fn().mockResolvedValue([conn]) } };
+  return { ...actual, api: { ...actual.api, listConnections: vi.fn().mockResolvedValue([conn]), listFolders: vi.fn().mockResolvedValue([]) } };
 });
 
 vi.mock("./TabContent", () => ({ TabContent: () => <div /> }));

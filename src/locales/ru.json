@@ -361,7 +361,10 @@
     "producer": "Producer",
     "consumer": "Consumer-сессия",
     "license": "Лицензия: {{tier}}",
-    "about": "О программе"
+    "about": "О программе",
+    "filter": "Фильтр подключений",
+    "folderToggle": "Развернуть или свернуть {{name}}",
+    "noMatches": "Ничего не найдено"
   },
   "tabs": {
     "settings": "Настройки",

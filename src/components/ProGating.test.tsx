@@ -15,6 +15,7 @@ vi.mock("../api/client", async (importOriginal) => {
     api: {
       getLicenseStatus: vi.fn(),
       listConnections: vi.fn().mockResolvedValue([{ ...newProfile(), id: "c", name: "local" }]),
+      listFolders: vi.fn().mockResolvedValue([]),
     },
   };
 });

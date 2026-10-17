@@ -361,7 +361,10 @@
     "producer": "Producer",
     "consumer": "Sessione consumer",
     "license": "Licenza: {{tier}}",
-    "about": "Informazioni"
+    "about": "Informazioni",
+    "filter": "Filtra connessioni",
+    "folderToggle": "Espandi o comprimi la cartella “{{name}}”",
+    "noMatches": "Nessun risultato"
   },
   "tabs": {
     "settings": "Impostazioni",

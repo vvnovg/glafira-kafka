@@ -159,5 +159,31 @@
     "topics.details.tabGroups",
     "topics.groups.colLag",
     "topics.list.title"
+  ],
+  "it": [
+    "about.build",
+    "browse.form.offsetAria",
+    "cluster.overview.controller",
+    "cluster.overview.controllerBadge",
+    "connections.form.password",
+    "connections.form.prodPro",
+    "connections.form.step.tcp",
+    "errors.groups.commitError",
+    "errors.groups.errorAndCommitError",
+    "errors.source.csv",
+    "groups.details.colHost",
+    "groups.details.colLag",
+    "groups.details.colTopic",
+    "groups.list.colLag",
+    "groups.reset.colTopic",
+    "groups.reset.offset",
+    "producer.history.colTopic",
+    "producer.partitionAuto",
+    "producer.topic",
+    "settings.language.proSuffix",
+    "sidebar.producer",
+    "tabs.producer",
+    "topics.details.colLeader",
+    "topics.groups.colLag"
   ]
 }

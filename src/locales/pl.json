@@ -364,7 +364,16 @@
     "about": "O programie",
     "filter": "Filtruj połączenia",
     "folderToggle": "Rozwiń lub zwiń folder „{{name}}”",
-    "noMatches": "Nic nie znaleziono"
+    "noMatches": "Nic nie znaleziono",
+    "newFolder": "Nowy folder",
+    "menu": "Więcej działań",
+    "folder": {
+      "newConnection": "Nowe połączenie tutaj",
+      "rename": "Zmień nazwę",
+      "delete": "Usuń",
+      "deleteConfirm": "Usunąć folder „{{name}}”?",
+      "namePlaceholder": "Nazwa folderu"
+    }
   },
   "tabs": {
     "settings": "Ustawienia",
@@ -399,6 +408,8 @@
       "titleNew": "Nowe połączenie",
       "titleEdit": "Połączenie „{{name}}”",
       "name": "Nazwa",
+      "folder": "Folder",
+      "folderRoot": "(poziom główny)",
       "environment": "Środowisko",
       "prodPro": "prod (Pro)",
       "color": "Kolor",

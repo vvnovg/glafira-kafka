@@ -364,7 +364,16 @@
     "about": "Sobre",
     "filter": "Filtrar conexões",
     "folderToggle": "Expandir ou recolher a pasta “{{name}}”",
-    "noMatches": "Nada encontrado"
+    "noMatches": "Nada encontrado",
+    "newFolder": "Nova pasta",
+    "menu": "Mais ações",
+    "folder": {
+      "newConnection": "Nova conexão aqui",
+      "rename": "Renomear",
+      "delete": "Excluir",
+      "deleteConfirm": "Excluir a pasta “{{name}}”?",
+      "namePlaceholder": "Nome da pasta"
+    }
   },
   "tabs": {
     "settings": "Configurações",
@@ -399,6 +408,8 @@
       "titleNew": "Nova conexão",
       "titleEdit": "Conexão “{{name}}”",
       "name": "Nome",
+      "folder": "Pasta",
+      "folderRoot": "(raiz)",
       "environment": "Ambiente",
       "prodPro": "prod (Pro)",
       "color": "Cor",

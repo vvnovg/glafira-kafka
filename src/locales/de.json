@@ -364,7 +364,16 @@
     "about": "Über Glafira",
     "filter": "Verbindungen filtern",
     "folderToggle": "Ordner „{{name}}“ auf- oder zuklappen",
-    "noMatches": "Nichts gefunden"
+    "noMatches": "Nichts gefunden",
+    "newFolder": "Neuer Ordner",
+    "menu": "Weitere Aktionen",
+    "folder": {
+      "newConnection": "Neue Verbindung hier",
+      "rename": "Umbenennen",
+      "delete": "Löschen",
+      "deleteConfirm": "Ordner „{{name}}“ löschen?",
+      "namePlaceholder": "Ordnername"
+    }
   },
   "tabs": {
     "settings": "Einstellungen",
@@ -399,6 +408,8 @@
       "titleNew": "Neue Verbindung",
       "titleEdit": "Verbindung „{{name}}“",
       "name": "Name",
+      "folder": "Ordner",
+      "folderRoot": "(Stammebene)",
       "environment": "Umgebung",
       "prodPro": "prod (Pro)",
       "color": "Farbe",

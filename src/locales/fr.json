@@ -364,7 +364,16 @@
     "about": "À propos",
     "filter": "Filtrer les connexions",
     "folderToggle": "Développer ou réduire le dossier « {{name}} »",
-    "noMatches": "Aucun résultat"
+    "noMatches": "Aucun résultat",
+    "newFolder": "Nouveau dossier",
+    "menu": "Plus d’actions",
+    "folder": {
+      "newConnection": "Nouvelle connexion ici",
+      "rename": "Renommer",
+      "delete": "Supprimer",
+      "deleteConfirm": "Supprimer le dossier « {{name}} » ?",
+      "namePlaceholder": "Nom du dossier"
+    }
   },
   "tabs": {
     "settings": "Paramètres",
@@ -399,6 +408,8 @@
       "titleNew": "Nouvelle connexion",
       "titleEdit": "Connexion « {{name}} »",
       "name": "Nom",
+      "folder": "Dossier",
+      "folderRoot": "(racine)",
       "environment": "Environnement",
       "prodPro": "prod (Pro)",
       "color": "Couleur",

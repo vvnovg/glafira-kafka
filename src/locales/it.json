@@ -364,7 +364,16 @@
     "about": "Informazioni",
     "filter": "Filtra connessioni",
     "folderToggle": "Espandi o comprimi la cartella “{{name}}”",
-    "noMatches": "Nessun risultato"
+    "noMatches": "Nessun risultato",
+    "newFolder": "Nuova cartella",
+    "menu": "Altre azioni",
+    "folder": {
+      "newConnection": "Nuova connessione qui",
+      "rename": "Rinomina",
+      "delete": "Elimina",
+      "deleteConfirm": "Eliminare la cartella “{{name}}”?",
+      "namePlaceholder": "Nome della cartella"
+    }
   },
   "tabs": {
     "settings": "Impostazioni",
@@ -399,6 +408,8 @@
       "titleNew": "Nuova connessione",
       "titleEdit": "Connessione “{{name}}”",
       "name": "Nome",
+      "folder": "Cartella",
+      "folderRoot": "(radice)",
       "environment": "Ambiente",
       "prodPro": "prod (Pro)",
       "color": "Colore",

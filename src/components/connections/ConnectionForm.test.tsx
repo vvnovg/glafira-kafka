@@ -14,6 +14,8 @@ vi.mock("../../api/client", async (importOriginal) => {
       saveConnection: vi.fn(),
       deleteConnection: vi.fn(),
       listConnections: vi.fn().mockResolvedValue([]),
+      listFolders: vi.fn().mockResolvedValue([]),
+      moveItems: vi.fn(),
     },
   };
 });
@@ -21,11 +23,19 @@ vi.mock("../../api/client", async (importOriginal) => {
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api } from "../../api/client";
 import { useWorkspace } from "../../state/workspace";
+import type { ConnectionFolder } from "../../api/types";
 import { ConnectionForm } from "./ConnectionForm";
+import { ConnectionFormTab } from "./ConnectionFormTab";
 import { newProfile } from "./profile";
+
+const FOLDERS: ConnectionFolder[] = [
+  { id: "a", name: "Проект А", parentId: null, order: 0 },
+  { id: "b", name: "ИФТ", parentId: "a", order: 0 },
+];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(api.listFolders).mockResolvedValue([]);
 });
 
 describe("ConnectionForm", () => {
@@ -258,5 +268,59 @@ describe("ConnectionForm", () => {
     for (const label of ["Формат CA", "Alias ключа", "Пароль ключа (если отличается)"]) {
       expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
     }
+  });
+
+  it("поле «Папка»: новое подключение уходит с выбранной папкой", async () => {
+    vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
+    vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "n", name: "dev", folderId: "b" });
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={newProfile()} tabId="t" />);
+    const select = screen.getByLabelText("Папка");
+    await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    expect(select).toHaveValue("");
+    expect(screen.getAllByRole("option", { name: /Проект А|корень/ }).map((o) => o.textContent)).toEqual([
+      "(корень)",
+      "Проект А",
+      "Проект А / ИФТ",
+    ]);
+    await user.type(screen.getByLabelText("Имя"), "dev");
+    await user.selectOptions(select, "Проект А / ИФТ");
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    expect(api.saveConnection).toHaveBeenCalledWith(expect.objectContaining({ name: "dev", folderId: "b" }), undefined, undefined);
+    expect(api.moveItems).not.toHaveBeenCalled();
+  });
+
+  it("поле «Папка»: смена папки существующего подключения переносит его после сохранения", async () => {
+    vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
+    const initial = { ...newProfile(), id: "c1", name: "x", folderId: "b", order: 3 };
+    vi.mocked(api.saveConnection).mockResolvedValue(initial);
+    vi.mocked(api.moveItems).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    expect(screen.getByLabelText("Папка")).toHaveValue("b");
+    await user.selectOptions(screen.getByLabelText("Папка"), "(корень)");
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    await vi.waitFor(() => expect(api.moveItems).toHaveBeenCalledWith([{ kind: "connection", id: "c1" }], null, null));
+    expect(vi.mocked(api.saveConnection).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(api.moveItems).mock.invocationCallOrder[0]);
+  });
+
+  it("поле «Папка»: без смены папки перенос не вызывается", async () => {
+    vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
+    const initial = { ...newProfile(), id: "c1", name: "x", folderId: "b", order: 3 };
+    vi.mocked(api.saveConnection).mockResolvedValue(initial);
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    await vi.waitFor(() => expect(api.saveConnection).toHaveBeenCalled());
+    expect(api.moveItems).not.toHaveBeenCalled();
+  });
+
+  it("вкладка новой формы предвыбирает папку, из которой её открыли", async () => {
+    vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
+    renderWithClient(<ConnectionFormTab connectionId={null} folderId="b" tabId="t" />);
+    await screen.findByRole("option", { name: "Проект А / ИФТ" });
+    expect(screen.getByLabelText("Папка")).toHaveValue("b");
   });
 });

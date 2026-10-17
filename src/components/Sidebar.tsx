@@ -10,12 +10,6 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
-        <span>{t("sidebar.connections")}</span>
-        <button type="button" title={t("sidebar.newConnection")} onClick={() => open({ kind: "connection-form", connectionId: null })}>
-          +
-        </button>
-      </div>
       <ConnectionTree />
       <div className="sidebar-footer">
         <button type="button" className="link" onClick={() => open({ kind: "settings" })}>

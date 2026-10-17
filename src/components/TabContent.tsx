@@ -20,7 +20,7 @@ export function TabContent({ tab }: { tab: Tab }) {
     case "license":
       return <LicensePanel />;
     case "connection-form":
-      return <ConnectionFormTab connectionId={tab.connectionId} tabId={tab.id} />;
+      return <ConnectionFormTab connectionId={tab.connectionId} folderId={tab.folderId ?? null} tabId={tab.id} />;
     case "cluster":
       return <ClusterOverview connectionId={tab.connectionId} />;
     case "topics":

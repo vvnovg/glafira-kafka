@@ -364,7 +364,16 @@
     "about": "About",
     "filter": "Filter connections",
     "folderToggle": "Expand or collapse {{name}}",
-    "noMatches": "Nothing found"
+    "noMatches": "Nothing found",
+    "newFolder": "New folder",
+    "menu": "More actions",
+    "folder": {
+      "newConnection": "New connection here",
+      "rename": "Rename",
+      "delete": "Delete",
+      "deleteConfirm": "Delete folder “{{name}}”?",
+      "namePlaceholder": "Folder name"
+    }
   },
   "tabs": {
     "settings": "Settings",
@@ -399,6 +408,8 @@
       "titleNew": "New connection",
       "titleEdit": "Connection “{{name}}”",
       "name": "Name",
+      "folder": "Folder",
+      "folderRoot": "(root)",
       "environment": "Environment",
       "prodPro": "prod (Pro)",
       "color": "Color",

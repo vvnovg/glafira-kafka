@@ -14,7 +14,8 @@ export type TabSpec =
   | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill }
   | { kind: "producer"; connectionId: string; prefill?: ProducerPrefill }
   | { kind: "consumer"; connectionId: string; key: string; topic?: string; groupId?: string }
-  | { kind: "connection-form"; connectionId: string | null }
+  /** folderId — папка нового подключения («Новое подключение здесь»). */
+  | { kind: "connection-form"; connectionId: string | null; folderId?: string | null }
   | { kind: "license" }
   | { kind: "about" }
   | { kind: "settings" };

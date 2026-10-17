@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConnectionProfile } from "../../../api/types";
 import { newConsumerKey, useWorkspace } from "../../../state/workspace";
@@ -5,15 +6,18 @@ import { proHint, useLicense } from "../../../lib/useLicense";
 import { ProLock } from "../../common/ProLock";
 import { EnvBadge } from "../../common/EnvBadge";
 
-/** Узел подключения в дереве: точка цвета, имя, окружение и пункты «Обзор», «Топики», «Группы»… */
-export function ConnectionNode({ connection: c }: { connection: ConnectionProfile }) {
+/**
+ * Узел подключения в дереве: точка цвета, имя, окружение и пункты «Обзор», «Топики», «Группы»…
+ * rowProps — атрибуты строки (перетаскивание), их className добавляется к `tree-conn`.
+ */
+export function ConnectionNode({ connection: c, rowProps }: { connection: ConnectionProfile; rowProps?: HTMLAttributes<HTMLDivElement> }) {
   const { t } = useTranslation();
   const open = useWorkspace((s) => s.open);
   const { locked } = useLicense();
 
   return (
     <li>
-      <div className="tree-conn">
+      <div {...rowProps} className={rowProps?.className ? `tree-conn ${rowProps.className}` : "tree-conn"}>
         <span className="dot" style={{ background: c.color }} />
         <span className="tree-name">{c.name}</span>
         <EnvBadge environment={c.environment} readOnly={c.readOnly} />

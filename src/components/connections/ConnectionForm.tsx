@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
 import { tr } from "../../i18n/text";
@@ -9,6 +9,7 @@ import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
 import { formatProps, parseProps, withProtocol } from "./profile";
+import { folderPaths } from "./tree/folderTree";
 import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./TlsSection";
 
 const ENVIRONMENTS: Environment[] = ["local", "dev", "test", "stage", "prod"];
@@ -27,6 +28,8 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   // Подтверждение удаления внутри формы: нативный window.confirm в Tauri 2 не показывается и возвращает false.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const queryClient = useQueryClient();
+  const foldersQ = useQuery({ queryKey: ["folders"], queryFn: api.listFolders });
+  const paths = useMemo(() => folderPaths(foldersQ.data ?? []), [foldersQ.data]);
   const open = useWorkspace((s) => s.open);
   const close = useWorkspace((s) => s.close);
   const closeForConnection = useWorkspace((s) => s.closeForConnection);
@@ -67,7 +70,16 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const onSave = () =>
     run(async () => {
       const saved = await api.saveConnection(current(), password || undefined, tlsPasswords());
-      await queryClient.invalidateQueries({ queryKey: ["connections"] });
+      // save_connection не меняет место существующего подключения в дереве — перенос отдельной командой.
+      const folderId = profile.folderId ?? null;
+      try {
+        if (!isNew && folderId !== (initial.folderId ?? null)) {
+          await api.moveItems([{ kind: "connection", id: saved.id }], folderId, null);
+        }
+      } finally {
+        // Настройки уже сохранены, даже если перенос не удался: список нужно обновить в любом случае.
+        await queryClient.invalidateQueries({ queryKey: ["connections"] });
+      }
       queryClient.removeQueries({ predicate: (q) => q.queryKey[1] === saved.id });
       close(tabId);
       open({ kind: "cluster", connectionId: saved.id });
@@ -92,6 +104,16 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
       <div className="form">
         <label htmlFor="cf-name">{t("connections.form.name")}</label>
         <input id="cf-name" value={profile.name} onChange={(e) => update({ name: e.target.value })} />
+
+        <label htmlFor="cf-folder">{t("connections.form.folder")}</label>
+        <select id="cf-folder" value={profile.folderId ?? ""} onChange={(e) => update({ folderId: e.target.value || null })}>
+          <option value="">{t("connections.form.folderRoot")}</option>
+          {paths.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.path.join(" / ")}
+            </option>
+          ))}
+        </select>
 
         <span className="field-label">
           <label htmlFor="cf-env">{t("connections.form.environment")}</label>

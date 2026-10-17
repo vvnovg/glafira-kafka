@@ -364,7 +364,16 @@
     "about": "О программе",
     "filter": "Фильтр подключений",
     "folderToggle": "Развернуть или свернуть {{name}}",
-    "noMatches": "Ничего не найдено"
+    "noMatches": "Ничего не найдено",
+    "newFolder": "Новая папка",
+    "menu": "Ещё действия",
+    "folder": {
+      "newConnection": "Новое подключение здесь",
+      "rename": "Переименовать",
+      "delete": "Удалить",
+      "deleteConfirm": "Удалить папку «{{name}}»?",
+      "namePlaceholder": "Имя папки"
+    }
   },
   "tabs": {
     "settings": "Настройки",
@@ -399,6 +408,8 @@
       "titleNew": "Новое подключение",
       "titleEdit": "Подключение «{{name}}»",
       "name": "Имя",
+      "folder": "Папка",
+      "folderRoot": "(корень)",
       "environment": "Окружение",
       "prodPro": "prod (Pro)",
       "color": "Цвет",

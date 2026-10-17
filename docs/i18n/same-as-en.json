@@ -194,6 +194,7 @@
     "browse.form.format",
     "browse.form.limit",
     "browse.form.offsetAria",
+    "connections.form.folder",
     "connections.form.prodPro",
     "connections.form.step.tcp",
     "consumer.form.formatLegend",

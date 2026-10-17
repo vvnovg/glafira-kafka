@@ -54,6 +54,18 @@ tr.clickable:hover, .row.clickable:hover { background: var(--bg-alt); }
 .tree-folder-toggle { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; background: none; border: none; padding: 0; font-weight: 600; text-align: left; }
 .tree-caret { width: 8px; flex-shrink: 0; color: var(--muted); font-size: 10px; }
 .tree-folder + ul > li { padding-top: 4px; }
+.sidebar-actions { display: flex; gap: 4px; }
+.tree-menu-anchor { position: relative; display: inline-flex; }
+.tree-menu { position: absolute; right: 0; top: 100%; z-index: 20; display: flex; flex-direction: column; min-width: 180px; padding: 4px 0; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); box-shadow: 0 4px 12px rgb(0 0 0 / 15%); font-weight: normal; }
+.tree-menu [role="menuitem"] { background: none; border: none; border-radius: 0; padding: 4px 12px; text-align: left; white-space: nowrap; }
+.tree-menu [role="menuitem"]:hover, .tree-menu [role="menuitem"]:focus { background: var(--bg-alt); }
+.tree-name-input input { width: 100%; }
+.tree-error { margin: 2px 0 0; color: var(--danger); font-size: 12px; }
+.tree-confirm { margin-top: 4px; }
+.tree-folder[draggable="true"], .tree-conn[draggable="true"] { cursor: grab; }
+.drop-into { outline: 2px solid var(--accent); outline-offset: -1px; border-radius: 4px; }
+.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.tree-root-drop { min-height: 24px; }
 .env-badge { color: #fff; font-size: 10px; padding: 0 4px; border-radius: 3px; }
 .workspace { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .env-stripe { height: 3px; flex-shrink: 0; }

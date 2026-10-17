@@ -364,7 +364,16 @@
     "about": "Acerca de",
     "filter": "Filtrar conexiones",
     "folderToggle": "Expandir o contraer la carpeta “{{name}}”",
-    "noMatches": "No se encontró nada"
+    "noMatches": "No se encontró nada",
+    "newFolder": "Nueva carpeta",
+    "menu": "Más acciones",
+    "folder": {
+      "newConnection": "Nueva conexión aquí",
+      "rename": "Cambiar nombre",
+      "delete": "Eliminar",
+      "deleteConfirm": "¿Eliminar la carpeta “{{name}}”?",
+      "namePlaceholder": "Nombre de la carpeta"
+    }
   },
   "tabs": {
     "settings": "Ajustes",
@@ -399,6 +408,8 @@
       "titleNew": "Nueva conexión",
       "titleEdit": "Conexión “{{name}}”",
       "name": "Nombre",
+      "folder": "Carpeta",
+      "folderRoot": "(raíz)",
       "environment": "Entorno",
       "prodPro": "prod (Pro)",
       "color": "Color",

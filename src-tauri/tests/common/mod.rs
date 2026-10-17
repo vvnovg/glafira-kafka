@@ -57,6 +57,9 @@ pub fn plaintext_profile(bs: &str) -> ConnectionProfile {
         security: SecurityConfig::Plaintext,
         extra_properties: BTreeMap::new(),
         request_timeout_ms: 10_000,
+        folder_id: None,
+        order: 0,
+        extra: Default::default(),
     }
 }
 

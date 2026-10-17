@@ -47,6 +47,7 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | key / value | ключ / значение | Schlüssel / Wert | clé / valeur | clave / valor | chiave / valore | klucz / wartość | chave / valor |
 | headers | заголовки | Header (Pl.) | en-têtes | encabezados | intestazioni | nagłówki | cabeçalhos |
 | connection | подключение | Verbindung | connexion | conexión | connessione | połączenie | conexão |
+| folder | папка | Ordner | dossier | carpeta | cartella | folder | pasta |
 | prod connection | prod-подключение | Prod-Verbindung | connexion prod | conexión prod | connessione prod | połączenie prod | conexão prod |
 | cluster | кластер | Cluster | cluster | clúster | cluster | klaster | cluster |
 | bootstrap server | bootstrap-сервер | Bootstrap-Server | serveur bootstrap | servidor bootstrap | server bootstrap | serwer bootstrap | servidor bootstrap |

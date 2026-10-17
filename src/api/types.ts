@@ -79,6 +79,15 @@ export interface ConnectionProfile {
   security: SecurityConfig;
   extraProperties: Record<string, string>;
   requestTimeoutMs: number;
+  folderId?: string | null;
+  order?: number;
+}
+
+export interface ConnectionFolder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  order: number;
 }
 
 export interface TestStep {

@@ -118,6 +118,27 @@ pub struct ConnectionProfile {
     pub extra_properties: BTreeMap<String, String>,
     #[serde(default = "default_request_timeout")]
     pub request_timeout_ms: u64,
+    #[serde(default)]
+    pub folder_id: Option<String>,
+    #[serde(default)]
+    pub order: i64,
+    /// Поля из более новой версии Glafira: сохраняются при записи как есть.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectionFolder {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub parent_id: Option<String>,
+    #[serde(default)]
+    pub order: i64,
+    /// Поля из более новой версии Glafira: сохраняются при записи как есть.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 pub fn parse_bootstrap(s: &str) -> AppResult<Vec<(String, u16)>> {
@@ -310,82 +331,269 @@ fn connection_not_found(id: &str) -> AppError {
 }
 
 const CURRENT_SCHEMA_VERSION: u32 = 1;
+const FOLDER_NAME_MAX_CHARS: usize = 100;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ConnectionsFile {
     schema_version: u32,
+    #[serde(default)]
+    folders: Vec<ConnectionFolder>,
     connections: Vec<ConnectionProfile>,
+    #[serde(flatten)]
+    extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Запись файла без копирования данных кэша.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ConnectionsFileRef<'a> {
+    schema_version: u32,
+    folders: &'a [ConnectionFolder],
+    connections: &'a [ConnectionProfile],
+    #[serde(flatten)]
+    extra: &'a serde_json::Map<String, serde_json::Value>,
+}
+
+/// Содержимое `connections.json` в памяти: подключения, папки и неизвестные поля файла.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct StoreData {
+    pub connections: Vec<ConnectionProfile>,
+    pub folders: Vec<ConnectionFolder>,
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+fn folder_not_found(id: &str) -> AppError {
+    app_err!(
+        ErrorCode::NotFound,
+        "errors.folders.notFound",
+        "Folder {{id}} not found",
+        id = id
+    )
+}
+
+/// Проверяет имя папки: непустое после trim и не длиннее 100 символов.
+pub(crate) fn validate_folder_name(name: &str) -> AppResult<()> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.folders.nameEmpty",
+            "Enter a folder name"
+        ));
+    }
+    if name.chars().count() > FOLDER_NAME_MAX_CHARS {
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.folders.nameTooLong",
+            "The folder name is longer than 100 characters"
+        ));
+    }
+    Ok(())
+}
+
+/// Инварианты дерева: ссылки на папки существуют, циклов нет,
+/// имена папок валидны и уникальны среди соседей без учёта регистра.
+pub(crate) fn check_tree(data: &StoreData) -> AppResult<()> {
+    use std::collections::{HashMap, HashSet};
+
+    let by_id: HashMap<&str, &ConnectionFolder> =
+        data.folders.iter().map(|f| (f.id.as_str(), f)).collect();
+    for c in &data.connections {
+        if let Some(fid) = c.folder_id.as_deref()
+            && !by_id.contains_key(fid)
+        {
+            return Err(folder_not_found(fid));
+        }
+    }
+    for f in &data.folders {
+        if let Some(pid) = f.parent_id.as_deref()
+            && !by_id.contains_key(pid)
+        {
+            return Err(folder_not_found(pid));
+        }
+    }
+    for f in &data.folders {
+        let mut seen = HashSet::new();
+        let mut cur = Some(f);
+        while let Some(node) = cur {
+            if !seen.insert(node.id.as_str()) {
+                return Err(app_err!(
+                    ErrorCode::InvalidInput,
+                    "errors.folders.cycle",
+                    "A folder cannot be moved into itself or its subfolder"
+                ));
+            }
+            cur = node
+                .parent_id
+                .as_deref()
+                .and_then(|p| by_id.get(p).copied());
+        }
+    }
+    let mut names = HashSet::new();
+    for f in &data.folders {
+        validate_folder_name(&f.name)?;
+        let name = f.name.trim();
+        if !names.insert((f.parent_id.as_deref(), name.to_lowercase())) {
+            return Err(app_err!(
+                ErrorCode::InvalidInput,
+                "errors.folders.nameTaken",
+                "A folder named “{{name}}” already exists here",
+                name = name
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Приводит прочитанный файл к допустимому виду без ошибок:
+/// старый файл получает `order` по порядку списка, висячие ссылки и циклы уходят в корень.
+fn repair_on_read(data: &mut StoreData) {
+    use std::collections::{HashMap, HashSet};
+
+    if data.connections.len() > 1 && data.connections.iter().all(|c| c.order == 0) {
+        for (i, c) in data.connections.iter_mut().enumerate() {
+            c.order = i as i64;
+        }
+    }
+    let ids: HashSet<String> = data.folders.iter().map(|f| f.id.clone()).collect();
+    for c in &mut data.connections {
+        if c.folder_id.as_ref().is_some_and(|id| !ids.contains(id)) {
+            c.folder_id = None;
+        }
+    }
+    for f in &mut data.folders {
+        if f.parent_id.as_ref().is_some_and(|id| !ids.contains(id)) {
+            f.parent_id = None;
+        }
+    }
+    // Цикл из правленного вручную файла: разрываем его у первой встреченной папки.
+    for i in 0..data.folders.len() {
+        let parents: HashMap<&str, Option<&str>> = data
+            .folders
+            .iter()
+            .map(|f| (f.id.as_str(), f.parent_id.as_deref()))
+            .collect();
+        let mut seen = HashSet::new();
+        let mut cur = Some(data.folders[i].id.as_str());
+        let mut cyclic = false;
+        while let Some(id) = cur {
+            if !seen.insert(id) {
+                cyclic = true;
+                break;
+            }
+            cur = parents.get(id).copied().flatten();
+        }
+        if cyclic {
+            data.folders[i].parent_id = None;
+        }
+    }
 }
 
 pub struct ConnectionStore {
     path: PathBuf,
-    cache: RwLock<Vec<ConnectionProfile>>,
+    cache: RwLock<StoreData>,
 }
 
 impl ConnectionStore {
     pub fn open(dir: &Path) -> AppResult<Self> {
         std::fs::create_dir_all(dir)?;
         let path = dir.join("connections.json");
-        let connections = match read_json::<ConnectionsFile>(&path)? {
+        let mut data = match read_json::<ConnectionsFile>(&path)? {
             Some(file) if file.schema_version > CURRENT_SCHEMA_VERSION => {
                 return Err(crate::storage::fs::newer_schema_error(
                     &path,
                     file.schema_version,
                 ));
             }
-            Some(file) => file.connections,
-            None => Vec::new(),
+            Some(file) => StoreData {
+                connections: file.connections,
+                folders: file.folders,
+                extra: file.extra,
+            },
+            None => StoreData::default(),
         };
+        repair_on_read(&mut data);
         Ok(Self {
             path,
-            cache: RwLock::new(connections),
+            cache: RwLock::new(data),
         })
     }
 
     pub fn list(&self) -> Vec<ConnectionProfile> {
-        self.cache.read_safe().clone()
+        self.cache.read_safe().connections.clone()
+    }
+
+    pub fn list_folders(&self) -> Vec<ConnectionFolder> {
+        self.cache.read_safe().folders.clone()
     }
 
     pub fn get(&self, id: &str) -> AppResult<ConnectionProfile> {
         self.cache
             .read_safe()
+            .connections
             .iter()
             .find(|c| c.id == id)
             .cloned()
             .ok_or_else(|| connection_not_found(id))
     }
 
-    pub fn upsert(&self, profile: ConnectionProfile) -> AppResult<ConnectionProfile> {
-        validate_profile(&profile)?;
+    /// Изменяет данные одной транзакцией: `f` работает с копией, затем проверяются
+    /// инварианты дерева и пишется файл; кэш заменяется только после успешной записи.
+    pub(crate) fn update<R>(&self, f: impl FnOnce(&mut StoreData) -> AppResult<R>) -> AppResult<R> {
         let mut cache = self.cache.write_safe();
         let mut next = cache.clone();
-        match next.iter_mut().find(|c| c.id == profile.id) {
-            Some(slot) => *slot = profile.clone(),
-            None => next.push(profile.clone()),
-        }
+        let result = f(&mut next)?;
+        check_tree(&next)?;
         self.persist(&next)?;
         *cache = next;
-        Ok(profile)
+        Ok(result)
+    }
+
+    pub fn upsert(&self, mut profile: ConnectionProfile) -> AppResult<ConnectionProfile> {
+        validate_profile(&profile)?;
+        self.update(|data| {
+            match data.connections.iter_mut().find(|c| c.id == profile.id) {
+                Some(slot) => {
+                    // Профиль из формы не знает неизвестных полей: берём их из сохранённого.
+                    if profile.extra.is_empty() {
+                        profile.extra = std::mem::take(&mut slot.extra);
+                    }
+                    *slot = profile.clone();
+                }
+                None => {
+                    profile.order = data
+                        .connections
+                        .iter()
+                        .filter(|c| c.folder_id == profile.folder_id)
+                        .map(|c| c.order + 1)
+                        .max()
+                        .unwrap_or(0);
+                    data.connections.push(profile.clone());
+                }
+            }
+            Ok(profile)
+        })
     }
 
     pub fn delete(&self, id: &str) -> AppResult<()> {
-        let mut cache = self.cache.write_safe();
-        if !cache.iter().any(|c| c.id == id) {
-            return Err(connection_not_found(id));
-        }
-        let next: Vec<_> = cache.iter().filter(|c| c.id != id).cloned().collect();
-        self.persist(&next)?;
-        *cache = next;
-        Ok(())
+        self.update(|data| {
+            if !data.connections.iter().any(|c| c.id == id) {
+                return Err(connection_not_found(id));
+            }
+            data.connections.retain(|c| c.id != id);
+            Ok(())
+        })
     }
 
-    fn persist(&self, list: &[ConnectionProfile]) -> AppResult<()> {
+    fn persist(&self, data: &StoreData) -> AppResult<()> {
         write_json(
             &self.path,
-            &ConnectionsFile {
+            &ConnectionsFileRef {
                 schema_version: CURRENT_SCHEMA_VERSION,
-                connections: list.to_vec(),
+                folders: &data.folders,
+                connections: &data.connections,
+                extra: &data.extra,
             },
         )
     }
@@ -403,6 +611,9 @@ pub fn sample_profile(id: &str) -> ConnectionProfile {
         security: SecurityConfig::Plaintext,
         extra_properties: BTreeMap::new(),
         request_timeout_ms: 30_000,
+        folder_id: None,
+        order: 0,
+        extra: Default::default(),
     }
 }
 
@@ -552,7 +763,7 @@ mod tests {
                 username: "alice".into(),
             },
         };
-        store.upsert(b.clone()).unwrap();
+        let b = store.upsert(b).unwrap();
 
         let reopened = ConnectionStore::open(dir.path()).unwrap();
         assert_eq!(reopened.list().len(), 2);
@@ -633,5 +844,135 @@ mod tests {
         let raw = std::fs::read_to_string(dir.path().join("connections.json")).unwrap();
         assert!(raw.contains("\"schemaVersion\": 1"));
         assert!(!raw.to_lowercase().contains("password"));
+    }
+
+    #[test]
+    fn migration_keeps_connections_in_root_with_order() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("connections.json"),
+            r##"{"schemaVersion":1,"connections":[
+          {"id":"a","name":"A","color":"#fff","environment":"dev","readOnly":false,"bootstrapServers":"h:1","security":{"protocol":"PLAINTEXT"}},
+          {"id":"b","name":"B","color":"#fff","environment":"dev","readOnly":false,"bootstrapServers":"h:1","security":{"protocol":"PLAINTEXT"}}]}"##,
+        )
+        .unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let list = store.list();
+        assert_eq!(
+            list.iter()
+                .map(|c| (c.id.as_str(), c.folder_id.clone(), c.order))
+                .collect::<Vec<_>>(),
+            vec![("a", None, 0), ("b", None, 1)]
+        );
+        assert!(store.list_folders().is_empty());
+    }
+
+    #[test]
+    fn unknown_fields_survive_write() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("connections.json"),
+            r##"{"schemaVersion":1,"future":{"x":1},"folders":[{"id":"f","name":"F","parentId":null,"order":0,"icon":"star"}],
+           "connections":[{"id":"a","name":"A","color":"#fff","environment":"dev","readOnly":false,"bootstrapServers":"h:1",
+           "security":{"protocol":"PLAINTEXT"},"folderId":"f","order":0,"pinned":true}]}"##,
+        )
+        .unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let mut p = store.get("a").unwrap();
+        p.name = "A2".into();
+        p.extra.clear(); // как профиль из формы фронтенда — без неизвестных полей
+        store.upsert(p).unwrap();
+        let raw: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(dir.path().join("connections.json")).unwrap())
+                .unwrap();
+        assert_eq!(raw["future"]["x"], 1);
+        assert_eq!(raw["folders"][0]["icon"], "star");
+        assert_eq!(raw["connections"][0]["pinned"], true);
+        assert_eq!(raw["connections"][0]["name"], "A2");
+        assert_eq!(raw["connections"][0]["folderId"], "f");
+    }
+
+    #[test]
+    fn new_connection_goes_to_end_of_its_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        store.upsert(sample_profile("a")).unwrap();
+        store.upsert(sample_profile("b")).unwrap();
+        assert_eq!(store.get("b").unwrap().order, 1);
+    }
+
+    #[test]
+    fn dangling_folder_reference_is_rejected_on_write() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let mut p = sample_profile("a");
+        p.folder_id = Some("missing".into());
+        let e = store.upsert(p).unwrap_err();
+        assert_eq!(e.key, "errors.folders.notFound");
+    }
+
+    fn folder(id: &str, name: &str, parent: Option<&str>) -> ConnectionFolder {
+        ConnectionFolder {
+            id: id.into(),
+            name: name.into(),
+            parent_id: parent.map(String::from),
+            order: 0,
+            extra: Default::default(),
+        }
+    }
+
+    #[test]
+    fn check_tree_rejects_bad_folders() {
+        let data = |folders: Vec<ConnectionFolder>| StoreData {
+            folders,
+            ..Default::default()
+        };
+        assert!(
+            check_tree(&data(vec![
+                folder("a", "A", None),
+                folder("b", "a", Some("a"))
+            ]))
+            .is_ok()
+        );
+        for (folders, key) in [
+            (
+                vec![folder("a", "A", Some("b")), folder("b", "B", Some("a"))],
+                "errors.folders.cycle",
+            ),
+            (vec![folder("a", "A", Some("a"))], "errors.folders.cycle"),
+            (vec![folder("a", "A", Some("x"))], "errors.folders.notFound"),
+            (vec![folder("a", "  ", None)], "errors.folders.nameEmpty"),
+            (
+                vec![folder("a", &"я".repeat(101), None)],
+                "errors.folders.nameTooLong",
+            ),
+            (
+                vec![folder("a", "Prod", None), folder("b", " prod ", None)],
+                "errors.folders.nameTaken",
+            ),
+        ] {
+            assert_eq!(check_tree(&data(folders)).unwrap_err().key, key);
+        }
+        assert!(check_tree(&data(vec![folder("a", &"я".repeat(100), None)])).is_ok());
+    }
+
+    #[test]
+    fn dangling_references_and_cycles_go_to_root_on_read() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("connections.json"),
+            r##"{"schemaVersion":1,"folders":[
+              {"id":"f","name":"F","parentId":"gone"},
+              {"id":"x","name":"X","parentId":"y"},{"id":"y","name":"Y","parentId":"x"}],
+              "connections":[{"id":"a","name":"A","color":"#fff","environment":"dev","readOnly":false,
+              "bootstrapServers":"h:1","security":{"protocol":"PLAINTEXT"},"folderId":"gone"}]}"##,
+        )
+        .unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        assert_eq!(store.get("a").unwrap().folder_id, None);
+        let folders = store.list_folders();
+        assert_eq!(folders[0].parent_id, None);
+        check_tree(&store.cache.read_safe()).unwrap();
+        store.delete("a").unwrap();
     }
 }

@@ -325,6 +325,14 @@
       "headerUnknown": "Cabeçalho “{{header}}”: marcador desconhecido “{{placeholder}}” (para enviar “{{open}}” literalmente, escreva “{{escaped}}”)",
       "unclosed": "Marcador não fechado: falta “}}” (para enviar “{{open}}” literalmente, escreva “{{escaped}}”)",
       "headerUnclosed": "Cabeçalho “{{header}}”: marcador não fechado: falta “}}” (para enviar “{{open}}” literalmente, escreva “{{escaped}}”)"
+    },
+    "folders": {
+      "notFound": "Pasta {{id}} não encontrada",
+      "cycle": "Uma pasta não pode ser movida para dentro de si mesma ou de uma de suas subpastas",
+      "nameEmpty": "Informe um nome para a pasta",
+      "nameTooLong": "O nome da pasta tem mais de 100 caracteres",
+      "nameTaken": "Já existe uma pasta “{{name}}” aqui",
+      "notEmpty": "A pasta não está vazia: primeiro mova ou exclua suas conexões e pastas"
     }
   },
   "messages": {

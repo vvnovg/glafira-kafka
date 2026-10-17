@@ -325,6 +325,14 @@
       "headerUnknown": "Intestazione “{{header}}”: segnaposto sconosciuto “{{placeholder}}” (per inviare “{{open}}” alla lettera, scrivi “{{escaped}}”)",
       "unclosed": "Segnaposto non chiuso: manca “}}” (per inviare “{{open}}” alla lettera, scrivi “{{escaped}}”)",
       "headerUnclosed": "Intestazione “{{header}}”: segnaposto non chiuso: manca “}}” (per inviare “{{open}}” alla lettera, scrivi “{{escaped}}”)"
+    },
+    "folders": {
+      "notFound": "Cartella {{id}} non trovata",
+      "cycle": "Una cartella non può essere spostata in sé stessa o in una sua sottocartella",
+      "nameEmpty": "Specifica un nome per la cartella",
+      "nameTooLong": "Il nome della cartella supera i 100 caratteri",
+      "nameTaken": "Qui esiste già una cartella “{{name}}”",
+      "notEmpty": "La cartella non è vuota: sposta o elimina prima le sue connessioni e cartelle"
     }
   },
   "messages": {

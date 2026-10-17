@@ -325,6 +325,14 @@
       "headerUnknown": "Nagłówek „{{header}}”: nieznany symbol zastępczy „{{placeholder}}” (aby wysłać „{{open}}” dosłownie, wpisz „{{escaped}}”)",
       "unclosed": "Niezamknięty symbol zastępczy: brak „}}” (aby wysłać „{{open}}” dosłownie, wpisz „{{escaped}}”)",
       "headerUnclosed": "Nagłówek „{{header}}”: niezamknięty symbol zastępczy: brak „}}” (aby wysłać „{{open}}” dosłownie, wpisz „{{escaped}}”)"
+    },
+    "folders": {
+      "notFound": "Nie znaleziono folderu {{id}}",
+      "cycle": "Folderu nie można przenieść do niego samego ani do jego podfolderu",
+      "nameEmpty": "Podaj nazwę folderu",
+      "nameTooLong": "Nazwa folderu jest dłuższa niż 100 znaków",
+      "nameTaken": "Folder „{{name}}” już tu istnieje",
+      "notEmpty": "Folder nie jest pusty: najpierw przenieś lub usuń jego połączenia i foldery"
     }
   },
   "messages": {

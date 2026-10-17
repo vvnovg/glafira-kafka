@@ -325,6 +325,14 @@
       "headerUnknown": "Header “{{header}}”: unknown placeholder “{{placeholder}}” (to send “{{open}}” literally, write “{{escaped}}”)",
       "unclosed": "Unclosed placeholder: “}}” is missing (to send “{{open}}” literally, write “{{escaped}}”)",
       "headerUnclosed": "Header “{{header}}”: unclosed placeholder: “}}” is missing (to send “{{open}}” literally, write “{{escaped}}”)"
+    },
+    "folders": {
+      "notFound": "Folder {{id}} not found",
+      "cycle": "A folder cannot be moved into itself or its subfolder",
+      "nameEmpty": "Enter a folder name",
+      "nameTooLong": "The folder name is longer than 100 characters",
+      "nameTaken": "A folder named “{{name}}” already exists here",
+      "notEmpty": "The folder is not empty: move or delete its connections and folders first"
     }
   },
   "messages": {

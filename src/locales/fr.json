@@ -325,6 +325,14 @@
       "headerUnknown": "En-tête « {{header}} » : variable inconnue « {{placeholder}} » (pour envoyer « {{open}} » tel quel, écrivez « {{escaped}} »)",
       "unclosed": "Variable non fermée : « }} » manquant (pour envoyer « {{open}} » tel quel, écrivez « {{escaped}} »)",
       "headerUnclosed": "En-tête « {{header}} » : variable non fermée : « }} » manquant (pour envoyer « {{open}} » tel quel, écrivez « {{escaped}} »)"
+    },
+    "folders": {
+      "notFound": "Dossier {{id}} introuvable",
+      "cycle": "Un dossier ne peut pas être déplacé dans lui-même ni dans l’un de ses sous-dossiers",
+      "nameEmpty": "Indiquez un nom de dossier",
+      "nameTooLong": "Le nom du dossier dépasse 100 caractères",
+      "nameTaken": "Un dossier « {{name}} » existe déjà ici",
+      "notEmpty": "Le dossier n’est pas vide : déplacez ou supprimez d’abord ses connexions et ses dossiers"
     }
   },
   "messages": {

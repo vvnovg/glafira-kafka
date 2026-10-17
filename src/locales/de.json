@@ -325,6 +325,14 @@
       "headerUnknown": "Header „{{header}}“: unbekannter Platzhalter „{{placeholder}}“ (um „{{open}}“ wörtlich zu senden, „{{escaped}}“ schreiben)",
       "unclosed": "Nicht geschlossener Platzhalter: „}}“ fehlt (um „{{open}}“ wörtlich zu senden, „{{escaped}}“ schreiben)",
       "headerUnclosed": "Header „{{header}}“: nicht geschlossener Platzhalter: „}}“ fehlt (um „{{open}}“ wörtlich zu senden, „{{escaped}}“ schreiben)"
+    },
+    "folders": {
+      "notFound": "Ordner {{id}} nicht gefunden",
+      "cycle": "Ein Ordner kann nicht in sich selbst oder in einen seiner Unterordner verschoben werden",
+      "nameEmpty": "Ordnernamen angeben",
+      "nameTooLong": "Der Ordnername ist länger als 100 Zeichen",
+      "nameTaken": "Hier gibt es bereits einen Ordner „{{name}}“",
+      "notEmpty": "Der Ordner ist nicht leer: Verschieben oder löschen Sie zuerst seine Verbindungen und Ordner"
     }
   },
   "messages": {

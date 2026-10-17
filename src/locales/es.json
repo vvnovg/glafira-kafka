@@ -325,6 +325,14 @@
       "headerUnknown": "Encabezado “{{header}}”: marcador desconocido “{{placeholder}}” (para enviar “{{open}}” literalmente, escribe “{{escaped}}”)",
       "unclosed": "Marcador sin cerrar: falta “}}” (para enviar “{{open}}” literalmente, escribe “{{escaped}}”)",
       "headerUnclosed": "Encabezado “{{header}}”: marcador sin cerrar: falta “}}” (para enviar “{{open}}” literalmente, escribe “{{escaped}}”)"
+    },
+    "folders": {
+      "notFound": "No se encontró la carpeta {{id}}",
+      "cycle": "Una carpeta no se puede mover dentro de sí misma ni de una de sus subcarpetas",
+      "nameEmpty": "Indica un nombre de carpeta",
+      "nameTooLong": "El nombre de la carpeta supera los 100 caracteres",
+      "nameTaken": "Ya existe aquí una carpeta “{{name}}”",
+      "notEmpty": "La carpeta no está vacía: primero mueve o elimina sus conexiones y carpetas"
     }
   },
   "messages": {

@@ -137,4 +137,21 @@ describe("ProducerPanel", () => {
     await user.type(screen.getByLabelText("Значение"), "x");
     expect(screen.queryByText(/партиция 0, offset 41/)).not.toBeInTheDocument();
   });
+
+  it("подсказки: значки у полей и настроек, текст acks", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ProducerPanel connectionId="dev" />);
+    await screen.findByLabelText("Формат значения");
+    screen.getByRole("button", { name: "Подсказка: Партиция" });
+    screen.getByRole("button", { name: "Подсказка: Формат ключа" });
+    screen.getByRole("button", { name: "Подсказка: Формат значения" });
+    expect(screen.getAllByRole("button", { name: /^Подсказка: Формат (ключа|значения)$/ })).toHaveLength(2);
+    screen.getByRole("button", { name: "Подсказка: Параметры продюсера" });
+    screen.getByRole("button", { name: "Подсказка: сжатие" });
+    screen.getByRole("button", { name: "Подсказка: идемпотентность" });
+    await user.click(screen.getByRole("button", { name: "Подсказка: acks" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Сколько реплик должны подтвердить запись. all — надёжнее всего, 1 — быстрее, 0 — без ожидания, сообщения могут теряться.",
+    );
+  });
 });

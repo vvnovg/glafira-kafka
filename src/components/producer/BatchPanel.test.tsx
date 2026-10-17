@@ -105,4 +105,9 @@ describe("BatchPanel", () => {
     renderWithClient(<BatchPanel connection={{ ...dev, readOnly: true }} form={form} />);
     expect(screen.queryByRole("button", { name: "Запустить" })).not.toBeInTheDocument();
   });
+
+  it("подсказка у скорости пакетной отправки", () => {
+    renderWithClient(<BatchPanel connection={dev} form={form} />);
+    expect(screen.getByRole("button", { name: "Подсказка: Скорость" })).toBeInTheDocument();
+  });
 });

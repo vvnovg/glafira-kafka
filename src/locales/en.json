@@ -1000,6 +1000,15 @@
       "limit": "How many messages to show. Large values make reading slower.",
       "format": "How to decode keys and values: string, JSON, hex or base64. Only the display changes, not the data.",
       "readerNotGroup": "Browsing does not join a consumer group and commits nothing, so the cluster is not changed."
+    },
+    "producer": {
+      "partition": "Leave empty to let Kafka choose the partition by key. Enter a number to send to a specific partition.",
+      "formats": "How to encode the text before sending: string as is, JSON (validated), hex or base64 for binary data.",
+      "placeholders": "Placeholders are replaced on every send: a new UUID, the current time, the copy number and so on.",
+      "acks": "How many replicas must confirm a write. <code>all</code> is the safest, <code>1</code> is faster, <code>0</code> does not wait and messages can be lost.",
+      "compression": "Compresses batches: less traffic and disk space, a bit more CPU. <code>zstd</code> and <code>lz4</code> are common choices.",
+      "idempotence": "Prevents duplicates when the client retries a send. Requires <code>acks = all</code>.",
+      "batchRate": "Limits batch sending to N messages per second so the cluster is not overloaded."
     }
   }
 }

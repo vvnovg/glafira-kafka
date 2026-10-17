@@ -1004,6 +1004,15 @@
       "limit": "Quanti messaggi mostrare. Valori elevati rallentano la lettura.",
       "format": "Come decodificare chiavi e valori: stringa, JSON, hex o base64. Cambia solo la visualizzazione, non i dati.",
       "readerNotGroup": "La lettura non entra in nessun consumer group e non esegue commit, quindi il cluster non cambia."
+    },
+    "producer": {
+      "partition": "Lascia vuoto per far scegliere a Kafka la partizione in base alla chiave. Inserisci un numero per inviare a una partizione specifica.",
+      "formats": "Come codificare il testo prima dell’invio: stringa così com’è, JSON (con validazione), hex o base64 per dati binari.",
+      "placeholders": "I segnaposto vengono sostituiti a ogni invio: un nuovo UUID, l’ora corrente, il numero della copia e così via.",
+      "acks": "Quante repliche devono confermare una scrittura. <code>all</code> è il più sicuro, <code>1</code> è più veloce, <code>0</code> non attende e i messaggi possono andare persi.",
+      "compression": "Comprime i batch: meno traffico e spazio su disco, un po’ più di CPU. <code>zstd</code> e <code>lz4</code> sono scelte comuni.",
+      "idempotence": "Evita i duplicati quando il client ritenta un invio. Richiede <code>acks = all</code>.",
+      "batchRate": "Limita l’invio in batch a N messaggi al secondo per non sovraccaricare il cluster."
     }
   }
 }

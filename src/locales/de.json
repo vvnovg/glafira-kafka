@@ -1000,6 +1000,15 @@
       "limit": "Wie viele Nachrichten angezeigt werden. Große Werte verlangsamen das Lesen.",
       "format": "Wie Schlüssel und Werte dekodiert werden: String, JSON, hex oder base64. Nur die Anzeige ändert sich, nicht die Daten.",
       "readerNotGroup": "Beim Anzeigen wird keiner Consumer Group beigetreten und nichts committet — der Cluster bleibt unverändert."
+    },
+    "producer": {
+      "partition": "Leer lassen, damit Kafka die Partition anhand des Schlüssels wählt. Eine Nummer angeben, um an eine bestimmte Partition zu senden.",
+      "formats": "Wie der Text vor dem Senden kodiert wird: String unverändert, JSON (mit Prüfung), hex oder base64 für Binärdaten.",
+      "placeholders": "Platzhalter werden bei jedem Senden neu ersetzt: eine neue UUID, die aktuelle Zeit, die Kopienummer usw.",
+      "acks": "Wie viele Replikate einen Schreibvorgang bestätigen müssen. <code>all</code> ist am sichersten, <code>1</code> ist schneller, <code>0</code> wartet nicht, Nachrichten können verloren gehen.",
+      "compression": "Komprimiert Batches: weniger Datenverkehr und Speicherplatz, etwas mehr CPU. Häufig gewählt werden <code>zstd</code> und <code>lz4</code>.",
+      "idempotence": "Verhindert Duplikate, wenn der Client einen Sendevorgang wiederholt. Erfordert <code>acks = all</code>.",
+      "batchRate": "Begrenzt den Stapelversand auf N Nachrichten pro Sekunde, damit der Cluster nicht überlastet wird."
     }
   }
 }

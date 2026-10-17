@@ -6,6 +6,7 @@ import type { BatchSource, ConnectionProfile } from "../../api/types";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { tr } from "../../i18n/text";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { batchReducer, fileFormatOf, initialBatchState } from "./batch";
 import { formToMessage, type ProducerForm } from "./form";
 
@@ -165,6 +166,7 @@ export function BatchPanel({ connection, form }: { connection: ConnectionProfile
                 style={{ width: 120 }}
               />
             </label>
+            <Hint k="hints.producer.batchRate" label={t("producer.batch.rate")} />
           </div>
           <p className="muted">
             {mode === "copies"

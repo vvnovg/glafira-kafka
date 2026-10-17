@@ -8,6 +8,7 @@ import { useConnection } from "../../lib/useConnection";
 import type { ProducerPrefill } from "../../state/workspace";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
 import { emptyProducerForm, formToMessage, messageToForm, type ProducerForm } from "./form";
 import { HeadersEditor } from "./HeadersEditor";
 import { BatchPanel } from "./BatchPanel";
@@ -20,13 +21,15 @@ function PayloadField({ kind, value, onChange }: { kind: "key" | "value"; value:
   const { t } = useTranslation();
   const id = useId();
   const label = t(kind === "key" ? "producer.key" : "producer.value");
+  const formatLabel = t(kind === "key" ? "producer.keyFormat" : "producer.valueFormat");
   return (
     <div className="payload-field">
       <div className="toolbar">
         <label htmlFor={`${id}-text`}>{label}</label>
         <label htmlFor={`${id}-format`} className="muted">
-          {t(kind === "key" ? "producer.keyFormat" : "producer.valueFormat")}
+          {formatLabel}
         </label>
+        <Hint k="hints.producer.formats" label={formatLabel} />
         <select id={`${id}-format`} value={value.format} onChange={(e) => onChange({ ...value, format: e.target.value as PayloadFormat })}>
           {FORMATS.map((f) => (
             <option key={f} value={f}>
@@ -142,14 +145,18 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
         <datalist id={`${uid}-topics`}>
           {topics.data?.filter((x) => !x.internal).map((x) => <option key={x.name} value={x.name} />)}
         </datalist>
-        <label htmlFor={`${uid}-partition`}>{t("producer.partition")}</label>
+        <span className="field-label">
+          <label htmlFor={`${uid}-partition`}>{t("producer.partition")}</label>
+          <Hint k="hints.producer.partition" label={t("producer.partition")} />
+        </span>
         <input id={`${uid}-partition`} placeholder={t("producer.partitionAuto")} value={form.partition} onChange={(e) => set({ partition: e.target.value })} />
       </div>
       <PayloadField kind="key" value={form.key} onChange={(key) => set({ key })} />
       <PayloadField kind="value" value={form.value} onChange={(value) => set({ value })} />
       <HeadersEditor headers={form.headers} onChange={(headers) => set({ headers })} />
       <p className="muted">
-        {t("producer.placeholders", { list: "{{uuid}} {{now}} {{nowMillis}} {{seq}} {{randomInt 1 100}} {{randomString 8}} {{env NAME}}" })}
+        {t("producer.placeholders", { list: "{{uuid}} {{now}} {{nowMillis}} {{seq}} {{randomInt 1 100}} {{randomString 8}} {{env NAME}}" })}{" "}
+        <Hint k="hints.producer.placeholders" label={t("producer.settings.legend")} />
       </p>
       <fieldset className="toolbar">
         <legend>{t("producer.settings.legend")}</legend>
@@ -161,6 +168,7 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
             <option value="all">all</option>
           </select>
         </label>
+        <Hint k="hints.producer.acks" label="acks" />
         <label>
           {t("producer.settings.compression")}{" "}
           <select value={form.settings.compression} onChange={(e) => setSettings({ compression: e.target.value as ProducerSettings["compression"] })}>
@@ -171,9 +179,11 @@ export function ProducerPanel({ connectionId, prefill }: { connectionId: string;
             ))}
           </select>
         </label>
+        <Hint k="hints.producer.compression" label={t("producer.settings.compression")} />
         <label>
           <input type="checkbox" checked={form.settings.idempotence} onChange={(e) => setSettings({ idempotence: e.target.checked })} /> {t("producer.settings.idempotence")}
         </label>
+        <Hint k="hints.producer.idempotence" label={t("producer.settings.idempotence")} />
       </fieldset>
       {formError && <p className="warn">{formError}</p>}
       {send.error && <ErrorBanner error={send.error} />}

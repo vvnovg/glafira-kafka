@@ -11,7 +11,7 @@
     "proHint": "Disponibile in Pro — attiva una licenza nella schermata “Licenza”",
     "readOnly": "Sola lettura",
     "confirm": {
-      "typeObject": "Per confermare, digita il {{label}} <code>{{name}}</code>",
+      "typeObject": "Per confermare, digita <code>{{name}}</code> ({{label}})",
       "prodNotice": "Questa è una connessione prod. Digita il suo nome <code>{{name}}</code>",
       "defaultLabel": "nome",
       "objectAria": "Conferma: {{label}}",
@@ -857,7 +857,7 @@
     },
     "actions": {
       "connect": "Unisciti al gruppo",
-      "commitSelected": "Esegui il commit fino al selezionato",
+      "commitSelected": "Esegui il commit fino al messaggio selezionato",
       "commitAll": "Esegui il commit dei messaggi letti"
     },
     "status": {

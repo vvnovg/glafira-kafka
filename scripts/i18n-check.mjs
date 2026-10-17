@@ -245,6 +245,34 @@ export function checkFrontendKeys(keys, enFlat) {
     .map(({ key, where }) => `en: нет ключа ${key} (используется во фронтенде, ${where})`);
 }
 
+const HINT_LITERAL = /["'](hints\.[\w.]+)["']/g;
+
+/** Ключи подсказок во фронтенде: любой строковый литерал "hints.…" вне тестов. Возвращает [{ key, where }]. */
+export function hintKeys(files) {
+  const out = [];
+  for (const [path, content] of Object.entries(files)) {
+    if (/\.test\.[tj]sx?$/.test(path) || path.includes("/test/")) continue;
+    for (const m of content.matchAll(HINT_LITERAL)) {
+      out.push({ key: m[1], where: `${path}:${content.slice(0, m.index).split("\n").length}` });
+    }
+  }
+  return out;
+}
+
+/** Каждая подсказка из кода есть в en; каждая подсказка en (кроме hints.label) используется; en не длиннее maxLength без тегов. */
+export function checkHints(uses, enFlat, { maxLength = 200 } = {}) {
+  const problems = [];
+  const used = new Set(uses.map((u) => u.key));
+  for (const { key, where } of uses) if (!enFlat.has(key)) problems.push(`en: нет ключа ${key} (подсказка, ${where})`);
+  for (const [k, v] of enFlat) {
+    if (!k.startsWith("hints.") || k === "hints.label") continue;
+    if (!used.has(k)) problems.push(`en: ${k} не используется ни в одном <Hint> — удалите или подключите`);
+    const plain = v.replace(/<[^>]+>/g, "");
+    if (plain.length > maxLength) problems.push(`en: ${k} — ${plain.length} символов, больше ${maxLength}`);
+  }
+  return problems;
+}
+
 /** Код Rust без строк-комментариев и без модуля тестов в конце файла (там бывают тестовые ключи).
  * Строки-комментарии заменяются пустыми, чтобы номера строк в сообщениях совпадали с файлом. */
 function rustCode(content) {
@@ -526,6 +554,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     walk(join(root, "src"), [".ts", ".tsx"]).map((p) => [relative(root, p), readFileSync(p, "utf8")]),
   );
   problems.push(...checkFrontendKeys(frontendKeys(srcFiles), flatten(dicts.en)));
+  problems.push(...checkHints(hintKeys(srcFiles), flatten(dicts.en)));
   if (!process.argv.includes("--no-cyrillic-scan")) {
     const files = srcFiles;
     for (const hit of findCyrillic(files)) problems.push(`кириллица в коде: ${hit}`);

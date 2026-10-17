@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkDictionaries, checkFrontendKeys, checkLanguageFiles, checkSameAsEn, checkTypography, languageCodes, lengthReport, tags, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
+import { checkDictionaries, checkFrontendKeys, checkHints, hintKeys, checkLanguageFiles, checkSameAsEn, checkTypography, languageCodes, lengthReport, tags, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -290,4 +290,23 @@ test("лишняя плюральная форма и голый ключ ряд
   assert.ok(p.some((x) => x.includes("de: n_few") && x.includes("лишняя форма")), p.join("\n"));
   const bare = checkDictionaries({ en, de: { n: "x", n_one: "{{count}} x", n_other: "{{count}} x" } });
   assert.ok(bare.some((x) => x.includes("de: n ") || x.includes("de: лишний ключ n")), bare.join("\n"));
+});
+
+test("подсказки: ключи есть, все используются, длина en", () => {
+  const files = {
+    "src/a.tsx": '<Hint k="hints.a.x" label="X" />\nconst M = { s: "hints.a.y" };',
+    "src/a.test.tsx": '<Hint k="hints.zzz" label="Z" />',
+  };
+  const uses = hintKeys(files);
+  assert.deepEqual(uses.map((u) => u.key), ["hints.a.x", "hints.a.y"]);
+  assert.equal(uses[0].where, "src/a.tsx:1");
+  assert.equal(uses[1].where, "src/a.tsx:2");
+  const en = flatten({ hints: { label: "Hint: {{name}}", a: { x: "Short <code>acks</code>", y: "y".repeat(201), z: "unused" } } });
+  const p = checkHints([...uses, { key: "hints.missing", where: "src/b.tsx:3" }], en);
+  assert.deepEqual(p.sort(), [
+    "en: hints.a.y — 201 символов, больше 200",
+    "en: hints.a.z не используется ни в одном <Hint> — удалите или подключите",
+    "en: нет ключа hints.missing (подсказка, src/b.tsx:3)",
+  ].sort());
+  assert.deepEqual(checkHints([], flatten({ hints: { label: "Hint: {{name}}" } })), [], "hints.label не требует использования в <Hint>");
 });

@@ -123,8 +123,8 @@ pub struct ConnectionProfile {
     #[serde(default)]
     pub order: i64,
     /// Поля из более новой версии Glafira: сохраняются при записи как есть.
-    /// В `ConnectionStore::upsert` пустой `extra` у существующего профиля означает
-    /// «оставить сохранённый»: форма фронтенда может не знать этих полей.
+    /// `ConnectionStore::upsert` входящий `extra` не принимает: у существующего профиля
+    /// остаётся сохранённый, новый получает пустой.
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
@@ -305,17 +305,8 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
         validate_tls(tls)?;
     }
     // Секреты хранятся только в keychain: connections.json не должен их содержать.
-    // Неизвестные поля профиля тоже пишутся в файл: секретоподобные не принимаем.
-    let secret_extra = p.extra.keys().find(|k| {
-        let k = k.to_lowercase();
-        k.contains("password") || k.contains("secret")
-    });
-    if let Some(key) = p
-        .extra_properties
-        .keys()
-        .find(|k| is_secret_property(k))
-        .or(secret_extra)
-    {
+    // Неизвестные поля (`extra`) здесь не проверяются: `upsert` не принимает их из запроса.
+    if let Some(key) = p.extra_properties.keys().find(|k| is_secret_property(k)) {
         return Err(app_err!(
             ErrorCode::InvalidInput,
             "errors.connections.secretInExtraProperties",
@@ -622,22 +613,21 @@ impl ConnectionStore {
     ///
     /// Новое подключение кладётся в конец папки `folder_id` входящего профиля.
     /// У существующего `folder_id` и `order` берутся из сохранённого, входящие значения
-    /// игнорируются: место подключения меняют только команды перемещения. Пустой `extra`
-    /// входящего профиля тоже означает «оставить сохранённый».
+    /// игнорируются: место подключения меняют только команды перемещения. Входящий `extra`
+    /// игнорируется всегда: неизвестные поля пишет только сама Glafira (существующий профиль
+    /// сохраняет свои, новый получает пустые), поэтому через них нельзя записать секрет в файл.
     pub fn upsert(&self, mut profile: ConnectionProfile) -> AppResult<ConnectionProfile> {
         validate_profile(&profile)?;
         self.update(|data| {
             match data.connections.iter_mut().find(|c| c.id == profile.id) {
                 Some(slot) => {
-                    // Профиль из формы не знает неизвестных полей: берём их из сохранённого.
-                    if profile.extra.is_empty() {
-                        profile.extra = std::mem::take(&mut slot.extra);
-                    }
+                    profile.extra = std::mem::take(&mut slot.extra);
                     profile.folder_id = slot.folder_id.take();
                     profile.order = slot.order;
                     *slot = profile.clone();
                 }
                 None => {
+                    profile.extra = Default::default();
                     profile.order = data
                         .connections
                         .iter()
@@ -956,7 +946,8 @@ mod tests {
         let store = ConnectionStore::open(dir.path()).unwrap();
         let mut p = store.get("a").unwrap();
         p.name = "A2".into();
-        p.extra.clear(); // как профиль из формы фронтенда — без неизвестных полей
+        // Входящие неизвестные поля игнорируются: остаются сохранённые.
+        p.extra.insert("pinned".into(), serde_json::json!(false));
         store.upsert(p).unwrap();
         let raw: serde_json::Value =
             serde_json::from_slice(&std::fs::read(dir.path().join("connections.json")).unwrap())
@@ -1140,16 +1131,50 @@ mod tests {
     }
 
     #[test]
-    fn secret_like_unknown_fields_are_rejected() {
-        for key in ["saslPassword", "clientSecret"] {
-            let mut p = sample_profile("a");
-            p.extra.insert(key.into(), serde_json::json!("x"));
-            let e = validate_profile(&p).unwrap_err();
-            assert_eq!(e.key, "errors.connections.secretInExtraProperties", "{key}");
-            assert_eq!(e.params["key"], key);
-        }
+    fn unknown_fields_are_not_validated() {
+        // Поля из более новой версии с «password»/«secret» в имени не мешают сохранению.
         let mut p = sample_profile("a");
-        p.extra.insert("pinned".into(), serde_json::json!(true));
+        for key in ["passwordRotationDays", "secretRef", "usesSecretManager"] {
+            p.extra.insert(key.into(), serde_json::json!(1));
+        }
         assert!(validate_profile(&p).is_ok());
+    }
+
+    #[test]
+    fn incoming_extra_is_ignored_on_save() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        // Новый профиль: неизвестные поля из запроса не пишутся.
+        let mut p = sample_profile("a");
+        p.extra
+            .insert("saslPassword".into(), serde_json::json!("x"));
+        p.extra.insert("pinned".into(), serde_json::json!(true));
+        assert!(store.upsert(p).unwrap().extra.is_empty());
+        assert!(store.get("a").unwrap().extra.is_empty());
+        let raw = std::fs::read_to_string(dir.path().join("connections.json")).unwrap();
+        assert!(!raw.contains("saslPassword") && !raw.contains("pinned"));
+        // Существующий профиль всегда сохраняет свои неизвестные поля.
+        store
+            .update(|d| {
+                d.connections[0]
+                    .extra
+                    .insert("passwordRotationDays".into(), serde_json::json!(30));
+                Ok(())
+            })
+            .unwrap();
+        let mut edited = store.get("a").unwrap();
+        edited.extra.clear();
+        edited
+            .extra
+            .insert("clientSecret".into(), serde_json::json!("x"));
+        edited.name = "A2".into();
+        let saved = store.upsert(edited).unwrap();
+        assert_eq!(saved.name, "A2");
+        assert_eq!(
+            serde_json::Value::Object(saved.extra),
+            serde_json::json!({"passwordRotationDays": 30})
+        );
+        let raw = std::fs::read_to_string(dir.path().join("connections.json")).unwrap();
+        assert!(!raw.contains("clientSecret"));
     }
 }

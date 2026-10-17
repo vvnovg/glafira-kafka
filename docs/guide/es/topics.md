@@ -7,7 +7,7 @@ This chapter covers the cluster overview, the topic list, creating and deleting 
 [[ui:cluster.overview.title]] shows the state of the cluster at the moment it was loaded. Click [[ui:cluster.overview.refresh]] to load it again.
 
 - `Cluster ID` — the cluster identifier.
-- [[ui:cluster.overview.controller]] — the ID of the broker that the cluster reports as the controller. In KRaft clusters, clients do not talk to the controllers directly, so a broker ID is shown here.
+- [[ui:cluster.overview.controller]] — the ID of the broker that the cluster reports as the controller. In KRaft clusters, clients do not talk to the controllers directly: the cluster reports a random broker here, not the active controller, and it may change between refreshes.
 - [[ui:cluster.overview.brokers]] — the number of brokers.
 - [[ui:cluster.overview.topicsInternal]] — all topics, with the number of internal topics in brackets.
 - [[ui:cluster.overview.partitions]] — the number of partitions in all topics.
@@ -16,7 +16,7 @@ This chapter covers the cluster overview, the topic list, creating and deleting 
 
 A non-zero value in `Under-replicated` or `Offline` is highlighted.
 
-Below is the broker table with `ID` and [[ui:cluster.overview.address]]. The controller is marked [[ui:cluster.overview.controllerBadge]]. Click a broker to see its configuration under the table. Broker configuration can only be viewed. Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to hide parameters with default values. A lock icon marks read-only parameters.
+Below is the broker table with `ID` and [[ui:cluster.overview.address]]. The broker from the [[ui:cluster.overview.controller]] field is marked [[ui:cluster.overview.controllerBadge]]. In KRaft clusters, this is the same random broker, not the active controller. Click a broker to see its configuration under the table. Broker configuration can only be viewed. Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to hide parameters with default values. A lock icon marks read-only parameters.
 
 ## Topic list {#topic-list}
 
@@ -62,7 +62,9 @@ To delete several topics at once:
 3. Click the delete button. It shows the number of selected topics.
 4. Check the list of names, type their number to confirm and click [[ui:topics.delete.confirm]].
 
-[[ui:topics.list.cancelSelect]] hides the checkboxes. On a prod connection, you also type the connection name.
+[[ui:topics.list.cancelSelect]] hides the checkboxes.
+
+On a prod connection, both ways of deleting also ask you to type the connection name.
 
 Deletion cannot be undone: the data is lost. If some topics are not deleted, for example because of missing rights, the app lists them with the reason. The other topics are deleted.
 

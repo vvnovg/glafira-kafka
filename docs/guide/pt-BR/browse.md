@@ -58,7 +58,7 @@ A filter does not move the start position. For example, [[ui:browse.form.startLa
 
 The details show which format was actually used, for example `json` when `auto` detected JSON. Header values are shown as text; binary header values are shown as `0x` followed by hex. A missing key or value is shown as `null`.
 
-Very large values are shown only partly, about the first 1 MB. The message details then show a warning.
+Very large keys and values are shown only partly, about the first 1 MB of text. This also applies to `hex` and `base64`. The message details then show a warning.
 
 ## Message details {#message-details}
 
@@ -76,7 +76,7 @@ Glafira does not save browsed messages to a file. To take a message out of the a
 - [[ui:browse.details.copyJson]] copies the whole message as JSON: topic, partition, offset, timestamp, key, value, headers and size. Key and value are included as decoded, with their format.
 - [[ui:browse.details.copy]] next to [[ui:browse.details.value]] or [[ui:browse.details.key]] copies only that text.
 
-The copied text uses the format chosen for reading. To copy binary data exactly, read it as `hex` or `base64`.
+The copied text uses the format chosen for reading. To copy binary data exactly, read it as `hex` or `base64`. Very large keys and values are copied only partly, as shown, even in `hex` and `base64`. See [Formats](browse.md#formats).
 
 ## Open in Producer {#open-in-producer}
 
@@ -86,7 +86,7 @@ Nothing is sent right away. Check the form, change it if needed, and send it fro
 
 The button is disabled in two cases, and the reason is shown:
 
-- the value was shown only partly because it is larger than 1 MB;
+- the key or value was shown only partly because it is too large;
 - the text was decoded with losses because it is not valid UTF-8. Read it as `hex` or `base64` to send an exact copy.
 
 On [[ui:common.readOnly]] connections, the button is hidden.

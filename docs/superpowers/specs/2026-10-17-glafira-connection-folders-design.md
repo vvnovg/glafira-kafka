@@ -54,10 +54,10 @@ librdkafka (`extraProperties`), которые вводит пользовате
 | `create_folder(name, parent_id) -> ConnectionFolder` | новая папка в конце уровня |
 | `rename_folder(id, name)` | переименование |
 | `delete_folder(id)` | только пустую, иначе `AppError` `errors.folders.notEmpty` |
-| `move_items(items: [{ kind: "folder" \| "connection", id }], parent_id, before_id?)` | перемещение и порядок; запрет циклов — `errors.folders.cycle` |
-| `export_connections(path, folder_id?) -> { connections, folders }` | файл формата §4; без секретов |
+| `move_items(items: [{ kind: "folder" \| "connection", id }], parent_id, before: { kind, id }?)` | перемещение и порядок; запрет циклов — `errors.folders.cycle` |
+| `export_connections(path, folder_id?) -> ExportSummary { connections, folders }` | файл формата §4; без секретов |
 | `preview_import(path, target_folder_id?, update_existing) -> ImportPreview` | разбор и план без записи |
-| `apply_import(path, target_folder_id?, update_existing) -> ImportResult` | применение одной записью файла; при ошибке не меняется ничего |
+| `apply_import(path, target_folder_id?, update_existing) -> ImportPreview` | применение одной записью файла (итог — в том же виде, что предпросмотр); при ошибке не меняется ничего |
 
 Поле «Папка» в форме применяется через `move_items` (см. §2). Все тексты ошибок — ключи словарей (`errors.folders.*`, `errors.import.*`).
 
@@ -97,7 +97,8 @@ librdkafka (`extraProperties`), которые вводит пользовате
 - После применения — сообщение «Импортировано: добавлено N, обновлено M; введите пароли для K подключений».
 
 `ImportPreview`: `{ added: [{ kind, id, name, path }], updated: [...], unchanged: [...], skipped: [{ name, reason: LocalizedText }],
-warnings: [{ key, params }] }`; предупреждения: prod во Free, отсутствующие файлы сертификатов на этом компьютере, нужны пароли.
+warnings: [{ key, params }], needsPasswords: number }`; предупреждения: prod во Free, отсутствующие файлы сертификатов на этом компьютере;
+число новых подключений, которым нужны пароли, — отдельное поле `needsPasswords`.
 
 ## 6. Интерфейс
 

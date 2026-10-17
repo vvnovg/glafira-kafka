@@ -1,8 +1,13 @@
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
-import en from "../locales/en.json";
-import ru from "../locales/ru.json";
 import { LANGUAGES } from "./languages";
+
+const modules = import.meta.glob<{ default: Record<string, unknown> }>("../locales/*.json", { eager: true });
+
+/** Все словари src/locales/<код>.json по коду языка. Новый язык подключается появлением файла. */
+export const DICTIONARIES: Record<string, Record<string, unknown>> = Object.fromEntries(
+  Object.entries(modules).map(([path, m]) => [path.replace(/^.*\/([^/]+)\.json$/, "$1"), m.default]),
+);
 
 const PSEUDO = "x-pseudo";
 
@@ -24,9 +29,8 @@ if (import.meta.env.DEV) {
 
 void instance.init({
   resources: {
-    en: { translation: en },
-    ru: { translation: ru },
-    ...(import.meta.env.DEV ? { [PSEUDO]: { translation: en } } : {}),
+    ...Object.fromEntries(Object.entries(DICTIONARIES).map(([code, d]) => [code, { translation: d }])),
+    ...(import.meta.env.DEV ? { [PSEUDO]: { translation: DICTIONARIES.en } } : {}),
   },
   showSupportNotice: false,
   lng: "en",

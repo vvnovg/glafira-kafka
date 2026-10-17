@@ -94,7 +94,7 @@ openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -ink
 
 ## Passwörter {#passwords}
 
-Das SASL-Passwort sowie die Passwörter von Schlüsseln und Keystores werden im Schlüsselbund des Systems gespeichert: in der Keychain unter macOS, in der Anmeldeinformationsverwaltung unter Windows, im Secret Service unter Linux. Sie werden nie in das Verbindungsprofil, in Exportdateien oder in das Diagnosearchiv geschrieben.
+Das SASL-Passwort sowie die Passwörter von Schlüsseln und Keystores werden im Schlüsselbund des Systems gespeichert: in der Schlüsselbundverwaltung unter macOS, in der Anmeldeinformationsverwaltung unter Windows, im Secret Service unter Linux. Sie werden nie in das Verbindungsprofil, in Exportdateien oder in das Diagnosearchiv geschrieben.
 
 Wenn Sie eine gespeicherte Verbindung bearbeiten, sind die Passwortfelder leer und zeigen [[ui:connections.form.passwordKeep]]. Lassen Sie ein Feld leer, um das gespeicherte Passwort beizubehalten, oder geben Sie ein neues ein, um es zu ersetzen. Um ein gespeichertes Zertifikatspasswort zu löschen, wählen Sie neben dem Feld [[ui:connections.tls.clear]]. Beim Speichern werden Passwörter gelöscht, die die Verbindung nicht mehr verwendet, etwa nach einem Wechsel des Protokolls auf `PLAINTEXT`.
 
@@ -160,4 +160,4 @@ So ordnet die App die Datei Ihren Verbindungen zu:
 - Hat eine neue Verbindung denselben Namen wie eine andere im selben Ordner, wird eine Nummer angehängt, zum Beispiel `kafka-dev (2)`.
 - Verbindungen, die diese Version von Glafira nicht unterstützt oder die Geheimnisse in zusätzlichen Eigenschaften enthalten, werden übersprungen.
 
-Die Vorschau warnt außerdem, wenn Zertifikatsdateien auf diesem Computer nicht gefunden werden und wenn Prod-Verbindungen schreibgeschützt werden, weil Pro nicht aktiv ist. Passwörter sind nicht in der Datei, daher zeigt der Bereich nach dem Import an, wie viele Verbindungen welche benötigen. Öffnen Sie jede dieser Verbindungen, geben Sie die Passwörter ein und speichern Sie.
+Die Vorschau warnt außerdem, wenn Zertifikatsdateien auf diesem Computer nicht gefunden werden und wenn Prod-Verbindungen schreibgeschützt werden, weil Pro nicht aktiv ist. Passwörter sind nicht in der Datei, daher zeigt der Bereich nach dem Import an, wie viele Verbindungen Passwörter benötigen. Öffnen Sie jede dieser Verbindungen, geben Sie die Passwörter ein und speichern Sie.

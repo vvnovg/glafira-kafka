@@ -39,7 +39,7 @@ Klicken Sie in der Liste auf eine Gruppe, um ihren Tab zu öffnen. Oben zeigt ei
 
 - [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] oder [[ui:groups.details.refresh10]].
 - [[ui:groups.details.refresh]] — sofort neu laden.
-- [[ui:groups.details.join]] — eine [Consumer-Session](consumer-sessions.md) in dieser Gruppe starten. Das Session-Formular übernimmt die Gruppen-ID und die Topics, für die die Gruppe Commits hat. Dafür ist Pro erforderlich, und bei Verbindungen mit [[ui:common.readOnly]] ist die Schaltfläche deaktiviert; zeigen Sie mit der Maus darauf, um den Grund zu sehen.
+- [[ui:groups.details.join]] — eine [Consumer-Session](consumer-sessions.md) in dieser Gruppe starten. Das Session-Formular übernimmt die Gruppen-ID und die Topics, für die die Gruppe Commits hat. Dafür ist Pro erforderlich, und bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] ist die Schaltfläche deaktiviert; zeigen Sie mit der Maus darauf, um den Grund zu sehen.
 
 [[ui:groups.details.partitions]] listet die Partitionen auf, für die die Gruppe Commits hat, sowie die ihren Mitgliedern zugewiesenen Partitionen. Der gesamte Lag der Gruppe steht über der Tabelle. Die Spalten sind [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (der committete Offset), `Log end` (der End-Offset der Partition), [[ui:groups.details.colLag]] und [[ui:groups.details.colMember]] (die Client-ID des Mitglieds, das die Partition liest).
 
@@ -73,7 +73,7 @@ Sie können ein Zurücksetzen auch von einer Nachricht aus vorbereiten: siehe [G
 - [[ui:groups.reset.strategyLatest]] — das Ende der Partition. Die Gruppe überspringt alles Angesammelte und liest nur neue Nachrichten.
 - [[ui:groups.reset.strategyTimestamp]] — die erste Nachricht, die zum Zeitpunkt unter [[ui:groups.reset.timestamp]] oder danach geschrieben wurde. In Partitionen ohne neuere Nachrichten ist das Ziel das Ende.
 - [[ui:groups.reset.strategyOffset]] — der angegebene [[ui:groups.reset.offset]], eine ganze Zahl ab 0, in jeder Partition. Hat eine Partition diesen Offset nicht, ist das Ziel ihr erster bzw. ihr End-Offset.
-- [[ui:groups.reset.strategyShift]] — verschiebt den committeten Offset um den Wert unter [[ui:groups.reset.shift]]. Eine negative Zahl liest N Nachrichten zurück erneut, eine positive überspringt N Nachrichten. Das Ergebnis bleibt zwischen erstem und End-Offset. Partitionen ohne committeten Offset lassen sich nicht verschieben und werden übersprungen.
+- [[ui:groups.reset.strategyShift]] — verschiebt den committeten Offset um den Wert unter [[ui:groups.reset.shift]]. Eine negative Zahl liest die letzten N Nachrichten erneut, eine positive überspringt N Nachrichten. Das Ergebnis bleibt zwischen erstem und End-Offset. Partitionen ohne committeten Offset lassen sich nicht verschieben und werden übersprungen.
 
 Die Zeit ist Ihre Ortszeit, mit Sekunden. Kafka ermittelt den Offset anhand der Zeitstempel der Nachrichten.
 
@@ -82,7 +82,7 @@ Die Zeit ist Ihre Ortszeit, mit Sekunden. Kafka ermittelt den Offset anhand der 
 [[ui:groups.reset.scope]] legt fest, welche Partitionen zurückgesetzt werden. Die übrigen Partitionen behalten ihre Offsets.
 
 - [[ui:groups.reset.scopeAll]] — alle Partitionen, für die die Gruppe Offsets committet hat. Hat die Gruppe noch keine Commits, wählen Sie stattdessen Topics.
-- [[ui:groups.reset.scopeTopics]] — alle Partitionen der aufgeführten Topics, auch Partitionen ohne Commits. Trennen Sie die Namen durch Kommas, Leerzeichen oder Zeilenumbrüche. So lässt sich eine Gruppe ab einer gewählten Stelle mit dem Lesen eines neuen Topics beginnen.
+- [[ui:groups.reset.scopeTopics]] — alle Partitionen der aufgeführten Topics, auch Partitionen ohne Commits. Trennen Sie die Namen durch Kommas, Leerzeichen oder Zeilenumbrüche. So können Sie eine Gruppe ein neues Topic ab einer gewählten Stelle lesen lassen.
 - [[ui:groups.reset.scopePartitions]] — nur die aufgeführten Partitionen. Geben Sie sie unter [[ui:groups.reset.partitionsLabel]] als `topic:partition` ein, getrennt durch Kommas oder Leerzeichen, zum Beispiel `orders:0, orders:3`.
 
 ## Gruppe löschen {#delete-group}
@@ -95,4 +95,4 @@ Das Löschen einer Gruppe entfernt alle ihre committeten Offsets. Nur eine Grupp
 
 Nach dem Löschen schließt sich der Tab der Gruppe. Startet eine Anwendung mit dieser `group.id` erneut, legt Kafka die Gruppe neu an. Ohne committete Offsets beginnt die Anwendung dort, wo ihre Einstellung `auto.offset.reset` es vorgibt: am Anfang oder am Ende.
 
-Bei Verbindungen mit [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.
+Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.

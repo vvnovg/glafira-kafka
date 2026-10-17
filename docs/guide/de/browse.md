@@ -1,6 +1,6 @@
 # Nachrichten durchsuchen
 
-Nachrichten durchsuchen Sie im Tab [[ui:topics.details.tabMessages]] eines Topics. Dabei tritt die App keiner Consumer Group bei und committet nichts, der Cluster bleibt also unverändert. Das funktioniert auch bei Verbindungen mit [[ui:common.readOnly]]. Um als Mitglied einer Gruppe zu lesen, verwenden Sie eine [Consumer-Session](consumer-sessions.md).
+Nachrichten durchsuchen Sie im Tab [[ui:topics.details.tabMessages]] eines Topics. Dabei tritt die App keiner Consumer Group bei und committet nichts, der Cluster bleibt also unverändert. Das funktioniert auch bei Verbindungen mit aktivierter Option [[ui:common.readOnly]]. Um als Mitglied einer Gruppe zu lesen, verwenden Sie eine [Consumer-Session](consumer-sessions.md).
 
 ## Lesen starten {#start-reading}
 
@@ -89,7 +89,7 @@ Die Schaltfläche ist in zwei Fällen deaktiviert, der Grund wird angezeigt:
 - der Schlüssel oder Wert wurde nur teilweise angezeigt, weil er zu groß ist;
 - der Text wurde verlustbehaftet dekodiert, weil er kein gültiges UTF-8 ist. Lesen Sie ihn als `hex` oder `base64`, um eine exakte Kopie zu senden.
 
-Bei Verbindungen mit [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.
+Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.
 
 ## Gruppe auf eine Nachricht zurücksetzen {#reset-group-here}
 
@@ -101,4 +101,4 @@ Bei Verbindungen mit [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.
 
 Der Tab der Gruppe öffnet sich mit ausgefülltem Formular zum Zurücksetzen. Als [[ui:groups.reset.strategy]] ist [[ui:groups.reset.strategyOffset]] mit dem Offset der Nachricht gesetzt, als [[ui:groups.reset.scope]] [[ui:groups.reset.scopePartitions]] mit Topic und Partition der Nachricht. Noch ändert sich nichts: Klicken Sie auf [[ui:groups.reset.preview]], um die neuen Offsets zu sehen, und wenden Sie das Zurücksetzen dort an. Die Gruppe darf keine aktiven Mitglieder haben. Siehe [Consumer Groups](groups.md).
 
-Bei Verbindungen mit [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.
+Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] ist die Schaltfläche ausgeblendet.

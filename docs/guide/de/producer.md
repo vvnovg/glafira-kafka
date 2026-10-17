@@ -2,7 +2,7 @@
 
 Der [[ui:sidebar.producer]] sendet Nachrichten an Kafka: einzeln aus einem Formular oder viele auf einmal. Öffnen Sie ihn über die Verbindung im Bereich [[ui:sidebar.connections]] oder mit [[ui:topics.details.produce]] im Tab eines Topics; dann ist das Topic bereits eingetragen. Jede Verbindung hat einen eigenen Producer-Tab.
 
-Bei Verbindungen mit [[ui:common.readOnly]] öffnet sich der Producer mit der Warnung [[ui:producer.readOnly]]. Die Schaltflächen zum Senden sind ausgeblendet, Vorlagen und Verlauf lassen sich aber weiterhin ansehen.
+Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] öffnet sich der Producer mit der Warnung [[ui:producer.readOnly]]. Die Schaltflächen zum Senden sind ausgeblendet, Vorlagen und Verlauf lassen sich aber weiterhin ansehen.
 
 ## Nachricht senden {#send-message}
 
@@ -66,7 +66,7 @@ Kommt eine Nachricht aus [Im Producer öffnen](browse.md#open-in-producer) oder 
 
 Eine Vorlage speichert das ganze Formular: Topic, Partition, Schlüssel, Wert, Header, Formate und Producer-Einstellungen. Platzhalter werden so gespeichert, wie sie geschrieben sind, und bei jedem Senden ersetzt.
 
-Um eine Vorlage zu speichern, klicken Sie auf [[ui:producer.templates.saveAs]], geben den [[ui:producer.templates.nameLabel]] ein und klicken auf [[ui:common.save]]. Das Topic darf leer sein. Standardmäßig gehört die Vorlage zu dieser Verbindung. Wählen Sie [[ui:producer.templates.global]], um sie bei jeder Verbindung anzuzeigen; solche Vorlagen sind in der Liste mit [[ui:producer.templates.allSuffix]] gekennzeichnet.
+Um eine Vorlage zu speichern, klicken Sie auf [[ui:producer.templates.saveAs]], geben unter [[ui:producer.templates.nameLabel]] einen Namen ein und klicken auf [[ui:common.save]]. Das Topic darf leer sein. Standardmäßig gehört die Vorlage zu dieser Verbindung. Wählen Sie [[ui:producer.templates.global]], um sie bei jeder Verbindung anzuzeigen; solche Vorlagen sind in der Liste mit [[ui:producer.templates.allSuffix]] gekennzeichnet.
 
 Um eine Vorlage zu verwenden, wählen Sie sie in der Liste [[ui:producer.templates.label]]. Das Formular wird durch die Vorlage ersetzt. Sie können das Formular vor dem Senden bearbeiten; die Vorlage ändert sich dabei nicht.
 
@@ -141,6 +141,6 @@ Ohne Begrenzung sendet die App so schnell, wie der Broker annimmt. Die Senderate
 - `1` — nur der Leader bestätigt. Schneller, aber eine Nachricht kann verloren gehen, wenn der Leader ausfällt, bevor die Follower sie kopiert haben.
 - `0` — der Producer wartet auf keine Bestätigung. Nachrichten können verloren gehen, und es wird kein Offset zurückgegeben.
 
-[[ui:producer.settings.compression]] komprimiert Nachrichten-Batches: `none` (Standard), `gzip`, `snappy`, `lz4` oder `zstd`. Komprimierung spart Netzwerkverkehr und Speicherplatz auf Kosten etwas CPU. `zstd` und `lz4` sind gängige Optionen. Bei einer einzelnen kleinen Nachricht ist der Gewinn gering.
+[[ui:producer.settings.compression]] komprimiert Nachrichten-Batches: `none` (Standard), `gzip`, `snappy`, `lz4` oder `zstd`. Komprimierung spart Netzwerkverkehr und Speicherplatz auf Kosten von etwas CPU-Leistung. `zstd` und `lz4` sind gängige Optionen. Bei einer einzelnen kleinen Nachricht ist der Gewinn gering.
 
 [[ui:producer.settings.idempotence]] setzt `enable.idempotence`. Sie verhindert Duplikate, wenn der Client ein Senden nach einem Netzwerkfehler wiederholt. Sie erfordert `acks` mit dem Wert `all`; bei anderen Werten zeigt die App einen Fehler und sendet nichts.

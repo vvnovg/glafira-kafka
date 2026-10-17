@@ -10,7 +10,7 @@ Eine Session wirkt sich auf den Cluster aus. Wenn sie beitritt oder austritt, ve
 
 In Free sind [[ui:sidebar.consumer]], [[ui:topics.details.consume]] und [[ui:groups.details.join]] deaktiviert und mit einem Schloss und `Pro` gekennzeichnet. Öffnet sich ein Session-Tab ohne aktive Pro-Lizenz, zeigt er [[ui:consumer.proOnly]] und den Link [[ui:common.openLicense]]. Siehe [Schlüssel aktivieren](license-updates.md#activate).
 
-Bei Verbindungen mit [[ui:common.readOnly]] sind Sessions nicht verfügbar: Der Tab zeigt [[ui:consumer.readOnlyBlocked]]. Wird eine Verbindung schreibgeschützt, während eine Session läuft, verlässt die Session die Gruppe.
+Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] sind Sessions nicht verfügbar: Der Tab zeigt [[ui:consumer.readOnlyBlocked]]. Wird eine Verbindung schreibgeschützt, während eine Session läuft, verlässt die Session die Gruppe.
 
 ## Session starten {#start-session}
 
@@ -25,7 +25,7 @@ Jedes Mal öffnet sich ein neuer Tab, sodass mehrere Sessions gleichzeitig laufe
 Unter [[ui:consumer.form.groupTopics]]:
 
 - `group.id` — die Gruppe, der beigetreten wird. Geben Sie keine ein, schlägt die App einen neuen Namen wie `glafira-kafka-anna-1a2b3c` vor. Eine neue Gruppe hat keine Commits.
-- [[ui:consumer.form.topicsLabel]] — Topic-Namen, getrennt durch Kommas oder Leerzeichen. Oder wählen Sie [[ui:consumer.form.useRegex]] und geben einen [[ui:consumer.form.patternLabel]] ein, zum Beispiel `orders\..*`. Der Ausdruck wird ab dem Anfang des Namens abgeglichen: Fehlt `^`, wird es ergänzt. Passende Topics, die später angelegt werden, kommen innerhalb weniger Minuten hinzu (bei der Aktualisierung der Metadaten); das löst ein Rebalance aus.
+- [[ui:consumer.form.topicsLabel]] — Topic-Namen, getrennt durch Kommas oder Leerzeichen. Oder wählen Sie [[ui:consumer.form.useRegex]] und geben unter [[ui:consumer.form.patternLabel]] einen Ausdruck ein, zum Beispiel `orders\..*`. Der Ausdruck wird ab dem Anfang des Namens abgeglichen: Fehlt `^`, wird es ergänzt. Passende Topics, die später angelegt werden, kommen innerhalb weniger Minuten hinzu (bei der Aktualisierung der Metadaten); das löst ein Rebalance aus.
 - `auto.offset.reset` — wo in Partitionen begonnen wird, für die die Gruppe keinen committeten Offset hat: [[ui:consumer.form.resetLatest]] (Standard) oder [[ui:consumer.form.resetEarliest]]. Wo die Gruppe einen committeten Offset hat, wird ab diesem weitergelesen.
 - [[ui:consumer.form.autoCommit]] — gelesene Offsets automatisch committen. Standardmäßig deaktiviert. Siehe [Commits](consumer-sessions.md#commits).
 - `isolation.level` — `read_committed` (Standard) zeigt nur Nachrichten abgeschlossener Transaktionen. `read_uncommitted` zeigt auch Nachrichten offener und abgebrochener Transaktionen.
@@ -82,7 +82,7 @@ Das Protokoll behält die letzten 200 Einträge. Vor dem ersten Rebalance zeigt 
 ## Einschränkungen {#limits}
 
 - Sessions erfordern Pro. Ist Pro während einer laufenden Session nicht mehr aktiv, liest die Session weiter, aber Commits, Pausieren und Fortsetzen werden abgelehnt, und eine neue Session lässt sich nicht starten.
-- Bei Verbindungen mit [[ui:common.readOnly]] sind Sessions nicht verfügbar.
+- Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] sind Sessions nicht verfügbar.
 - Eine Session kann nicht ab einem gewählten Offset beginnen. Um den Start festzulegen, setzen Sie zuerst die Offsets der Gruppe zurück: siehe [Offsets zurücksetzen](groups.md#reset-offsets). Das Zurücksetzen erfordert eine Gruppe ohne Mitglieder, trennen Sie also vorher die Sessions dieser Gruppe.
 - Die Tabelle behält höchstens 100000 Nachrichten. Ältere Nachrichten werden entfernt, zählen aber weiterhin als gelesen.
 - Sehr große Schlüssel und Werte werden nur teilweise angezeigt, wie beim Durchsuchen.

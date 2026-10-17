@@ -31,12 +31,12 @@ Elemente der Symbolleiste:
 - Die Liste für die automatische Aktualisierung — [[ui:topics.list.autoRefreshOff]], [[ui:topics.list.every10]] oder [[ui:topics.list.every30]].
 - [[ui:topics.list.refresh]] — Liste und Nachrichtenanzahl sofort neu laden.
 
-Neben der Symbolleiste zeigt die App, wie viele Topics von der Gesamtzahl zur Suche passen. Bei Verbindungen mit [[ui:common.readOnly]] sind die Schaltflächen [[ui:topics.list.create]] und [[ui:topics.list.select]] ausgeblendet.
+Neben der Symbolleiste zeigt die App, wie viele Topics von der Gesamtzahl zur Suche passen. Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] sind die Schaltflächen [[ui:topics.list.create]] und [[ui:topics.list.select]] ausgeblendet.
 
 ## Topic erstellen {#create-topic}
 
 1. Klicken Sie in der Topic-Liste auf [[ui:topics.list.create]]. Das Formular [[ui:topics.create.title]] öffnet sich über der Liste.
-2. Geben Sie den [[ui:topics.create.name]] ein. Er darf lateinische Buchstaben, Ziffern, `.`, `_` und `-` enthalten, bis zu 249 Zeichen. Das Formular warnt, wenn der Name sowohl `.` als auch `_` enthält: Die Kafka-Metriknamen solcher Topics können mit denen anderer Topics kollidieren.
+2. Geben Sie unter [[ui:topics.create.name]] einen Namen ein. Er darf lateinische Buchstaben, Ziffern, `.`, `_` und `-` enthalten, bis zu 249 Zeichen. Das Formular warnt, wenn der Name sowohl `.` als auch `_` enthält: Die Kafka-Metriknamen solcher Topics können mit denen anderer Topics kollidieren.
 3. Legen Sie die Anzahl der [[ui:topics.create.partitions]] fest. Partitionen werden parallel gelesen, die Reihenfolge ist nur innerhalb einer Partition garantiert. Die Anzahl lässt sich später erhöhen, aber nie verringern.
 4. Legen Sie den [[ui:topics.create.rf]] fest — wie viele Kopien jeder Partition die Broker vorhalten. Er darf die Anzahl der Broker nicht überschreiten, die das Formular unter dem Feld anzeigt. Standard ist 3 oder die Anzahl der Broker, wenn es weniger sind. `-1` übernimmt den Standardwert des Brokers.
 5. Wählen Sie eine [[ui:topics.create.preset]]:
@@ -76,7 +76,7 @@ Der Tab eines Topics zeigt die Anzahl der Partitionen, den Replikationsfaktor un
 - [[ui:topics.details.produce]] — den [[ui:sidebar.producer]] mit diesem Topic öffnen. Siehe [Producer](producer.md).
 - [[ui:topics.details.consume]] — eine Consumer-Session für dieses Topic starten. Dafür ist Pro erforderlich. Siehe [Consumer-Sessions](consumer-sessions.md).
 
-Bei Verbindungen mit [[ui:common.readOnly]] sind beide Schaltflächen deaktiviert.
+Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] sind beide Schaltflächen deaktiviert.
 
 Die zweite Zeile enthält Aktionen, die das Topic verändern. Sie ist bei schreibgeschützten Verbindungen und für interne Topics ausgeblendet.
 
@@ -105,7 +105,7 @@ Mit [[ui:common.config.searchParam]] finden Sie einen Parameter nach Namen, mit 
 
 ## Konfiguration ändern {#edit-config}
 
-1. Klicken Sie im Tab [[ui:topics.details.tabConfigs]] auf [[ui:topics.details.edit]]. Bei Verbindungen mit [[ui:common.readOnly]] ist diese Schaltfläche ausgeblendet.
+1. Klicken Sie im Tab [[ui:topics.details.tabConfigs]] auf [[ui:topics.details.edit]]. Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] ist diese Schaltfläche ausgeblendet.
 2. Ändern Sie die Werte in der Spalte [[ui:common.config.colValue]]. Schreibgeschützte und vertrauliche Parameter lassen sich nicht bearbeiten. Um den eigenen Wert des Topics zu entfernen, klicken Sie auf [[ui:common.config.reset]]: Dann gilt der Wert des Brokers. Ein leerer Wert ist nicht zulässig.
 3. Klicken Sie auf [[ui:common.config.review]]. Die App zeigt jede Änderung als alter Wert → neuer Wert; [[ui:common.config.defaultValue]] bedeutet, dass der Wert zurückgesetzt wird.
 4. Klicken Sie auf [[ui:common.config.apply]] oder auf [[ui:common.config.back]], um weiter zu bearbeiten.

@@ -61,7 +61,7 @@ Probleme mit Zertifikatsdateien werden im Schritt [[ui:connections.form.step.con
 
 [[ui:errors.connections.saslPasswordMissing]] — für diese Verbindung ist kein Passwort gespeichert, etwa nach einem Import. Öffnen Sie die Verbindung, geben Sie das Passwort ein und speichern Sie. Siehe [Passwörter](connections.md#passwords).
 
-[[ui:errors.secrets.keychain]] — die App kann das Passwort nicht aus dem Schlüsselbund des Systems lesen. Erlauben Sie unter macOS den Zugriff, wenn die Keychain danach fragt. Prüfen Sie unter Linux, ob GNOME Keyring, KWallet oder ein anderer Secret-Service-Anbieter in Ihrer Sitzung läuft.
+[[ui:errors.secrets.keychain]] — die App kann das Passwort nicht aus dem Schlüsselbund des Systems lesen. Erlauben Sie unter macOS den Zugriff, wenn der Schlüsselbund danach fragt. Prüfen Sie unter Linux, ob GNOME Keyring, KWallet oder ein anderer Secret-Service-Anbieter in Ihrer Sitzung läuft.
 
 [[ui:errors.kafka.notAuthorized]] ist etwas anderes: Die Anmeldung war erfolgreich, aber der Kafka-Benutzer hat keine Rechte (ACLs) für diesen Vorgang, etwa für das Lesen eines Topics oder einer Gruppe. Bitten Sie Ihre Administratoren um die Rechte. Beachten Sie, dass Kafka für Topics, die Sie nicht beschreiben dürfen, keinen Fehler meldet: Sie fehlen einfach in der Topic-Liste.
 

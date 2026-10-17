@@ -36,12 +36,14 @@ import type {
   BrowseParams,
   ClusterOverview,
   ConfigEntry,
+  ConnectionFolder,
   ConnectionProfile,
   TestReport,
   TlsPasswordsInput,
   TopicDetails,
   TopicStats,
   TopicSummary,
+  TreeItemRef,
 } from "./types";
 
 export function isAppError(e: unknown): e is AppError {
@@ -84,6 +86,13 @@ export const api = {
     call<TestReport>("test_connection", {
       input: { profile, saslPassword: saslPassword ?? null, tlsPasswords: tlsPasswords ?? null },
     }),
+  listFolders: () => call<ConnectionFolder[]>("list_folders"),
+  createFolder: (name: string, parentId: string | null) =>
+    call<ConnectionFolder>("create_folder", { name, parentId }),
+  renameFolder: (id: string, name: string) => call<ConnectionFolder>("rename_folder", { id, name }),
+  deleteFolder: (id: string) => call<void>("delete_folder", { id }),
+  moveItems: (items: TreeItemRef[], parentId: string | null, before: TreeItemRef | null) =>
+    call<void>("move_items", { items, parentId, before }),
 
   getClusterOverview: (connectionId: string) => call<ClusterOverview>("get_cluster_overview", { connectionId }),
   getBrokerConfig: (connectionId: string, brokerId: number) =>

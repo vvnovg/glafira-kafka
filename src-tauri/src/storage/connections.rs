@@ -333,7 +333,7 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
     Ok(())
 }
 
-fn connection_not_found(id: &str) -> AppError {
+pub(crate) fn connection_not_found(id: &str) -> AppError {
     app_err!(
         ErrorCode::NotFound,
         "errors.connections.notFound",
@@ -375,7 +375,7 @@ pub(crate) struct StoreData {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
-fn folder_not_found(id: &str) -> AppError {
+pub(crate) fn folder_not_found(id: &str) -> AppError {
     app_err!(
         ErrorCode::NotFound,
         "errors.folders.notFound",

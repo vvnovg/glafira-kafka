@@ -90,6 +90,12 @@ export interface ConnectionFolder {
   order: number;
 }
 
+/** Ссылка на элемент дерева подключений для перемещения. */
+export interface TreeItemRef {
+  kind: "folder" | "connection";
+  id: string;
+}
+
 export interface TestStep {
   name: "config" | "tcp" | "kafka";
   ok: boolean;

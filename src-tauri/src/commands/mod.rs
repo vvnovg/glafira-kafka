@@ -3,6 +3,7 @@ pub mod browse;
 pub mod cluster;
 pub mod connections;
 pub mod consume;
+pub mod folders;
 pub mod groups;
 pub mod license;
 pub mod produce;

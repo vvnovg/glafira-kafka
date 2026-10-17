@@ -448,6 +448,22 @@ mod tests {
     }
 
     #[test]
+    fn new_connection_is_saved_into_requested_folder() {
+        let (_d, st) = state(Arc::new(MemoryStore::default()));
+        let f = st.connections.create_folder("F", None).unwrap();
+        let mut p = sample_profile("a");
+        p.folder_id = Some(f.id.clone());
+        let saved = save_connection_blocking(&st, input(p, None)).unwrap();
+        assert_eq!(saved.folder_id.as_deref(), Some(f.id.as_str()));
+        // Несуществующая папка — ошибка, профиль не создаётся.
+        let mut p = sample_profile("b");
+        p.folder_id = Some("nope".into());
+        let e = save_connection_blocking(&st, input(p, None)).unwrap_err();
+        assert_eq!(e.key, "errors.folders.notFound");
+        assert!(st.connections.get("b").is_err());
+    }
+
+    #[test]
     fn prod_environment_with_pro() {
         let (d, mut st) = state(Arc::new(MemoryStore::default()));
         st.license = Arc::new(crate::license::pro_for_tests(d.path()));

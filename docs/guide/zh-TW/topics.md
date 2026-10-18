@@ -1,131 +1,131 @@
-# Cluster and topics
+# 叢集與主題
 
-This chapter covers the cluster overview, the topic list, creating and deleting topics, the topic screen and topic configuration. Under each connection in the [[ui:sidebar.connections]] panel there are links to [[ui:sidebar.cluster]] and [[ui:sidebar.topics]]. Each opens in its own tab.
+本章說明叢集概觀、主題清單、建立和刪除主題、主題畫面以及主題設定。[[ui:sidebar.connections]]面板中每個連線下方都有[[ui:sidebar.cluster]]和[[ui:sidebar.topics]]的連結，各自在獨立的分頁中打開。
 
-## Cluster overview {#cluster-overview}
+## 叢集概觀 {#cluster-overview}
 
-[[ui:cluster.overview.title]] shows the state of the cluster at the moment it was loaded. Click [[ui:cluster.overview.refresh]] to load it again.
+[[ui:cluster.overview.title]]會顯示載入當下的叢集狀態。按一下[[ui:cluster.overview.refresh]]可重新載入。
 
-- `Cluster ID` — the cluster identifier.
-- [[ui:cluster.overview.controller]] — the ID of the broker that the cluster reports as the controller. In KRaft clusters, clients do not talk to the controllers directly: the cluster reports a random broker here, not the active controller, and it may change between refreshes.
-- [[ui:cluster.overview.brokers]] — the number of brokers.
-- [[ui:cluster.overview.topicsInternal]] — all topics, with the number of internal topics in brackets.
-- [[ui:cluster.overview.partitions]] — the number of partitions in all topics.
-- `Under-replicated` — partitions where not all replicas are in sync (in the ISR). Usually a broker is down or cannot keep up.
-- `Offline` — partitions without a leader. Nobody can write to them or read from them.
+- `Cluster ID`：叢集識別碼。
+- [[ui:cluster.overview.controller]]：叢集回報為控制器的 Broker ID。在 KRaft 叢集中，用戶端不會直接與控制器通訊：叢集在這裡回報的是隨機的 Broker，而不是作用中的控制器，而且每次重新整理都可能不同。
+- [[ui:cluster.overview.brokers]]：Broker 數量。
+- [[ui:cluster.overview.topicsInternal]]：所有主題的數量，括號中為內部主題的數量。
+- [[ui:cluster.overview.partitions]]：所有主題的分區總數。
+- `Under-replicated`：並非所有複本都已同步（在 ISR 中）的分區。通常是有 Broker 停止運作或跟不上。
+- `Offline`：沒有 Leader 的分區。任何人都無法寫入或讀取這些分區。
 
-A non-zero value in `Under-replicated` or `Offline` is highlighted.
+`Under-replicated` 或 `Offline` 的值不為零時會醒目標示。
 
-Below is the broker table with `ID` and [[ui:cluster.overview.address]]. The broker from the [[ui:cluster.overview.controller]] field is marked [[ui:cluster.overview.controllerBadge]]. In KRaft clusters, this is the same random broker, not the active controller. Click a broker to see its configuration under the table. Broker configuration can only be viewed. Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to hide parameters with default values. A lock icon marks read-only parameters.
+下方是 Broker 表格，包含 `ID` 和[[ui:cluster.overview.address]]。[[ui:cluster.overview.controller]]欄位中的 Broker 會標示為[[ui:cluster.overview.controllerBadge]]。在 KRaft 叢集中，這是同一個隨機的 Broker，而不是作用中的控制器。按一下 Broker，即可在表格下方查看它的設定。Broker 設定只能檢視。使用[[ui:common.config.searchParam]]可依名稱尋找參數，使用[[ui:common.config.onlyChanged]]可隱藏預設值的參數。鎖頭圖示表示唯讀參數。
 
-## Topic list {#topic-list}
+## 主題清單 {#topic-list}
 
-[[ui:sidebar.topics]] lists the topics of the cluster. Click a row to open the topic in its own tab.
+[[ui:sidebar.topics]]會列出叢集中的主題。按一下某一列，即可在獨立的分頁中打開該主題。
 
-The columns are [[ui:topics.list.colName]], [[ui:topics.list.colPartitions]], `RF` (replication factor), [[ui:topics.list.colMessages]], `cleanup.policy` and [[ui:topics.list.colUnderRepl]] (the number of under-replicated partitions). The message count is approximate: it is the difference between the end and start offsets of the partitions. Compaction and transaction markers make the real number smaller. Message counts and `cleanup.policy` are loaded only for the rows you scroll to.
+欄位包括[[ui:topics.list.colName]]、[[ui:topics.list.colPartitions]]、`RF`（複寫係數）、[[ui:topics.list.colMessages]]、`cleanup.policy` 和[[ui:topics.list.colUnderRepl]]（複本不足的分區數量）。訊息數是近似值，也就是各分區結尾和起始偏移量的差。Compaction 和交易標記會使實際數量較少。訊息數和 `cleanup.policy` 只會針對捲動到的列載入。
 
-Toolbar controls:
+工具列控制項：
 
-- [[ui:topics.list.search]] — type part of a name to find topics; case does not matter. To search with a regular expression, put it between slashes, for example `/^orders\..*/`.
-- [[ui:topics.list.internal]] — show internal topics, such as `__consumer_offsets`. They are marked [[ui:topics.list.internalBadge]].
-- The auto-refresh list — [[ui:topics.list.autoRefreshOff]], [[ui:topics.list.every10]] or [[ui:topics.list.every30]].
-- [[ui:topics.list.refresh]] — reload the list and the message counts now.
+- [[ui:topics.list.search]]：輸入名稱的一部分即可尋找主題，不區分大小寫。若要使用規則運算式搜尋，請將它放在兩個斜線之間，例如 `/^orders\..*/`。
+- [[ui:topics.list.internal]]：顯示內部主題，例如 `__consumer_offsets`。這些主題會標示為「[[ui:topics.list.internalBadge]]」。
+- 自動重新整理清單：[[ui:topics.list.autoRefreshOff]]、[[ui:topics.list.every10]]或[[ui:topics.list.every30]]。
+- [[ui:topics.list.refresh]]：立即重新載入清單和訊息數。
 
-Next to the toolbar, the app shows how many topics match the search out of the total. On [[ui:common.readOnly]] connections, the [[ui:topics.list.create]] and [[ui:topics.list.select]] buttons are hidden.
+工具列旁會顯示符合搜尋條件的主題數和總數。在[[ui:common.readOnly]]連線上，[[ui:topics.list.create]]和[[ui:topics.list.select]]按鈕會隱藏。
 
-## Create a topic {#create-topic}
+## 建立主題 {#create-topic}
 
-1. In the topic list, click [[ui:topics.list.create]]. The [[ui:topics.create.title]] form opens above the list.
-2. Enter a [[ui:topics.create.name]]. It can contain Latin letters, digits, `.`, `_` and `-`, up to 249 characters. The form warns if the name has both `.` and `_`: Kafka metric names of such topics may collide with other topics.
-3. Set the number of [[ui:topics.create.partitions]]. Partitions are read in parallel, and order is guaranteed only within one partition. The number can be increased later, but never decreased.
-4. Set the [[ui:topics.create.rf]] — how many copies of each partition the brokers keep. It cannot be more than the number of brokers, which the form shows under the field. The default is 3, or the number of brokers if there are fewer. `-1` uses the broker default.
-5. Choose a [[ui:topics.create.preset]]:
-   - [[ui:topics.create.presetDelete]] — old messages are deleted by time.
-   - `compact` — only the latest value per key is kept.
-   - `compact + delete` — both.
-   - [[ui:topics.create.presetTest]] — messages are kept for one hour.
-6. Optionally, add [[ui:topics.create.extraConfigs]], one per line, for example `retention.ms=86400000`. They override the preset. Lines that start with `#` are ignored.
-7. Click [[ui:topics.create.submit]].
+1. 在主題清單中按一下[[ui:topics.list.create]]。清單上方會打開[[ui:topics.create.title]]表單。
+2. 輸入[[ui:topics.create.name]]。名稱可包含拉丁字母、數字、`.`、`_` 和 `-`，最多 249 個字元。如果名稱同時含有 `.` 和 `_`，表單會發出警告：這類主題的 Kafka 指標名稱可能與其他主題衝突。
+3. 設定[[ui:topics.create.partitions]]。分區會平行讀取，而順序只在單一分區內有保證。分區數之後可以增加，但永遠無法減少。
+4. 設定[[ui:topics.create.rf]]，也就是 Broker 為每個分區保留幾份複本。它不能大於 Broker 數量，表單會在欄位下方顯示 Broker 數量。預設為 3；如果 Broker 少於 3 個，則為 Broker 數量。`-1` 表示使用 Broker 的預設值。
+5. 選擇[[ui:topics.create.preset]]：
+   - [[ui:topics.create.presetDelete]]：舊訊息依時間刪除。
+   - `compact`：每個鍵只保留最新的值。
+   - `compact + delete`：兩者兼具。
+   - [[ui:topics.create.presetTest]]：訊息保留一小時。
+6. 視需要新增[[ui:topics.create.extraConfigs]]，每行一個，例如 `retention.ms=86400000`。這些設定會覆寫預設集。以 `#` 開頭的行會被忽略。
+7. 按一下[[ui:topics.create.submit]]。
 
-When the form is valid, it shows the equivalent `kafka-topics.sh` command. You can copy it, for example, to create the same topic in another cluster.
+表單內容有效時，會顯示對應的 `kafka-topics.sh` 指令。你可以複製它，例如在另一個叢集中建立相同的主題。
 
-On a prod connection, you confirm the creation by typing the connection name. After the topic is created, its tab opens.
+在正式環境連線上，需要輸入連線名稱來確認建立。主題建立後會打開它的分頁。
 
-## Delete topics {#delete-topics}
+## 刪除主題 {#delete-topics}
 
-To delete one topic, open it and click [[ui:topics.actions.deleteTopic]]. Type the topic name to confirm and click [[ui:topics.delete.confirm]]. The topic tab closes.
+若要刪除一個主題，請打開它並按一下[[ui:topics.actions.deleteTopic]]。輸入主題名稱確認，然後按[[ui:topics.delete.confirm]]。主題的分頁會關閉。
 
-To delete several topics at once:
+一次刪除多個主題：
 
-1. In the topic list, click [[ui:topics.list.select]]. Checkboxes appear next to the names.
-2. Select the topics. Internal topics cannot be selected.
-3. Click the delete button. It shows the number of selected topics.
-4. Check the list of names, type their number to confirm and click [[ui:topics.delete.confirm]].
+1. 在主題清單中按一下[[ui:topics.list.select]]。名稱旁會出現核取方塊。
+2. 選取主題。內部主題無法選取。
+3. 按一下刪除按鈕。按鈕上會顯示已選取的主題數。
+4. 檢查名稱清單，輸入主題數量確認，然後按[[ui:topics.delete.confirm]]。
 
-[[ui:topics.list.cancelSelect]] hides the checkboxes.
+[[ui:topics.list.cancelSelect]]會隱藏核取方塊。
 
-On a prod connection, both ways of deleting also ask you to type the connection name.
+在正式環境連線上，這兩種刪除方式也都會要求輸入連線名稱。
 
-Deletion cannot be undone: the data is lost. If some topics are not deleted, for example because of missing rights, the app lists them with the reason. The other topics are deleted.
+刪除後無法復原，資料會遺失。如果有些主題沒有刪除，例如因為權限不足，應用程式會列出這些主題和原因。其他主題則會刪除。
 
-## Topic screen {#topic-details}
+## 主題畫面 {#topic-details}
 
-The topic tab shows the number of partitions, the replication factor and the approximate message count. The buttons at the top:
+主題分頁會顯示分區數、複寫係數和近似的訊息數。上方的按鈕：
 
-- [[ui:topics.details.refresh]] — reload the topic data.
-- [[ui:topics.details.produce]] — open the [[ui:sidebar.producer]] with this topic. See [Producer](producer.md).
-- [[ui:topics.details.consume]] — start a consumer session for this topic. This needs Pro. See [Consumer sessions](consumer-sessions.md).
+- [[ui:topics.details.refresh]]：重新載入主題資料。
+- [[ui:topics.details.produce]]：以這個主題打開 [[ui:sidebar.producer]]。請參閱 [Producer](producer.md)。
+- [[ui:topics.details.consume]]：為這個主題啟動消費者工作階段。此功能需要 Pro。請參閱[消費者工作階段](consumer-sessions.md)。
 
-On [[ui:common.readOnly]] connections, both buttons are disabled.
+在[[ui:common.readOnly]]連線上，這兩個按鈕會停用。
 
-The second row has actions that change the topic. It is hidden on read-only connections and for internal topics.
+第二列是會變更主題的動作。在唯讀連線上和內部主題中會隱藏。
 
-- [[ui:topics.actions.addPartitions]] — enter the new total and click [[ui:topics.actions.addSubmit]]. The number of partitions cannot be decreased. After an increase, messages with the same key may go to a different partition, so the order by key breaks.
-- [[ui:topics.actions.purge]] — delete all messages up to the current end of the selected partitions. The topic itself stays. Select the partitions, type the topic name and click [[ui:topics.actions.purgeConfirm]]. Purge works only when `cleanup.policy` includes `delete`; otherwise the button is disabled and the reason is shown. For a `compact,delete` topic, purge also deletes the latest values of the keys.
-- [[ui:topics.actions.deleteTopic]] — see [Delete topics](topics.md#delete-topics).
+- [[ui:topics.actions.addPartitions]]：輸入新的總數，然後按一下[[ui:topics.actions.addSubmit]]。分區數無法減少。增加分區後，相同鍵的訊息可能會進入不同的分區，因此依鍵的順序會被打亂。
+- [[ui:topics.actions.purge]]：刪除所選分區中直到目前結尾的所有訊息，主題本身會保留。選取分區，輸入主題名稱，然後按一下[[ui:topics.actions.purgeConfirm]]。只有在 `cleanup.policy` 包含 `delete` 時才能清除；否則按鈕會停用並顯示原因。對於 `compact,delete` 主題，清除也會刪除各個鍵的最新值。
+- [[ui:topics.actions.deleteTopic]]：請參閱[刪除主題](topics.md#delete-topics)。
 
-On a prod connection, each of these actions also asks for the connection name.
+在正式環境連線上，這些動作都會要求輸入連線名稱。
 
-The tabs below:
+下方的分頁：
 
-- [[ui:topics.details.tabMessages]] — browse messages. See [Browsing messages](browse.md).
-- [[ui:topics.details.tabPartitions]] — a table with each partition: [[ui:topics.details.colLeader]], [[ui:topics.details.colReplicas]], `ISR` (in-sync replicas), the start (`Low`) and end (`High`) offsets and the number of messages. A partition without a leader shows [[ui:topics.details.noLeader]].
-- [[ui:topics.details.tabConfigs]] — topic parameters. See [Topic configuration](topics.md#topic-config).
-- [[ui:topics.details.tabGroups]] — consumer groups that have committed offsets for this topic, with [[ui:topics.groups.colState]], [[ui:topics.groups.colPartitions]] and [[ui:topics.groups.colLag]]. Click a group to open it. See [Consumer groups](groups.md).
+- [[ui:topics.details.tabMessages]]：瀏覽訊息。請參閱[瀏覽訊息](browse.md)。
+- [[ui:topics.details.tabPartitions]]：列出每個分區的表格，包含 [[ui:topics.details.colLeader]]、[[ui:topics.details.colReplicas]]、`ISR`（同步中的複本）、起始（`Low`）和結尾（`High`）偏移量以及訊息數。沒有 Leader 的分區會顯示[[ui:topics.details.noLeader]]。
+- [[ui:topics.details.tabConfigs]]：主題參數。請參閱[主題設定](topics.md#topic-config)。
+- [[ui:topics.details.tabGroups]]：已為這個主題提交偏移量的消費者群組，包含[[ui:topics.groups.colState]]、[[ui:topics.groups.colPartitions]]和[[ui:topics.groups.colLag]]。按一下群組即可打開。請參閱[消費者群組](groups.md)。
 
-## Topic configuration {#topic-config}
+## 主題設定 {#topic-config}
 
-The [[ui:topics.details.tabConfigs]] tab lists all topic parameters with three columns:
+[[ui:topics.details.tabConfigs]]分頁會列出所有主題參數，共有三欄：
 
-- [[ui:common.config.colParam]] — the parameter name. Names in bold are set explicitly: on the topic or in the broker configuration.
-- [[ui:common.config.colValue]] — the current value. Sensitive values are hidden as `••••••`.
-- [[ui:common.config.colSource]] — where the value comes from. For example, `DynamicTopic` is set on this topic, `StaticBroker` and `DynamicBroker` come from the broker configuration, and `Default` is the Kafka default.
+- [[ui:common.config.colParam]]：參數名稱。粗體名稱表示已明確設定，設定在主題上或 Broker 設定中。
+- [[ui:common.config.colValue]]：目前的值。敏感值會隱藏為 `••••••`。
+- [[ui:common.config.colSource]]：值的來源。例如 `DynamicTopic` 是在這個主題上設定的，`StaticBroker` 和 `DynamicBroker` 來自 Broker 設定，`Default` 是 Kafka 的預設值。
 
-Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to show only the parameters in bold. A lock icon marks read-only parameters. The `?` icon next to a name explains the parameter.
+使用[[ui:common.config.searchParam]]可依名稱尋找參數，使用[[ui:common.config.onlyChanged]]可只顯示粗體參數。鎖頭圖示表示唯讀參數。名稱旁的 `?` 圖示會說明該參數。
 
-## Change the configuration {#edit-config}
+## 變更設定 {#edit-config}
 
-1. On the [[ui:topics.details.tabConfigs]] tab, click [[ui:topics.details.edit]]. On [[ui:common.readOnly]] connections, this button is hidden.
-2. Change values in the [[ui:common.config.colValue]] column. Read-only and sensitive parameters cannot be edited. To remove the topic's own value, click [[ui:common.config.reset]]: the broker value then applies. An empty value is not allowed.
-3. Click [[ui:common.config.review]]. The app shows each change as old value → new value; [[ui:common.config.defaultValue]] means the value is reset.
-4. Click [[ui:common.config.apply]], or [[ui:common.config.back]] to continue editing.
+1. 在[[ui:topics.details.tabConfigs]]分頁上按一下[[ui:topics.details.edit]]。在[[ui:common.readOnly]]連線上，這個按鈕會隱藏。
+2. 在[[ui:common.config.colValue]]欄中變更值。唯讀和敏感參數無法編輯。若要移除主題自己的值，請按一下[[ui:common.config.reset]]，之後就會套用 Broker 的值。不允許空值。
+3. 按一下[[ui:common.config.review]]。應用程式會以「舊值 → 新值」顯示每項變更；[[ui:common.config.defaultValue]]表示值會被還原。
+4. 按一下[[ui:common.config.apply]]，或按[[ui:common.config.back]]繼續編輯。
 
-Nothing changes in the cluster until you apply. [[ui:common.config.discard]] cancels all edits. While there are unsaved edits, [[ui:topics.details.closeEditor]] is disabled. On a prod connection, you confirm the changes by typing the connection name.
+套用之前，叢集中不會有任何變更。[[ui:common.config.discard]]會取消所有編輯。有未儲存的編輯時，[[ui:topics.details.closeEditor]]會停用。在正式環境連線上，需要輸入連線名稱來確認變更。
 
-Only the parameters you changed are sent. Other topic parameters stay as they are. The broker checks the values and rejects invalid ones with an error.
+只會傳送你變更的參數，主題的其他參數保持不變。Broker 會檢查這些值，並以錯誤拒絕無效的值。
 
-## Topic parameters {#config-parameters}
+## 主題參數 {#config-parameters}
 
-Kafka topics have dozens of parameters. The `?` icons in the configuration table explain each of them. Most often you need these:
+Kafka 主題有數十個參數。設定表格中的 `?` 圖示會逐一說明。最常用的是這些：
 
-- `cleanup.policy` — what happens to old data. `delete` removes old segments by time or size. `compact` keeps only the latest value per key. `compact,delete` does both.
-- `retention.ms` — how long messages are kept, in milliseconds. The default is `604800000` (7 days); `-1` keeps them forever. Works when `cleanup.policy` includes `delete`.
-- `retention.bytes` — the maximum size of each partition before old segments are deleted. The default `-1` means no size limit.
-- `segment.ms` and `segment.bytes` — when the broker starts a new log segment. Retention and compaction work on whole segments, so a message may stay longer than `retention.ms` until its segment is closed.
-- `min.insync.replicas` — how many replicas must confirm a write with `acks=all`. Usually 2 with replication factor 3.
-- `max.message.bytes` — the largest batch the broker accepts for this topic. The default is about 1 MB. Producers must allow the same size (`max.request.size`).
-- `compression.type` — how the broker stores messages. `producer` keeps the producer's compression.
-- `message.timestamp.type` — `CreateTime` (the time set by the producer) or `LogAppendTime` (the time the broker wrote the message). This is the time shown when you browse messages.
-- `delete.retention.ms` — how long delete markers (messages with a null value) stay in a compacted topic. The default is 1 day.
+- `cleanup.policy`：舊資料的處理方式。`delete` 會依時間或大小移除舊的日誌區段。`compact` 每個鍵只保留最新的值。`compact,delete` 兩者都做。
+- `retention.ms`：訊息保留多久，單位為毫秒。預設為 `604800000`（7 天）；`-1` 表示永久保留。在 `cleanup.policy` 包含 `delete` 時生效。
+- `retention.bytes`：刪除舊日誌區段前每個分區的最大大小。預設值 `-1` 表示不限大小。
+- `segment.ms` 和 `segment.bytes`：Broker 何時開始新的日誌區段。保留和 Compaction 都以整個日誌區段為單位，因此在區段關閉之前，訊息保留的時間可能超過 `retention.ms`。
+- `min.insync.replicas`：使用 `acks=all` 時，必須有多少個複本確認寫入。複寫係數為 3 時通常設為 2。
+- `max.message.bytes`：Broker 為這個主題接受的最大批次。預設約為 1 MB。生產者也必須允許相同的大小（`max.request.size`）。
+- `compression.type`：Broker 儲存訊息的方式。`producer` 會保留生產者的壓縮方式。
+- `message.timestamp.type`：`CreateTime`（生產者設定的時間）或 `LogAppendTime`（Broker 寫入訊息的時間）。這是瀏覽訊息時顯示的時間。
+- `delete.retention.ms`：刪除標記（值為 null 的訊息）在已 Compaction 的主題中保留多久。預設為 1 天。
 
-Some parameters exist only in newer Kafka versions, and some are deprecated. The `?` icon says so where it matters. Parameters for tiered storage, such as `remote.storage.enable`, work only if the cluster supports it.
+有些參數只存在於較新的 Kafka 版本中，有些則已淘汰。必要時 `?` 圖示會加以說明。分層儲存的參數（例如 `remote.storage.enable`）只有在叢集支援時才有效。

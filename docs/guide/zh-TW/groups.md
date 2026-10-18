@@ -1,98 +1,98 @@
-# Consumer groups
+# 消費者群組
 
-A consumer group is a set of consumers that share the reading of topics. Kafka gives each partition to one member of the group and stores, for each partition, the offset the group has committed. Applications continue reading from that offset after a restart.
+消費者群組是一組共同分擔主題讀取工作的消費者。Kafka 會將每個分區分配給群組中的一個成員，並為每個分區儲存群組已提交的偏移量。應用程式重新啟動後，會從該偏移量繼續讀取。
 
-Open [[ui:sidebar.groups]] under the connection in the [[ui:sidebar.connections]] panel. The groups of one topic are also on the [[ui:topics.details.tabGroups]] tab of the topic. See [Topic screen](topics.md#topic-details).
+請在[[ui:sidebar.connections]]面板中的連線下方打開[[ui:sidebar.groups]]。單一主題的群組也會顯示在該主題的[[ui:topics.details.tabGroups]]分頁上。請參閱[主題畫面](topics.md#topic-details)。
 
-## Group list {#group-list}
+## 群組清單 {#group-list}
 
-The list shows all consumer groups of the cluster. The columns:
+清單會顯示叢集中的所有消費者群組。欄位如下：
 
-- [[ui:groups.list.colGroup]] — the group ID (`group.id`).
-- [[ui:groups.list.colState]] — the state reported by Kafka, for example `Stable` (members are reading), `Empty` (no members), `PreparingRebalance` or `CompletingRebalance` (partitions are being redistributed) and `Dead` (the group no longer exists).
-- [[ui:groups.list.colMembers]] — the number of active members.
-- `Assignor` — the strategy used to distribute partitions, for example `range`.
-- [[ui:groups.list.colLag]] — the total lag of the group. See [Lag](groups.md#lag).
-- [[ui:groups.list.colTopics]] — the topics the group has committed offsets for.
+- [[ui:groups.list.colGroup]]：群組 ID（`group.id`）。
+- [[ui:groups.list.colState]]：Kafka 回報的狀態，例如 `Stable`（成員正在讀取）、`Empty`（沒有成員）、`PreparingRebalance` 或 `CompletingRebalance`（正在重新分配分區），以及 `Dead`（群組已不存在）。
+- [[ui:groups.list.colMembers]]：作用中的成員數。
+- `Assignor`：分配分區所用的策略，例如 `range`。
+- [[ui:groups.list.colLag]]：群組的總延遲。請參閱[延遲](groups.md#lag)。
+- [[ui:groups.list.colTopics]]：群組已提交偏移量的主題。
 
-Type in [[ui:groups.list.search]] to show the groups whose ID contains the text; case does not matter. The state list next to it shows only groups in one state; [[ui:groups.list.allStates]] removes this filter. The counter shows how many groups are shown and how many there are in total.
+在[[ui:groups.list.search]]中輸入文字，即可顯示 ID 中包含該文字的群組，不區分大小寫。旁邊的狀態清單可只顯示處於某一狀態的群組；選擇[[ui:groups.list.allStates]]可移除此篩選條件。計數器會顯示目前顯示的群組數和總數。
 
-Members, assignor and lag are loaded only for the rows you see, while you scroll. Until they arrive, the cell shows `…`. If they cannot be loaded, the cell shows `—`; point at it to see the reason.
+成員、Assignor 和延遲只會在捲動時針對看得到的列載入。資料到達之前，儲存格會顯示 `…`。如果無法載入，儲存格會顯示 `—`；將指標停在上面即可查看原因。
 
-[[ui:groups.list.refresh]] reloads the list and the data in it. If some brokers did not respond, a warning says the list may be incomplete.
+[[ui:groups.list.refresh]]會重新載入清單及其中的資料。如果有些 Broker 沒有回應，會出現警告，說明清單可能不完整。
 
-## Lag {#lag}
+## 延遲 {#lag}
 
-Lag is how many messages the group has not read yet. For each partition, it is the end of the log minus the committed offset. Lag is never shown below zero.
+延遲是群組尚未讀取的訊息數。對每個分區而言，延遲等於日誌結尾減去已提交的偏移量。延遲絕不會顯示為小於零。
 
-Lag depends only on committed offsets. An active consumer may have read further than it has committed, so its real lag can be smaller. When the group commits again, the lag drops.
+延遲只取決於已提交的偏移量。作用中的消費者讀取的位置可能比它提交的更遠，因此實際的延遲可能較小。群組再次提交後，延遲就會下降。
 
-A partition without a committed offset shows [[ui:groups.lag.noCommit]] and does not count in the total. The total lag of a group shows `—` when the group has no commits at all ([[ui:groups.lag.noCommits]]), or when the offsets of some partition could not be read ([[ui:groups.lag.unknown]]).
+沒有已提交偏移量的分區會顯示[[ui:groups.lag.noCommit]]，且不計入總數。群組完全沒有提交（[[ui:groups.lag.noCommits]]），或無法讀取某個分區的偏移量（[[ui:groups.lag.unknown]]）時，群組的總延遲會顯示 `—`。
 
-Lag counts offsets, not messages. In topics with compaction or transactions, some offsets hold no visible messages, so the group may have fewer messages left to read than the lag shows.
+延遲計算的是偏移量，而不是訊息。在使用 Compaction 或交易的主題中，有些偏移量沒有可見的訊息，因此群組剩下要讀取的訊息可能比延遲顯示的少。
 
-The values are a snapshot at the moment of loading. To follow the lag, open the group and turn on auto-refresh.
+這些值是載入當下的快照。若要持續追蹤延遲，請打開群組並開啟自動重新整理。
 
-## Group details {#group-details}
+## 群組詳細資訊 {#group-details}
 
-Click a group in the list to open its tab. At the top, a summary shows the state, the number of members and the assignor.
+在清單中按一下群組即可打開其分頁。上方的摘要會顯示狀態、成員數和 Assignor。
 
-- [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] or [[ui:groups.details.refresh10]].
-- [[ui:groups.details.refresh]] — reload now.
-- [[ui:groups.details.join]] — start a [consumer session](consumer-sessions.md) in this group. The session form gets the group ID and the topics the group has commits for. This needs Pro, and the button is disabled on [[ui:common.readOnly]] connections; point at the button to see the reason.
+- [[ui:groups.details.autoRefresh]]：[[ui:groups.details.refreshOff]]、[[ui:groups.details.refresh5]]或[[ui:groups.details.refresh10]]。
+- [[ui:groups.details.refresh]]：立即重新載入。
+- [[ui:groups.details.join]]：在這個群組中啟動[消費者工作階段](consumer-sessions.md)。工作階段表單會填入群組 ID 和群組有提交的主題。此功能需要 Pro，且在[[ui:common.readOnly]]連線上按鈕會停用；將指標停在按鈕上即可查看原因。
 
-[[ui:groups.details.partitions]] lists the partitions the group has commits for, and the partitions assigned to its members. The total lag of the group is shown above the table. The columns are [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (the committed offset), `Log end` (the end offset of the partition), [[ui:groups.details.colLag]] and [[ui:groups.details.colMember]] (the client ID of the member that reads the partition).
+[[ui:groups.details.partitions]]會列出群組有提交的分區，以及分配給其成員的分區。群組的總延遲顯示在表格上方。欄位包括[[ui:groups.details.colTopic]]、[[ui:groups.details.colPartition]]、`Committed`（已提交的偏移量）、`Log end`（分區的結尾偏移量）、[[ui:groups.details.colLag]]和[[ui:groups.details.colMember]]（讀取該分區的成員的用戶端 ID）。
 
-[[ui:groups.details.members]] lists the active members: `Client ID`, [[ui:groups.details.colHost]], `Member ID` and [[ui:groups.details.colAssignment]] (the partitions of the member as `topic:partition`). A group without members shows [[ui:groups.details.noMembers]].
+[[ui:groups.details.members]]會列出作用中的成員：`Client ID`、[[ui:groups.details.colHost]]、`Member ID` 和[[ui:groups.details.colAssignment]]（成員的分區，格式為 `topic:partition`）。沒有成員的群組會顯示[[ui:groups.details.noMembers]]
 
-The second row has [[ui:groups.details.resetOffsets]] and [[ui:groups.details.deleteGroup]]. It is hidden on read-only connections.
+第二列有[[ui:groups.details.resetOffsets]]和[[ui:groups.details.deleteGroup]]。在唯讀連線上會隱藏。
 
-## Reset offsets {#reset-offsets}
+## 重設偏移量 {#reset-offsets}
 
-Resetting offsets moves the committed offsets of a group. The group then rereads messages or skips them. Offsets can be reset only for a group without active members (state `Empty` or `Dead`). Otherwise the members would overwrite the new offsets with their own commits. Stop the applications of the group first.
+重設偏移量會移動群組已提交的偏移量，之後群組會重新讀取或略過訊息。只有沒有作用中成員的群組（狀態為 `Empty` 或 `Dead`）才能重設偏移量，否則成員會以自己的提交覆寫新的偏移量。請先停止該群組的應用程式。
 
-1. On the group tab, click [[ui:groups.details.resetOffsets]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Choose the [[ui:groups.reset.strategy]]. See [Reset strategies](groups.md#reset-strategies).
-3. Choose the [[ui:groups.reset.scope]]. See [Reset scope](groups.md#reset-scope).
-4. Click [[ui:groups.reset.preview]].
-5. Check the table and click the apply button. It shows the number of partitions that will change.
+1. 在群組分頁上按一下[[ui:groups.details.resetOffsets]]。群組有成員時，按鈕會停用；將指標停在按鈕上即可查看原因。
+2. 選擇[[ui:groups.reset.strategy]]。請參閱[重設策略](groups.md#reset-strategies)。
+3. 選擇[[ui:groups.reset.scope]]。請參閱[重設範圍](groups.md#reset-scope)。
+4. 按一下[[ui:groups.reset.preview]]。
+5. 檢查表格後按一下套用按鈕。按鈕上會顯示將變更的分區數。
 
-The preview changes nothing. For each partition it shows the topic, the partition, [[ui:groups.reset.colCurrent]] (the committed offset), [[ui:groups.reset.colNew]] (the target offset), and `Low / High` (the first and end offsets of the partition). A partition for which no target can be computed is marked [[ui:groups.reset.noTarget]], with the reason. Such partitions are skipped.
+預覽不會變更任何內容。它會為每個分區顯示主題、分區、[[ui:groups.reset.colCurrent]]（已提交的偏移量）、[[ui:groups.reset.colNew]]（目標偏移量）以及 `Low / High`（分區的第一個和結尾偏移量）。無法計算目標的分區會標示為[[ui:groups.reset.noTarget]]，並附上原因。這類分區會被略過。
 
-Only the plan shown in the preview is applied. Any change in the form hides the preview, and you need to click [[ui:groups.reset.preview]] again. On a prod connection, applying asks for the connection name; on other connections, it applies at once.
+只會套用預覽中顯示的計畫。表單中的任何變更都會隱藏預覽，你需要再按一次[[ui:groups.reset.preview]]。在正式環境連線上，套用時會要求輸入連線名稱；在其他連線上則會立即套用。
 
-Before applying, the app checks again that the group has no members. After applying, [[ui:groups.reset.result]] lists each partition with its new offset or an error.
+套用之前，應用程式會再次檢查群組沒有成員。套用後，[[ui:groups.reset.result]]會列出每個分區及其新的偏移量或錯誤。
 
-You can also prepare a reset from a message: see [Reset a group to a message](browse.md#reset-group-here). [[ui:common.close]] closes the reset panel.
+也可以從訊息準備重設：請參閱[將群組重設到某則訊息](browse.md#reset-group-here)。[[ui:common.close]]會關閉重設面板。
 
-## Reset strategies {#reset-strategies}
+## 重設策略 {#reset-strategies}
 
-[[ui:groups.reset.strategy]] sets the target offset for each partition in the scope:
+[[ui:groups.reset.strategy]]會為範圍內的每個分區設定目標偏移量：
 
-- [[ui:groups.reset.strategyEarliest]] — the first offset that is still stored. The group rereads everything the topic keeps.
-- [[ui:groups.reset.strategyLatest]] — the end of the partition. The group skips everything accumulated and reads only new messages.
-- [[ui:groups.reset.strategyTimestamp]] — the first message written at or after [[ui:groups.reset.timestamp]]. In partitions without newer messages, the target is the end.
-- [[ui:groups.reset.strategyOffset]] — the given [[ui:groups.reset.offset]], an integer of 0 or more, in every partition. If a partition does not have this offset, the target is its first or end offset.
-- [[ui:groups.reset.strategyShift]] — moves the committed offset by [[ui:groups.reset.shift]]. A negative number rereads N messages back, a positive one skips N messages. The result stays within the first and end offsets. Partitions without a committed offset cannot be shifted and are skipped.
+- [[ui:groups.reset.strategyEarliest]]：仍保存的第一個偏移量。群組會重新讀取主題保留的所有內容。
+- [[ui:groups.reset.strategyLatest]]：分區的結尾。群組會略過累積的所有內容，只讀取新訊息。
+- [[ui:groups.reset.strategyTimestamp]]：在「[[ui:groups.reset.timestamp]]」當下或之後寫入的第一則訊息。在沒有較新訊息的分區中，目標為結尾。
+- [[ui:groups.reset.strategyOffset]]：在每個分區中使用指定的[[ui:groups.reset.offset]]，必須是大於或等於 0 的整數。如果某個分區沒有這個偏移量，目標為它的第一個或結尾偏移量。
+- [[ui:groups.reset.strategyShift]]：將已提交的偏移量移動「[[ui:groups.reset.shift]]」指定的數量。負數會往回重新讀取 N 則訊息，正數會略過 N 則訊息。結果會保持在第一個和結尾偏移量之間。沒有已提交偏移量的分區無法位移，會被略過。
 
-The time is your local time, with seconds. Kafka finds the offset by message timestamps.
+時間為你的本機時間，包含秒。Kafka 會依訊息時間戳記尋找偏移量。
 
-## Reset scope {#reset-scope}
+## 重設範圍 {#reset-scope}
 
-[[ui:groups.reset.scope]] sets which partitions are reset. Other partitions keep their offsets.
+[[ui:groups.reset.scope]]用於設定要重設哪些分區。其他分區會保留其偏移量。
 
-- [[ui:groups.reset.scopeAll]] — all partitions the group has committed offsets for. If the group has no commits yet, choose topics instead.
-- [[ui:groups.reset.scopeTopics]] — all partitions of the listed topics, including partitions without commits. Separate the names with commas, spaces or line breaks. Use this to make a group start reading a new topic from a chosen place.
-- [[ui:groups.reset.scopePartitions]] — only the listed partitions. Enter them in [[ui:groups.reset.partitionsLabel]] as `topic:partition`, separated by commas or spaces, for example `orders:0, orders:3`.
+- [[ui:groups.reset.scopeAll]]：群組已提交偏移量的所有分區。如果群組還沒有任何提交，請改為選擇主題。
+- [[ui:groups.reset.scopeTopics]]：所列主題的所有分區，包括沒有提交的分區。名稱之間以逗號、空格或換行分隔。可用來讓群組從選定的位置開始讀取新主題。
+- [[ui:groups.reset.scopePartitions]]：只重設所列的分區。請以 `topic:partition` 格式輸入分區，以逗號或空格分隔，例如 `orders:0, orders:3`。輸入欄位為[[ui:groups.reset.partitionsLabel]]。
 
-## Delete a group {#delete-group}
+## 刪除群組 {#delete-group}
 
-Deleting a group removes all its committed offsets. Only a group without members, in the `Empty` state, can be deleted.
+刪除群組會移除其所有已提交的偏移量。只有沒有成員、處於 `Empty` 狀態的群組才能刪除。
 
-1. On the group tab, click [[ui:groups.details.deleteGroup]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Type the group ID to confirm. On a prod connection, also type the connection name.
-3. Click [[ui:common.delete]].
+1. 在群組分頁上按一下[[ui:groups.details.deleteGroup]]。群組有成員時，按鈕會停用；將指標停在按鈕上即可查看原因。
+2. 輸入群組 ID 確認。在正式環境連線上，還要輸入連線名稱。
+3. 按一下[[ui:common.delete]]。
 
-After deleting, the group tab closes. If an application with this `group.id` starts again, Kafka creates the group anew. Without committed offsets, the application starts where its `auto.offset.reset` setting says: from the beginning or from the end.
+刪除後，群組分頁會關閉。如果使用此 `group.id` 的應用程式再次啟動，Kafka 會重新建立群組。由於沒有已提交的偏移量，應用程式會依其 `auto.offset.reset` 設定開始讀取：從頭開始或從結尾開始。
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+在[[ui:common.readOnly]]連線上，這個按鈕會隱藏。

@@ -1,104 +1,104 @@
-# Browsing messages
+# 瀏覽訊息
 
-You browse messages on the [[ui:topics.details.tabMessages]] tab of a topic. Browsing does not join a consumer group and commits nothing, so the cluster does not change. It also works on [[ui:common.readOnly]] connections. To read as a member of a group, use a [consumer session](consumer-sessions.md).
+訊息是在主題的[[ui:topics.details.tabMessages]]分頁上瀏覽。瀏覽不會加入消費者群組，也不會提交任何內容，因此叢集不會有任何變更。在[[ui:common.readOnly]]連線上也可以瀏覽。若要以群組成員身分讀取，請使用[消費者工作階段](consumer-sessions.md)。
 
-## Start reading {#start-reading}
+## 開始讀取 {#start-reading}
 
-1. Open a topic from the [[ui:sidebar.topics]] list. The [[ui:topics.details.tabMessages]] tab opens first.
-2. Choose where to start in [[ui:browse.form.from]]. See [Start position](browse.md#start-position).
-3. Optionally, set the formats and the filters.
-4. Click [[ui:browse.panel.read]].
+1. 從[[ui:sidebar.topics]]清單中打開一個主題。首先打開的是[[ui:topics.details.tabMessages]]分頁。
+2. 在[[ui:browse.form.from]]中選擇從哪裡開始。請參閱[起始位置](browse.md#start-position)。
+3. 視需要設定格式和篩選條件。
+4. 按一下[[ui:browse.panel.read]]。
 
-Messages appear in the table as they arrive. The line next to the buttons shows how many messages were scanned, how many matched the filters and how many are in the table. It also shows the state: [[ui:browse.panel.reading]], [[ui:browse.panel.finishLimit]], [[ui:browse.panel.finishEnd]] or [[ui:browse.panel.finishCancelled]].
+訊息一到達就會顯示在表格中。按鈕旁的狀態列會顯示已掃描多少訊息、有多少符合篩選條件，以及表格中有多少訊息，也會顯示狀態：[[ui:browse.panel.reading]]、[[ui:browse.panel.finishLimit]]、[[ui:browse.panel.finishEnd]]或[[ui:browse.panel.finishCancelled]]。
 
-Without `Live tail`, reading stops at the end of the topic as it was when you clicked [[ui:browse.panel.read]], or earlier when the [[ui:browse.form.limit]] is reached. The limit counts messages that match the filters. It can be from 1 to 100000; large values make reading slower.
+未開啟 `Live tail` 時，讀取會在按下[[ui:browse.panel.read]]那一刻的主題結尾停止；如果先達到[[ui:browse.form.limit]]，則會提早停止。上限計算的是符合篩選條件的訊息，範圍為 1 到 100000；值越大，讀取越慢。
 
-With `Live tail` on, reading does not stop at the end: new messages are added as they are written. When all old messages are read, the state shows [[ui:browse.panel.waiting]]. The table keeps the last messages up to the limit and drops the oldest ones.
+開啟 `Live tail` 時，讀取到結尾也不會停止：新訊息一寫入就會加入表格。所有舊訊息讀完後，狀態會顯示[[ui:browse.panel.waiting]]。表格最多保留上限數量的最新訊息，並捨棄最舊的訊息。
 
-[[ui:browse.panel.stop]] stops reading and keeps the table. While reading runs, the [[ui:browse.panel.read]] button becomes [[ui:browse.panel.restart]]: it starts again with the current settings and clears the table. If the connection to the broker is lost, the app reconnects by itself and shows that in the state line.
+[[ui:browse.panel.stop]]會停止讀取並保留表格。讀取進行時，[[ui:browse.panel.read]]按鈕會變成[[ui:browse.panel.restart]]：它會以目前的設定重新開始，並清除表格。如果與 Broker 的連線中斷，應用程式會自行重新連線，並在狀態列中顯示。
 
-Messages from different partitions are mixed in the table. Kafka keeps the order only within one partition. The `P` column shows the partition, and `Offset` shows the position in it. Select `UTC` to show times in UTC instead of local time.
+不同分區的訊息會混合顯示在表格中。Kafka 只在單一分區內保證順序。`P` 欄顯示分區，`Offset` 顯示在分區中的位置。勾選 `UTC` 可改以 UTC 而非本機時間顯示時間。
 
-## Start position {#start-position}
+## 起始位置 {#start-position}
 
-[[ui:browse.form.startPosition]] sets where reading begins in each partition:
+[[ui:browse.form.startPosition]]用於設定在每個分區中從哪裡開始讀取：
 
-- [[ui:browse.form.startLatest]] — the last N messages. N is split evenly between the partitions, so with 100 messages and 4 partitions the app takes up to 25 from each.
-- [[ui:browse.form.startEarliest]] — from the oldest message that is still stored.
-- [[ui:browse.form.startOffset]] — from the same offset in each partition. If a partition has no such offset, reading starts at its beginning or end. This mode is most useful with one partition.
-- [[ui:browse.form.startTimestamp]] — from the first message with a timestamp at or after the given local time. In partitions without newer messages, reading starts at the end.
-- [[ui:browse.form.startLastMinutes]] — the same, counted back from now.
+- [[ui:browse.form.startLatest]]：最後 N 則訊息。N 會平均分配給各分區，因此在 100 則訊息、4 個分區的情況下，每個分區最多讀取 25 則。
+- [[ui:browse.form.startEarliest]]：從仍保存的最舊訊息開始。
+- [[ui:browse.form.startOffset]]：在每個分區中從相同的偏移量開始。如果某個分區沒有這個偏移量，則從該分區的開頭或結尾開始讀取。這個模式最適合只有一個分區的情況。
+- [[ui:browse.form.startTimestamp]]：從時間戳記等於或晚於指定本機時間的第一則訊息開始。在沒有較新訊息的分區中，從結尾開始讀取。
+- [[ui:browse.form.startLastMinutes]]：同上，但從現在往回計算。
 
-The field with [[ui:browse.form.partitionsPlaceholder]] limits reading to some partitions. Enter partition numbers separated by commas, for example `0,2`. Leave it empty to read all partitions.
+顯示[[ui:browse.form.partitionsPlaceholder]]的欄位可將讀取範圍限制在部分分區。請輸入以逗號分隔的分區編號，例如 `0,2`。留空則讀取所有分區。
 
-## Filters {#filters}
+## 篩選條件 {#filters}
 
-Filters show only matching messages. The app still reads all messages from the start position and checks each one, so filters do not make reading faster. All filled fields must match.
+篩選條件只會顯示符合的訊息。應用程式仍會從起始位置讀取所有訊息並逐一檢查，因此篩選條件不會加快讀取。所有已填寫的欄位都必須符合。
 
-- [[ui:browse.filters.keyContains]] and [[ui:browse.filters.valueContains]] — text in the key or the value.
-- `regex` — treat these fields, and the header value, as regular expressions.
-- `Aa` — match case. By default, case does not matter.
-- [[ui:browse.filters.header]] — the message has a header with this exact name. [[ui:browse.filters.headerValue]] also checks its value.
-- `JSONPath` — a condition on a JSON value, for example `$.order.status == "FAILED"`. Without `==` or `!=`, the path must simply exist, for example `$.error`. Messages whose value is not valid JSON do not match.
-- [[ui:browse.filters.timeFrom]] and [[ui:browse.filters.timeTo]] — the message timestamp is within this range, in local time. Both ends are included.
+- [[ui:browse.filters.keyContains]]和[[ui:browse.filters.valueContains]]：鍵或值中的文字。
+- `regex`：將這些欄位以及標頭值當作規則運算式。
+- `Aa`：區分大小寫。預設不區分大小寫。
+- [[ui:browse.filters.header]]：訊息含有名稱完全相同的標頭。[[ui:browse.filters.headerValue]]還會檢查它的值。
+- `JSONPath`：針對 JSON 值的條件，例如 `$.order.status == "FAILED"`。如果沒有 `==` 或 `!=`，則路徑只要存在即可，例如 `$.error`。值不是有效 JSON 的訊息不符合條件。
+- [[ui:browse.filters.timeFrom]]和[[ui:browse.filters.timeTo]]：訊息時間戳記在此範圍內，以本機時間計算，包含兩端。
 
-Filters check the text shown in the table, after decoding. If the value format is `hex`, the value filter searches the hex text. Filters apply when you click [[ui:browse.panel.read]]; after changing them, read again.
+篩選條件檢查的是表格中顯示的文字，也就是解碼後的文字。如果值格式為 `hex`，值篩選條件會搜尋十六進位文字。篩選條件在按下[[ui:browse.panel.read]]時套用；變更後請重新讀取。
 
-A filter does not move the start position. For example, [[ui:browse.form.startLatest]] with a filter finds matches only among the last N messages. To search the whole topic, start from [[ui:browse.form.startEarliest]].
+篩選條件不會移動起始位置。例如，搭配篩選條件使用[[ui:browse.form.startLatest]]時，只會在最後 N 則訊息中尋找符合的訊息。若要搜尋整個主題，請選擇[[ui:browse.form.startEarliest]]。
 
-## Formats {#formats}
+## 格式 {#formats}
 
-[[ui:browse.form.format]] sets how keys and values are decoded, separately for the [[ui:browse.form.key]] and the [[ui:browse.form.value]]. Only the display changes, not the data.
+[[ui:browse.form.format]]用於設定鍵和值的解碼方式，[[ui:browse.form.key]]和[[ui:browse.form.value]]分別設定。只會改變顯示方式，不會改變資料。
 
-- `auto` — the default. Valid JSON objects and arrays are shown as JSON, other UTF-8 text as a string, binary data as hex.
-- `string` — text in UTF-8. Bytes that are not valid UTF-8 are replaced with `�`.
-- `json` — JSON with indents in the message details. If the value is not valid JSON, the details show the error.
-- `hex` — every byte as two hex digits.
-- `base64` — the bytes in Base64.
+- `auto`：預設值。有效的 JSON 物件和陣列以 JSON 顯示，其他 UTF-8 文字以字串顯示，二進位資料以十六進位顯示。
+- `string`：UTF-8 文字。不是有效 UTF-8 的位元組會被替換為 `�`。
+- `json`：在訊息詳細資訊中以縮排顯示 JSON。如果值不是有效的 JSON，詳細資訊會顯示錯誤。
+- `hex`：每個位元組以兩個十六進位數字表示。
+- `base64`：以 Base64 表示的位元組。
 
-The details show which format was actually used, for example `json` when `auto` detected JSON. Header values are shown as text; binary header values are shown as `0x` followed by hex. A missing key or value is shown as `null`.
+詳細資訊會顯示實際使用的格式，例如 `auto` 偵測到 JSON 時會顯示 `json`。標頭值以文字顯示；二進位的標頭值會以 `0x` 加上十六進位顯示。缺少的鍵或值會顯示為 `null`。
 
-Very large keys and values are shown only partly, about the first 1 MB of text. This also applies to `hex` and `base64`. The message details then show a warning.
+非常大的鍵和值只會顯示一部分，大約是文字的前 1 MB。這也適用於 `hex` 和 `base64`。此時訊息詳細資訊會顯示警告。
 
-## Message details {#message-details}
+## 訊息詳細資訊 {#message-details}
 
-Click a row to open the message details next to the table. At the top are the partition, the offset and the time. Below:
+按一下某一列，即可在表格旁打開訊息詳細資訊。上方是分區、偏移量和時間。下方：
 
-- [[ui:browse.details.value]] and [[ui:browse.details.key]] — the full text, with the format and size in bytes. JSON is shown with indents. [[ui:browse.details.copy]] copies the text.
-- [[ui:browse.table.colHeaders]] — a table of header names and values.
+- [[ui:browse.details.value]]和[[ui:browse.details.key]]：完整文字，以及格式和以位元組計算的大小。JSON 會以縮排顯示。[[ui:browse.details.copy]]會複製文字。
+- [[ui:browse.table.colHeaders]]：標頭名稱和值的表格。
 
-The table columns are `P`, `Offset`, [[ui:browse.table.colTime]], [[ui:browse.table.colKey]], [[ui:browse.table.colValue]], [[ui:browse.table.colHeaders]] (their number) and [[ui:browse.table.colSize]] (the key and value size in bytes). The time is the message timestamp. Depending on the topic setting `message.timestamp.type`, it is set by the producer or by the broker.
+表格欄位為 `P`、`Offset`、[[ui:browse.table.colTime]]、[[ui:browse.table.colKey]]、[[ui:browse.table.colValue]]、[[ui:browse.table.colHeaders]]（標頭數量）和[[ui:browse.table.colSize]]（鍵和值的大小，以位元組計算）。時間是訊息的時間戳記，依主題設定 `message.timestamp.type` 而定，由生產者或 Broker 設定。
 
-## Copy messages {#export-messages}
+## 複製訊息 {#export-messages}
 
-Glafira does not save browsed messages to a file. To take a message out of the app, copy it:
+Glafira 不會將瀏覽的訊息儲存成檔案。若要將訊息帶出應用程式，請複製它：
 
-- [[ui:browse.details.copyJson]] copies the whole message as JSON: topic, partition, offset, timestamp, key, value, headers and size. Key and value are included as decoded, with their format.
-- [[ui:browse.details.copy]] next to [[ui:browse.details.value]] or [[ui:browse.details.key]] copies only that text.
+- [[ui:browse.details.copyJson]] 會將整則訊息複製為 JSON：主題、分區、偏移量、時間戳記、鍵、值、標頭和大小。鍵和值以解碼後的內容包含在內，並附上格式。
+- [[ui:browse.details.value]]或[[ui:browse.details.key]]旁的[[ui:browse.details.copy]]只會複製該段文字。
 
-The copied text uses the format chosen for reading. To copy binary data exactly, read it as `hex` or `base64`. Very large keys and values are copied only partly, as shown, even in `hex` and `base64`. See [Formats](browse.md#formats).
+複製的文字使用讀取時選擇的格式。若要精確複製二進位資料，請以 `hex` 或 `base64` 讀取。非常大的鍵和值只會依顯示的內容複製一部分，即使是 `hex` 和 `base64` 也一樣。請參閱[格式](browse.md#formats)。
 
-## Open in Producer {#open-in-producer}
+## 在 Producer 中打開 {#open-in-producer}
 
-[[ui:browse.details.resend]] opens the message in the [[ui:sidebar.producer]] of the same connection. The form gets the topic, key, value, headers and formats of the message. The partition is left to Kafka. Placeholders in the message text are not replaced: the copy is sent as it was read.
+[[ui:browse.details.resend]]會在同一個連線的 [[ui:sidebar.producer]] 中打開這則訊息。表單會填入訊息的主題、鍵、值、標頭和格式。分區交由 Kafka 決定。訊息文字中的預留位置不會被替換：副本會依讀取時的原樣傳送。
 
-Nothing is sent right away. Check the form, change it if needed, and send it from the Producer. See [Producer](producer.md).
+不會立即傳送任何內容。請檢查表單，視需要修改，然後在 Producer 中傳送。請參閱 [Producer](producer.md)。
 
-The button is disabled in two cases, and the reason is shown:
+在兩種情況下按鈕會停用，並顯示原因：
 
-- the key or value was shown only partly because it is too large;
-- the text was decoded with losses because it is not valid UTF-8. Read it as `hex` or `base64` to send an exact copy.
+- 鍵或值太大，只顯示了一部分；
+- 文字不是有效的 UTF-8，解碼時有遺失。請以 `hex` 或 `base64` 讀取，以傳送精確的副本。
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+在[[ui:common.readOnly]]連線上，這個按鈕會隱藏。
 
-## Reset a group to a message {#reset-group-here}
+## 將群組重設到某則訊息 {#reset-group-here}
 
-[[ui:browse.details.resetHere]] prepares an offset reset so that a consumer group starts reading from this message.
+使用「[[ui:browse.details.resetHere]]」可以準備偏移量重設，讓消費者群組從這則訊息開始讀取。
 
-1. In the message details, click [[ui:browse.details.resetHere]].
-2. Choose a group in the list. Only existing groups are listed.
-3. Click [[ui:browse.details.goToReset]].
+1. 在訊息詳細資訊中按一下[[ui:browse.details.resetHere]]。
+2. 在清單中選擇群組。清單只會列出已存在的群組。
+3. 按一下[[ui:browse.details.goToReset]]。
 
-The group tab opens with the reset form filled in. [[ui:groups.reset.strategy]] is [[ui:groups.reset.strategyOffset]] with the offset of the message. [[ui:groups.reset.scope]] is [[ui:groups.reset.scopePartitions]] with the topic and partition of the message. Nothing changes yet: click [[ui:groups.reset.preview]] to see the new offsets, then apply the reset there. The group must have no active members. See [Consumer groups](groups.md).
+群組分頁會打開，並已填好重設表單。[[ui:groups.reset.strategy]]為[[ui:groups.reset.strategyOffset]]，並填入這則訊息的偏移量。[[ui:groups.reset.scope]]為[[ui:groups.reset.scopePartitions]]，並填入這則訊息的主題和分區。此時還不會有任何變更：按一下[[ui:groups.reset.preview]]查看新的偏移量，再在那裡套用重設。群組不能有作用中的成員。請參閱[消費者群組](groups.md)。
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+在[[ui:common.readOnly]]連線上，這個按鈕會隱藏。

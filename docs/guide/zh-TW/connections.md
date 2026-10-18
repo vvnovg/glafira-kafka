@@ -1,163 +1,163 @@
-# Connections
+# 連線
 
-A connection is a saved profile of one Kafka cluster: addresses, security settings and passwords. Connections are listed in the [[ui:sidebar.connections]] panel on the left. You can sort them into folders and move them to another computer with export and import.
+連線是一個 Kafka 叢集的已儲存設定檔，包含位址、安全性設定和密碼。連線列在左側的[[ui:sidebar.connections]]面板中。你可以把連線分類到資料夾，也可以透過匯出和匯入將連線移到另一台電腦。
 
-## Create a connection {#create}
+## 建立連線 {#create}
 
-1. Click `+` ( [[ui:sidebar.newConnection]] ) in the header of the [[ui:sidebar.connections]] panel. To create the connection right in a folder, open the folder menu and choose [[ui:sidebar.folder.newConnection]].
-2. Enter a [[ui:connections.form.name]]. It is shown in the panel and in tab titles.
-3. In [[ui:connections.form.bootstrap]], enter one or more addresses in `host:port` format, separated by commas, for example `kafka1:9092,kafka2:9092`. One reachable broker is enough: the client discovers the others by itself.
-4. Choose a [[ui:connections.form.protocol]] and fill in the fields it adds. See [Security protocols](connections.md#security).
-5. Optionally, choose a [[ui:connections.form.folder]], an [[ui:connections.form.environment]] and a [[ui:connections.form.color]] for the dot next to the name.
-6. Click [[ui:connections.form.test]], then [[ui:common.save]].
+1. 按一下[[ui:sidebar.connections]]面板標題列中的 `+`（[[ui:sidebar.newConnection]]）。若要直接在資料夾中建立連線，請打開資料夾選單，選擇[[ui:sidebar.folder.newConnection]]。
+2. 輸入[[ui:connections.form.name]]。名稱會顯示在面板和分頁標題中。
+3. 在 [[ui:connections.form.bootstrap]]中輸入一個或多個 `host:port` 格式的位址，以逗號分隔，例如 `kafka1:9092,kafka2:9092`。只要有一個可連線的 Broker 就夠了，用戶端會自行找到其他 Broker。
+4. 選擇[[ui:connections.form.protocol]]，並填寫它新增的欄位。請參閱[安全性通訊協定](connections.md#security)。
+5. 視需要選擇[[ui:connections.form.folder]]、[[ui:connections.form.environment]]，以及名稱旁圓點的[[ui:connections.form.color]]。
+6. 按一下[[ui:connections.form.test]]，然後按[[ui:common.save]]。
 
-After saving, the form closes and the cluster overview opens.
+儲存後，表單會關閉並打開叢集概觀。
 
-Two more fields are for special cases. [[ui:connections.form.timeout]] is how long to wait for a broker response. The default is `30000` ms, the minimum is `1000`. Increase it for slow networks and VPNs. [[ui:connections.form.props]] takes any librdkafka setting as `key=value`, one per line. Lines that start with `#` are ignored. Passwords and keys are not allowed there: properties whose names contain `password` or `secret`, `sasl.jaas.config`, `ssl.key.pem` and `ssl.keystore.key` are rejected on save.
+另外兩個欄位用於特殊情況。[[ui:connections.form.timeout]]，即等待 Broker 回應的時間，預設為 `30000` ms，最小值為 `1000`。網路較慢或使用 VPN 時請調高此值。[[ui:connections.form.props]]可接受任何 librdkafka 設定，格式為 `key=value`，每行一個。以 `#` 開頭的行會被忽略。這裡不能填寫密碼和金鑰：名稱含有 `password` 或 `secret` 的屬性，以及 `sasl.jaas.config`、`ssl.key.pem` 和 `ssl.keystore.key`，在儲存時會被拒絕。
 
-To change a connection later, click `✎` ( [[ui:sidebar.editConnection]] ) next to its name. To delete it, open the form, click [[ui:common.delete]] and confirm with [[ui:connections.form.deleteYes]].
+之後若要變更連線，請按一下名稱旁的 `✎`（[[ui:sidebar.editConnection]]）。若要刪除連線，請打開表單，按一下[[ui:common.delete]]，再按[[ui:connections.form.deleteYes]]確認。
 
-## Test the connection {#test}
+## 測試連線 {#test}
 
-[[ui:connections.form.test]] checks the settings in the form step by step and stops at the first failed step:
+[[ui:connections.form.test]]會逐步檢查表單中的設定，並在第一個失敗的步驟停止：
 
-1. [[ui:connections.form.step.config]] — the addresses, certificate files, passwords and the SASL username.
-2. [[ui:connections.form.step.tcp]] — the host names resolve, and a TCP connection to at least one bootstrap server opens.
-3. [[ui:connections.form.step.kafka]] — the TLS handshake and SASL login succeed, and the broker returns metadata. On success, the step shows the number of brokers and topics.
+1. [[ui:connections.form.step.config]]：位址、憑證檔案、密碼和 SASL 使用者名稱。
+2. [[ui:connections.form.step.tcp]]：主機名稱可以解析，且至少能與一台 Bootstrap 伺服器建立 TCP 連線。
+3. [[ui:connections.form.step.kafka]]：TLS 交握和 SASL 登入成功，且 Broker 傳回中繼資料。成功時，此步驟會顯示 Broker 和主題的數量。
 
-The test uses the values currently in the form, including passwords you typed but have not saved. Nothing is saved or changed in the cluster. If a step fails, its error text and details are shown under it. Common errors are explained in [Cannot connect](troubleshooting.md#cannot-connect).
+測試使用表單中目前的值，包括已輸入但尚未儲存的密碼。不會儲存任何內容，也不會變更叢集。如果某個步驟失敗，其下方會顯示錯誤文字和詳細資訊。常見錯誤的說明請參閱[無法連線](troubleshooting.md#cannot-connect)。
 
-## Security protocols {#security}
+## 安全性通訊協定 {#security}
 
-The [[ui:connections.form.protocol]] must match the broker listener you connect to. Your Kafka administrators know which one to use.
+[[ui:connections.form.protocol]]必須與你要連線的 Broker 監聽器相符。請向你的 Kafka 管理員確認該用哪一種。
 
-- `PLAINTEXT` — no encryption and no login. Typical for local and test clusters.
-- `SSL` — traffic is encrypted with TLS. With a client certificate, this is mTLS.
-- `SASL_PLAINTEXT` — login with a username and password, without encryption.
-- `SASL_SSL` — login with a username and password over TLS.
+- `PLAINTEXT`：不加密也不登入。常用於本機和測試叢集。
+- `SSL`：流量以 TLS 加密。搭配用戶端憑證時即為 mTLS。
+- `SASL_PLAINTEXT`：以使用者名稱和密碼登入，不加密。
+- `SASL_SSL`：透過 TLS 以使用者名稱和密碼登入。
 
-When you change the protocol, the form shows only the fields that the protocol needs. All protocols, including mTLS, are available in Free.
+變更通訊協定時，表單只會顯示該通訊協定需要的欄位。所有通訊協定（包括 mTLS）在 Free 中都可以使用。
 
 ## SASL {#sasl}
 
-For `SASL_PLAINTEXT` and `SASL_SSL`, fill in three fields:
+使用 `SASL_PLAINTEXT` 和 `SASL_SSL` 時，請填寫三個欄位：
 
-- [[ui:connections.form.saslMechanism]] — `PLAIN`, `SCRAM-SHA-256` or `SCRAM-SHA-512`. The cluster defines which one works.
-- [[ui:connections.form.username]].
-- [[ui:connections.form.password]]. It is saved in the system secret store, not in the profile. See [Passwords](connections.md#passwords).
+- [[ui:connections.form.saslMechanism]]：`PLAIN`、`SCRAM-SHA-256` 或 `SCRAM-SHA-512`。可用哪一種由叢集決定。
+- [[ui:connections.form.username]]。
+- [[ui:connections.form.password]]。密碼會儲存在系統金鑰儲存區，而不是設定檔中。請參閱[密碼](connections.md#passwords)。
 
-SCRAM never sends the password itself. `PLAIN` sends it as is, so over `SASL_PLAINTEXT` the password travels in clear text. Use `SASL_SSL` for clusters outside your computer when possible.
+SCRAM 從不傳送密碼本身。`PLAIN` 會原樣傳送密碼，因此透過 `SASL_PLAINTEXT` 時，密碼會以明文傳輸。對於不在你電腦上的叢集，請盡可能使用 `SASL_SSL`。
 
-## SSL and the trusted CA {#tls}
+## SSL 與受信任的 CA {#tls}
 
-For `SSL` and `SASL_SSL`, the form adds TLS settings.
+使用 `SSL` 和 `SASL_SSL` 時，表單會新增 TLS 設定。
 
-[[ui:connections.tls.ca]] is the certificate of the authority (CA) that signed the broker certificates. Leave it empty if the operating system already trusts this CA: the system root certificates are then used. Otherwise enter the full path to the file or click [[ui:connections.tls.pick]]. After you choose a file, the [[ui:connections.tls.caFormat]] field appears. For PKCS#12 and JKS, there is also a [[ui:connections.tls.truststorePassword]] field.
+[[ui:connections.tls.ca]]是簽署 Broker 憑證的憑證授權單位（CA）的憑證。如果作業系統已信任此 CA，請留空，此時會使用系統根憑證。否則請輸入檔案的完整路徑，或按一下[[ui:connections.tls.pick]]，選擇檔案後會出現 [[ui:connections.tls.caFormat]]欄位。若為 PKCS#12 和 JKS，還會有[[ui:connections.tls.truststorePassword]]欄位。
 
-[[ui:connections.tls.verifyHostname]] is on by default. It checks that the broker certificate was issued for the host name you connect to. Turn it off only in test environments, for example when brokers use self-signed certificates with other names.
+[[ui:connections.tls.verifyHostname]]預設為開啟，它會檢查 Broker 憑證是否為你所連線的主機名稱核發。請只在測試環境中關閉，例如 Broker 使用其他名稱的自我簽署憑證時。
 
-## Client certificate (mTLS) {#mtls}
+## 用戶端憑證（mTLS） {#mtls}
 
-If brokers authenticate clients by certificate, turn on [[ui:connections.tls.mtls]]. Your Kafka administrators issue the certificate and key. Then fill in:
+如果 Broker 以憑證驗證用戶端，請開啟[[ui:connections.tls.mtls]]。憑證和金鑰由你的 Kafka 管理員核發。接著填寫：
 
-- [[ui:connections.tls.cert]] — the path to the certificate file.
-- [[ui:connections.tls.certFormat]] — PEM, PKCS#12 or JKS.
-- For PEM: [[ui:connections.tls.key]] — the path to the private key file, and [[ui:connections.tls.keyPasswordPem]] if the key is encrypted.
-- For PKCS#12: [[ui:connections.tls.keystorePassword]].
-- For JKS: [[ui:connections.tls.keystorePassword]], [[ui:connections.tls.keyPasswordJks]] if the key has its own password, and [[ui:connections.tls.alias]] if the store has several keys.
+- [[ui:connections.tls.cert]]：憑證檔案的路徑。
+- [[ui:connections.tls.certFormat]]：PEM、PKCS#12 或 JKS。
+- PEM：[[ui:connections.tls.key]]，即私密金鑰檔案的路徑；如果金鑰已加密，還需填寫[[ui:connections.tls.keyPasswordPem]]。
+- PKCS#12：[[ui:connections.tls.keystorePassword]]。
+- JKS：[[ui:connections.tls.keystorePassword]]；如果金鑰有自己的密碼，填寫[[ui:connections.tls.keyPasswordJks]]；如果儲存區中有多個金鑰，填寫[[ui:connections.tls.alias]]。
 
-Paths must be absolute. The files are read every time the app connects, so after the certificate is renewed you only need to reconnect. The app checks that the key matches the certificate and that the certificate has not expired.
+路徑必須是絕對路徑。每次連線時都會讀取這些檔案，因此憑證更新後只需重新連線。應用程式會檢查金鑰是否與憑證相符，以及憑證是否已過期。
 
-A common case is a cluster in Kubernetes, where the client secret holds `tls.crt`, `tls.key` and `ca.crt`. Save them to files, choose protocol `SSL`, set [[ui:connections.tls.ca]] to `ca.crt`, and use `tls.crt` and `tls.key` as a PEM client certificate and key with empty passwords.
+常見的情況是 Kubernetes 中的叢集，用戶端 Secret 中包含 `tls.crt`、`tls.key` 和 `ca.crt`。將它們存成檔案，選擇通訊協定 `SSL`，將[[ui:connections.tls.ca]]設為 `ca.crt`，再將 `tls.crt` 和 `tls.key` 當作 PEM 用戶端憑證和金鑰使用，密碼留空。
 
-## Certificate formats {#certificate-formats}
+## 憑證格式 {#certificate-formats}
 
-Glafira reads three formats. The format is chosen automatically by the file extension; check it in the format field and change it if needed.
+Glafira 可讀取三種格式。格式會依副檔名自動選擇；請在格式欄位中確認，必要時加以變更。
 
-- PEM — a text file that starts with `-----BEGIN`. Extensions `.pem`, `.crt`, `.cer`, `.key`. For a client certificate, the key is a separate file. The trusted CA can also be a binary DER certificate.
-- PKCS#12 — a binary store with a certificate and key. Extensions `.p12`, `.pfx`.
-- JKS — a Java keystore. Extensions `.jks`, `.keystore`, `.truststore`.
+- PEM：以 `-----BEGIN` 開頭的文字檔。副檔名為 `.pem`、`.crt`、`.cer`、`.key`。用戶端憑證的金鑰是另一個檔案。受信任的 CA 也可以是二進位 DER 憑證。
+- PKCS#12：包含憑證和金鑰的二進位儲存區。副檔名為 `.p12`、`.pfx`。
+- JKS：Java 金鑰庫。副檔名為 `.jks`、`.keystore`、`.truststore`。
 
-Two kinds of files need converting first:
+有兩類檔案需要先轉換：
 
-- JCEKS stores are not supported. Convert them to PKCS#12:
+- 不支援 JCEKS 儲存區。請將它轉換為 PKCS#12：
 
 ```bash
 keytool -importkeystore -srcstoretype JCEKS -srckeystore client.jceks -deststoretype PKCS12 -destkeystore client.p12
 ```
 
-- PKCS#12 stores encrypted with legacy algorithms (RC2, 3DES) may fail to open. If the app reports a legacy algorithm, recreate the file with AES:
+- 以舊式演算法（RC2、3DES）加密的 PKCS#12 儲存區可能無法打開。如果應用程式回報舊式演算法，請以 AES 重新建立檔案：
 
 ```bash
 openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -inkey tls.key -out client.p12
 ```
 
-## Passwords {#passwords}
+## 密碼 {#passwords}
 
-The SASL password and the passwords of keys and stores are saved in the system secret store: Keychain on macOS, Credential Manager on Windows, Secret Service on Linux. They are never written to the connection profile, export files or the diagnostics archive.
+SASL 密碼以及金鑰和儲存區的密碼會儲存在系統金鑰儲存區：macOS 上是鑰匙圈，Windows 上是認證管理員，Linux 上是 Secret Service。這些密碼絕不會寫入連線設定檔、匯出檔案或診斷壓縮檔。
 
-When you edit a saved connection, password fields are empty and show [[ui:connections.form.passwordKeep]]. Leave a field empty to keep the saved password, or type a new one to replace it. To delete a saved certificate password, select [[ui:connections.tls.clear]] next to the field. When you save, passwords that the connection no longer uses are deleted, for example after switching the protocol to `PLAINTEXT`.
+編輯已儲存的連線時，密碼欄位是空白的，並顯示[[ui:connections.form.passwordKeep]]。將欄位留空可保留已儲存的密碼，輸入新密碼則會取代它。若要刪除已儲存的憑證密碼，請勾選欄位旁的[[ui:connections.tls.clear]]。儲存時，連線不再使用的密碼會被刪除，例如將通訊協定切換為 `PLAINTEXT` 之後。
 
-If the app cannot access the secret store, an error is shown when you save. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+如果應用程式無法存取金鑰儲存區，儲存時會顯示錯誤。在 Linux 上，請確認你的工作階段中有 GNOME Keyring、KWallet 或其他 Secret Service 提供者正在執行。
 
-## Environments and prod {#environments}
+## 環境與正式環境 {#environments}
 
-[[ui:connections.form.environment]] marks the connection: `local`, `dev`, `test`, `stage` or `prod`. The environment is shown as a colored badge next to the name in the panel, so you always see which cluster you work with.
+[[ui:connections.form.environment]]用於標示連線：`local`、`dev`、`test`、`stage` 或 `prod`。環境會以彩色標籤顯示在面板中的名稱旁，讓你隨時知道自己正在使用哪個叢集。
 
-`prod` adds protection. Any change on a prod connection, such as creating a topic, sending a message, resetting offsets or starting a consumer session, asks you to type the connection name. Deleting and purging ask for the name of the object on any connection (deleting several topics asks for their count), and on prod you type both. These confirmations appear inside the app window.
+`prod` 會加上保護。在正式環境連線上進行任何變更，例如建立主題、傳送訊息、重設偏移量或啟動消費者工作階段，都會要求你輸入連線名稱。在任何連線上刪除和清除時，都會要求輸入物件名稱（刪除多個主題時要求輸入數量）；在正式環境上則兩者都要輸入。這些確認會顯示在應用程式視窗內。
 
-Creating prod connections and switching connections to prod need Pro. In Free, this option is shown as [[ui:connections.form.prodPro]] and cannot be selected. Prod connections created earlier keep working in Free, with the same confirmations.
+建立正式環境連線以及將連線切換為正式環境需要 Pro。在 Free 中，此選項顯示為 [[ui:connections.form.prodPro]]，無法選取。先前建立的正式環境連線在 Free 中仍可繼續使用，確認方式也相同。
 
-A new prod connection starts as [[ui:common.readOnly]]. Clear the box if you need to make changes.
+新的正式環境連線預設為[[ui:common.readOnly]]。如果需要進行變更，請取消勾選該核取方塊。
 
-## Read-only {#read-only}
+## 唯讀 {#read-only}
 
-[[ui:common.readOnly]] blocks everything that changes the cluster: creating, changing, purging and deleting topics, sending messages, resetting offsets, deleting groups and starting consumer sessions. The buttons for these actions are hidden or disabled, and the app core rejects such operations as well. Browsing and reading stay available. A lock icon next to the name in the panel marks read-only connections.
+[[ui:common.readOnly]]會封鎖所有變更叢集的操作：建立、變更、清除和刪除主題，傳送訊息，重設偏移量，刪除群組，以及啟動消費者工作階段。這些操作的按鈕會隱藏或停用，應用程式核心也會拒絕這類操作。瀏覽和讀取仍可使用。面板中名稱旁的鎖頭圖示表示唯讀連線。
 
-Use this mode when you only need to look at the data, especially on shared clusters. Read-only is a protection inside the app: it does not replace access rights (ACLs) in Kafka.
+只需要查看資料時，特別是在共用叢集上，請使用此模式。唯讀是應用程式內的保護，無法取代 Kafka 中的存取權限（ACL）。
 
-In Free, the box cannot be cleared on a read-only prod connection: lifting this protection needs Pro.
+在 Free 中，唯讀的正式環境連線無法取消勾選此核取方塊：解除這項保護需要 Pro。
 
-## Folders {#folders}
+## 資料夾 {#folders}
 
-Folders help to sort connections, for example by project or by environment. Folders can be nested.
+資料夾可用來分類連線，例如依專案或依環境。資料夾可以巢狀放置。
 
-- To create a folder at the top level, click `+📁` ( [[ui:sidebar.newFolder]] ) in the panel header. To create a subfolder, open the folder menu and choose [[ui:sidebar.newFolder]]. Type the name and press `Enter`, or press `Esc` to cancel.
-- To open the folder menu, click `⋯` ( [[ui:sidebar.menu]] ) on the folder row or right-click the folder. The menu has [[ui:sidebar.folder.rename]], [[ui:sidebar.folder.delete]] and the export and import commands.
-- Only an empty folder can be deleted. Move or delete its connections and subfolders first.
-- Folder names must be unique within one level and at most 100 characters long.
+- 若要在最上層建立資料夾，請按一下面板標題列中的 `+📁`（[[ui:sidebar.newFolder]]）。若要建立子資料夾，請打開資料夾選單，選擇[[ui:sidebar.newFolder]]。輸入名稱後按 `Enter`，或按 `Esc` 取消。
+- 若要打開資料夾選單，請按一下資料夾列上的 `⋯`（[[ui:sidebar.menu]]），或在資料夾上按右鍵。選單中有[[ui:sidebar.folder.rename]]、[[ui:sidebar.folder.delete]]，以及匯出和匯入指令。
+- 只能刪除空的資料夾。請先移動或刪除其中的連線和子資料夾。
+- 同一層中的資料夾名稱不得重複，長度最多 100 個字元。
 
-To move a connection, drag it onto a folder, or onto another connection to place it before that one. To move it to the top level, drop it onto the panel header or the empty space below the list. You can also choose a [[ui:connections.form.folder]] in the connection form; [[ui:connections.form.folderRoot]] means the top level. Folders are dragged the same way. Drop a folder onto the upper edge of another folder to place it before that folder. A folder cannot be moved into its own subfolder.
+若要移動連線，請將它拖曳到資料夾上，或拖曳到另一個連線上，放在該連線之前。若要移到最上層，請將它放到面板標題列或清單下方的空白處。也可以在連線表單中選擇[[ui:connections.form.folder]]；選擇「[[ui:connections.form.folderRoot]]」表示最上層。資料夾的拖曳方式相同。將資料夾放到另一個資料夾的上緣，即可放在該資料夾之前。資料夾無法移到自己的子資料夾中。
 
-Click a folder name to collapse or expand it. The app remembers which folders are collapsed. Use [[ui:sidebar.filter]] above the tree to find connections and folders by name. Matching folders are shown with all their contents.
+按一下資料夾名稱可以收合或展開。應用程式會記住哪些資料夾已收合。使用樹狀結構上方的[[ui:sidebar.filter]]，可依名稱尋找連線和資料夾。符合的資料夾會連同其所有內容一起顯示。
 
-## Export {#export}
+## 匯出 {#export}
 
-Export saves connections and folders to a file, for example to share them with colleagues or move them to another computer.
+匯出會將連線和資料夾儲存成檔案，例如分享給同事或移到另一台電腦。
 
-1. To export everything, open the panel header menu `⋯` and choose [[ui:sidebar.exportAll]]. To export one folder with its subfolders, choose [[ui:sidebar.folder.export]] in its menu.
-2. Choose where to save the file. The suggested name is `glafira-connections-<date>.glafira-connections.json` or `<folder>.glafira-connections.json`.
+1. 若要全部匯出，請打開面板標題列選單 `⋯`，選擇[[ui:sidebar.exportAll]]。若要匯出一個資料夾及其子資料夾，請在該資料夾的選單中選擇[[ui:sidebar.folder.export]]。
+2. 選擇檔案的儲存位置。建議的名稱為 `glafira-connections-<date>.glafira-connections.json` 或 `<folder>.glafira-connections.json`。
 
-When the file is saved, the panel shows how many connections and folders it contains.
+檔案儲存後，面板會顯示其中包含多少連線和資料夾。
 
-The file has the connection settings and the folder structure. It does not contain passwords or secret properties. Certificate files are not included either: the file only keeps their paths. Hosts, usernames and paths are stored as plain text, so share the file only with people who may see them.
+檔案中包含連線設定和資料夾結構，但不包含密碼或機密屬性。憑證檔案也不會包含在內，檔案中只保留它們的路徑。主機、使用者名稱和路徑會以純文字儲存，因此請只與可以看到這些資訊的人分享檔案。
 
-## Import {#import}
+## 匯入 {#import}
 
-1. Open the panel header menu `⋯` and choose [[ui:sidebar.import]]. To import straight into a folder, choose [[ui:sidebar.folder.importHere]] in its menu.
-2. Choose a `.glafira-connections.json` file. The [[ui:exchange.import.title]] dialog opens.
-3. In [[ui:exchange.import.target]], choose where new folders and connections go. [[ui:connections.form.folderRoot]] is the top level.
-4. Leave [[ui:exchange.import.updateExisting]] on to update connections that already exist from the file. Turn it off to keep them as they are.
-5. Check the preview and click [[ui:exchange.import.apply]], or [[ui:common.cancel]] to close the dialog without changes.
+1. 打開面板標題列選單 `⋯`，選擇[[ui:sidebar.import]]。若要直接匯入到資料夾，請在該資料夾的選單中選擇[[ui:sidebar.folder.importHere]]。
+2. 選擇 `.glafira-connections.json` 檔案。會打開[[ui:exchange.import.title]]對話框。
+3. 在[[ui:exchange.import.target]]中選擇新資料夾和連線要放到哪裡。「[[ui:connections.form.folderRoot]]」表示最上層。
+4. 保持開啟[[ui:exchange.import.updateExisting]]，即可用檔案中的內容更新已存在的連線。關閉此選項則會保留它們原樣。
+5. 檢查預覽後按一下[[ui:exchange.import.apply]]，或按[[ui:common.cancel]]關閉對話框而不做任何變更。
 
-The preview updates after each change in the dialog. It shows the totals and expandable lists: [[ui:exchange.import.groupAdded]], [[ui:exchange.import.groupUpdated]], [[ui:exchange.import.groupUnchanged]] and [[ui:exchange.import.groupSkipped]] with the reason for each skipped connection.
+對話框中每次變更後，預覽都會更新。預覽會顯示總數和可展開的清單：[[ui:exchange.import.groupAdded]]、[[ui:exchange.import.groupUpdated]]、[[ui:exchange.import.groupUnchanged]]和[[ui:exchange.import.groupSkipped]]，並列出每個略過的連線的原因。
 
-How the app matches the file with your connections:
+應用程式比對檔案和你的連線的方式：
 
-- Connections are matched by an internal ID, not by name. A connection counts as existing if the file contains the same connection: for example, it was exported from this computer, or imported from the same source before.
-- An updated connection gets the settings from the file. Your passwords and its place in the tree are kept.
-- Existing folders are not renamed or moved. New connections from the file still go into them.
-- If a new connection has the same name as another one in the same folder, a number is added, for example `kafka-dev (2)`.
-- Connections that this version of Glafira does not support, or that contain secrets in extra properties, are skipped.
+- 連線依內部 ID 比對，而非依名稱。如果檔案中有同一個連線，該連線就視為已存在，例如它是從這台電腦匯出的，或先前從同一個來源匯入過。
+- 更新的連線會套用檔案中的設定，但你的密碼和它在樹狀結構中的位置會保留。
+- 已存在的資料夾不會被重新命名或移動，檔案中的新連線仍會放入其中。
+- 如果新連線與同一資料夾中的另一個連線同名，會加上編號，例如 `kafka-dev (2)`。
+- 這個版本的 Glafira 不支援的連線，或額外屬性中含有機密的連線，會被略過。
 
-The preview also warns when certificate files are not found on this computer, and when prod connections will become read-only because Pro is not active. Passwords are not in the file, so after import the panel says how many connections need them. Open each of these connections, enter the passwords and save.
+如果在這台電腦上找不到憑證檔案，或因為 Pro 未啟用而使正式環境連線變成唯讀，預覽也會發出警告。檔案中沒有密碼，因此匯入後，面板會顯示有多少連線需要輸入密碼。請打開這些連線，逐一輸入密碼並儲存。

@@ -261,3 +261,22 @@ Secret Service — Secret Service; prod mode — 生产模式; копия при
 метки — вплотную к тексту; если значение кончается или начинается пунктуацией («…», «（…）», «。», «：»),
 метка берётся в кавычки “[[ui:…]]” или рядом ставится полноширинная пунктуация («点击[[ui:connections.tls.pick]]，然后…»);
 read-only connection — 只读连接 (с меткой: «在[[ui:common.readOnly]]连接上»).
+
+## Слова руководства (zh-TW)
+
+Термины, которые часто встречаются в `docs/guide/zh-TW` и отсутствуют в словаре интерфейса (тайваньская норма, перевод с en, не конвертация zh-CN):
+click — 按一下 (повтор в той же фразе — 按); right-click — 按右鍵; drag — 拖曳; tab — 分頁; screen — 畫面 (как «「授權」畫面» в UI);
+panel (левая панель) — 面板; header bar панели — 標題列; button — 按鈕; checkbox — 核取方塊; select/clear a box — 勾選 / 取消勾選;
+field — 欄位; form — 表單; section — 區段; menu — 選單; Start menu — 「開始」功能表; dialog — 對話框; row — 列; column — 欄;
+app — 應用程式; installer — 安裝程式; package — 套件; release page — 發行頁面; release notes — 版本資訊; build — build (латиницей, как в UI);
+logs — 日誌 (日誌檔案); batch send — 批次傳送; batch (Kafka) — 批次; copy при пакетной отправке — 份 / 份數編號 (не 副本);
+support request — 支援要求; support — 支援人員; timestamp — 時間戳記; tombstone — tombstone (при первом упоминании «tombstone（墓碑訊息）»);
+listener — 監聽器; handshake — 交握; policy — 原則 (как в UI); browse — 瀏覽; purge — 清除 (как в UI); to commit — 提交;
+transaction — 交易; port — 連接埠; timeout — 逾時; proxy — Proxy; hex — 十六進位; point at (наведение) — 將指標停在…上;
+prod — 正式環境 (prod connection — 正式環境連線, prod mode — 正式環境模式); lock icon — 鎖頭圖示;
+macOS: Terminal — 「終端機」, System Settings → Privacy & Security — 「系統設定」→「隱私權與安全性」, Open Anyway — 「強制打開」,
+Help menu — 「輔助說明」選單; Keychain — 鑰匙圈; Credential Manager — 認證管理員; Secret Service — Secret Service;
+метки — вплотную к тексту; если значение кончается или начинается пунктуацией («…», «（…）», «。», «：», «」»), метка берётся
+в 「[[ui:…]]」 или рядом ставится полноширинная пунктуация («按一下[[ui:connections.tls.pick]]，選擇檔案»); значение, которое
+кончается на «：» ([[ui:about.dataDir]], [[ui:about.logDir]]) в начале пункта списка, отделяется от текста пробелом;
+read-only connection — 唯讀連線 (с меткой: «在[[ui:common.readOnly]]連線上»).

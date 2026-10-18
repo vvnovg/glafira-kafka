@@ -8,6 +8,7 @@ pub mod endpoint;
 pub mod handshake;
 pub mod limits;
 pub mod model;
+pub mod observe;
 pub mod rules;
 
 pub use audit::{AuditEvent, AuditLog};

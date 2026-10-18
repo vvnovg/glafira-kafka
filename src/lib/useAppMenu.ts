@@ -24,7 +24,11 @@ interface BuiltMenu {
   parts: { close(): Promise<void> }[];
 }
 
-/** Меню приложения: стандартные подменю Tauri + Help с пунктами Glafira (подписи — из словаря текущего языка). */
+/**
+ * Меню приложения: стандартные подменю Tauri + Help с пунктами Glafira (подписи — из словаря текущего языка).
+ * Подменю не регистрируется как меню справки NSApp: иначе macOS добавляет в него системный поиск,
+ * который ищет по пунктам меню и справке macOS, а не по нашему руководству.
+ */
 async function buildAppMenu(): Promise<BuiltMenu> {
   const t = i18n.t.bind(i18n);
   const { open } = useWorkspace.getState();
@@ -60,7 +64,6 @@ async function buildAppMenu(): Promise<BuiltMenu> {
   // setAsAppMenu возвращает новый хэндл прежнего меню — его закрываем сразу.
   const previous = await menu.setAsAppMenu();
   await previous?.close();
-  await help.setAsHelpMenuForNSApp();
   return { menu, parts: [help, ...items] };
 }
 

@@ -148,7 +148,8 @@ describe("useAppMenu", () => {
     expect(h.appMenu?.items.some((i) => i.opts.id === "__tauri_help_menu__")).toBe(false);
     expect(h.appMenu?.items.some((i) => i.opts.id === "__tauri_window_menu__")).toBe(true);
     expect(helpSubmenu()?.opts.items?.[0].opts.accelerator).toBe("CmdOrCtrl+Shift+/");
-    expect(h.helpForNSApp).toEqual(["Справка"]);
+    // Не меню справки NSApp — без системного поиска macOS.
+    expect(h.helpForNSApp).toEqual([]);
   });
 
   it("после смены языка меню перестроено с английскими подписями", async () => {

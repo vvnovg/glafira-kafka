@@ -46,7 +46,7 @@
       "typeToConfirm": "輸入「{{expected}}」以確認"
     },
     "diagnostics": {
-      "noFile": "未選擇壓縮檔的檔案",
+      "noFile": "未選擇診斷壓縮檔的儲存位置",
       "writeFailed": "無法寫入診斷壓縮檔"
     },
     "updates": {
@@ -355,7 +355,7 @@
     "newConnection": "新增連線",
     "editConnection": "編輯連線",
     "emptyHint": "新增第一個連線。本機 Kafka：<code>docker compose -f dev/docker-compose.yml up -d</code>，Bootstrap 伺服器 <code>localhost:9092</code>。",
-    "cluster": "叢集概覽",
+    "cluster": "叢集概觀",
     "topics": "主題",
     "groups": "消費者群組",
     "producer": "Producer",
@@ -387,7 +387,7 @@
     "help": "說明",
     "connection": "連線：{{name}}",
     "newConnection": "新增連線",
-    "cluster": "{{conn}} · 概覽",
+    "cluster": "{{conn}} · 概觀",
     "topics": "{{conn}} · 主題",
     "groups": "{{conn}} · 群組",
     "producer": "{{conn}} · Producer",
@@ -456,7 +456,7 @@
       "key": "用戶端私密金鑰",
       "alias": "金鑰別名",
       "aliasPlaceholder": "有多個金鑰時填寫",
-      "keystorePassword": "金鑰儲存區密碼",
+      "keystorePassword": "金鑰庫密碼",
       "keyPasswordJks": "金鑰密碼（若不同）",
       "keyPasswordPem": "金鑰密碼（若已加密）"
     }
@@ -464,7 +464,7 @@
   "cluster": {
     "overview": {
       "loading": "正在載入中繼資料…",
-      "title": "叢集概覽",
+      "title": "叢集概觀",
       "refresh": "重新整理",
       "controller": "控制器",
       "brokers": "Broker",
@@ -657,7 +657,7 @@
       "onlyEmpty": "只能為沒有作用中成員（Empty）的群組重設。",
       "onlyEmptyLabel": "群組的作用中成員",
       "strategy": "策略",
-      "timestamp": "日期和時間（本地）",
+      "timestamp": "日期和時間（本機）",
       "offset": "偏移量",
       "shift": "位移量（±N）",
       "scope": "範圍",
@@ -840,7 +840,7 @@
       "rate": "速率",
       "rateAria": "每秒訊息數",
       "rateUnlimited": "不限",
-      "hintCopies": "每一份都會替換預留位置；{{seq}} 是份數序號，從 0 開始。",
+      "hintCopies": "每一份都會替換預留位置；{{seq}} 是份序號，從 0 開始。",
       "hintFile": "JSON Lines：每行一個 {\"key\":…, \"value\":…, \"headers\":{…}, \"partition\":…}。CSV：欄位 key、value、partition、header.<name>。",
       "errCount": "份數必須介於 1 到 1,000,000 之間",
       "errNoFile": "請選擇檔案",
@@ -918,8 +918,8 @@
       "resume": "繼續",
       "pauseAria": "暫停 {{partition}}",
       "resumeAria": "繼續 {{partition}}",
-      "logTitle": "重新平衡記錄",
-      "logEmpty": "尚未發生重新平衡。",
+      "logTitle": "重新平衡日誌",
+      "logEmpty": "日誌中尚無重新平衡。",
       "logAssigned": "{{time}} — 已指派：{{partitions}}",
       "logRevoked": "{{time}} — 已撤銷：{{partitions}}",
       "logError": "{{time}} — 重新平衡錯誤：{{message}}"
@@ -1039,11 +1039,11 @@
       "props": "任何 librdkafka 設定，格式為 <code>key=value</code>，每行一個。此處不允許填寫密碼和金鑰。",
       "test": "依序檢查設定、DNS 和 TCP，再檢查 Kafka（TLS、SASL、中繼資料）。不會儲存或變更任何內容。",
       "ca": "簽署 Broker 憑證的 CA。如果系統已信任此 CA，請留空。",
-      "caFormat": "檔案格式：PEM（文字，<code>-----BEGIN</code>）、PKCS#12（<code>.p12</code>、<code>.pfx</code>）或 JKS（Java 金鑰儲存區）。",
+      "caFormat": "檔案格式：PEM（文字，<code>-----BEGIN</code>）、PKCS#12（<code>.p12</code>、<code>.pfx</code>）或 JKS（Java 金鑰庫）。",
       "verifyHostname": "檢查 Broker 憑證是否與其主機名稱相符。僅在測試環境中關閉。",
       "mtls": "Broker 以憑證驗證用戶端時需要。憑證和私密金鑰由你的 Kafka 管理員核發。",
       "alias": "JKS 或 PKCS#12 檔案中金鑰項目的名稱。僅在檔案包含多個金鑰時需要。",
-      "keyPassword": "僅在金鑰有自己的密碼時填寫：與金鑰儲存區密碼不同，或是加密的 PEM 金鑰。"
+      "keyPassword": "僅在金鑰有自己的密碼時填寫：與金鑰庫密碼不同，或是加密的 PEM 金鑰。"
     },
     "topics": {
       "partitions": "分區可平行讀取；只有在單一分區內才保證順序。分區數日後可以增加，但無法減少。",
@@ -1072,7 +1072,7 @@
     "producer": {
       "partition": "留空則由 Kafka 依鍵選擇分區。輸入數字可傳送到指定的分區。",
       "formats": "文字編碼：string 照原樣傳送，JSON（會驗證），hex 或 base64 用於二進位資料，null 表示無值。鍵預設為 null：如果鍵是空字串，所有訊息都會進入同一個分區。",
-      "placeholders": "每次傳送時都會替換預留位置：新的 UUID、目前時間、份數序號等。",
+      "placeholders": "每次傳送時都會替換預留位置：新的 UUID、目前時間、份序號等。",
       "acks": "需要多少個複本確認寫入。<code>all</code> 最安全，<code>1</code> 較快，<code>0</code> 不等待確認，訊息可能遺失。",
       "compression": "壓縮批次：減少流量和磁碟空間，但會稍微增加 CPU 負擔。常用 <code>zstd</code> 和 <code>lz4</code>。",
       "idempotence": "用戶端重試傳送時防止產生重複訊息。需要 <code>acks = all</code>。",
@@ -1116,7 +1116,7 @@
       "message_downconversion_enable": "允許 Broker 為非常舊的消費者轉換訊息；會耗用 CPU。自 Kafka 4.0 起不再有作用（已淘汰）。",
       "flush_messages": "每 N 則訊息強制寫入磁碟一次。通常維持預設值：Kafka 仰賴複寫和作業系統的分頁快取。",
       "flush_ms": "每 N 毫秒強制寫入磁碟一次。通常維持預設值：Kafka 仰賴複寫和作業系統的分頁快取。",
-      "index_interval_bytes": "每隔多少位元組的日誌寫入一筆偏移量索引項目。數值越小，搜尋越快，但索引越大。很少變更。",
+      "index_interval_bytes": "每隔多少位元組的日誌寫入一筆偏移量索引項目。數值越小，定位越快，但索引越大。很少變更。",
       "segment_index_bytes": "日誌區段偏移量索引檔案的大小上限。很少變更。",
       "preallocate": "建立日誌區段檔案時，預先在磁碟上配置空間。在某些檔案系統上可能有幫助；很少變更。",
       "leader_replication_throttled_replicas": "在 Leader 端限制複寫速率的複本，格式為 <code>partition:broker</code> 或 <code>*</code>。由重新指派工具設定；通常不手動編輯。",

@@ -293,13 +293,19 @@ impl McpController {
 
     /// Ответ на подтверждение. Блокирующий вызов (запись настроек).
     pub fn answer(&self, session_id: &str, approve: bool) -> AppResult<McpStatus> {
-        if let Some(client) = self.approvals.answer(session_id, approve, now_ms())? {
-            let (session, client) = (session_id.to_string(), client.map(|c| c.name));
-            self.audit.record(if approve {
-                AuditEvent::Approved { session, client }
+        if let Some(answered) = self.approvals.answer(session_id, approve, now_ms())? {
+            let client = answered.client.map(|c| c.name);
+            let session = session_id.to_string();
+            if approve {
+                for session in std::iter::once(session).chain(answered.also_approved) {
+                    self.audit.record(AuditEvent::Approved {
+                        session,
+                        client: client.clone(),
+                    });
+                }
             } else {
-                AuditEvent::Rejected { session, client }
-            });
+                self.audit.record(AuditEvent::Rejected { session, client });
+            }
             if !approve && let Some(h) = &self.inner().handle {
                 h.disconnect(session_id);
             }

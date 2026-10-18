@@ -256,6 +256,21 @@ async fn handle_conn(
     shared.backend.sessions_changed();
 }
 
+/// Имя и версия клиента приходят от него самого: длина ограничена (диалог, `settings.json`).
+const MAX_CLIENT_FIELD_CHARS: usize = 128;
+
+fn capped(s: &str) -> String {
+    s.trim().chars().take(MAX_CLIENT_FIELD_CHARS).collect()
+}
+
+fn normalize_client(c: Implementation) -> Option<ClientIdent> {
+    let name = capped(&c.name);
+    (!name.is_empty()).then(|| ClientIdent {
+        name,
+        version: capped(&c.version),
+    })
+}
+
 fn tool_error(e: &BackendError) -> CallToolResult {
     CallToolResult::error(vec![ContentBlock::text(format!(
         "{}: {}",
@@ -311,7 +326,9 @@ impl GatewayServer {
     }
 
     /// Клиент запоминается при первом запросе, где он известен, и дальше не меняется.
+    /// Имя без пробелов по краям; пустое — как отсутствующее (спец. §4).
     fn identify(&self, client: Option<Implementation>) -> SessionView {
+        let client = client.and_then(normalize_client);
         let mut sessions = self.shared.sessions();
         let entry = sessions.get_mut(&self.session_id);
         let mut changed = false;
@@ -320,10 +337,7 @@ impl GatewayServer {
                 if e.client.is_none()
                     && let Some(c) = client
                 {
-                    e.client = Some(ClientIdent {
-                        name: c.name,
-                        version: c.version,
-                    });
+                    e.client = Some(c);
                     changed = true;
                 }
                 e.client.clone()

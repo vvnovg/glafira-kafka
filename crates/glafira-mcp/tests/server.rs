@@ -11,7 +11,10 @@ use glafira_mcp::{
     AuditLog, Backend, BackendError, BoxFuture, GatewayOptions, McpServerHandle, endpoint,
     handshake,
 };
-use rmcp::model::{CallToolRequest, CallToolRequestParams, CallToolResult, ClientRequest};
+use rmcp::model::{
+    CallToolRequest, CallToolRequestParams, CallToolResult, ClientCapabilities, ClientConfig,
+    ClientRequest, Implementation,
+};
 use rmcp::service::{PeerRequestOptions, RunningService};
 use rmcp::{RoleClient, ServiceExt};
 use serde_json::{Value, json};
@@ -310,6 +313,23 @@ async fn client(ep: &str) -> RunningService<RoleClient, ()> {
     ().serve(s).await.unwrap()
 }
 
+/// Клиент с заданными именем и версией в `initialize`.
+async fn named_client(
+    ep: &str,
+    name: &str,
+    version: &str,
+) -> RunningService<RoleClient, ClientConfig> {
+    let mut s = endpoint::connect(&ep.to_string()).await.unwrap();
+    handshake::client(&mut s, TOKEN).await.unwrap();
+    ClientConfig::new(
+        ClientCapabilities::default(),
+        Implementation::new(name, version),
+    )
+    .serve(s)
+    .await
+    .unwrap()
+}
+
 async fn call(c: &RunningService<RoleClient, ()>, tool: &str, args: Value) -> CallToolResult {
     let mut p = CallToolRequestParams::new(tool.to_string());
     if let Value::Object(m) = args {
@@ -500,6 +520,27 @@ async fn pending_client_gets_a_hint_then_works_after_approval() {
         "отклонённый вызов не считается"
     );
     assert_eq!(sessions[0].client_name.as_deref(), Some("rmcp"));
+}
+
+#[tokio::test]
+async fn client_name_is_trimmed_and_capped() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let _blank = named_client(&e.ep, " \t ", "1.0").await;
+    let _long = named_client(&e.ep, &format!("  {}", "ж".repeat(300)), &"v".repeat(300)).await;
+    let seen = fake.seen.lock().unwrap().clone();
+    assert_eq!(seen[0].client, None, "пустое имя — как отсутствующее");
+    let c = seen.last().unwrap().client.clone().unwrap();
+    assert_eq!(c.name, "ж".repeat(128));
+    assert_eq!(c.version, "v".repeat(128));
+    let mut names: Vec<Option<String>> = e
+        .handle
+        .sessions()
+        .into_iter()
+        .map(|s| s.client_name)
+        .collect();
+    names.sort();
+    assert_eq!(names, [None, Some("ж".repeat(128))]);
 }
 
 #[tokio::test]

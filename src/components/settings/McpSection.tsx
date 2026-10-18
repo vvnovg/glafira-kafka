@@ -127,11 +127,7 @@ export function McpSection() {
           <p className="hint">{t("settings.mcp.connectHint")}</p>
           <CopyBlock id="mcp-cfg-desktop" label={t("settings.mcp.claudeDesktop")} text={configs.data.claudeDesktop} />
           <CopyBlock id="mcp-cfg-code" label={t("settings.mcp.claudeCode")} text={configs.data.claudeCode} />
-          <CopyBlock
-            id="mcp-cfg-other"
-            label={t("settings.mcp.otherClient")}
-            text={[configs.data.command, ...configs.data.args].join(" ")}
-          />
+          <CopyBlock id="mcp-cfg-other" label={t("settings.mcp.otherClient")} text={configs.data.otherClient} />
         </>
       )}
 

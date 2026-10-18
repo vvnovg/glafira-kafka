@@ -24,10 +24,11 @@ import { api } from "../../api/client";
 import { McpSection } from "./McpSection";
 
 const configs = {
-  command: "/Applications/Glafira.app/Contents/MacOS/glafira-kafka",
+  command: "/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka",
   args: ["mcp"],
   claudeDesktop: '{"mcpServers":{"glafira":{}}}',
   claudeCode: "claude mcp add glafira -- /x mcp",
+  otherClient: "'/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka' mcp",
 };
 
 beforeEach(() => {
@@ -49,7 +50,8 @@ describe("McpSection", () => {
     expect(api.setMcpEnabled).toHaveBeenCalledWith(true);
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Сервер работает"));
     expect(screen.getByText("claude mcp add glafira -- /x mcp")).toBeInTheDocument();
-    expect(screen.getByText(`${configs.command} mcp`)).toBeInTheDocument();
+    // Путь с пробелами — в кавычках, как у Claude Code.
+    expect(screen.getByText(configs.otherClient)).toBeInTheDocument();
   });
 
   it("политика запрещает MCP", async () => {

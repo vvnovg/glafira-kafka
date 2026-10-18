@@ -626,6 +626,8 @@ export interface McpClientConfigs {
   args: string[];
   claudeDesktop: string;
   claudeCode: string;
+  /** Команда для любого stdio-клиента: путь с пробелами — в кавычках. */
+  otherClient: string;
 }
 
 /** Запись журнала MCP (`mcp-audit.jsonl`), новые первыми. */

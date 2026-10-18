@@ -45,6 +45,8 @@ pub struct ClientConfigs {
     pub args: Vec<String>,
     pub claude_desktop: String,
     pub claude_code: String,
+    /// Команда для любого stdio-клиента: путь в кавычках, если в нём пробелы.
+    pub other_client: String,
 }
 
 /// Путь для командной строки: в одинарных кавычках на macOS/Linux, в двойных на Windows.
@@ -80,6 +82,7 @@ pub fn client_configs(exe: &Path) -> ClientConfigs {
     ClientConfigs {
         claude_desktop: serde_json::to_string_pretty(&desktop).unwrap_or_default(),
         claude_code: format!("claude mcp add {key} -- {} mcp", shell_quote(&command)),
+        other_client: format!("{} mcp", shell_quote(&command)),
         args: vec!["mcp".into()],
         command,
     }
@@ -103,9 +106,15 @@ mod tests {
         assert_eq!(v["mcpServers"]["glafira"]["command"], exe.to_str().unwrap());
         assert_eq!(v["mcpServers"]["glafira"]["args"][0], "mcp");
         assert_eq!(
-            client_configs(Path::new("/usr/bin/glafira-kafka")).claude_code,
+            c.other_client,
+            "'/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka' mcp"
+        );
+        let plain = client_configs(Path::new("/usr/bin/glafira-kafka"));
+        assert_eq!(
+            plain.claude_code,
             "claude mcp add glafira -- /usr/bin/glafira-kafka mcp"
         );
+        assert_eq!(plain.other_client, "/usr/bin/glafira-kafka mcp");
         assert_eq!(shell_quote("/a/it's"), r"'/a/it'\''s'");
     }
 

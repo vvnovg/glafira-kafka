@@ -64,7 +64,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
               kind: "producer",
               connectionId,
               prefill: {
-                message: { topic, partition: null, key: { format: "string", text: "" }, value: { format: "json", text: "" }, headers: [] },
+                message: { topic, partition: null, key: { format: "null", text: "" }, value: { format: "json", text: "" }, headers: [] },
                 nonce: Date.now(),
               },
             })

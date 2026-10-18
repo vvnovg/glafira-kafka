@@ -41,9 +41,11 @@ function PayloadField({ kind, value, onChange }: { kind: "key" | "value"; value:
       <textarea
         id={`${id}-text`}
         rows={kind === "value" ? 8 : 2}
-        disabled={value.format === "null"}
-        value={value.text}
-        onChange={(e) => onChange({ ...value, text: e.target.value })}
+        placeholder={value.format === "null" ? "null" : undefined}
+        // При null текст не отправляется и не показывается; он сохраняется до смены формата.
+        value={value.format === "null" ? "" : value.text}
+        // Ввод текста в поле с форматом null переключает формат на string.
+        onChange={(e) => onChange({ format: value.format === "null" ? "string" : value.format, text: e.target.value })}
       />
     </div>
   );

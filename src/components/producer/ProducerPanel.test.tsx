@@ -82,7 +82,7 @@ describe("ProducerPanel", () => {
       {
         topic: "orders",
         partition: null,
-        key: { format: "string", text: "" },
+        key: { format: "null", text: "" },
         value: { format: "json", text: '{"a":1}' },
         headers: [{ name: "trace", value: "t1", format: "string" }],
       },
@@ -101,6 +101,21 @@ describe("ProducerPanel", () => {
     await user.type(screen.getByLabelText("Имя подключения"), "prod-1");
     await user.click(screen.getByRole("button", { name: "Отправить в prod" }));
     expect(vi.mocked(api.produce).mock.calls[0][3]).toBe("prod-1");
+  });
+
+  it("ключ по умолчанию null; ввод ключа переключает формат на string", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ProducerPanel connectionId="dev" />);
+    await user.type(await screen.findByLabelText("Топик"), "orders");
+    expect(screen.getByLabelText("Формат ключа")).toHaveValue("null");
+    await user.type(screen.getByLabelText("Ключ"), "k1");
+    expect(screen.getByLabelText("Формат ключа")).toHaveValue("string");
+    await user.selectOptions(screen.getByLabelText("Формат ключа"), "null");
+    expect(screen.getByLabelText("Ключ")).toHaveValue("");
+    await user.selectOptions(screen.getByLabelText("Формат ключа"), "string");
+    expect(screen.getByLabelText("Ключ")).toHaveValue("k1");
+    await user.click(screen.getByRole("button", { name: "Отправить" }));
+    expect(vi.mocked(api.produce).mock.calls[0][1].key).toEqual({ format: "string", text: "k1" });
   });
 
   it("read-only: отправка недоступна", async () => {

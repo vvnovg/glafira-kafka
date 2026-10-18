@@ -28,9 +28,9 @@ Pola [[ui:producer.keyFormat]] i [[ui:producer.valueFormat]] określają, jak te
 - `json` — tekst jest sprawdzany pod kątem poprawności JSON i wysyłany tak, jak został wpisany, bez przeformatowania.
 - `hex` — dwie cyfry szesnastkowe na bajt, na przykład `48656c6c6f`. Spacje i podziały wierszy są ignorowane.
 - `base64` — bajty w standardowym Base64.
-- `null` — całkowity brak klucza lub wartości. Pole tekstowe jest nieaktywne.
+- `null` — całkowity brak klucza lub wartości. Pole jest puste, a wpisanie tekstu przełącza format na `string`.
 
-Domyślnie klucz ma format `string`, a wartość — `json`. Puste pole klucza z formatem `string` wysyła pusty klucz, a nie brak klucza: wszystkie takie wiadomości mają ten sam hash i trafiają do jednej partycji. Aby wysłać wiadomość bez klucza, należy wybrać `null`.
+Domyślnie klucz ma format `null`, a wartość — `json`. Aby wysłać wiadomość z kluczem, wystarczy go wpisać: format zmieni się na `string`. Pusty ciąg znaków też jest kluczem, a nie brakiem klucza: jeśli wybrać `string` i zostawić pole puste, wszystkie takie wiadomości będą miały ten sam hash i trafią do jednej partycji.
 
 Wiadomość z wartością `null` to tombstone. W topiku z `cleanup.policy=compact` sygnalizuje Kafce, że należy usunąć starsze wiadomości z tym samym kluczem.
 

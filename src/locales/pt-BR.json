@@ -1089,7 +1089,7 @@
     },
     "producer": {
       "partition": "Deixe vazio para o Kafka escolher a partição pela chave. Informe um número para enviar a uma partição específica.",
-      "formats": "Como codificar o texto antes do envio: string sem alteração, JSON (com validação), hex ou base64 para dados binários.",
+      "formats": "Codificação do texto: string sem alteração, JSON (com validação), hex ou base64 para dados binários, null para nada. A chave é null por padrão: com chave string vazia, todas as mensagens vão para uma partição.",
       "placeholders": "Os marcadores são substituídos a cada envio: um novo UUID, a hora atual, o número da cópia etc.",
       "acks": "Quantas réplicas precisam confirmar uma gravação. <code>all</code> é o mais seguro, <code>1</code> é mais rápido, <code>0</code> não espera e mensagens podem ser perdidas.",
       "compression": "Comprime os lotes: menos tráfego e espaço em disco, um pouco mais de CPU. <code>zstd</code> e <code>lz4</code> são escolhas comuns.",

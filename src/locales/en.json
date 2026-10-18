@@ -1081,7 +1081,7 @@
     },
     "producer": {
       "partition": "Leave empty to let Kafka choose the partition by key. Enter a number to send to a specific partition.",
-      "formats": "How to encode the text before sending: string as is, JSON (validated), hex or base64 for binary data.",
+      "formats": "Text encoding: string as is, JSON (validated), hex or base64 for binary data, null for none. The key defaults to null: with an empty string key, all messages go to one partition.",
       "placeholders": "Placeholders are replaced on every send: a new UUID, the current time, the copy number and so on.",
       "acks": "How many replicas must confirm a write. <code>all</code> is the safest, <code>1</code> is faster, <code>0</code> does not wait and messages can be lost.",
       "compression": "Compresses batches: less traffic and disk space, a bit more CPU. <code>zstd</code> and <code>lz4</code> are common choices.",

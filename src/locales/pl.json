@@ -1097,7 +1097,7 @@
     },
     "producer": {
       "partition": "Puste pole — partycję wybierze Kafka na podstawie klucza. Podanie numeru wysyła wiadomość do konkretnej partycji.",
-      "formats": "Sposób kodowania tekstu przed wysłaniem: ciąg znaków bez zmian, JSON (z walidacją), hex lub base64 dla danych binarnych.",
+      "formats": "Kodowanie tekstu: string bez zmian, JSON (z walidacją), hex lub base64 dla danych binarnych, null — brak danych. Domyślnie klucz to null: z pustym kluczem string wszystkie wiadomości trafiają do jednej partycji.",
       "placeholders": "Symbole zastępcze są podstawiane od nowa przy każdej wysyłce: nowy UUID, bieżący czas, numer kopii itd.",
       "acks": "Ile replik musi potwierdzić zapis. <code>all</code> — najbezpieczniej, <code>1</code> — szybciej, <code>0</code> — bez czekania, wiadomości mogą zostać utracone.",
       "compression": "Kompresuje paczki: mniejszy ruch i mniej miejsca na dysku, nieco większe użycie CPU. Częsty wybór to <code>zstd</code> i <code>lz4</code>.",

@@ -1089,7 +1089,7 @@
     },
     "producer": {
       "partition": "Laisser vide pour que Kafka choisisse la partition selon la clé. Saisir un numéro pour envoyer vers une partition précise.",
-      "formats": "Encodage du texte avant l’envoi : chaîne telle quelle, JSON (avec validation), hex ou base64 pour les données binaires.",
+      "formats": "Encodage du texte : string tel quel, JSON (avec validation), hex ou base64 pour le binaire, null pour rien. La clé est null par défaut : avec une clé string vide, tous les messages vont dans une partition.",
       "placeholders": "Les variables sont remplacées à chaque envoi : un nouvel UUID, l’heure actuelle, le numéro de copie, etc.",
       "acks": "Nombre de répliques qui doivent confirmer une écriture. <code>all</code> est le plus sûr, <code>1</code> est plus rapide, <code>0</code> n’attend pas et des messages peuvent être perdus.",
       "compression": "Compresse les lots : moins de trafic et d’espace disque, un peu plus de CPU. <code>zstd</code> et <code>lz4</code> sont des choix courants.",

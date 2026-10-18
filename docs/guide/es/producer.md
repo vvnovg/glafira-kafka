@@ -28,9 +28,9 @@ En una conexión prod, el envío te pide escribir el nombre de la conexión y co
 - `json`: se comprueba que el texto sea JSON válido y se envía tal como se escribió, sin reformatear.
 - `hex`: dos dígitos hexadecimales por byte, por ejemplo `48656c6c6f`. Los espacios y los saltos de línea se ignoran.
 - `base64`: bytes en Base64 estándar.
-- `null`: sin clave o sin valor. El campo de texto se deshabilita.
+- `null`: sin clave o sin valor. El campo queda vacío y, al escribir texto, el formato cambia a `string`.
 
-El valor predeterminado es `string` para la clave y `json` para el valor. Un campo de clave vacío con `string` envía una clave vacía, no una ausente: todos esos mensajes obtienen el mismo hash y van a una misma partición. Para enviar un mensaje sin clave, elige `null`.
+El valor predeterminado es `null` para la clave y `json` para el valor. Para enviar un mensaje con clave, basta con escribirla: el formato cambia a `string`. Una cadena vacía también es una clave, no una ausente: si eliges `string` y dejas el campo vacío, todos esos mensajes obtienen el mismo hash y van a una misma partición.
 
 Un mensaje con valor `null` es un tombstone. En un topic con `cleanup.policy=compact`, indica a Kafka que elimine los mensajes anteriores con la misma clave.
 

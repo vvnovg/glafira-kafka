@@ -28,9 +28,9 @@ On a prod connection, sending asks you to type the connection name and confirm w
 - `json` — the text is checked to be valid JSON and sent as typed, without reformatting.
 - `hex` — two hex digits per byte, for example `48656c6c6f`. Spaces and line breaks are ignored.
 - `base64` — bytes in standard Base64.
-- `null` — no key or no value at all. The text field is disabled.
+- `null` — no key or no value at all. The field is empty, and typing text switches the format to `string`.
 
-The default is `string` for the key and `json` for the value. An empty key field with `string` sends an empty key, not a missing one: all such messages get the same hash and go to one partition. To send a message without a key, choose `null`.
+The default is `null` for the key and `json` for the value. To send a message with a key, just type it: the format changes to `string`. An empty string is still a key, not a missing one: if you choose `string` and leave the field empty, all such messages get the same hash and go to one partition.
 
 A message with a `null` value is a tombstone. In a topic with `cleanup.policy=compact`, it tells Kafka to remove older messages with the same key.
 

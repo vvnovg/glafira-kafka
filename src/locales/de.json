@@ -1081,7 +1081,7 @@
     },
     "producer": {
       "partition": "Leer lassen, damit Kafka die Partition anhand des Schlüssels wählt. Eine Nummer angeben, um an eine bestimmte Partition zu senden.",
-      "formats": "Wie der Text vor dem Senden kodiert wird: String unverändert, JSON (mit Prüfung), hex oder base64 für Binärdaten.",
+      "formats": "Kodierung des Texts: string unverändert, JSON (mit Prüfung), hex oder base64 für Binärdaten, null für keine Daten. Schlüssel standardmäßig null: Mit leerem string-Schlüssel landen alle Nachrichten in einer Partition.",
       "placeholders": "Platzhalter werden bei jedem Senden neu ersetzt: eine neue UUID, die aktuelle Zeit, die Kopienummer usw.",
       "acks": "Wie viele Replikate einen Schreibvorgang bestätigen müssen. <code>all</code> ist am sichersten, <code>1</code> ist schneller, <code>0</code> wartet nicht, Nachrichten können verloren gehen.",
       "compression": "Komprimiert Batches: weniger Datenverkehr und Speicherplatz, etwas mehr CPU. Häufig gewählt werden <code>zstd</code> und <code>lz4</code>.",

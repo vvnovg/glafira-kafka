@@ -5,7 +5,7 @@ describe("producer form", () => {
   it("пустая форма", () => {
     const f = emptyProducerForm("orders");
     expect(f.topic).toBe("orders");
-    expect(f.key).toEqual({ format: "string", text: "" });
+    expect(f.key).toEqual({ format: "null", text: "" });
     expect(f.value).toEqual({ format: "json", text: "" });
     expect(f.settings).toEqual(DEFAULT_SETTINGS);
   });
@@ -16,7 +16,7 @@ describe("producer form", () => {
     expect(formToMessage(f)).toEqual({
       topic: "orders",
       partition: 2,
-      key: { format: "string", text: "" },
+      key: { format: "null", text: "" },
       value: { format: "json", text: '{"a":1}' },
       headers: [{ name: "trace", value: "x", format: "string" }],
     });

@@ -28,9 +28,9 @@ Bei einer Prod-Verbindung verlangt das Senden die Eingabe des Verbindungsnamens 
 - `json` — der Text wird auf gültiges JSON geprüft und so gesendet, wie er eingegeben wurde, ohne Neuformatierung.
 - `hex` — zwei Hex-Ziffern pro Byte, zum Beispiel `48656c6c6f`. Leerzeichen und Zeilenumbrüche werden ignoriert.
 - `base64` — Bytes in Standard-Base64.
-- `null` — überhaupt kein Schlüssel bzw. kein Wert. Das Textfeld ist deaktiviert.
+- `null` — überhaupt kein Schlüssel bzw. kein Wert. Das Feld ist leer, und eine Texteingabe schaltet das Format auf `string` um.
 
-Standard ist `string` für den Schlüssel und `json` für den Wert. Ein leeres Schlüsselfeld mit `string` sendet einen leeren Schlüssel, keinen fehlenden: Alle solchen Nachrichten erhalten denselben Hash und landen in einer Partition. Um eine Nachricht ohne Schlüssel zu senden, wählen Sie `null`.
+Standard ist `null` für den Schlüssel und `json` für den Wert. Um eine Nachricht mit Schlüssel zu senden, geben Sie ihn einfach ein: Das Format wechselt zu `string`. Ein leerer String ist auch ein Schlüssel, kein fehlender: Wenn Sie `string` wählen und das Feld leer lassen, erhalten alle solchen Nachrichten denselben Hash und landen in einer Partition.
 
 Eine Nachricht mit dem Wert `null` ist ein Tombstone. In einem Topic mit `cleanup.policy=compact` weist sie Kafka an, ältere Nachrichten mit demselben Schlüssel zu entfernen.
 

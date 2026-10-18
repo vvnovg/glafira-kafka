@@ -17,7 +17,8 @@ export function emptyProducerForm(topic = ""): ProducerForm {
   return {
     topic,
     partition: "",
-    key: { format: "string", text: "" },
+    // Без ключа: пустая строка — это ключ, и все такие сообщения попадают в одну партицию.
+    key: { format: "null", text: "" },
     value: { format: "json", text: "" },
     headers: [],
     settings: DEFAULT_SETTINGS,

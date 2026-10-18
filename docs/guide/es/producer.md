@@ -14,7 +14,7 @@ En las conexiones con la opción [[ui:common.readOnly]] activada, el Producer se
 
 Tras un envío correcto, una línea bajo el formulario muestra la partición, el offset y la hora del mensaje. Con `acks` en `0`, el broker no devuelve ningún offset y se muestra `—` en su lugar.
 
-Si el número de partición es demasiado grande o el broker no confirma el mensaje dentro del tiempo de espera de la conexión, la app muestra un error. Un topic que no existe también da error, salvo que el broker cree topics automáticamente (`auto.create.topics.enable`). Con la creación automática desactivada, este error puede tardar unos 30 s en aparecer (el tiempo de espera de la conexión). Los errores del formulario, como un JSON no válido o un marcador desconocido, se muestran antes de enviar nada.
+Si el número de partición es demasiado grande o el broker no confirma el mensaje dentro del tiempo de espera de la conexión, la app muestra un error. Un topic que no existe también da error, salvo que el broker cree topics automáticamente (`auto.create.topics.enable`). Con la creación automática desactivada, este error puede tardar hasta unos 30 s en aparecer (el tiempo de espera de la conexión). Los errores del formulario, como un JSON no válido o un marcador desconocido, se muestran antes de enviar nada.
 
 En una conexión prod, el envío te pide escribir el nombre de la conexión y confirmar con [[ui:producer.confirmLabel]]. Consulta [Entornos y prod](connections.md#environments).
 

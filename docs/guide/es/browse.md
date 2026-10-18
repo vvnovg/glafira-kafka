@@ -33,7 +33,7 @@ El campo con el texto [[ui:browse.form.partitionsPlaceholder]] limita la lectura
 
 ## Filtros {#filters}
 
-Los filtros muestran solo los mensajes que coinciden. La app sigue leyendo todos los mensajes desde la posición inicial y comprueba cada uno, así que los filtros no aceleran la lectura. Deben cumplirse todos los campos rellenados.
+Los filtros muestran solo los mensajes que coinciden. Aun así, la app lee todos los mensajes desde la posición inicial y comprueba cada uno, así que los filtros no aceleran la lectura. Deben coincidir todos los campos rellenados.
 
 - [[ui:browse.filters.keyContains]] y [[ui:browse.filters.valueContains]]: texto en la clave o en el valor.
 - `regex`: interpreta estos campos, y el valor del encabezado, como expresiones regulares.

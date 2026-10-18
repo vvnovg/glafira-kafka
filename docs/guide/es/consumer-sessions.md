@@ -59,7 +59,7 @@ Sin commit automático, la sesión no hace commit de nada por sí sola. Usa los 
 - [[ui:consumer.actions.commitSelected]]: hace commit del offset posterior al mensaje seleccionado, solo en su partición. El grupo continuará desde el mensaje siguiente. Si el mensaje seleccionado es anterior al commit actual, el offset retrocede.
 - [[ui:consumer.actions.commitAll]]: hace commit de la posición actual en todas las particiones asignadas. Esto incluye los mensajes ocultos por los filtros y los ya eliminados de la tabla.
 
-Tras un commit, una línea muestra los offsets confirmados como `topic:partition → offset`. En una conexión prod, cada commit pide el nombre de la conexión.
+Tras un commit, una línea muestra los offsets con commit como `topic:partition → offset`. En una conexión prod, cada commit pide el nombre de la conexión.
 
 Si la sesión no responde a tiempo, la app avisa de que no se sabe si el commit se aplicó. Comprueba los offsets en la pestaña del grupo. Consulta [Detalles del grupo](groups.md#group-details).
 
@@ -86,4 +86,4 @@ El registro conserva las últimas 200 entradas. Antes del primer rebalanceo, mue
 - Una sesión no puede empezar desde un offset elegido. Para fijar el inicio, restablece antes los offsets del grupo: consulta [Restablecer offsets](groups.md#reset-offsets). El restablecimiento requiere un grupo sin miembros, así que desconecta las sesiones de este grupo antes de restablecer.
 - La tabla conserva como máximo 100000 mensajes. Los más antiguos se eliminan, pero siguen contando como leídos.
 - Las claves y los valores muy grandes se muestran solo en parte, como en la exploración.
-- No te unas al grupo de una aplicación en ejecución sin intención. La sesión le quita particiones a la aplicación, y la aplicación no las procesa mientras la sesión las tiene. Los commits de la sesión, incluidos los automáticos, mueven los offsets de la aplicación.
+- No te unas al grupo de una aplicación en ejecución, a menos que sea lo que pretendes. La sesión le quita particiones a la aplicación, y la aplicación no las procesa mientras la sesión las tiene. Los commits de la sesión, incluidos los automáticos, mueven los offsets de la aplicación.

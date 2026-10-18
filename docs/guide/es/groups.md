@@ -25,7 +25,7 @@ Los miembros, el assignor y el lag se cargan solo para las filas visibles, a med
 
 El lag es el número de mensajes que el grupo aún no ha leído. Para cada partición, es el final del log menos el offset con commit. El lag nunca se muestra por debajo de cero.
 
-El lag depende solo de los offsets con commit. Un consumidor activo puede haber leído más allá de lo que ha confirmado con commit, así que su lag real puede ser menor. Cuando el grupo vuelve a hacer commit, el lag baja.
+El lag depende solo de los offsets con commit. Un consumidor activo puede haber leído más allá de los offsets con commit, así que su lag real puede ser menor. Cuando el grupo vuelve a hacer commit, el lag baja.
 
 Una partición sin offset con commit muestra [[ui:groups.lag.noCommit]] y no cuenta en el total. El lag total de un grupo muestra `—` cuando el grupo no tiene ningún commit ([[ui:groups.lag.noCommits]]) o cuando no se han podido leer los offsets de alguna partición ([[ui:groups.lag.unknown]]).
 

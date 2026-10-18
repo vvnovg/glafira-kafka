@@ -14,7 +14,7 @@ Elige el archivo para tu Mac: `aarch64` para Apple silicon (M1 y posteriores), `
 
 También puedes usar el instalador `.pkg`. Instala la app en `/Applications` para todos los usuarios.
 
-Las versiones beta aún no están firmadas por Apple, así que macOS bloquea el primer inicio. Para permitirlo:
+Los builds beta aún no están firmados por Apple, así que macOS bloquea el primer inicio. Para permitirlo:
 
 1. Intenta abrir la app una vez y cierra el aviso.
 2. Abre Ajustes del Sistema → Privacidad y seguridad.
@@ -44,7 +44,7 @@ Descarga el instalador `.msi` (`x64`) desde la página de versiones: https://git
 2. Confirma la instalación en el aviso de Windows. La app se instala para todos los usuarios del equipo, por lo que se necesitan derechos de administrador.
 3. Inicia Glafira for Apache Kafka desde el menú Inicio.
 
-Las versiones beta aún no están firmadas. Si SmartScreen bloquea el instalador, haz clic en “Más información” y luego en “Ejecutar de todas formas”. También puedes desbloquear el archivo en PowerShell antes de ejecutarlo:
+Los builds beta aún no están firmados. Si SmartScreen bloquea el instalador, haz clic en “Más información” y luego en “Ejecutar de todas formas”. También puedes desbloquear el archivo en PowerShell antes de ejecutarlo:
 
 ```powershell
 Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en-US.msi"
@@ -115,6 +115,6 @@ En una empresa, los administradores pueden fijar algunas opciones para todos los
 
 - fijar el idioma de la interfaz: la lista de idiomas en [[ui:sidebar.settings]] queda entonces deshabilitada, con una nota de que el idioma lo ha establecido tu organización;
 - activar Pro con una clave de licencia de la organización: la pantalla [[ui:tabs.license]] indica entonces que la licencia la gestiona tu organización;
-- desactivar la búsqueda de actualizaciones o dirigirla a un mirror interno.
+- desactivar la búsqueda de actualizaciones o dirigirla a una réplica interna.
 
 Para saber si se aplica una política, abre [[ui:sidebar.about]] y consulta [[ui:about.policy]]. Si la política tiene un error, se muestra ahí y en la pantalla [[ui:tabs.license]]. Para dudas sobre la política, contacta con tus administradores. Las licencias y las actualizaciones se describen en [Licencia y actualizaciones](license-updates.md).

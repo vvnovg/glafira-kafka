@@ -63,7 +63,7 @@ Los problemas con los archivos de certificado se notifican en el paso [[ui:conne
 
 [[ui:errors.secrets.keychain]]: la app no puede leer la contraseña del almacén de secretos del sistema. En macOS, permite el acceso cuando el Llavero lo pida. En Linux, comprueba que GNOME Keyring, KWallet u otro proveedor de Secret Service se esté ejecutando en tu sesión.
 
-[[ui:errors.kafka.notAuthorized]] es distinto: el inicio de sesión se ha completado, pero el usuario de Kafka no tiene permisos (ACL) para esta operación, por ejemplo leer un topic o un grupo. Pide los permisos a tus administradores. Ten en cuenta que Kafka no informa de ningún error sobre los topics que no puedes describir: simplemente no aparecen en la lista de topics.
+[[ui:errors.kafka.notAuthorized]] es distinto: el inicio de sesión se ha completado, pero el usuario de Kafka no tiene permisos (ACL) para esta operación, por ejemplo leer un topic o un grupo. Pide los permisos a tus administradores. Ten en cuenta que Kafka no informa de ningún error sobre los topics que no tienes permiso para describir: simplemente no aparecen en la lista de topics.
 
 ## Tiempos de espera {#timeouts}
 

@@ -69,7 +69,7 @@ Si se están leyendo mensajes, hay una sesión de consumer en ejecución o se es
 
 Las actualizaciones se descargan desde la página de versiones en GitHub. Si la comprobación falla con [[ui:errors.updates.checkFailed]], revisa tu red o tu proxy. [[ui:errors.updates.notConfigured]] significa que este build se creó sin la clave del actualizador, por ejemplo un build de desarrollo o de prueba. En ese caso, descarga las versiones nuevas desde la página de versiones: https://github.com/vvnovg/glafira-kafka-releases/releases
 
-Una organización puede desactivar la búsqueda de actualizaciones mediante una política o dirigirla a un mirror interno. Cuando la búsqueda está desactivada, la sección [[ui:about.updates.title]] indica [[ui:errors.updates.managed]] después de hacer clic en [[ui:about.updates.check]]. Al igual que [[ui:errors.updates.notConfigured]], este mensaje solo aparece tras el clic; en estos casos, la comprobación al iniciar no muestra nada.
+Una organización puede desactivar la búsqueda de actualizaciones mediante una política o dirigirla a una réplica interna. Cuando la búsqueda está desactivada, la sección [[ui:about.updates.title]] indica [[ui:errors.updates.managed]] después de hacer clic en [[ui:about.updates.check]]. Al igual que [[ui:errors.updates.notConfigured]], este mensaje solo aparece tras el clic; en estos casos, la comprobación al iniciar no muestra nada.
 
 ## Acerca de {#about}
 

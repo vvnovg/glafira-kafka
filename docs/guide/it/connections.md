@@ -5,10 +5,10 @@ Una connessione è il profilo salvato di un cluster Kafka: indirizzi, impostazio
 ## Creare una connessione {#create}
 
 1. Fai clic su `+` ( [[ui:sidebar.newConnection]] ) nell’intestazione del pannello [[ui:sidebar.connections]]. Per creare la connessione direttamente in una cartella, apri il menu della cartella e scegli [[ui:sidebar.folder.newConnection]].
-2. In [[ui:connections.form.name]] inserisci un nome. Compare nel pannello e nei titoli delle schede.
+2. Inserisci il [[ui:connections.form.name]]. Compare nel pannello e nei titoli delle schede.
 3. In [[ui:connections.form.bootstrap]] inserisci uno o più indirizzi nel formato `host:port`, separati da virgole, per esempio `kafka1:9092,kafka2:9092`. Basta un broker raggiungibile: il client trova gli altri da solo.
-4. Scegli il protocollo in [[ui:connections.form.protocol]] e compila i campi che aggiunge. Vedi [Protocolli di sicurezza](connections.md#security).
-5. Facoltativamente, scegli una cartella in [[ui:connections.form.folder]], un ambiente in [[ui:connections.form.environment]] e, in [[ui:connections.form.color]], il colore del pallino accanto al nome.
+4. Scegli il [[ui:connections.form.protocol]] e compila i campi che aggiunge. Vedi [Protocolli di sicurezza](connections.md#security).
+5. Facoltativamente, scegli la [[ui:connections.form.folder]], un [[ui:connections.form.environment]] e il [[ui:connections.form.color]] del pallino accanto al nome.
 6. Fai clic su [[ui:connections.form.test]], poi su [[ui:common.save]].
 
 Dopo il salvataggio il modulo si chiude e si apre la panoramica del cluster.
@@ -140,7 +140,7 @@ L’esportazione salva connessioni e cartelle in un file, per esempio per condiv
 
 Una volta salvato il file, il pannello mostra quante connessioni e cartelle contiene.
 
-Il file contiene le impostazioni delle connessioni e la struttura delle cartelle. Non contiene password né proprietà segrete. Non include nemmeno i file dei certificati: ne conserva solo i percorsi. Host, nomi utente e percorsi sono memorizzati come testo in chiaro, quindi condividi il file solo con chi può vederli.
+Il file contiene le impostazioni delle connessioni e la struttura delle cartelle. Non contiene password né proprietà segrete. Non include nemmeno i file dei certificati: ne conserva solo i percorsi. Host, nomi utente e percorsi sono memorizzati come testo in chiaro, quindi condividi il file solo con chi è autorizzato a vederli.
 
 ## Importazione {#import}
 

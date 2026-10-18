@@ -60,7 +60,7 @@ Le build sono disponibili per `x86_64` in tre formati. Scarica quello adatto all
 
 Dopo aver installato un pacchetto, avvia l’app dal menu delle applicazioni o esegui `glafira-kafka` in un terminale.
 
-Glafira conserva le password nel Secret Service (per esempio GNOME Keyring o KWallet). Assicurati che uno dei due sia in esecuzione nella tua sessione, altrimenti l’app non può salvare le password delle connessioni.
+Glafira conserva le password nel Secret Service (per esempio GNOME Keyring o KWallet). Assicurati che uno di questi servizi sia in esecuzione nella tua sessione, altrimenti l’app non può salvare le password delle connessioni.
 
 ## Primo avvio {#first-run}
 

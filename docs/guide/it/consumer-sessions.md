@@ -52,7 +52,7 @@ Se un topic non esiste, la sessione si arresta con un errore e mostra i nomi da 
 
 Un commit salva un offset per il gruppo. Il membro successivo che legge la partizione, o la stessa applicazione dopo un riavvio, inizia da quell’offset.
 
-Con l’opzione [[ui:consumer.form.autoCommit]] attiva, la sessione esegue il commit degli offset letti in background ogni pochi secondi, e un’ultima volta quando esce dal gruppo. I messaggi nascosti dai filtri contano come letti.
+Con l’opzione [[ui:consumer.form.autoCommit]] attiva, la sessione esegue il commit degli offset letti in background a intervalli di pochi secondi, e un’ultima volta quando esce dal gruppo. I messaggi nascosti dai filtri contano come letti.
 
 Senza commit automatico, la sessione non esegue alcun commit da sola. Usa i pulsanti:
 
@@ -69,7 +69,7 @@ Il pannello a destra della tabella elenca le partizioni assegnate alla sessione 
 
 La pausa non fa uscire dal gruppo, quindi non c’è ribilanciamento. La partizione resta assegnata alla sessione e, finché è in pausa, gli altri membri non la leggono. La pausa non modifica nulla nel cluster e non richiede conferma.
 
-Dopo un ribilanciamento, le partizioni appena assegnate partono non in pausa. Quando la sessione esce dal gruppo, tutte le pause terminano.
+Dopo un ribilanciamento, le partizioni appena assegnate non sono in pausa. Quando la sessione esce dal gruppo, tutte le pause terminano.
 
 ## Registro dei ribilanciamenti {#rebalance-log}
 

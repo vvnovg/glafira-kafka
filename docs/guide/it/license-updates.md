@@ -67,7 +67,7 @@ L’installazione può chiedere una password di amministratore, perché l’app 
 
 Se è in corso la lettura di messaggi, una sessione consumer o un invio in batch, l’app chiede prima conferma e indica quante sessioni sono attive. Fai clic su [[ui:about.updates.stopAndUpdate]] per interromperle e continuare, oppure su [[ui:common.cancel]]. Connessioni, impostazioni, chiave di licenza e altri dati vengono conservati dopo un aggiornamento.
 
-Gli aggiornamenti vengono scaricati dalla pagina delle release su GitHub. Se la verifica non riesce con [[ui:errors.updates.checkFailed]], controlla la rete o il proxy. [[ui:errors.updates.notConfigured]] significa che questa build è stata creata senza la chiave dell’aggiornamento, per esempio una build di sviluppo o di test. In tal caso scarica le nuove versioni dalla pagina delle release: https://github.com/vvnovg/glafira-kafka-releases/releases
+Gli aggiornamenti vengono scaricati dalla pagina delle release su GitHub. Se la verifica non riesce con [[ui:errors.updates.checkFailed]], controlla la rete o il proxy. [[ui:errors.updates.notConfigured]] significa che questa build è stata creata senza la chiave del programma di aggiornamento, per esempio una build di sviluppo o di test. In tal caso scarica le nuove versioni dalla pagina delle release: https://github.com/vvnovg/glafira-kafka-releases/releases
 
 Un’organizzazione può disattivare la verifica degli aggiornamenti tramite una policy, oppure indirizzarla a un mirror interno. Quando la verifica è disattivata, la sezione [[ui:about.updates.title]] indica [[ui:errors.updates.managed]] dopo il clic su [[ui:about.updates.check]]. Come [[ui:errors.updates.notConfigured]], questo messaggio compare solo dopo il clic; in questi casi la verifica all’avvio non mostra nulla.
 

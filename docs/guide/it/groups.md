@@ -52,8 +52,8 @@ La seconda riga contiene [[ui:groups.details.resetOffsets]] e [[ui:groups.detail
 La reimpostazione sposta gli offset sottoposti a commit di un gruppo. Il gruppo rilegge così dei messaggi oppure li salta. Gli offset si possono reimpostare solo per un gruppo senza membri attivi (stato `Empty` o `Dead`). Altrimenti i membri sovrascriverebbero i nuovi offset con i propri commit. Arresta prima le applicazioni del gruppo.
 
 1. Nella scheda del gruppo, fai clic su [[ui:groups.details.resetOffsets]]. Finché il gruppo ha membri, il pulsante è disattivato; passa il puntatore sul pulsante per vedere il motivo.
-2. Scegli la strategia in [[ui:groups.reset.strategy]]. Vedi [Strategie di reimpostazione](groups.md#reset-strategies).
-3. Scegli l’ambito in [[ui:groups.reset.scope]]. Vedi [Ambito della reimpostazione](groups.md#reset-scope).
+2. Scegli la [[ui:groups.reset.strategy]]. Vedi [Strategie di reimpostazione](groups.md#reset-strategies).
+3. Scegli un [[ui:groups.reset.scope]]. Vedi [Ambito della reimpostazione](groups.md#reset-scope).
 4. Fai clic su [[ui:groups.reset.preview]].
 5. Controlla la tabella e fai clic sul pulsante di applicazione, che mostra il numero di partizioni che cambieranno.
 

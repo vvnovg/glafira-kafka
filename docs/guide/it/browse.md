@@ -25,7 +25,7 @@ Nella tabella i messaggi di partizioni diverse sono mescolati. Kafka mantiene l�
 
 - [[ui:browse.form.startLatest]] — gli ultimi N messaggi. N viene suddiviso equamente tra le partizioni, quindi con 100 messaggi e 4 partizioni l’app ne prende fino a 25 da ciascuna.
 - [[ui:browse.form.startEarliest]] — dal messaggio più vecchio ancora conservato.
-- [[ui:browse.form.startOffset]] — dallo stesso offset in ogni partizione. Se una partizione non ha questo offset, la lettura inizia dal suo inizio o dalla sua fine. Questa modalità è utile soprattutto con una sola partizione.
+- [[ui:browse.form.startOffset]] — dallo stesso offset in ogni partizione. Se una partizione non ha questo offset, la lettura parte dal primo o dall’ultimo offset della partizione. Questa modalità è utile soprattutto con una sola partizione.
 - [[ui:browse.form.startTimestamp]] — dal primo messaggio con timestamp uguale o successivo all’ora locale indicata. Nelle partizioni senza messaggi più recenti, la lettura inizia dalla fine.
 - [[ui:browse.form.startLastMinutes]] — lo stesso, contando a ritroso da adesso.
 

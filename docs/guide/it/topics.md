@@ -12,11 +12,11 @@ Questo capitolo tratta la panoramica del cluster, l’elenco dei topic, la creaz
 - [[ui:cluster.overview.topicsInternal]] — tutti i topic, con il numero di topic interni tra parentesi.
 - [[ui:cluster.overview.partitions]] — il numero di partizioni di tutti i topic.
 - `Under-replicated` — le partizioni in cui non tutte le repliche sono sincronizzate (nell’ISR). Di solito un broker è inattivo o non riesce a tenere il passo.
-- `Offline` — le partizioni senza leader. Nessuno può scriverci né leggerle.
+- `Offline` — le partizioni senza leader. Non è possibile né scrivervi né leggerle.
 
 Un valore diverso da zero in `Under-replicated` o `Offline` viene evidenziato.
 
-Sotto si trova la tabella dei broker con `ID` e [[ui:cluster.overview.address]]. Il broker indicato nel campo [[ui:cluster.overview.controller]] è contrassegnato da [[ui:cluster.overview.controllerBadge]]. Nei cluster KRaft si tratta dello stesso broker casuale, non del controller attivo. Fai clic su un broker per vederne la configurazione sotto la tabella. La configurazione dei broker è di sola consultazione. Usa [[ui:common.config.searchParam]] per trovare un parametro per nome e [[ui:common.config.onlyChanged]] per nascondere i parametri con valori predefiniti. Un’icona a forma di lucchetto contrassegna i parametri di sola lettura.
+Sotto si trova la tabella dei broker con `ID` e [[ui:cluster.overview.address]]. Il broker indicato nel campo [[ui:cluster.overview.controller]] è contrassegnato da [[ui:cluster.overview.controllerBadge]]. Nei cluster KRaft si tratta dello stesso broker casuale, non del controller attivo. Fai clic su un broker per vederne la configurazione sotto la tabella. La configurazione dei broker si può solo visualizzare. Usa [[ui:common.config.searchParam]] per trovare un parametro per nome e [[ui:common.config.onlyChanged]] per nascondere i parametri con valori predefiniti. Un’icona a forma di lucchetto contrassegna i parametri di sola lettura.
 
 ## Elenco dei topic {#topic-list}
 
@@ -36,10 +36,10 @@ Accanto alla barra degli strumenti, l’app mostra quanti topic corrispondono al
 ## Creare un topic {#create-topic}
 
 1. Nell’elenco dei topic, fai clic su [[ui:topics.list.create]]. Sopra l’elenco si apre il modulo [[ui:topics.create.title]].
-2. In [[ui:topics.create.name]] inserisci il nome. Può contenere lettere latine, cifre, `.`, `_` e `-`, fino a 249 caratteri. Il modulo avvisa se il nome contiene sia `.` sia `_`: i nomi delle metriche Kafka di questi topic possono entrare in conflitto con quelli di altri topic.
+2. Inserisci il [[ui:topics.create.name]]. Può contenere lettere latine, cifre, `.`, `_` e `-`, fino a 249 caratteri. Il modulo avvisa se il nome contiene sia `.` sia `_`: i nomi delle metriche Kafka di questi topic possono entrare in conflitto con quelli di altri topic.
 3. Imposta il numero di [[ui:topics.create.partitions]]. Le partizioni vengono lette in parallelo e l’ordine è garantito solo all’interno di una partizione. Il numero può essere aumentato in seguito, ma mai ridotto.
 4. Imposta il [[ui:topics.create.rf]], cioè quante copie di ogni partizione conservano i broker. Non può superare il numero di broker, che il modulo mostra sotto il campo. Il valore predefinito è 3, oppure il numero di broker se sono meno. `-1` usa il valore predefinito del broker.
-5. Scegli un profilo in [[ui:topics.create.preset]]:
+5. Scegli il [[ui:topics.create.preset]]:
    - [[ui:topics.create.presetDelete]] — i messaggi vecchi vengono eliminati in base al tempo.
    - `compact` — viene conservato solo l’ultimo valore per chiave.
    - `compact + delete` — entrambe le cose.

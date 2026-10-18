@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import { LANGUAGES } from "../../i18n/languages";
 import { i18n, setLanguage } from "../../i18n";
+import { useHelpChapter } from "../../state/helpContext";
+import { tabId } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { McpSection } from "./McpSection";
 
@@ -17,6 +20,10 @@ export function SettingsPanel() {
       void setLanguage(st.effective);
     },
   });
+
+  // F1: в разделе MCP — глава «LLM-ассистенты», в остальных — «Начало работы» (язык описан там).
+  const [mcpFocused, setMcpFocused] = useState(false);
+  useHelpChapter(tabId({ kind: "settings" }), mcpFocused ? "llm-mcp" : "getting-started");
 
   if (lang.error) return <ErrorBanner error={lang.error} onRetry={() => lang.refetch()} />;
   const s = lang.data;
@@ -33,7 +40,7 @@ export function SettingsPanel() {
       <div className="toolbar">
         <h2>{t("settings.title")}</h2>
       </div>
-      <section>
+      <section onFocusCapture={() => setMcpFocused(false)}>
         <h3>{t("settings.language.section")}</h3>
         <div className="field">
           <label htmlFor="settings-language">{t("settings.language.label")}</label>
@@ -57,7 +64,9 @@ export function SettingsPanel() {
         {byPolicy && <p className="hint">{t("settings.language.policy")}</p>}
         {change.error && <ErrorBanner error={change.error} />}
       </section>
-      <McpSection />
+      <div onFocusCapture={() => setMcpFocused(true)}>
+        <McpSection />
+      </div>
     </div>
   );
 }

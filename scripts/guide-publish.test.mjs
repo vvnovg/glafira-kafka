@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { publishChapter, publishGuide } from "./guide-publish.mjs";
+import { GUIDE_CHAPTERS } from "./i18n-check.mjs";
 
 test("метки → **значение** с экранированием Markdown", () => {
   const labels = new Map([
@@ -116,7 +117,7 @@ test("publishGuide на реальном репозитории: 8 языков,
     }
     for (const c of ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR"]) {
       const files = readdirSync(join(out, c));
-      assert.equal(files.length, 9, c);
+      assert.equal(files.length, GUIDE_CHAPTERS.length, c);
       for (const f of files) {
         const t = readFileSync(join(out, c, f), "utf8");
         assert.ok(!t.includes("[[ui:") && !t.includes("{#"), `${c}/${f}`);

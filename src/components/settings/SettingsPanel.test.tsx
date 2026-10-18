@@ -5,6 +5,7 @@ import type { LanguageSettings } from "../../api/types";
 import { i18n } from "../../i18n";
 import { mcpStatus } from "../../test/mcp";
 import { renderWithClient } from "../../test/render";
+import { useHelpContext } from "../../state/helpContext";
 
 const base: LanguageSettings = {
   system: "ru-RU", systemMatch: "ru", chosen: null, policy: null, effective: "ru", reason: "system",
@@ -81,5 +82,17 @@ describe("SettingsPanel", () => {
     expect(api.setLanguage).toHaveBeenCalledWith("de");
     await vi.waitFor(() => expect(i18n.language).toBe("de"));
     expect(screen.queryByText(/\bPro\b/)).not.toBeInTheDocument();
+  });
+
+  it("F1 в разделе MCP открывает главу «LLM-ассистенты»", async () => {
+    vi.mocked(api.getLanguageSettings).mockResolvedValue(base);
+    renderWithClient(<SettingsPanel />);
+    expect(useHelpContext.getState().byTab.settings).toBe("getting-started");
+    const mcp = await screen.findByLabelText("Разрешить MCP-сервер");
+    act(() => mcp.focus());
+    expect(useHelpContext.getState().byTab.settings).toBe("llm-mcp");
+    act(() => screen.getByLabelText("Язык интерфейса").focus());
+    expect(useHelpContext.getState().byTab.settings).toBe("getting-started");
+    await mcpSettled();
   });
 });

@@ -560,7 +560,7 @@ export function findRustCyrillic(files) {
   return hits;
 }
 
-export const GUIDE_CHAPTERS = ["getting-started", "connections", "topics", "browse", "producer", "groups", "consumer-sessions", "license-updates", "troubleshooting"];
+export const GUIDE_CHAPTERS = ["getting-started", "connections", "topics", "browse", "producer", "groups", "consumer-sessions", "llm-mcp", "license-updates", "troubleshooting"];
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

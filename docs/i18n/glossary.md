@@ -17,7 +17,7 @@
 
 ## Не переводится
 Kafka, Glafira, Pro, Free, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
-DNS, TCP, ID, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»; в ja — ビルド, как в остальном словаре), Leader (лидер партиции; в ja и ko — リーダー и 리더); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
+DNS, TCP, ID, MCP, LLM, stdio, Claude Desktop, Claude Code, Cursor, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»; в ja — ビルド, как в остальном словаре), Leader (лидер партиции; в ja и ko — リーダー и 리더); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
 команды, пути, адреса (`docker compose -f dev/docker-compose.yml up -d`, `keytool …`, `localhost:9092`);
 название экрана «Producer» (как в ru); значения CreateTime / LogAppendTime, producer / uncompressed в compression.type.
 
@@ -82,6 +82,13 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | diagnostics archive | архив диагностики | Diagnosearchiv | archive de diagnostic | archivo de diagnóstico | archivio diagnostico | archiwum diagnostyczne | arquivo de diagnóstico | 诊断归档 | 診斷壓縮檔 | 診断アーカイブ | 진단 아카이브 |
 | set by your organization | задан вашей организацией | von Ihrer Organisation festgelegt | défini par votre organisation | establecido por tu organización | impostato dalla tua organizzazione | ustawione przez organizację | definido pela sua organização | 由你的组织设置 | 由你的組織設定 | 言語は組織によって設定されています | 언어는 조직에서 설정합니다 |
 | System default (…) | Как в системе (…) | Systemsprache ({{name}}) | Langue du système ({{name}}) | Idioma del sistema ({{name}}) | Lingua di sistema ({{name}}) | Język systemu ({{name}}) | Idioma do sistema ({{name}}) | 跟随系统（{{name}}） | 跟隨系統（{{name}}） | システムの言語（{{name}}） | 시스템 언어({{name}}) |
+| LLM assistant | LLM-ассистент | LLM-Assistent | assistant LLM | asistente LLM | assistente LLM | asystent LLM | assistente LLM | LLM 助手 | LLM 助理 | LLMアシスタント | LLM 어시스턴트 |
+| MCP server | MCP-сервер | MCP-Server | serveur MCP | servidor MCP | server MCP | serwer MCP | servidor MCP | MCP 服务器 | MCP 伺服器 | MCPサーバー | MCP 서버 |
+| client (MCP) | клиент | Client (der, Pl. Clients) | client (m.) | cliente (m.) | client (m., pl. invar.) | klient | cliente (m.) | 客户端 | 用戶端 | クライアント | 클라이언트 |
+| approve / reject (a client) | разрешить / отклонить | zulassen / ablehnen | autoriser / rejeter | permitir / rechazar | consenti / rifiuta | zezwól / odrzuć | permitir / rejeitar | 允许 / 拒绝 | 允許 / 拒絕 | 許可 / 拒否 | 허용 / 거부 |
+| approved (client) | подтверждённый | genehmigt | approuvé | aprobado | approvato | zatwierdzony | aprovado | 已批准 | 已核准 | 承認済み | 승인된 |
+| revoke | отозвать | widerrufen | révoquer | revocar | revoca | odwołaj | revogar | 撤销 | 撤銷 | 取り消す | 승인 취소 (кнопка; в журнале — 접근 취소됨) |
+| coordinator (group) | координатор | Koordinator | coordinateur | coordinador | coordinatore | koordynator | coordenador | 协调器 | 協調器 | コーディネーター | 코디네이터 |
 
 ## Частые слова интерфейса
 
@@ -184,6 +191,7 @@ tab — Tab (der, Pl. Tabs); screen — Bildschirm; panel (левая панел
 checkbox — Kontrollkästchen; logs — Protokolle (Protokolldateien); batch send — Stapelversand, Stapel;
 release page — Release-Seite; installer — Installationsprogramm; support request — Supportanfrage;
 macOS menu Help — Menü „Hilfe“.
+Глава «LLM-Assistenten (MCP)»: gateway — Gateway; snippet — Fragment; local socket — lokaler Socket; named pipe — Named Pipe; token — Token; indicator — Anzeige; badge `LLM` — Zeichen.
 
 ## Слова руководства (fr)
 
@@ -194,6 +202,7 @@ release page — page des versions; installer — programme d’installation; su
 support — assistance; timestamp — horodatage; tombstone — tombstone; listener — listener;
 macOS menu Help — menu « Aide »; to commit — commiter; read-only connection — connexion en lecture seule
 (с меткой: «connexions en [[ui:common.readOnly]]»).
+Глава «Assistants LLM (MCP)»: gateway — passerelle; snippet — fragment; local socket — socket local; named pipe — tube nommé; token — jeton; indicator — indicateur; badge `LLM` — « marquées `LLM` ».
 
 ## Слова руководства (es)
 
@@ -205,6 +214,7 @@ support — soporte; timestamp — marca de tiempo; tombstone — tombstone; lis
 purge — purgar, purga (как в интерфейсе); to commit — hacer commit; committed offsets — offsets con commit;
 macOS menu Help — menú Ayuda; Keychain — Llavero; Credential Manager — Administrador de credenciales;
 read-only connection — conexión de solo lectura (с меткой: «en las conexiones con la opción [[ui:common.readOnly]] activada»).
+Глава «Asistentes LLM (MCP)»: gateway — pasarela; snippet — fragmento; named pipe — canalización con nombre; token — token; indicator — indicador; badge `LLM` — marca.
 
 ## Слова руководства (it)
 
@@ -218,6 +228,7 @@ browse (просмотр сообщений) — consultazione, lettura; purge �
 to commit — eseguire il commit; committed offset — offset sottoposto a commit; lock icon — icona a forma di lucchetto;
 macOS menu Help — menu Aiuto; Keychain — Portachiavi; Credential Manager — Gestione credenziali;
 read-only connection — connessione in sola lettura (с меткой: «sulle connessioni con l’opzione [[ui:common.readOnly]] attiva»).
+Глава «Assistenti LLM (MCP)»: gateway — gateway; snippet — frammento; named pipe — named pipe; token — token; indicator — indicatore; badge `LLM` — contrassegno.
 
 ## Слова руководства (pl)
 
@@ -233,6 +244,7 @@ to commit — zatwierdzić, zatwierdzanie (как в UI: Zatwierdź); commit (с
 Credential Manager — Menedżer poświadczeń; lock icon — ikona kłódki;
 метки — только в именительном: «w polu [[ui:…]] wpisać…», «przycisk [[ui:…]]», «sekcja [[ui:…]]»;
 read-only connection — połączenie tylko do odczytu (с меткой: «w połączeniach z włączoną opcją [[ui:common.readOnly]]»).
+Глава «Asystenci LLM (MCP)»: gateway — bramka; snippet — fragment (konfiguracji); local socket — lokalne gniazdo; named pipe — potok nazwany; token — token; indicator — wskaźnik; badge `LLM` — znaczek.
 
 ## Слова руководства (pt-BR)
 
@@ -248,6 +260,7 @@ to commit — fazer commit; committed offset — offset com commit; timeout — 
 macOS menu Help — menu Ajuda; Keychain — Chaves; Credential Manager — Gerenciador de Credenciais;
 метки полей — «em [[ui:…]], digite/escolha…», «o campo [[ui:…]]», «a seção [[ui:…]]», «a tela [[ui:…]]»;
 read-only connection — conexão somente leitura (с меткой: «nas conexões com a opção [[ui:common.readOnly]] ativada»).
+Глава «Assistentes LLM (MCP)»: gateway — gateway; snippet — trecho; named pipe — pipe nomeado; token — token; indicator — indicador; badge `LLM` — indicativo.
 
 ## Слова руководства (zh-CN)
 
@@ -264,6 +277,7 @@ Secret Service — Secret Service; prod connection — 生产环境连接 (`prod
 «Build», «prod (Pro)»), с этой стороны — пробел («在 [[ui:connections.form.bootstrap]]中»); если значение кончается или начинается
 пунктуацией («…», «（…）», «。», «：»), метка берётся в кавычки “[[ui:…]]” или рядом ставится полноширинная пунктуация («点击[[ui:connections.tls.pick]]，然后…»);
 read-only connection — 只读连接 (с меткой: «在[[ui:common.readOnly]]连接上»).
+Глава «LLM 助手（MCP）»: gateway — 网关; snippet — 片段; local socket — 本地套接字; named pipe — 命名管道; token — 令牌; indicator — 指示器; badge `LLM` — 标记; метки со скобками в значении (“LLM 助手（MCP）”, “LLM 访问（仅元数据）”) — всегда в кавычках “[[ui:…]]”.
 
 ## Слова руководства (zh-TW)
 
@@ -284,6 +298,7 @@ Help menu — 「輔助說明」選單; Keychain — 鑰匙圈; Credential Manag
 кончается на «：» ([[ui:about.dataDir]], [[ui:about.logDir]]), — в 「」 без пробела («「[[ui:about.dataDir]]」後顯示的是…»); open — 開啟 (как в UI;
 системные строки macOS «強制打開», «打開» — как в системе); compacted topic — 經過 Compaction 的主題;
 read-only connection — 唯讀連線 (с меткой: «在[[ui:common.readOnly]]連線上»).
+Глава «LLM 助理（MCP）»: gateway — 閘道; snippet — 片段; local socket — 本機通訊端; named pipe — 具名管道; token — 權杖; indicator — 指示器; badge `LLM` — 標示; метки со скобками в значении (「LLM 助理（MCP）」, 「LLM 存取（僅中繼資料）」) — всегда в 「[[ui:…]]」.
 
 ## Слова руководства (ja)
 
@@ -305,6 +320,7 @@ SmartScreen «More info / Run anyway» — 「詳細情報」/「実行」; Secr
 «prod (Pro)»), метка берётся в 「[[ui:…]]」 или рядом ставится полноширинная пунктуация («[[ui:connections.form.timeout]]：…»);
 сообщения об ошибках в прозе — в 「」 («「[[ui:errors.kafka.timeout]]」は…»), фразы-значения с «。» в конце — в 「」 или в конце абзаца после «：»;
 значение, которое кончается на «：» ([[ui:about.dataDir]], [[ui:about.logDir]]) в начале пункта списка, отделяется от текста пробелом.
+Глава «LLMアシスタント（MCP）»: gateway — ゲートウェイ; snippet — スニペット; local socket — ローカルソケット; named pipe — 名前付きパイプ; token — トークン; indicator — インジケーター; badge `LLM` — バッジ; метки со скобками в значении (「LLMアシスタント（MCP）」, 「LLMアクセス（メタデータのみ）」) — всегда в 「[[ui:…]]」.
 
 ## Слова руководства (ko)
 
@@ -326,3 +342,4 @@ SmartScreen «More info / Run anyway» — '추가 정보' / '실행'; Secret Se
 значение, которое кончается или начинается пунктуацией («…», «)», «:», «(»), отделяется пробелом (частицу после него не ставить);
 сообщения об ошибках в прозе — в '…' («'[[ui:errors.kafka.timeout]]' 오류는…»), кроме значений с собственными кавычками;
 фразы-значения с «.» в конце — после «다음 메시지가 표시됩니다:» в конце предложения.
+Глава «LLM 어시스턴트(MCP)»: gateway — 게이트웨이; snippet — 스니펫; local socket — 로컬 소켓; named pipe — 명명된 파이프; token — 토큰; indicator — 표시기; badge `LLM` — 표시; значения-предложения (“…입니다”, “…했습니다”) после метки — частица «라고» («[[ui:settings.mcp.policy]]라고 표시됩니다»); значения со скобкой в конце (“LLM 접근(메타데이터만)”, “LLM 어시스턴트(MCP)”) — после метки постоянное слово («[[ui:connections.form.llmAccess]] 확인란»).

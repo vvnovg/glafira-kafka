@@ -1,0 +1,73 @@
+# LLM 助理（MCP）
+
+Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor，或其他支援 MCP（Model Context Protocol）的用戶端。助理會讀取你為其開放的叢集的中繼資料，協助你找出問題：複本不足的分區、消費延遲、持續發生的重新平衡、不理想的設定。助理無法透過 Glafira 變更叢集中的任何內容：變更由你自己在介面中進行。
+
+## 運作方式 {#how-it-works}
+
+用戶端會執行 `glafira-kafka mcp`，也就是應用程式的同一個程式檔案，只是不顯示視窗。這個指令會透過本機通訊端（在 Windows 上為具名管道）連線到正在執行的 Glafira，Glafira 再透過自己的連線回應助理的請求。密碼和憑證一律留在 Glafira 中，助理不會取得它們。
+
+如果 Glafira 未執行，用戶端會自行啟動它，並最多等待 30 秒。
+
+## 啟用 {#enable}
+
+1. 開啟[[ui:sidebar.settings]]，進入「[[ui:settings.mcp.section]]」區段。
+2. 勾選[[ui:settings.mcp.enable]]。狀態會變成[[ui:settings.mcp.state.running]]。
+3. 在連線表單中，勾選「[[ui:connections.form.llmAccess]]」並儲存。助理看不到沒有勾選此核取方塊的連線。在連線清單中，已開啟的連線會標示 `LLM`。
+
+如果管理員停用了 MCP，核取方塊會無法使用，旁邊會顯示「[[ui:settings.mcp.policy]]」。
+
+存取核取方塊不會隨連線的匯出和匯入一起轉移：在另一台電腦上，需要重新勾選。
+
+## 連接用戶端 {#connect-client}
+
+在「[[ui:settings.mcp.connectTitle]]」下有現成的片段和[[ui:settings.mcp.copy]]按鈕：
+
+- 「[[ui:settings.mcp.claudeDesktop]]」：將片段貼到 Claude Desktop 設定檔的 `mcpServers` 區段，然後重新啟動 Claude Desktop；
+- 「[[ui:settings.mcp.claudeCode]]」：使用 `claude mcp add` 指令；
+- 「[[ui:settings.mcp.otherClient]]」：適用於任何透過指令（stdio）啟動 MCP 伺服器的用戶端。
+
+片段中包含已安裝應用程式的路徑。如果你把 Glafira 重新安裝到其他位置，請重新複製片段。
+
+## 核准用戶端 {#approve}
+
+用戶端第一次連線時，Glafira 會顯示一個帶有其名稱的對話框。按一下[[ui:mcp.approval.allow]]或[[ui:mcp.approval.reject]]。在你回答之前，助理會收到「用戶端尚未核准」的訊息，並請你在 Glafira 視窗中回答。
+
+被允許的用戶端會依名稱記住，並出現在[[ui:settings.mcp.clients]]清單中。拒絕不會被記住：下次連線時 Glafira 會再次詢問。如果用戶端未提供名稱，該許可僅在本次工作階段期間有效。
+
+## 助理能看到什麼 {#what-llm-sees}
+
+助理能看到：
+
+- 勾選了「[[ui:connections.form.llmAccess]]」的連線：名稱、環境、資料夾；
+- Broker 的主機和連接埠，以及控制器；
+- 主題、分區、複本、ISR、偏移量、訊息的大致數量；
+- Broker 和主題的設定，其中密碼和其他機密值會被隱藏；
+- 消費者群組：狀態、通訊協定、協調器、成員（含 client id、主機和 `group.instance.id`）、指派、已提交的偏移量和延遲。
+
+助理看不到主題中的訊息、連線的 Bootstrap 伺服器位址和安全性設定、密碼、憑證、librdkafka 的額外屬性、傳送歷程記錄和範本。
+
+為了排查持續發生的重新平衡，助理最多可以觀察某個群組 50 秒：誰離開、誰加入、頻率如何、來自哪台主機。消費者本身的設定和日誌無法透過 Glafira 取得，助理會向你索取。
+
+主題、群組和 client id 的名稱可以由任何有權存取叢集的人設定。Glafira 會提醒助理：這些資料不是給它的指令。
+
+## 工作階段、撤銷和日誌 {#sessions-log}
+
+用戶端連線期間，左側面板底部會顯示帶有用戶端名稱的 `LLM` 指示器，處理請求時它會亮起。按一下它即可開啟 MCP 區段。
+
+- [[ui:settings.mcp.sessions]]：[[ui:settings.mcp.disconnect]]會關閉一個工作階段，[[ui:settings.mcp.disconnectAll]]會關閉所有工作階段。
+- [[ui:settings.mcp.clients]]：[[ui:settings.mcp.revoke]]會關閉該用戶端的工作階段，該用戶端下次連線時會再次要求核准。
+- 取消勾選「[[ui:connections.form.llmAccess]]」會立即生效，不需要重新連線。
+- [[ui:settings.mcp.audit.title]]：記錄每一次請求的時間、用戶端、工具、連線和結果。回應的內容不會被記錄。[[ui:settings.mcp.audit.reveal]]會開啟檔案 `mcp-audit.jsonl`。
+
+若要完全關閉 MCP，請取消勾選[[ui:settings.mcp.enable]]：用戶端會被中斷連線。
+
+## 無法運作時 {#troubleshooting}
+
+用戶端會顯示來自 Glafira 的訊息：
+
+- `MCP is disabled in Glafira`：請勾選[[ui:settings.mcp.enable]]，然後在用戶端中重新啟動 MCP 伺服器；
+- `MCP is disabled by the administrator`：MCP 已被組織的原則停用；
+- `Glafira did not start the MCP server within 30 s`：請手動啟動 Glafira，並在「[[ui:settings.mcp.section]]」區段查看狀態；
+- `Invalid MCP token`：請在用戶端中重新啟動 MCP 伺服器，Glafira 每次啟動都會發出新的權杖。
+
+在 macOS 上，請先以一般方式開啟一次未簽署的 Beta build，否則系統可能不允許用戶端啟動它。請參閱[在 macOS 上安裝](getting-started.md#install-macos)。

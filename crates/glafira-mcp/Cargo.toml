@@ -1,0 +1,22 @@
+[package]
+name = "glafira-mcp"
+version = "0.1.0"
+edition = "2024"
+description = "MCP-шлюз Glafira: сервер только для чтения, рукопожатие и транспорт шима"
+publish = false
+
+# Крейт намеренно не зависит от rdkafka и от крейта приложения: изменить кластер он не может
+# (проверяет tests/manifest.rs).
+[dependencies]
+rmcp = { version = "3.5.1", features = ["transport-async-rw"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "net", "io-util", "sync", "time", "macros"] }
+tokio-util = "0.7"
+tracing = "0.1"
+
+[dev-dependencies]
+rmcp = { version = "3.5.1", features = ["client", "transport-async-rw"] }
+tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "test-util"] }

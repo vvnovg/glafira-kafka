@@ -27,4 +27,5 @@ dist-ssr
 license-signing.key
 tools/issue-license/target
 crates/license-format/target
+crates/glafira-mcp/target
 dist-e2e

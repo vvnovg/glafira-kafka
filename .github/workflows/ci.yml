@@ -54,6 +54,11 @@ jobs:
           cargo test --manifest-path tools/issue-license/Cargo.toml
           cargo clippy --manifest-path crates/license-format/Cargo.toml --all-features -- -D warnings
           cargo clippy --manifest-path tools/issue-license/Cargo.toml -- -D warnings
+      - name: MCP-шлюз (крейт glafira-mcp)
+        run: |
+          cargo fmt --manifest-path crates/glafira-mcp/Cargo.toml --check
+          cargo clippy --manifest-path crates/glafira-mcp/Cargo.toml --all-targets -- -D warnings
+          cargo test --manifest-path crates/glafira-mcp/Cargo.toml
       - name: Закрытые ключи лицензий не в репозитории
         run: |
           if git ls-files | grep -E '(^|/)license-signing\.key$'; then
@@ -95,3 +100,5 @@ jobs:
       - run: pnpm build
       - name: Unit-тесты Rust
         run: cargo test --manifest-path src-tauri/Cargo.toml --lib
+      - name: MCP-шлюз (stdio GUI-процесса, named pipe / Unix socket)
+        run: cargo test --manifest-path crates/glafira-mcp/Cargo.toml

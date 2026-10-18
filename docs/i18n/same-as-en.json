@@ -253,5 +253,13 @@
     "connections.form.step.tcp",
     "sidebar.producer",
     "tabs.producer"
+  ],
+  "ko": [
+    "about.build",
+    "connections.form.prodPro",
+    "connections.form.step.tcp",
+    "errors.source.csv",
+    "sidebar.producer",
+    "tabs.producer"
   ]
 }

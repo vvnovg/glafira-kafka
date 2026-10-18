@@ -323,13 +323,26 @@ export interface GroupMember {
   memberId: string;
   clientId: string;
   host: string;
+  /** group.instance.id (static membership). */
+  groupInstanceId?: string;
   assignment: TopicPartitionRef[];
+  /** Целевое назначение — только у групп нового протокола (KIP-848). */
+  targetAssignment?: TopicPartitionRef[];
+}
+
+export interface GroupCoordinator {
+  id: number;
+  host: string;
+  port: number;
 }
 
 export interface GroupDescription {
   groupId: string;
   state: string;
+  /** classic, consumer (KIP-848) или unknown. */
+  groupType?: string;
   assignor: string;
+  coordinator?: GroupCoordinator | null;
   members: GroupMember[];
   error?: string;
 }

@@ -3,6 +3,7 @@
     "connections.form.prodPro",
     "connections.form.step.tcp",
     "errors.source.csv",
+    "groups.details.colInstance",
     "groups.list.title",
     "sidebar.groups",
     "sidebar.producer",
@@ -29,6 +30,7 @@
     "consumer.form.topicsLabel",
     "errors.source.csv",
     "groups.details.colHost",
+    "groups.details.colInstance",
     "groups.details.colLag",
     "groups.details.colPartition",
     "groups.details.colTopic",
@@ -75,6 +77,7 @@
     "consumer.assignment.pause",
     "consumer.form.formatLegend",
     "consumer.form.topicsLabel",
+    "groups.details.colInstance",
     "groups.details.colLag",
     "groups.details.colPartition",
     "groups.details.colTopic",
@@ -132,6 +135,7 @@
     "errors.groups.offsetsError",
     "errors.source.csv",
     "groups.details.colHost",
+    "groups.details.colInstance",
     "groups.details.colLag",
     "groups.details.colTopic",
     "groups.list.colLag",
@@ -169,6 +173,7 @@
     "errors.groups.errorAndCommitError",
     "errors.source.csv",
     "groups.details.colHost",
+    "groups.details.colInstance",
     "groups.details.colLag",
     "groups.details.colTopic",
     "groups.list.colLag",
@@ -195,6 +200,7 @@
     "consumer.form.formatLegend",
     "errors.source.csv",
     "groups.details.colHost",
+    "groups.details.colInstance",
     "groups.details.colLag",
     "groups.list.colLag",
     "groups.reset.offset",
@@ -219,6 +225,7 @@
     "errors.groups.offsetsError",
     "errors.source.csv",
     "groups.details.colHost",
+    "groups.details.colInstance",
     "groups.details.colLag",
     "groups.list.colLag",
     "groups.list.title",
@@ -235,6 +242,7 @@
     "about.build",
     "connections.form.prodPro",
     "connections.form.step.tcp",
+    "groups.details.colInstance",
     "sidebar.producer",
     "tabs.producer",
     "topics.details.colLeader"
@@ -243,6 +251,7 @@
     "about.build",
     "connections.form.prodPro",
     "connections.form.step.tcp",
+    "groups.details.colInstance",
     "sidebar.producer",
     "tabs.producer",
     "topics.details.colLeader"
@@ -250,6 +259,7 @@
   "ja": [
     "connections.form.prodPro",
     "connections.form.step.tcp",
+    "groups.details.colInstance",
     "sidebar.producer",
     "tabs.producer"
   ],
@@ -258,6 +268,7 @@
     "connections.form.prodPro",
     "connections.form.step.tcp",
     "errors.source.csv",
+    "groups.details.colInstance",
     "sidebar.producer",
     "tabs.producer"
   ]

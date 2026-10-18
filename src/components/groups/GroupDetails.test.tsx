@@ -61,6 +61,28 @@ describe("GroupDetails", () => {
     expect(await screen.findByRole("button", { name: "Удалить группу" })).toBeDisabled();
   });
 
+  it("координатор, протокол и group.instance.id участников", async () => {
+    vi.mocked(api.describeGroups).mockResolvedValue([
+      {
+        ...stable,
+        groupType: "classic",
+        coordinator: { id: 2, host: "kafka-2", port: 9092 },
+        members: [{ ...stable.members[0], groupInstanceId: "pod-0" }],
+      },
+    ]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
+    expect(await screen.findByText("Координатор: брокер 2 (kafka-2:9092) · протокол: classic")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "group.instance.id" })).toBeInTheDocument();
+    expect(screen.getByText("pod-0")).toBeInTheDocument();
+  });
+
+  it("без static membership колонки group.instance.id нет", async () => {
+    vi.mocked(api.describeGroups).mockResolvedValue([stable]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" />);
+    expect(await screen.findByText("/10.0.0.1")).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "group.instance.id" })).not.toBeInTheDocument();
+  });
+
   it("GROUP_NOT_EMPTY показывает детали и не закрывает вкладку", async () => {
     vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Empty", members: [] }]);
     vi.mocked(api.deleteGroup).mockRejectedValueOnce({ code: "GROUP_NOT_EMPTY", message: "Группа не пуста", details: "member m9" });

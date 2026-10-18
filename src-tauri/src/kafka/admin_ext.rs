@@ -308,14 +308,28 @@ pub struct MemberRaw {
     pub member_id: String,
     pub client_id: String,
     pub host: String,
+    /// `group.instance.id` (static membership); `None` — участник без него.
+    pub group_instance_id: Option<String>,
     pub assignment: Vec<(String, i32)>,
+    /// Целевое назначение — только у групп нового протокола (KIP-848).
+    pub target_assignment: Option<Vec<(String, i32)>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NodeRaw {
+    pub id: i32,
+    pub host: String,
+    pub port: u16,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GroupDescriptionRaw {
     pub group_id: String,
     pub state: String,
+    /// `classic`, `consumer` (KIP-848) или `unknown`.
+    pub group_type: &'static str,
     pub assignor: String,
+    pub coordinator: Option<NodeRaw>,
     pub members: Vec<MemberRaw>,
     pub error: Option<ItemError>,
 }
@@ -485,17 +499,35 @@ pub fn list_consumer_groups(
     Ok((groups, errors))
 }
 
+fn group_type_name(t: rd::rd_kafka_consumer_group_type_t) -> &'static str {
+    use rd::rd_kafka_consumer_group_type_t::*;
+    match t {
+        RD_KAFKA_CONSUMER_GROUP_TYPE_CLASSIC => "classic",
+        RD_KAFKA_CONSUMER_GROUP_TYPE_CONSUMER => "consumer",
+        _ => "unknown",
+    }
+}
+
+/// # Safety
+/// `a` — NULL или живое назначение, принадлежащее событию.
+unsafe fn read_assignment(a: *const rd::rd_kafka_MemberAssignment_t) -> Option<Vec<(String, i32)>> {
+    if a.is_null() {
+        return None;
+    }
+    // SAFETY: a ненулевой и жив (контракт); список (или NULL) принадлежит назначению.
+    let parts = unsafe { read_partitions(rd::rd_kafka_MemberAssignment_partitions(a)) };
+    Some(parts.into_iter().map(|p| (p.topic, p.partition)).collect())
+}
+
 /// # Safety
 /// `m` — ненулевое живое описание участника, принадлежащее событию.
 unsafe fn read_member(m: *const rd::rd_kafka_MemberDescription_t) -> MemberRaw {
-    // SAFETY: см. контракт; назначение (или NULL) принадлежит участнику.
-    let assignment = unsafe { rd::rd_kafka_MemberDescription_assignment(m) };
-    let parts = if assignment.is_null() {
-        Vec::new()
-    } else {
-        // SAFETY: assignment ненулевой и жив; список (или NULL) принадлежит назначению.
-        unsafe { read_partitions(rd::rd_kafka_MemberAssignment_partitions(assignment)) }
-    };
+    // SAFETY: см. контракт; назначения (или NULL) принадлежат участнику.
+    let assignment = unsafe { read_assignment(rd::rd_kafka_MemberDescription_assignment(m)) };
+    // SAFETY: то же.
+    let target = unsafe { read_assignment(rd::rd_kafka_MemberDescription_target_assignment(m)) };
+    // SAFETY: строка (или NULL) принадлежит живому участнику.
+    let instance = unsafe { rd::rd_kafka_MemberDescription_group_instance_id(m) };
     MemberRaw {
         // SAFETY: строки принадлежат живому участнику и копируются сразу.
         member_id: unsafe { string(rd::rd_kafka_MemberDescription_consumer_id(m)) },
@@ -503,8 +535,27 @@ unsafe fn read_member(m: *const rd::rd_kafka_MemberDescription_t) -> MemberRaw {
         client_id: unsafe { string(rd::rd_kafka_MemberDescription_client_id(m)) },
         // SAFETY: то же.
         host: unsafe { string(rd::rd_kafka_MemberDescription_host(m)) },
-        assignment: parts.into_iter().map(|p| (p.topic, p.partition)).collect(),
+        // SAFETY: instance ненулевой — строка живого участника, копируется сразу.
+        group_instance_id: (!instance.is_null()).then(|| unsafe { string(instance) }),
+        assignment: assignment.unwrap_or_default(),
+        target_assignment: target,
     }
+}
+
+/// # Safety
+/// `n` — NULL или живой узел, принадлежащий событию.
+unsafe fn read_node(n: *const rd::rd_kafka_Node_t) -> Option<NodeRaw> {
+    if n.is_null() {
+        return None;
+    }
+    // SAFETY: n ненулевой и жив (контракт); строка копируется сразу.
+    Some(unsafe {
+        NodeRaw {
+            id: rd::rd_kafka_Node_id(n),
+            host: string(rd::rd_kafka_Node_host(n)),
+            port: rd::rd_kafka_Node_port(n),
+        }
+    })
 }
 
 /// # Safety
@@ -527,7 +578,11 @@ unsafe fn read_group_description(
         // SAFETY: то же.
         state: state_name(unsafe { rd::rd_kafka_ConsumerGroupDescription_state(g) }),
         // SAFETY: то же.
+        group_type: group_type_name(unsafe { rd::rd_kafka_ConsumerGroupDescription_type(g) }),
+        // SAFETY: то же.
         assignor: unsafe { string(rd::rd_kafka_ConsumerGroupDescription_partition_assignor(g)) },
+        // SAFETY: узел (или NULL) принадлежит живому описанию группы.
+        coordinator: unsafe { read_node(rd::rd_kafka_ConsumerGroupDescription_coordinator(g)) },
         members,
         // SAFETY: объект ошибки (или NULL) принадлежит описанию группы, не освобождается.
         error: unsafe { error_obj(rd::rd_kafka_ConsumerGroupDescription_error(g)) },

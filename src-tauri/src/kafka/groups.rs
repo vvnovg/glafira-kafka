@@ -37,7 +37,21 @@ pub struct GroupMember {
     pub member_id: String,
     pub client_id: String,
     pub host: String,
+    /// `group.instance.id` (static membership).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub group_instance_id: Option<String>,
     pub assignment: Vec<TopicPartitionRef>,
+    /// Целевое назначение — только у групп нового протокола (KIP-848).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target_assignment: Option<Vec<TopicPartitionRef>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupCoordinator {
+    pub id: i32,
+    pub host: String,
+    pub port: u16,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -45,7 +59,10 @@ pub struct GroupMember {
 pub struct GroupDescription {
     pub group_id: String,
     pub state: String,
+    /// `classic`, `consumer` (KIP-848) или `unknown`.
+    pub group_type: String,
     pub assignor: String,
+    pub coordinator: Option<GroupCoordinator>,
     pub members: Vec<GroupMember>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
@@ -54,28 +71,37 @@ pub struct GroupDescription {
     pub not_found: bool,
 }
 
+fn partition_refs(parts: Vec<(String, i32)>) -> Vec<TopicPartitionRef> {
+    let mut v: Vec<TopicPartitionRef> = parts
+        .into_iter()
+        .map(|(topic, partition)| TopicPartitionRef { topic, partition })
+        .collect();
+    v.sort();
+    v
+}
+
 impl From<GroupDescriptionRaw> for GroupDescription {
     fn from(r: GroupDescriptionRaw) -> Self {
         Self {
             group_id: r.group_id,
             state: r.state,
+            group_type: r.group_type.to_string(),
             assignor: r.assignor,
+            coordinator: r.coordinator.map(|n| GroupCoordinator {
+                id: n.id,
+                host: n.host,
+                port: n.port,
+            }),
             members: r
                 .members
                 .into_iter()
-                .map(|m| {
-                    let mut assignment: Vec<TopicPartitionRef> = m
-                        .assignment
-                        .into_iter()
-                        .map(|(topic, partition)| TopicPartitionRef { topic, partition })
-                        .collect();
-                    assignment.sort();
-                    GroupMember {
-                        member_id: m.member_id,
-                        client_id: m.client_id,
-                        host: m.host,
-                        assignment,
-                    }
+                .map(|m| GroupMember {
+                    member_id: m.member_id,
+                    client_id: m.client_id,
+                    host: m.host,
+                    group_instance_id: m.group_instance_id,
+                    assignment: partition_refs(m.assignment),
+                    target_assignment: m.target_assignment.map(partition_refs),
                 })
                 .collect(),
             not_found: r
@@ -795,18 +821,74 @@ mod tests {
         GroupDescription {
             group_id: "g".into(),
             state: state.into(),
+            group_type: "classic".into(),
             assignor: "range".into(),
+            coordinator: None,
             members: (0..members)
                 .map(|i| GroupMember {
                     member_id: format!("m{i}"),
                     client_id: format!("client-{i}"),
                     host: "/10.0.0.1".into(),
+                    group_instance_id: None,
                     assignment: vec![],
+                    target_assignment: None,
                 })
                 .collect(),
             error: None,
             not_found: false,
         }
+    }
+
+    #[test]
+    fn raw_description_keeps_coordinator_type_and_static_membership() {
+        use crate::kafka::admin_ext::{GroupDescriptionRaw, MemberRaw, NodeRaw};
+        let raw = GroupDescriptionRaw {
+            group_id: "g".into(),
+            state: "Stable".into(),
+            group_type: "consumer",
+            assignor: "uniform".into(),
+            coordinator: Some(NodeRaw {
+                id: 2,
+                host: "kafka-2".into(),
+                port: 9092,
+            }),
+            members: vec![MemberRaw {
+                member_id: "m1".into(),
+                client_id: "svc".into(),
+                host: "/10.0.0.1".into(),
+                group_instance_id: Some("pod-0".into()),
+                assignment: vec![("t".into(), 1), ("t".into(), 0)],
+                target_assignment: Some(vec![("t".into(), 2)]),
+            }],
+            error: None,
+        };
+        let d = GroupDescription::from(raw);
+        assert_eq!(d.group_type, "consumer");
+        assert_eq!(
+            d.coordinator,
+            Some(GroupCoordinator {
+                id: 2,
+                host: "kafka-2".into(),
+                port: 9092
+            })
+        );
+        let m = &d.members[0];
+        assert_eq!(m.group_instance_id.as_deref(), Some("pod-0"));
+        assert_eq!(m.assignment[0].partition, 0, "назначение отсортировано");
+        assert_eq!(m.target_assignment.as_ref().unwrap()[0].partition, 2);
+        let json = serde_json::to_value(&d).unwrap();
+        assert_eq!(json["coordinator"]["host"], "kafka-2");
+        assert_eq!(json["members"][0]["groupInstanceId"], "pod-0");
+        let empty = GroupDescription::from(GroupDescriptionRaw {
+            group_id: "c".into(),
+            state: "Empty".into(),
+            group_type: "classic",
+            assignor: String::new(),
+            coordinator: None,
+            members: vec![],
+            error: None,
+        });
+        assert!(serde_json::to_value(&empty).unwrap()["coordinator"].is_null());
     }
 
     #[test]

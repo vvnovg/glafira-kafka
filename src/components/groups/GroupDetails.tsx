@@ -76,6 +76,8 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
     void offsets.refetch();
   };
   const d = desc.data;
+  // Колонка group.instance.id — только если static membership есть хотя бы у одного участника.
+  const staticMembers = d?.members.some((m) => m.groupInstanceId) ?? false;
   // Сброс применим только к группе без участников; окончательная проверка — в бэкенде.
   const resetBlock =
     d?.state === "Empty" || d?.state === "Dead"
@@ -90,6 +92,11 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         {d && (
           <span className="muted">
             {t("groups.details.summary", { state: d.state, count: d.members.length, assignor: d.assignor || "—" })}
+          </span>
+        )}
+        {d?.coordinator && (
+          <span className="muted">
+            {t("groups.details.coordinator", { id: d.coordinator.id, host: d.coordinator.host, port: d.coordinator.port, type: d.groupType ?? "—" })}
           </span>
         )}
         <select aria-label={t("groups.details.autoRefresh")} value={refreshMs} onChange={(e) => setRefreshMs(Number(e.target.value))}>
@@ -214,6 +221,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
             <tr>
               <th>Client ID</th>
               <th>{t("groups.details.colHost")}</th>
+              {staticMembers && <th>{t("groups.details.colInstance")}</th>}
               <th>Member ID</th>
               <th>{t("groups.details.colAssignment")}</th>
             </tr>
@@ -223,6 +231,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
               <tr key={m.memberId}>
                 <td>{m.clientId}</td>
                 <td>{m.host}</td>
+                {staticMembers && <td>{m.groupInstanceId ?? ""}</td>}
                 <td className="muted">{m.memberId}</td>
                 <td>{m.assignment.map((a) => `${a.topic}:${a.partition}`).join(", ")}</td>
               </tr>

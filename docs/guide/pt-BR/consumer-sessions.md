@@ -20,7 +20,7 @@ Abra uma sessão de uma destas três formas:
 - [[ui:topics.details.consume]] na aba de um tópico — o tópico vem preenchido;
 - [[ui:groups.details.join]] na aba de um grupo — o grupo e os tópicos em que ele tem commits vêm preenchidos.
 
-Cada vez, abre-se uma nova aba, então várias sessões podem rodar ao mesmo tempo.
+A cada vez, uma nova aba é aberta, então várias sessões podem rodar ao mesmo tempo.
 
 Na seção [[ui:consumer.form.groupTopics]]:
 
@@ -65,7 +65,7 @@ Se a sessão não responder a tempo, o aplicativo avisa que não se sabe se o co
 
 ## Pausar partições {#pause-partitions}
 
-O painel à direita da tabela lista as partições atribuídas à sessão como `topic:partition`. Clique em [[ui:consumer.assignment.pause]] ao lado de uma partição para parar de lê-la e em [[ui:consumer.assignment.resume]] para continuar. Uma partição pausada é marcada com [[ui:consumer.assignment.paused]].
+O painel à direita da tabela lista as partições atribuídas à sessão como `topic:partition`. Clique em [[ui:consumer.assignment.pause]] ao lado de uma partição para parar de lê-la e em [[ui:consumer.assignment.resume]] para continuar. Uma partição pausada aparece como [[ui:consumer.assignment.paused]].
 
 Pausar não faz a sessão sair do grupo, então não há rebalanceamento. A partição continua atribuída à sessão, e os outros membros não a leem enquanto ela está pausada. Pausar não altera nada no cluster e não exige confirmação.
 

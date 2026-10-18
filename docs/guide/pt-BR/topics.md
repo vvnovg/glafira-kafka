@@ -22,7 +22,7 @@ Abaixo fica a tabela de brokers, com `ID` e [[ui:cluster.overview.address]]. O b
 
 A tela [[ui:sidebar.topics]] lista os tópicos do cluster. Clique em uma linha para abrir o tópico em sua própria aba.
 
-As colunas são [[ui:topics.list.colName]], [[ui:topics.list.colPartitions]], `RF` (fator de replicação), [[ui:topics.list.colMessages]], `cleanup.policy` e [[ui:topics.list.colUnderRepl]] (o número de partições sub-replicadas). A contagem de mensagens é aproximada: é a diferença entre os offsets final e inicial das partições. A compactação e os marcadores de transação tornam o número real menor. A contagem de mensagens e o valor de `cleanup.policy` são carregados apenas para as linhas até as quais você rola.
+As colunas são [[ui:topics.list.colName]], [[ui:topics.list.colPartitions]], `RF` (fator de replicação), [[ui:topics.list.colMessages]], `cleanup.policy` e [[ui:topics.list.colUnderRepl]] (o número de partições sub-replicadas). A contagem de mensagens é aproximada: é a diferença entre os offsets final e inicial das partições. A compactação e os marcadores de transação tornam o número real menor. A contagem de mensagens e o valor de `cleanup.policy` são carregados apenas para as linhas que ficam visíveis durante a rolagem.
 
 Controles da barra de ferramentas:
 

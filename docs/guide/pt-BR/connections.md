@@ -155,7 +155,7 @@ A pré-visualização é atualizada a cada alteração na caixa de diálogo. Ela
 Como o aplicativo associa o arquivo às suas conexões:
 
 - As conexões são associadas por um ID interno, não pelo nome. Uma conexão é considerada existente se o arquivo contém essa mesma conexão: por exemplo, ela foi exportada deste computador ou importada antes da mesma origem.
-- Uma conexão atualizada recebe as configurações do arquivo. Suas senhas e a posição dela na árvore são mantidas.
+- Uma conexão atualizada recebe as configurações do arquivo. As suas senhas e a posição da conexão na árvore são mantidas.
 - As pastas existentes não são renomeadas nem movidas. As novas conexões do arquivo vão para elas mesmo assim.
 - Se uma nova conexão tiver o mesmo nome de outra na mesma pasta, um número é acrescentado, por exemplo `kafka-dev (2)`.
 - As conexões que esta versão do Glafira não suporta, ou que contêm segredos nas propriedades adicionais, são ignoradas.

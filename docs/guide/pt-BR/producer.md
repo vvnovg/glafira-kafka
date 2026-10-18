@@ -54,7 +54,7 @@ Os marcadores são substituídos por valores a cada envio. Eles funcionam na cha
 - `{{randomString 8}}` — uma string aleatória de letras latinas e dígitos com o comprimento indicado, até 100000.
 - `{{env NAME}}` — o valor da variável de ambiente `NAME`. Se ela não estiver definida, nada é enviado e um erro aparece.
 
-Espaços dentro dos delimitadores são permitidos. Um marcador desconhecido ou um `}}` ausente interrompe o envio com um erro. Para enviar `{{` como texto, escreva `\{{`.
+Espaços entre as chaves duplas são permitidos. Um marcador desconhecido ou um `}}` ausente interrompe o envio com um erro. Para enviar `{{` como texto, escreva `\{{`.
 
 Com o formato `json`, o JSON é verificado depois que os marcadores são substituídos. Os marcadores que geram texto precisam de aspas: `{"id": "{{uuid}}"}`. Os números não: `{"n": {{seq}}}`.
 
@@ -103,7 +103,7 @@ Em uma conexão prod, a execução pede o nome da conexão e é confirmada com [
 
 ## Enviar a partir de um arquivo {#batch-file}
 
-No modo [[ui:producer.batch.modeFile]], cada linha ou registro de um arquivo vira uma mensagem. Os arquivos suportados são JSON Lines (`.jsonl`, `.ndjson`) e CSV (`.csv`).
+Com o modo [[ui:producer.batch.modeFile]] selecionado, cada linha ou registro de um arquivo vira uma mensagem. Os arquivos suportados são JSON Lines (`.jsonl`, `.ndjson`) e CSV (`.csv`).
 
 1. Em [[ui:producer.topic]], no formulário acima, informe o tópico. Todas as mensagens vão para esse tópico.
 2. Selecione [[ui:producer.batch.modeFile]] e clique em [[ui:producer.batch.chooseFile]].
@@ -141,6 +141,6 @@ As [[ui:producer.settings.legend]] valem para os envios individuais e para os lo
 - `1` — só o leader confirma. É mais rápido, mas uma mensagem pode se perder se o leader falhar antes que os followers a copiem.
 - `0` — o produtor não espera confirmação. As mensagens podem se perder, e nenhum offset é retornado.
 
-A opção [[ui:producer.settings.compression]] comprime os batches de mensagens: `none` (o padrão), `gzip`, `snappy`, `lz4` ou `zstd`. A compressão economiza tráfego de rede e espaço em disco ao custo de um pouco de CPU. `zstd` e `lz4` são escolhas comuns. Para uma única mensagem pequena, o ganho é pequeno.
+O campo [[ui:producer.settings.compression]] define a compressão dos batches de mensagens: `none` (o padrão), `gzip`, `snappy`, `lz4` ou `zstd`. A compressão economiza tráfego de rede e espaço em disco ao custo de um pouco de CPU. `zstd` e `lz4` são escolhas comuns. Para uma única mensagem pequena, o ganho é pequeno.
 
 A opção [[ui:producer.settings.idempotence]] define `enable.idempotence`. Ela evita duplicatas quando o cliente repete um envio após um erro de rede. Ela exige `acks` igual a `all`; com outros valores, o aplicativo mostra um erro e não envia nada.

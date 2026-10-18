@@ -62,7 +62,6 @@ impl BackendError {
         Self::new("not_found", message)
     }
 
-    #[allow(dead_code)] // вызывает сервер (Task 4); атрибут снимается там
     pub(crate) fn unexpected() -> Self {
         Self::new("internal", "Unexpected backend response")
     }

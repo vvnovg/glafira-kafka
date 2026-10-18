@@ -1,109 +1,109 @@
-# Troubleshooting
+# 故障排除
 
-This chapter explains common connection errors and what to check for each of them. It also shows where the logs are and what to include in a support request. On macOS, the Help menu opens this chapter with [[ui:menu.troubleshooting]].
+本章说明常见的连接错误以及每种错误需要检查的内容，还介绍日志的位置以及支持请求中应包含哪些信息。在 macOS 上，可以通过“帮助”菜单中的[[ui:menu.troubleshooting]]打开本章。
 
-An error message has a short text and, on most screens, the error code in brackets, for example `TIMEOUT`. Expand [[ui:common.details]] to see the original message from the Kafka client (librdkafka). It often names the exact broker address and cause.
+错误消息包含简短的文本，并且在大多数页面上，括号中还会显示错误代码，例如 `TIMEOUT`。展开[[ui:common.details]]可查看 Kafka 客户端（librdkafka）的原始消息，其中通常会指明具体的 Broker 地址和原因。
 
-## Cannot connect {#cannot-connect}
+## 无法连接 {#cannot-connect}
 
-Start with [[ui:connections.form.test]] in the connection form, see [Test the connection](connections.md#test). The test stops at the first failed step, and the step shows where to look:
+先在连接表单中点击[[ui:connections.form.test]]，参见[测试连接](connections.md#test)。测试会在第一个失败的步骤处停止，而该步骤指明了应检查的方向：
 
-- [[ui:connections.form.step.config]] — the problem is in the form itself: an address without a port, a missing or unreadable certificate file, a wrong certificate password. The error names the field. For certificate files, see [TLS errors](troubleshooting.md#tls-errors).
-- [[ui:connections.form.step.tcp]] — the computer cannot reach the bootstrap servers. See [DNS and TCP](troubleshooting.md#dns-tcp).
-- [[ui:connections.form.step.kafka]] — the network works, but the TLS handshake, the SASL login or the metadata request failed. See [TLS errors](troubleshooting.md#tls-errors), [SASL errors](troubleshooting.md#sasl-errors) and [Timeouts](troubleshooting.md#timeouts).
+- [[ui:connections.form.step.config]]：问题出在表单本身，例如地址缺少端口、证书文件缺失或无法读取、证书密码错误。错误会指明相应字段。证书文件问题参见 [TLS 错误](troubleshooting.md#tls-errors)。
+- [[ui:connections.form.step.tcp]]：计算机无法访问 Bootstrap 服务器。参见 [DNS 和 TCP](troubleshooting.md#dns-tcp)。
+- [[ui:connections.form.step.kafka]]：网络正常，但 TLS 握手、SASL 登录或元数据请求失败。参见 [TLS 错误](troubleshooting.md#tls-errors)、[SASL 错误](troubleshooting.md#sasl-errors)和[超时](troubleshooting.md#timeouts)。
 
-The most common cause is a protocol that does not match the port. Each broker listener has its own port and protocol. Ask your Kafka administrators which port belongs to which protocol, see [Security protocols](connections.md#security).
+最常见的原因是协议与端口不匹配。每个 Broker 监听器都有自己的端口和协议。请向你的 Kafka 管理员询问哪个端口对应哪种协议，参见[安全协议](connections.md#security)。
 
-If the test passes but reading or sending fails, the cause is often the broker addresses. The client gets the list of brokers from the bootstrap server and then connects to each broker at the address the broker advertises (`advertised.listeners`). If these addresses are internal, for example Docker or Kubernetes host names, they cannot be reached from your computer. The addresses are listed in the broker table of the cluster overview, see [Cluster overview](topics.md#cluster-overview). Ask your administrators for a listener that is reachable from outside.
+如果测试通过，但读取或发送失败，原因通常在于 Broker 地址。客户端从 Bootstrap 服务器获取 Broker 列表，然后按每个 Broker 公布的地址（`advertised.listeners`）连接到该 Broker。如果这些地址是内部地址，例如 Docker 或 Kubernetes 主机名，你的计算机就无法访问它们。这些地址列在集群概览的 Broker 表中，参见[集群概览](topics.md#cluster-overview)。请向管理员申请一个可从外部访问的监听器。
 
-## DNS and TCP {#dns-tcp}
+## DNS 和 TCP {#dns-tcp}
 
-[[ui:errors.kafka.tcpUnreachable]] means that the app could not open a TCP connection to any address in [[ui:connections.form.bootstrap]]. Each address gets up to 5 seconds. The details show the last address tried and the reason. `DNS` in the details means the host name could not be resolved.
+[[ui:errors.kafka.tcpUnreachable]]表示应用无法与[[ui:connections.form.bootstrap]]中的任何地址建立 TCP 连接。每个地址最多尝试 5 秒。详细信息中会显示最后尝试的地址和原因。详细信息中的 `DNS` 表示无法解析主机名。
 
-Check:
+请检查：
 
-- the host name and port, without a protocol prefix such as `https://`;
-- that a VPN is on, if the cluster is in a private network;
-- that a firewall does not block the port;
-- for a broker in Docker, that the port is published to the host, for example `-p 9092:9092`.
+- 主机名和端口，不要带 `https://` 之类的协议前缀；
+- 如果集群位于专用网络中，VPN 是否已开启；
+- 防火墙是否阻止了该端口；
+- 对于 Docker 中的 Broker，端口是否已发布到主机，例如 `-p 9092:9092`。
 
-To check the port outside the app, run `nc -vz <host> <port>` on macOS or Linux, or `Test-NetConnection <host> -Port <port>` in PowerShell on Windows.
+要在应用之外检查端口，可在 macOS 或 Linux 上运行 `nc -vz <host> <port>`，或在 Windows 的 PowerShell 中运行 `Test-NetConnection <host> -Port <port>`。
 
-[[ui:errors.kafka.connectionFailed]] after the TCP step has passed usually means that a broker closed the connection or could not be reached later. Also check the broker addresses, see [Cannot connect](troubleshooting.md#cannot-connect).
+TCP 步骤通过后出现[[ui:errors.kafka.connectionFailed]]，通常表示某个 Broker 关闭了连接，或之后无法访问。另请检查 Broker 地址，参见[无法连接](troubleshooting.md#cannot-connect)。
 
-## TLS errors {#tls-errors}
+## TLS 错误 {#tls-errors}
 
-Errors on the [[ui:connections.form.step.kafka]] step during the TLS handshake:
+TLS 握手期间的错误（属于步骤[[ui:connections.form.step.kafka]]）：
 
-- [[ui:errors.kafka.plaintextListener]].
-- [[ui:errors.kafka.caUntrusted]]. Set [[ui:connections.tls.ca]] to the file of the CA that signed the broker certificates. Your administrators can give you this file. With an empty field, only the system root certificates are trusted.
-- [[ui:errors.kafka.hostnameMismatch]]. Connect by the name that the certificate was issued for, not by an IP address or an alias. In test environments only, you can turn off [[ui:connections.tls.verifyHostname]].
-- [[ui:errors.kafka.clientCertRejected]]. The broker requires a client certificate, or it does not trust the one you use. Check that [[ui:connections.tls.mtls]] is on and that the certificate was issued for this cluster. See [Client certificate (mTLS)](connections.md#mtls).
-- [[ui:errors.kafka.tlsError]] — another TLS problem. Expand [[ui:common.details]] for the cause.
+- [[ui:errors.kafka.plaintextListener]]。
+- [[ui:errors.kafka.caUntrusted]]。请将[[ui:connections.tls.ca]]设为为 Broker 证书签名的 CA 的文件，该文件可向管理员索取。字段为空时，只信任系统根证书。
+- [[ui:errors.kafka.hostnameMismatch]]。请使用证书签发时所对应的名称连接，而不是 IP 地址或别名。仅在测试环境中，可以关闭[[ui:connections.tls.verifyHostname]]。
+- [[ui:errors.kafka.clientCertRejected]]。Broker 要求提供客户端证书，或不信任你使用的证书。请检查是否已开启[[ui:connections.tls.mtls]]，以及证书是否为此集群签发。参见[客户端证书（mTLS）](connections.md#mtls)。
+- [[ui:errors.kafka.tlsError]]：其他 TLS 问题。展开[[ui:common.details]]可查看原因。
 
-If you chose a protocol without SSL and still see a TLS error, the port is probably a TLS listener. The details then say `connecting to a SSL listener?`. Choose `SSL` or `SASL_SSL`, or use the port of a listener without TLS.
+如果选择了不带 SSL 的协议却仍出现 TLS 错误，说明该端口很可能是 TLS 监听器。此时详细信息中会显示 `connecting to a SSL listener?`。请选择 `SSL` 或 `SASL_SSL`，或使用不带 TLS 的监听器的端口。
 
-Problems with certificate files are reported on the [[ui:connections.form.step.config]] step, before the app connects. The message starts with the field name: trusted CA, client certificate or client key. Common cases:
+证书文件的问题会在应用连接之前，于[[ui:connections.form.step.config]]步骤中报告。消息以字段名称开头：受信任的 CA、客户端证书或客户端私钥。常见情况：
 
-- The path is not absolute or the file cannot be read. Enter the full path or choose the file with [[ui:connections.tls.pick]].
-- [[ui:errors.tls.keyEncrypted]], [[ui:errors.tls.keyBadPassword]], [[ui:errors.tls.clientPkcs12BadPassword]] or [[ui:errors.tls.jksBadStorePassword]] — enter the right password in the form.
-- [[ui:errors.tls.keyMismatch]] — the key file belongs to another certificate.
-- The client certificate has expired or is not valid yet — the message gives the date. Ask for a new certificate.
-- The PKCS#12 store uses a legacy algorithm, or the store is in JCEKS format. Convert the file as shown in [Certificate formats](connections.md#certificate-formats).
+- 路径不是绝对路径，或文件无法读取。请输入完整路径，或点击[[ui:connections.tls.pick]]，然后选择文件。
+- [[ui:errors.tls.keyEncrypted]]、[[ui:errors.tls.keyBadPassword]]、[[ui:errors.tls.clientPkcs12BadPassword]]或[[ui:errors.tls.jksBadStorePassword]]：请在表单中输入正确的密码。
+- [[ui:errors.tls.keyMismatch]]：私钥文件属于另一个证书。
+- 客户端证书已过期或尚未生效：消息中会给出日期。请申请新证书。
+- PKCS#12 存储使用了旧算法，或存储为 JCEKS 格式。请按[证书格式](connections.md#certificate-formats)中所示转换文件。
 
-## SASL errors {#sasl-errors}
+## SASL 错误 {#sasl-errors}
 
-[[ui:errors.kafka.authFailed]] means that the broker did not accept the SASL login. Check:
+[[ui:errors.kafka.authFailed]]表示 Broker 未接受 SASL 登录。请检查：
 
-- the username and password. When you edit a saved connection, an empty password field keeps the saved password. Type the password again if you are not sure it is right;
-- [[ui:connections.form.saslMechanism]]. It must be the mechanism your user was created for. SCRAM credentials are created separately for `SCRAM-SHA-256` and `SCRAM-SHA-512`, and `PLAIN` users are configured separately again;
-- the protocol: `SASL_SSL` and `SASL_PLAINTEXT` usually use different ports.
+- 用户名和密码。编辑已保存的连接时，密码字段留空会保留已保存的密码。如果不确定密码是否正确，请重新输入；
+- [[ui:connections.form.saslMechanism]]。它必须是创建你的用户时所针对的机制。SCRAM 凭据需要分别为 `SCRAM-SHA-256` 和 `SCRAM-SHA-512` 创建，`PLAIN` 用户又是单独配置的；
+- 协议：`SASL_SSL` 和 `SASL_PLAINTEXT` 通常使用不同的端口。
 
-[[ui:errors.connections.saslPasswordMissing]] — no password is saved for this connection, for example after an import. Open the connection, enter the password and save it. See [Passwords](connections.md#passwords).
+[[ui:errors.connections.saslPasswordMissing]]：此连接没有保存密码，例如在导入之后。请打开该连接，输入密码并保存。参见[密码](connections.md#passwords)。
 
-[[ui:errors.secrets.keychain]] — the app cannot read the password from the system secret store. On macOS, allow access when Keychain asks. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+[[ui:errors.secrets.keychain]]：应用无法从系统密钥存储中读取密码。在 macOS 上，钥匙串询问时请允许访问。在 Linux 上，请检查你的会话中是否运行着 GNOME Keyring、KWallet 或其他 Secret Service 提供程序。
 
-[[ui:errors.kafka.notAuthorized]] is different: the login succeeded, but the Kafka user has no rights (ACLs) for this operation, for example reading a topic or a group. Ask your administrators for the rights. Note that Kafka does not report an error for topics that you are not allowed to describe: they are simply missing from the topic list.
+[[ui:errors.kafka.notAuthorized]]则不同：登录已成功，但该 Kafka 用户没有执行此操作的权限（ACL），例如读取主题或组。请向管理员申请权限。请注意，对于你无权查看描述信息的主题，Kafka 不会报告错误：它们只是不会出现在主题列表中。
 
-## Timeouts {#timeouts}
+## 超时 {#timeouts}
 
-[[ui:errors.kafka.timeout]] means that the broker did not answer in time. Typical causes are a slow network or VPN, an overloaded cluster, or broker addresses that cannot be reached, see [Cannot connect](troubleshooting.md#cannot-connect).
+[[ui:errors.kafka.timeout]]表示 Broker 未及时响应。典型原因是网络或 VPN 较慢、集群过载，或 Broker 地址无法访问，参见[无法连接](troubleshooting.md#cannot-connect)。
 
-A TLS or SASL problem can look like a timeout. The app tries to find the real cause and shows it instead, but this is not always possible. Expand [[ui:common.details]]: messages such as `SSL handshake failed` or `SASL authentication error` point to the cause.
+TLS 或 SASL 问题也可能表现为超时。应用会尝试找出真正的原因并改为显示该原因，但并非总能做到。展开[[ui:common.details]]：`SSL handshake failed` 或 `SASL authentication error` 之类的消息会指明原因。
 
-If the network is just slow, increase [[ui:connections.form.timeout]] in the connection form. The default is `30000` ms. This value applies to requests to the brokers, to sending messages and to reading. The connection test uses its own limits (5 seconds for each TCP address and 10 seconds for the Kafka step), so a larger value does not change the test.
+如果只是网络较慢，请在连接表单中调大[[ui:connections.form.timeout]]，默认为 `30000` ms。该值适用于对 Broker 的请求、发送消息和读取。连接测试使用自己的时限（每个 TCP 地址 5 秒，Kafka 步骤 10 秒），因此调大该值不会影响测试。
 
-## An action is unavailable or refused {#read-only-blocked}
+## 操作不可用或被拒绝 {#read-only-blocked}
 
-If a button is hidden or disabled, or an action is refused, check these causes:
+如果按钮被隐藏或禁用，或者操作被拒绝，请检查以下原因：
 
-- The connection is read-only. A lock icon next to its name marks it. Buttons that change the cluster are hidden or disabled. If such a request still reaches the app core, for example after the mode was turned on while a screen was open, the error says that the connection is read-only. To make changes, open the connection, clear [[ui:common.readOnly]] and save. In Free, this box cannot be cleared on a prod connection. See [Read-only](connections.md#read-only).
-- The connection is prod. Changes ask you to type the connection name. Until the name matches, the action is not performed. See [Environments and prod](connections.md#environments).
-- The feature needs Pro. The error says [[ui:errors.license.proRequired]], or gives the end date if the license has expired. See [Free and Pro](license-updates.md#free-and-pro).
-- The consumer group has active members. Offsets can be reset and a group can be deleted only when it has no members. See [Reset offsets](groups.md#reset-offsets).
-- The setting is managed by your organization. A policy can set the interface language, the license key and update checks, and these cannot be changed in the app. See [Settings set by your organization](getting-started.md#managed-settings).
-- Kafka refused the operation with [[ui:errors.kafka.notAuthorized]]. This is a matter of rights in the cluster, not of Glafira settings. See [SASL errors](troubleshooting.md#sasl-errors).
+- 连接为只读。只读连接的名称旁带有锁形图标。会更改集群的按钮会被隐藏或禁用。如果此类请求仍到达了应用内核，例如在页面打开期间开启了该模式，错误会提示连接为只读。如需进行更改，请打开该连接，取消选中[[ui:common.readOnly]]并保存。在 Free 中，prod 连接无法取消选中该复选框。参见[只读](connections.md#read-only)。
+- 连接为 prod。更改时会要求输入连接名称，名称一致之前不会执行操作。参见[环境与 prod](connections.md#environments)。
+- 该功能需要 Pro。错误会显示[[ui:errors.license.proRequired]]；如果许可证已过期，则会给出到期日期。参见 [Free 和 Pro](license-updates.md#free-and-pro)。
+- 消费者组有活动成员。只有在组中没有成员时，才能重置偏移量或删除组。参见[重置偏移量](groups.md#reset-offsets)。
+- 该设置由你的组织管理。策略可以设置界面语言、许可证密钥和更新检查，这些都无法在应用中更改。参见[由组织设置的选项](getting-started.md#managed-settings)。
+- Kafka 以[[ui:errors.kafka.notAuthorized]]拒绝了操作。这是集群中的权限问题，与 Glafira 设置无关。参见 [SASL 错误](troubleshooting.md#sasl-errors)。
 
-## Logs {#logs}
+## 日志 {#logs}
 
-The app writes a log of its work and of Kafka client errors. The exact folder is shown on the [[ui:sidebar.about]] screen in [[ui:about.logDir]]. By default:
+应用会将自身的工作情况和 Kafka 客户端错误写入日志。确切的文件夹显示在[[ui:sidebar.about]]页面的“[[ui:about.logDir]]”一项中。默认位置：
 
-- macOS: `~/Library/Logs/io.github.vvnovg.glafira.kafka`
-- Windows: `%LOCALAPPDATA%\io.github.vvnovg.glafira.kafka\logs`
-- Linux: `~/.local/share/io.github.vvnovg.glafira.kafka/logs`
+- macOS：`~/Library/Logs/io.github.vvnovg.glafira.kafka`
+- Windows：`%LOCALAPPDATA%\io.github.vvnovg.glafira.kafka\logs`
+- Linux：`~/.local/share/io.github.vvnovg.glafira.kafka/logs`
 
-The current file is `app.log`. When it reaches 5 MB, it is renamed to `app.1.log`, and older files move on to `app.2.log` and so on. The app keeps up to five files and deletes the oldest one.
+当前文件为 `app.log`。达到 5 MB 时，它会被重命名为 `app.1.log`，更早的文件依次变为 `app.2.log`，以此类推。应用最多保留五个文件，并删除最旧的文件。
 
-Passwords are not written to the logs. Broker addresses and the texts of Kafka errors are written. You do not need to collect the files by hand: the diagnostics archive includes them, see [Diagnostics archive](license-updates.md#diagnostics).
+日志中不会写入密码，但会写入 Broker 地址和 Kafka 错误文本。无需手动收集这些文件：诊断归档中已包含它们，参见[诊断归档](license-updates.md#diagnostics)。
 
-## Contact support {#support}
+## 联系技术支持 {#support}
 
-Before you contact support, run [[ui:connections.form.test]] and note which step fails. Then send the request to whoever supports Glafira for you, for example your administrators. Include:
+联系技术支持之前，请先运行[[ui:connections.form.test]]，并记下哪个步骤失败。然后将请求发送给为你提供 Glafira 支持的人员，例如你的管理员。请附上：
 
-- the diagnostics archive, see [Diagnostics archive](license-updates.md#diagnostics). It contains the version, the build, the logs and the connection profiles without passwords;
-- what you did, what you expected and what happened, step by step;
-- the full error text, together with the [[ui:common.details]] content. You can select and copy this text;
-- a screenshot, if the problem is in the interface;
-- the time when the error happened, to find it in the logs.
+- 诊断归档，参见[诊断归档](license-updates.md#diagnostics)。其中包含版本、build、日志以及不含密码的连接配置；
+- 你执行了哪些操作、预期结果是什么、实际发生了什么，请逐步说明；
+- 完整的错误文本以及[[ui:common.details]]中的内容。这些文本可以选中并复制；
+- 如果问题出在界面上，请附上截图；
+- 错误发生的时间，以便在日志中查找。
 
-If you cannot create the archive, give the [[ui:about.version]] and [[ui:about.build]] values from the [[ui:sidebar.about]] screen and attach the log files from the logs folder.
+如果无法创建归档，请提供[[ui:sidebar.about]]页面上的[[ui:about.version]]和[[ui:about.build]]的值，并附上日志文件夹中的日志文件。

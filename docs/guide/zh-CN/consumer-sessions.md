@@ -1,89 +1,89 @@
-# Consumer sessions
+# 消费者会话
 
-A consumer session reads topics as a real member of a consumer group. Consumer sessions are a Pro feature.
+消费者会话以消费者组真正成员的身份读取主题。消费者会话是 Pro 功能。
 
-## What a session is {#what-is}
+## 什么是会话 {#what-is}
 
-[Browsing](browse.md) reads messages without joining a group and changes nothing in the cluster. A session is different: it joins a group with the given `group.id`, gets partitions from Kafka and can commit offsets. Use it to read what a group would read, to move the offsets of a group by committing, or to watch how a group rebalances.
+[浏览](browse.md)读取消息时不加入组，也不会改变集群中的任何内容。会话则不同：它以指定的 `group.id` 加入组，从 Kafka 获得分区，并可以提交偏移量。可用会话查看某个组将会读到的内容、通过提交移动组的偏移量，或观察组如何重平衡。
 
-A session affects the cluster. When it joins or leaves, Kafka redistributes the partitions of the group, and the other members go through a rebalance. Commits change the offsets of the group, which its applications will use.
+会话会影响集群。会话加入或离开时，Kafka 会重新分配该组的分区，组的其他成员会经历一次重平衡。提交会改变组的偏移量，该组的应用将使用这些偏移量。
 
-In Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] and [[ui:groups.details.join]] are disabled and marked with a lock and `Pro`. If a session tab opens without an active Pro license, it shows [[ui:consumer.proOnly]] and the link [[ui:common.openLicense]]. See [Activate a key](license-updates.md#activate).
+在 Free 中，[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]和[[ui:groups.details.join]]被禁用，并带有锁形图标和 `Pro` 标记。如果在没有有效 Pro 许可证的情况下打开会话标签页，会显示“[[ui:consumer.proOnly]]”以及链接：[[ui:common.openLicense]]。参见[激活密钥](license-updates.md#activate)。
 
-Sessions are not available on [[ui:common.readOnly]] connections: the tab shows [[ui:consumer.readOnlyBlocked]]. If a connection becomes read-only while a session runs, the session leaves the group.
+在[[ui:common.readOnly]]连接上无法使用会话，标签页会显示“[[ui:consumer.readOnlyBlocked]]”如果会话运行期间连接变为只读，会话会离开该组。
 
-## Start a session {#start-session}
+## 启动会话 {#start-session}
 
-Open a session in one of three ways:
+可通过以下三种方式之一打开会话：
 
-- [[ui:sidebar.consumer]] under the connection in the [[ui:sidebar.connections]] panel — an empty form;
-- [[ui:topics.details.consume]] on a topic tab — the topic is filled in;
-- [[ui:groups.details.join]] on a group tab — the group and the topics it has commits for are filled in.
+- [[ui:sidebar.connections]]面板中连接下方的[[ui:sidebar.consumer]]：空白表单；
+- 主题标签页中的[[ui:topics.details.consume]]：已填入主题；
+- 组标签页中的[[ui:groups.details.join]]：已填入该组及其有提交的主题。
 
-Each time, a new tab opens, so several sessions can run at once.
+每次都会打开一个新标签页，因此可以同时运行多个会话。
 
-In [[ui:consumer.form.groupTopics]]:
+在[[ui:consumer.form.groupTopics]]中：
 
-- `group.id` — the group to join. If you do not enter one, the app suggests a new name such as `glafira-kafka-anna-1a2b3c`. A new group has no commits.
-- [[ui:consumer.form.topicsLabel]] — topic names separated by commas or spaces. Or select [[ui:consumer.form.useRegex]] and enter a [[ui:consumer.form.patternLabel]], for example `orders\..*`. The expression is matched from the start of the name: `^` is added if it is missing. Topics that match and are created later are added within a few minutes (on the metadata refresh); this causes a rebalance.
-- `auto.offset.reset` — where to start in partitions for which the group has no committed offset: [[ui:consumer.form.resetLatest]] (the default) or [[ui:consumer.form.resetEarliest]]. Where the group has a committed offset, reading continues from it.
-- [[ui:consumer.form.autoCommit]] — commit read offsets automatically. Off by default. See [Commits](consumer-sessions.md#commits).
-- `isolation.level` — `read_committed` (the default) shows only messages of committed transactions. `read_uncommitted` also shows messages of open and aborted transactions.
+- `group.id`：要加入的组。如果不填写，应用会建议一个新名称，例如 `glafira-kafka-anna-1a2b3c`。新组没有任何提交。
+- [[ui:consumer.form.topicsLabel]]：用逗号或空格分隔的主题名称。也可以选中[[ui:consumer.form.useRegex]]，并输入[[ui:consumer.form.patternLabel]]，例如 `orders\..*`。表达式从名称开头开始匹配：如果缺少 `^`，会自动添加。之后创建的匹配主题会在几分钟内（元数据刷新时）加入，这会引发一次重平衡。
+- `auto.offset.reset`：对于该组没有已提交偏移量的分区，从哪里开始读取：[[ui:consumer.form.resetLatest]]（默认）或[[ui:consumer.form.resetEarliest]]。对于该组有已提交偏移量的分区，会从该偏移量继续读取。
+- [[ui:consumer.form.autoCommit]]：自动提交已读取的偏移量。默认关闭。参见[提交](consumer-sessions.md#commits)。
+- `isolation.level`：`read_committed`（默认）只显示已提交事务中的消息。`read_uncommitted` 还会显示未完成和已中止事务中的消息。
 
-In [[ui:consumer.form.formatLegend]], choose the [[ui:consumer.form.keyFormat]] and the [[ui:consumer.form.valueFormat]], as in browsing. See [Formats](browse.md#formats). [[ui:consumer.form.buffer]] sets how many messages the table keeps, from 1 to 100000; the default is 5000.
+在[[ui:consumer.form.formatLegend]]中，选择[[ui:consumer.form.keyFormat]]和[[ui:consumer.form.valueFormat]]，与浏览时相同。参见[格式](browse.md#formats)。通过[[ui:consumer.form.buffer]]，可设置表格保留的消息数，范围为 1 到 100000，默认为 5000。
 
-The filters work as in browsing. See [Filters](browse.md#filters).
+筛选条件的用法与浏览时相同。参见[筛选条件](browse.md#filters)。
 
-Click [[ui:consumer.actions.connect]]. On a prod connection, the app asks you to type the connection name and confirm with [[ui:consumer.dialog.confirm]]. While the session runs, the form cannot be changed.
+点击[[ui:consumer.actions.connect]]。在 prod 连接上，应用会要求输入连接名称，并点击[[ui:consumer.dialog.confirm]]确认。会话运行期间，表单无法更改。
 
-## Reading {#reading}
+## 读取 {#reading}
 
-The state line next to the buttons shows [[ui:consumer.status.connecting]], then [[ui:consumer.status.inGroup]]. It also shows how many messages were read, how many matched the filters and how many are in the table. If the connection to the broker is lost, the session reconnects by itself and shows this in the state line.
+按钮旁的状态行先显示[[ui:consumer.status.connecting]]，然后显示[[ui:consumer.status.inGroup]]。状态行还会显示已读取的消息数、与筛选条件匹配的消息数以及表格中的消息数。如果与 Broker 的连接断开，会话会自动重新连接，并在状态行中显示。
 
-Messages appear in the table as they arrive, and the session keeps reading new messages until you stop it. When the table is full, the oldest messages are removed. Click a row to see the message details, as in browsing. See [Message details](browse.md#message-details). Select `UTC` to show times in UTC.
+消息到达后会陆续出现在表格中，会话会持续读取新消息，直到你将其停止。表格已满时，最旧的消息会被移除。与浏览时一样，点击某一行可查看消息详情。参见[消息详情](browse.md#message-details)。选中 `UTC` 可按 UTC 显示时间。
 
-The session reads only the partitions Kafka has assigned to it. If the group has other members, they read the other partitions. If the group has more members than partitions, the session may get no partitions at all.
+会话只读取 Kafka 分配给它的分区。如果该组还有其他成员，它们会读取其他分区。如果组的成员多于分区，会话可能完全分不到分区。
 
-[[ui:consumer.disconnect]] leaves the group, and the other members get its partitions. Closing the session tab also leaves the group. When the session has ended, the state line shows [[ui:consumer.status.disconnected]].
+[[ui:consumer.disconnect]]会离开该组，其他成员将获得它的分区。关闭会话标签页也会离开该组。会话结束后，状态行显示[[ui:consumer.status.disconnected]]。
 
-If a topic does not exist, the session stops with an error and shows the names to check.
+如果主题不存在，会话会因错误而停止，并显示需要检查的名称。
 
-## Commits {#commits}
+## 提交 {#commits}
 
-A commit saves an offset for the group. The next member that reads the partition, or the same application after a restart, starts from that offset.
+提交会为组保存一个偏移量。下一个读取该分区的成员，或重启后的同一个应用，会从该偏移量开始。
 
-With [[ui:consumer.form.autoCommit]] on, the session commits read offsets in the background every few seconds, and once more when it leaves the group. Messages hidden by filters count as read.
+开启[[ui:consumer.form.autoCommit]]时，会话每隔几秒在后台提交已读取的偏移量，并在离开组时再提交一次。被筛选条件隐藏的消息也计为已读。
 
-Without auto-commit, the session commits nothing by itself. Use the buttons:
+不开启自动提交时，会话不会自行提交任何内容。请使用以下按钮：
 
-- [[ui:consumer.actions.commitSelected]] — commits the offset after the selected message, in its partition only. The group will continue from the next message. If the selected message is older than the current commit, the offset moves back.
-- [[ui:consumer.actions.commitAll]] — commits the current position in every assigned partition. This includes messages hidden by filters and messages already removed from the table.
+- [[ui:consumer.actions.commitSelected]]：提交所选消息之后的偏移量，仅限该消息所在的分区。该组将从下一条消息继续。如果所选消息早于当前提交，偏移量会往回移动。
+- [[ui:consumer.actions.commitAll]]：提交每个已分配分区中的当前位置，包括被筛选条件隐藏的消息以及已从表格中移除的消息。
 
-After a commit, a line shows the committed offsets as `topic:partition → offset`. On a prod connection, each commit asks for the connection name.
+提交后，会有一行以 `topic:partition → offset` 的形式显示已提交的偏移量。在 prod 连接上，每次提交都会要求输入连接名称。
 
-If the session does not answer in time, the app warns that it is unknown whether the commit was applied. Check the offsets on the group tab. See [Group details](groups.md#group-details).
+如果会话未及时响应，应用会警告无法确定提交是否生效。请在组标签页中检查偏移量。参见[组详情](groups.md#group-details)。
 
-## Pause partitions {#pause-partitions}
+## 暂停分区 {#pause-partitions}
 
-The panel to the right of the table lists the partitions assigned to the session as `topic:partition`. Click [[ui:consumer.assignment.pause]] next to a partition to stop reading it, and [[ui:consumer.assignment.resume]] to continue. A paused partition is marked [[ui:consumer.assignment.paused]].
+表格右侧的面板以 `topic:partition` 的形式列出分配给会话的分区。点击分区旁的[[ui:consumer.assignment.pause]]可停止读取该分区，点击[[ui:consumer.assignment.resume]]可继续读取。已暂停的分区会标记为[[ui:consumer.assignment.paused]]。
 
-Pausing does not leave the group, so there is no rebalance. The partition stays assigned to the session, and other members do not read it while it is paused. Pausing changes nothing in the cluster and needs no confirmation.
+暂停不会离开组，因此不会引发重平衡。该分区仍分配给会话，暂停期间其他成员也不会读取它。暂停不会改变集群中的任何内容，也无需确认。
 
-After a rebalance, newly assigned partitions start unpaused. When the session leaves the group, all pauses end.
+重平衡后，新分配的分区处于未暂停状态。会话离开组时，所有暂停都会结束。
 
-## Rebalance log {#rebalance-log}
+## 重平衡日志 {#rebalance-log}
 
-[[ui:consumer.assignment.logTitle]] under the partition list records every change of the assignment, newest first. Each entry has a time and one of three kinds: partitions assigned to the session, partitions revoked from it, or a rebalance error with its text.
+分区列表下方的[[ui:consumer.assignment.logTitle]]会记录分配的每次变化，最新的在前。每条记录包含时间以及以下三种类型之一：分配给会话的分区、从会话撤销的分区，或带有错误文本的重平衡错误。
 
-A rebalance happens when a member joins or leaves the group, when the subscribed topics change, or when a member stops responding in time. To watch it, start a second session with the same `group.id` in another tab: the partitions are split between the two sessions, and both logs show it.
+当有成员加入或离开组、订阅的主题发生变化，或某个成员未能及时响应时，就会发生重平衡。要观察重平衡，请在另一个标签页中以相同的 `group.id` 启动第二个会话：分区会在两个会话之间划分，两个日志中都会显示这一过程。
 
-The log keeps the last 200 entries. Before the first rebalance, it shows [[ui:consumer.assignment.logEmpty]].
+日志保留最近 200 条记录。在第一次重平衡之前，日志显示“[[ui:consumer.assignment.logEmpty]]”
 
-## Limits {#limits}
+## 限制 {#limits}
 
-- Sessions need Pro. If Pro stops being active while a session runs, the session keeps reading, but commits, pauses and resumes are refused, and a new session cannot be started.
-- Sessions are not available on [[ui:common.readOnly]] connections.
-- A session cannot start from a chosen offset. To set the start, reset the offsets of the group first: see [Reset offsets](groups.md#reset-offsets). The reset needs a group without members, so disconnect sessions of this group before resetting.
-- The table keeps at most 100000 messages. Older messages are removed, but they still count as read.
-- Very large keys and values are shown only partly, as in browsing.
-- Do not join the group of a running application unless you mean to. The session takes partitions from the application, and the application does not process them while the session holds them. Commits from the session, including auto-commits, move the offsets of the application.
+- 会话需要 Pro。如果会话运行期间 Pro 不再有效，会话会继续读取，但提交、暂停和恢复会被拒绝，并且无法启动新会话。
+- 在[[ui:common.readOnly]]连接上无法使用会话。
+- 会话无法从选定的偏移量开始。要设置起点，请先重置组的偏移量：参见[重置偏移量](groups.md#reset-offsets)。重置要求组中没有成员，因此重置前请断开该组的会话。
+- 表格最多保留 100000 条消息。较旧的消息会被移除，但仍计为已读。
+- 与浏览时一样，非常大的键和值只显示一部分。
+- 除非确有此意，否则不要加入正在运行的应用所在的组。会话会从应用那里夺走分区，在会话持有这些分区期间，应用不会处理它们。会话的提交（包括自动提交）会移动应用的偏移量。

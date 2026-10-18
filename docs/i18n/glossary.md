@@ -245,3 +245,18 @@ to commit — fazer commit; committed offset — offset com commit; timeout — 
 macOS menu Help — menu Ajuda; Keychain — Chaves; Credential Manager — Gerenciador de Credenciais;
 метки полей — «em [[ui:…]], digite/escolha…», «o campo [[ui:…]]», «a seção [[ui:…]]», «a tela [[ui:…]]»;
 read-only connection — conexão somente leitura (с меткой: «nas conexões com a opção [[ui:common.readOnly]] ativada»).
+
+## Слова руководства (zh-CN)
+
+Термины, которые часто встречаются в `docs/guide/zh-CN` и отсутствуют в словаре интерфейса:
+tab — 标签页; screen — 页面 (как «“许可证”页面» в UI); panel (левая панель) — 面板; button — 按钮; checkbox — 复选框;
+field — 字段; form — 表单; section — 部分; header bar панели — 标题栏; logs — 日志 (日志文件); batch send — 批量发送;
+batch (Kafka) — 批次; release page — 发布页面; release notes — 发行说明; installer — 安装程序; build — build (латиницей, как в UI);
+support request — 支持请求; support — 技术支持; timestamp — 时间戳; tombstone — tombstone (при первом упоминании «tombstone（墓碑消息）»);
+listener — 监听器; handshake — 握手; policy — 策略 (как в UI); browse — 浏览; purge — 清空 (как в UI);
+to commit — 提交; committed offset — 已提交的偏移量; lag в прозе — 延迟 / 消费延迟; lock icon — 锁形图标;
+point at (наведение) — 将指针悬停在…上; macOS menu Help — “帮助”菜单; Keychain — 钥匙串; Credential Manager — 凭据管理器;
+Secret Service — Secret Service; prod mode — 生产模式; копия при пакетной отправке — 份 / 份序号 (не 副本);
+метки — вплотную к тексту; если значение кончается или начинается пунктуацией («…», «（…）», «。», «：»),
+метка берётся в кавычки “[[ui:…]]” или рядом ставится полноширинная пунктуация («点击[[ui:connections.tls.pick]]，然后…»);
+read-only connection — 只读连接 (с меткой: «在[[ui:common.readOnly]]连接上»).

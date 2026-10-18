@@ -1,146 +1,146 @@
 # Producer
 
-The [[ui:sidebar.producer]] sends messages to Kafka: one at a time from a form, or many at once. Open it from the connection in the [[ui:sidebar.connections]] panel, or with [[ui:topics.details.produce]] on a topic tab, which fills in the topic. Each connection has its own Producer tab.
+[[ui:sidebar.producer]]用于向 Kafka 发送消息：通过表单逐条发送，或一次发送多条。可以从[[ui:sidebar.connections]]面板中的连接打开它，也可以在主题标签页中点击[[ui:topics.details.produce]]打开，此时会自动填入主题。每个连接都有各自的 Producer 标签页。
 
-On [[ui:common.readOnly]] connections, the Producer opens with the warning [[ui:producer.readOnly]]. The send buttons are hidden, but templates and history can still be viewed.
+在[[ui:common.readOnly]]连接上，Producer 打开时会显示警告“[[ui:producer.readOnly]]”发送按钮会被隐藏，但仍可查看模板和历史记录。
 
-## Send a message {#send-message}
+## 发送消息 {#send-message}
 
-1. Enter the [[ui:producer.topic]]. The field suggests the topics of the cluster, without internal topics.
-2. Optionally, enter a [[ui:producer.partition]] number. When the field shows [[ui:producer.partitionAuto]], the partition is chosen by the key: messages with the same key go to the same partition, as with the Java client. Messages without a key go to a random partition.
-3. Fill in the [[ui:producer.key]] and the [[ui:producer.value]], and choose their formats. See [Key and value formats](producer.md#key-value-formats).
-4. Optionally, add headers.
-5. Click [[ui:producer.send]].
+1. 输入[[ui:producer.topic]]。该字段会提示集群中的主题，不含内部主题。
+2. 可以输入[[ui:producer.partition]]编号（可选）。字段显示[[ui:producer.partitionAuto]]时，分区按键选择：与 Java 客户端一样，具有相同键的消息会进入同一分区。没有键的消息会进入随机分区。
+3. 填写[[ui:producer.key]]和[[ui:producer.value]]，并选择它们的格式。参见[键和值的格式](producer.md#key-value-formats)。
+4. 可以添加标头（可选）。
+5. 点击[[ui:producer.send]]。
 
-After a successful send, a line below the form shows the partition, the offset and the time of the message. With `acks` set to `0`, the broker does not return an offset, and `—` is shown instead.
+发送成功后，表单下方的一行会显示消息的分区、偏移量和时间。`acks` 设为 `0` 时，Broker 不返回偏移量，此时显示 `—`。
 
-If the partition number is too large, or the broker does not confirm the message within the connection timeout, the app shows an error. A topic that does not exist also gives an error, unless the broker creates topics automatically (`auto.create.topics.enable`). With auto-creation off, this error can take up to about 30 s to appear (the connection timeout). Errors in the form, such as invalid JSON or an unknown placeholder, are shown before anything is sent.
+如果分区编号过大，或者 Broker 未在连接超时时间内确认消息，应用会显示错误。主题不存在时也会报错，除非 Broker 会自动创建主题（`auto.create.topics.enable`）。关闭自动创建时，此错误可能要等约 30 秒（连接超时时间）才会出现。表单中的错误，例如无效的 JSON 或未知的占位符，会在发送前显示。
 
-On a prod connection, sending asks you to type the connection name and confirm with [[ui:producer.confirmLabel]]. See [Environments and prod](connections.md#environments).
+在 prod 连接上，发送时会要求输入连接名称，并点击[[ui:producer.confirmLabel]]确认。参见[环境与 prod](connections.md#environments)。
 
-[[ui:producer.clearForm]] empties the form and returns the producer settings to their defaults. The topic stays.
+[[ui:producer.clearForm]]会清空表单，并将 Producer 设置恢复为默认值。主题保持不变。
 
-## Key and value formats {#key-value-formats}
+## 键和值的格式 {#key-value-formats}
 
-[[ui:producer.keyFormat]] and [[ui:producer.valueFormat]] set how the text in the field is turned into bytes:
+[[ui:producer.keyFormat]]和[[ui:producer.valueFormat]]设置如何将字段中的文本转换为字节：
 
-- `string` — the text as is, in UTF-8.
-- `json` — the text is checked to be valid JSON and sent as typed, without reformatting.
-- `hex` — two hex digits per byte, for example `48656c6c6f`. Spaces and line breaks are ignored.
-- `base64` — bytes in standard Base64.
-- `null` — no key or no value at all. The field is empty, and typing text switches the format to `string`.
+- `string`：按原样发送文本，使用 UTF-8。
+- `json`：检查文本是否为有效 JSON，并按输入原样发送，不重新格式化。
+- `hex`：每个字节两位十六进制数，例如 `48656c6c6f`。空格和换行会被忽略。
+- `base64`：标准 Base64 编码的字节。
+- `null`：完全没有键或值。字段为空，输入文本后格式会切换为 `string`。
 
-The default is `null` for the key and `json` for the value. To send a message with a key, just type it: the format changes to `string`. An empty string is still a key, not a missing one: if you choose `string` and leave the field empty, all such messages get the same hash and go to one partition.
+默认情况下，键为 `null`，值为 `json`。要发送带键的消息，直接输入键即可，格式会变为 `string`。空字符串仍是键，而不是缺少键：如果选择 `string` 并将字段留空，所有此类消息都会得到相同的哈希值并进入同一分区。
 
-A message with a `null` value is a tombstone. In a topic with `cleanup.policy=compact`, it tells Kafka to remove older messages with the same key.
+值为 `null` 的消息是 tombstone（墓碑消息）。在 `cleanup.policy=compact` 的主题中，它会通知 Kafka 删除具有相同键的旧消息。
 
-## Headers {#headers}
+## 标头 {#headers}
 
-Headers are name and value pairs sent with the message. Click [[ui:producer.headers.add]] to add a row, then fill in [[ui:producer.headers.colName]], [[ui:producer.headers.colValue]] and [[ui:producer.headers.colFormat]]. The `×` button removes the row.
+标头是随消息发送的名称和值对。点击[[ui:producer.headers.add]]添加一行，然后填写[[ui:producer.headers.colName]]、[[ui:producer.headers.colValue]]和[[ui:producer.headers.colFormat]]。`×` 按钮用于删除该行。
 
-The format of a header value is `string` (text in UTF-8) or `hex` (bytes as hex digits). Rows with an empty name are not sent. Kafka allows several headers with the same name, and they are all sent.
+标头值的格式为 `string`（UTF-8 文本）或 `hex`（以十六进制数表示的字节）。名称为空的行不会被发送。Kafka 允许多个同名标头，它们都会被发送。
 
-Placeholders work in header values, but not in header names.
+占位符可用于标头值，但不能用于标头名称。
 
-## Placeholders {#placeholders}
+## 占位符 {#placeholders}
 
-Placeholders are replaced with values at every send. They work in the key, the value and the header values. The list is shown below the headers:
+每次发送时，占位符都会被替换为相应的值。占位符可用于键、值和标头值。列表显示在标头下方：
 
-- `{{uuid}}` — a new random UUID, for example `0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`.
-- `{{now}}` — the current time in UTC in ISO 8601 format with milliseconds, for example `2026-10-15T12:30:00.000Z`.
-- `{{nowMillis}}` — the current time in milliseconds since 1970-01-01 UTC.
-- `{{seq}}` — the number of the copy in a batch, starting at 0. For a single send, it is `0`.
-- `{{randomInt 1 100}}` — a random integer between the two numbers, both included.
-- `{{randomString 8}}` — a random string of Latin letters and digits of the given length, up to 100000.
-- `{{env NAME}}` — the value of the environment variable `NAME`. If it is not set, nothing is sent and an error is shown.
+- `{{uuid}}`：新的随机 UUID，例如 `0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`。
+- `{{now}}`：当前 UTC 时间，ISO 8601 格式，精确到毫秒，例如 `2026-10-15T12:30:00.000Z`。
+- `{{nowMillis}}`：自 1970-01-01 UTC 起的当前时间，以毫秒为单位。
+- `{{seq}}`：批量发送中的份序号，从 0 开始。单条发送时为 `0`。
+- `{{randomInt 1 100}}`：介于两个数字之间的随机整数，包含两端。
+- `{{randomString 8}}`：由拉丁字母和数字组成的指定长度的随机字符串，长度最多 100000。
+- `{{env NAME}}`：环境变量 `NAME` 的值。如果未设置该变量，则不会发送任何内容并显示错误。
 
-Spaces inside the braces are allowed. An unknown placeholder or a missing `}}` stops the send with an error. To send `{{` as text, write `\{{`.
+大括号内允许有空格。未知的占位符或缺少 `}}` 会使发送因错误而中止。要将 `{{` 作为文本发送，请写成 `\{{`。
 
-With the `json` format, the JSON is checked after the placeholders are replaced. Placeholders that produce text need quotes: `{"id": "{{uuid}}"}`. Numbers do not: `{"n": {{seq}}}`.
+使用 `json` 格式时，会在替换占位符之后检查 JSON。生成文本的占位符需要加引号：`{"id": "{{uuid}}"}`。数字则不需要：`{"n": {{seq}}}`。
 
-`{{env NAME}}` reads the environment of the Glafira process. If you start Glafira from the Dock or the Start menu, variables set only in your terminal profile may be missing.
+`{{env NAME}}` 读取的是 Glafira 进程的环境。如果从程序坞或“开始”菜单启动 Glafira，仅在终端配置文件中设置的变量可能不存在。
 
-When a message comes from [Open in Producer](browse.md#open-in-producer) or from the history, every `{{` in it is written as `\{{`. The message is then sent exactly as it was, without replacing anything.
+当消息来自[在 Producer 中打开](browse.md#open-in-producer)或历史记录时，其中的每个 `{{` 都会写成 `\{{`。这样消息会按原样发送，不会替换任何内容。
 
-## Templates {#templates}
+## 模板 {#templates}
 
-A template saves the whole form: topic, partition, key, value, headers, formats and producer settings. Placeholders are saved as written and are replaced at each send.
+模板会保存整个表单：主题、分区、键、值、标头、格式和 Producer 设置。占位符按书写形式保存，并在每次发送时替换。
 
-To save a template, click [[ui:producer.templates.saveAs]], enter the [[ui:producer.templates.nameLabel]] and click [[ui:common.save]]. The topic may be empty. By default, the template belongs to this connection. Select [[ui:producer.templates.global]] to show it on every connection; such templates are marked [[ui:producer.templates.allSuffix]] in the list.
+要保存模板，请点击[[ui:producer.templates.saveAs]]，输入[[ui:producer.templates.nameLabel]]，然后点击[[ui:common.save]]。主题可以为空。默认情况下，模板属于当前连接。选中[[ui:producer.templates.global]]可使其在所有连接上显示；此类模板在列表中带有“[[ui:producer.templates.allSuffix]]”标记。
 
-To use a template, choose it in the [[ui:producer.templates.label]] list. The form is replaced with the template. You can edit the form before sending; the template does not change.
+要使用模板，请在[[ui:producer.templates.label]]列表中选择它，表单会被替换为该模板。发送前可以编辑表单，模板本身不会改变。
 
-Saving always creates a new template. To change one, load it, edit the form, save it under a new name and delete the old one. To delete the selected template, click [[ui:producer.templates.delete]] and confirm with [[ui:common.delete]].
+保存总是会创建新模板。要修改模板，请加载它，编辑表单，以新名称保存，然后删除旧模板。要删除所选模板，请点击[[ui:producer.templates.delete]]，然后点击[[ui:common.delete]]确认。
 
-Templates of a connection are deleted together with the connection.
+连接的模板会随连接一起删除。
 
-## History {#history}
+## 历史记录 {#history}
 
-[[ui:producer.history.title]] lists the last 100 single sends of this connection, newest first. Messages from batch sends are not added. Each row shows the time, the topic, the partition and offset, and the start of the key.
+“[[ui:producer.history.title]]”列出此连接最近 100 次单条发送，最新的在前。批量发送的消息不会添加到其中。每行显示时间、主题、分区和偏移量以及键的开头部分。
 
-History stores the message as it was sent, with the placeholders already replaced. [[ui:producer.history.repeat]] loads it into the form together with its producer settings. Nothing is sent until you click [[ui:producer.send]]. The copy is sent exactly as stored: for example, the same UUID is sent again.
+历史记录按发送时的样子保存消息，其中的占位符已被替换。[[ui:producer.history.repeat]]会将消息连同其 Producer 设置一起加载到表单中。在点击[[ui:producer.send]]之前，不会发送任何内容。副本会完全按保存的内容发送：例如，会再次发送同一个 UUID。
 
-A key, value or header value longer than 64 KB is stored only partly. For such rows, [[ui:producer.history.repeat]] is disabled.
+超过 64 KB 的键、值或标头值只会保存一部分。对于此类行，[[ui:producer.history.repeat]]被禁用。
 
-History is stored on this computer in plain text, including the values of `{{env NAME}}`. Do not send secrets through the Producer if this matters. The history of a connection is deleted together with the connection.
+历史记录以纯文本形式保存在这台计算机上，包括 `{{env NAME}}` 的值。如果这一点很重要，请勿通过 Producer 发送机密信息。连接的历史记录会随连接一起删除。
 
-## N copies of the form {#batch-copies}
+## 按表单发送 N 份 {#batch-copies}
 
-[[ui:producer.batch.legend]] below the form sends many messages in one run. In the [[ui:producer.batch.modeCopies]] mode, it sends the form the given number of times.
+表单下方的[[ui:producer.batch.legend]]可在一次运行中发送多条消息。在[[ui:producer.batch.modeCopies]]模式下，它会按指定次数发送表单。
 
-1. Fill in the form as for a single send.
-2. Select [[ui:producer.batch.modeCopies]] and enter the number of [[ui:producer.batch.count]], from 1 to 1000000.
-3. Optionally, set the [[ui:producer.batch.rate]]. See [Send rate](producer.md#batch-rate).
-4. Click [[ui:producer.batch.start]].
+1. 像单条发送一样填写表单。
+2. 选中[[ui:producer.batch.modeCopies]]，并输入[[ui:producer.batch.count]]，范围为 1 到 1000000。
+3. 可以设置[[ui:producer.batch.rate]]（可选）。参见[发送速率](producer.md#batch-rate)。
+4. 点击[[ui:producer.batch.start]]。
 
-Placeholders are replaced separately for each copy. `{{seq}}` is the copy number, from 0 to N−1, so each message can get its own key, for example `order-{{seq}}`. Placeholder errors are checked on the first copy before the run starts.
+每一份的占位符都会单独替换。`{{seq}}` 是份序号，从 0 到 N−1，因此每条消息都可以有自己的键，例如 `order-{{seq}}`。运行开始前，会用第一份检查占位符错误。
 
-During the run, the panel shows how many messages were sent and how many failed. At the end, it shows [[ui:producer.batch.done]]. Errors are listed with the copy number, counted from 1. The list shows the first 20 errors; if there are more, a note below gives the total.
+运行期间，面板会显示已发送和失败的消息数。结束时显示[[ui:producer.batch.done]]。错误会连同份序号（从 1 开始计数）一起列出。列表显示前 20 个错误；如果更多，下方的说明会给出总数。
 
-[[ui:producer.batch.cancel]] stops the run. Messages that have not left the app yet are not sent, and the panel shows their count. The app waits up to 2 seconds for the broker to confirm messages already sent. Messages that are still not confirmed count as errors, because it is unknown whether they were written. Closing the Producer tab also stops the run.
+[[ui:producer.batch.cancel]]会停止运行。尚未离开应用的消息不会被发送，面板会显示其数量。应用最多等待 2 秒，让 Broker 确认已发送的消息。仍未确认的消息计为错误，因为无法确定它们是否已写入。关闭 Producer 标签页也会停止运行。
 
-On a prod connection, the run asks for the connection name and is confirmed with [[ui:producer.batch.confirmLabel]].
+在 prod 连接上，运行时会要求输入连接名称，并点击[[ui:producer.batch.confirmLabel]]确认。
 
-## Send from a file {#batch-file}
+## 从文件发送 {#batch-file}
 
-In the [[ui:producer.batch.modeFile]] mode, each line or row of a file becomes a message. Supported files are JSON Lines (`.jsonl`, `.ndjson`) and CSV (`.csv`).
+在[[ui:producer.batch.modeFile]]模式下，文件的每一行或每条记录都会成为一条消息。支持的文件为 JSON Lines（`.jsonl`、`.ndjson`）和 CSV（`.csv`）。
 
-1. Enter the [[ui:producer.topic]] in the form above. All messages go to this topic.
-2. Select [[ui:producer.batch.modeFile]] and click [[ui:producer.batch.chooseFile]].
-3. Click [[ui:producer.batch.start]].
+1. 在上方表单中输入[[ui:producer.topic]]。所有消息都发送到此主题。
+2. 选中[[ui:producer.batch.modeFile]]，然后点击[[ui:producer.batch.chooseFile]]。
+3. 点击[[ui:producer.batch.start]]。
 
-The key, value, headers and partition from the form are not used, and placeholders are not replaced. The producer settings of the form apply.
+不使用表单中的键、值、标头和分区，也不替换占位符。表单中的 Producer 设置仍然生效。
 
-In JSON Lines, each line is one JSON object, for example `{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`. All fields are optional:
+在 JSON Lines 中，每行是一个 JSON 对象，例如 `{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`。所有字段均为可选：
 
-- `key` and `value` — a JSON string is sent as its text, without quotes. Any other JSON value, such as an object or a number, is sent as JSON text. `null` or a missing field means no key or no value.
-- `headers` — an object of string values.
-- `partition` — a partition number. Without it, the partition is chosen by the key.
+- `key` 和 `value`：JSON 字符串按其文本发送，不带引号。其他任何 JSON 值（例如对象或数字）按 JSON 文本发送。`null` 或缺少该字段表示没有键或值。
+- `headers`：由字符串值组成的对象。
+- `partition`：分区编号。不指定时，分区按键选择。
 
-Empty lines are skipped. The file must be in UTF-8.
+空行会被跳过。文件必须使用 UTF-8 编码。
 
-In CSV, the first row holds the column names. The `value` column is required; `key`, `partition` and `header.NAME` columns are optional, for example `header.source`. An empty `key` cell means no key, and an empty header cell means no such header. An empty `value` cell sends an empty value, not `null`, so a tombstone cannot be sent from CSV.
+在 CSV 中，第一行是列名。`value` 列为必需列；`key`、`partition` 和 `header.NAME` 列为可选列，例如 `header.source`。`key` 单元格为空表示没有键，标头单元格为空表示没有该标头。`value` 单元格为空时发送的是空值而不是 `null`，因此无法从 CSV 发送 tombstone。
 
-The file is read as a stream, so the total number is not known in advance and is shown as `—`. A line or record larger than 16 MB, invalid JSON or a negative partition counts as an error for that line, and the run goes on with the next line. Errors are shown with the line number.
+文件以流的方式读取，因此事先不知道总数，显示为 `—`。超过 16 MB 的行或记录、无效的 JSON 或负数分区都会计为该行的错误，运行会继续处理下一行。错误会连同行号一起显示。
 
-## Send rate {#batch-rate}
+## 发送速率 {#batch-rate}
 
-[[ui:producer.batch.rate]] limits a batch to the given number of messages per second. Enter an integer of 1 or more. An empty field means [[ui:producer.batch.rateUnlimited]].
+[[ui:producer.batch.rate]]将批量发送限制为每秒指定数量的消息。请输入大于或等于 1 的整数。字段为空表示[[ui:producer.batch.rateUnlimited]]。
 
-The messages are spread evenly over time: at 10 messages per second, one message leaves about every 100 ms. Use the limit to avoid overloading a shared cluster, or to imitate a steady load.
+消息会在时间上均匀分布：每秒 10 条消息时，大约每 100 ms 发出一条。使用此限制可避免共享集群过载，或模拟稳定的负载。
 
-Without a limit, the app sends as fast as the broker accepts. The rate applies to both batch modes.
+不设限制时，应用会以 Broker 能接受的最快速度发送。速率适用于两种批量发送模式。
 
-## Producer settings {#producer-settings}
+## Producer 设置 {#producer-settings}
 
-[[ui:producer.settings.legend]] apply to single sends and batches. They are saved in templates and history.
+[[ui:producer.settings.legend]]适用于单条发送和批量发送，并会保存到模板和历史记录中。
 
-`acks` sets how many replicas must confirm a write:
+`acks` 设置必须有多少个副本确认写入：
 
-- `all` — the default. The leader waits for all in-sync replicas. This is the safest choice. If fewer replicas are in sync than the topic setting `min.insync.replicas` requires, the write fails.
-- `1` — only the leader confirms. Faster, but a message can be lost if the leader fails before the followers copy it.
-- `0` — the producer does not wait for a confirmation. Messages can be lost, and no offset is returned.
+- `all`：默认值。Leader 会等待所有同步副本。这是最安全的选择。如果处于同步状态的副本少于主题设置 `min.insync.replicas` 的要求，写入会失败。
+- `1`：只有 Leader 确认。速度更快，但如果 Leader 在 Follower 复制消息之前发生故障，消息可能会丢失。
+- `0`：生产者不等待确认。消息可能会丢失，也不会返回偏移量。
 
-[[ui:producer.settings.compression]] compresses message batches: `none` (the default), `gzip`, `snappy`, `lz4` or `zstd`. Compression saves network traffic and disk space at the cost of some CPU. `zstd` and `lz4` are common choices. For a single small message, the gain is small.
+[[ui:producer.settings.compression]]用于压缩消息批次：`none`（默认）、`gzip`、`snappy`、`lz4` 或 `zstd`。压缩以消耗一些 CPU 为代价，节省网络流量和磁盘空间。`zstd` 和 `lz4` 是常见的选择。对于单条小消息，收益不大。
 
-[[ui:producer.settings.idempotence]] sets `enable.idempotence`. It prevents duplicates when the client retries a send after a network error. It requires `acks` set to `all`; with other values, the app shows an error and sends nothing.
+[[ui:producer.settings.idempotence]]对应 `enable.idempotence`，可防止客户端在网络错误后重试发送时产生重复消息。它要求 `acks` 设为 `all`；如果是其他值，应用会显示错误，并且不发送任何内容。

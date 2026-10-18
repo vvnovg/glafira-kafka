@@ -1,103 +1,103 @@
-# License and updates
+# 许可证与更新
 
-This chapter covers what Pro adds, how to activate a license key, what happens when the license expires, how to update the app, the [[ui:sidebar.about]] screen and the diagnostics archive.
+本章介绍 Pro 增加的功能、如何激活许可证密钥、许可证到期后会发生什么、如何更新应用、[[ui:sidebar.about]]页面以及诊断归档。
 
-## Free and Pro {#free-and-pro}
+## Free 和 Pro {#free-and-pro}
 
-Free covers everyday work with Kafka: all security protocols including mTLS, the cluster overview and topics, browsing messages, the Producer with batch sending, consumer groups and offset reset. All interface languages are included as well. See [Interface language](getting-started.md#language).
+Free 涵盖 Kafka 的日常工作：包括 mTLS 在内的所有安全协议、集群概览和主题、浏览消息、支持批量发送的 Producer、消费者组以及偏移量重置。所有界面语言也都包含在内。参见[界面语言](getting-started.md#language)。
 
-Pro adds:
+Pro 增加：
 
-- consumer sessions: reading as a group member, committing offsets, pausing partitions. See [Consumer sessions](consumer-sessions.md#what-is);
-- prod mode: creating prod connections, switching connections to prod and clearing [[ui:common.readOnly]] on a prod connection. See [Environments and prod](connections.md#environments).
+- 消费者会话：以组成员身份读取、提交偏移量、暂停分区。参见[消费者会话](consumer-sessions.md#what-is)；
+- 生产模式：创建 prod 连接、将连接切换为 prod，以及在 prod 连接上取消[[ui:common.readOnly]]。参见[环境与 prod](connections.md#environments)。
 
-In Free, these features are visible but unavailable. The consumer session commands are disabled and marked with a lock and `Pro`. The prod option is shown as [[ui:connections.form.prodPro]]. If an action needs Pro, the error says [[ui:errors.license.proRequired]] and offers the [[ui:common.openLicense]] button.
+在 Free 中，这些功能可见但不可用。消费者会话命令被禁用，并带有锁形图标和 `Pro` 标记。prod 选项显示为[[ui:connections.form.prodPro]]。如果某项操作需要 Pro，错误信息会显示[[ui:errors.license.proRequired]]，并提供按钮：[[ui:common.openLicense]]。
 
-The [[ui:tabs.license]] screen lists consumer sessions and prod mode under [[ui:license.whatProGives]].
+[[ui:tabs.license]]页面在[[ui:license.whatProGives]]下列出消费者会话和生产模式。
 
-## Activate a key {#activate}
+## 激活密钥 {#activate}
 
-A license key is a line of text issued to a person or to an organization. The app checks the key on your computer and does not contact any server.
+许可证密钥是签发给个人或组织的一行文本。应用在你的计算机上检查密钥，不会连接任何服务器。
 
-1. Click [[ui:tabs.license]] at the bottom of the left panel.
-2. Paste the whole key into [[ui:license.keyLabel]].
-3. Click [[ui:license.activate]].
+1. 点击左侧面板底部的[[ui:tabs.license]]。
+2. 将完整的密钥粘贴到[[ui:license.keyLabel]]中。
+3. 点击[[ui:license.activate]]。
 
-Pro features become available at once. The screen shows [[ui:license.tier]] (Pro), [[ui:license.licensee]], [[ui:license.kind]] ( [[ui:license.kindPersonal]] or [[ui:license.kindOrganization]] ) and [[ui:license.expires]]: a date, or [[ui:license.perpetual]]. The key is saved in the app data folder, so it stays after a restart or an update. A new key replaces the previous one.
+Pro 功能立即可用。页面会显示[[ui:license.tier]]（Pro）、[[ui:license.licensee]]、[[ui:license.kind]]（[[ui:license.kindPersonal]]或[[ui:license.kindOrganization]]）以及[[ui:license.expires]]：某个日期，或[[ui:license.perpetual]]。密钥保存在应用数据文件夹中，因此重启或更新后仍然有效。新密钥会替换之前的密钥。
 
-If the key is not accepted, the reason is shown under the field:
+如果密钥未被接受，字段下方会显示原因：
 
-- [[ui:errors.license.malformed]] — part of the key is missing or changed. Copy the key again as one line, without extra characters.
-- [[ui:errors.license.badSignature]] — the key was not issued for Glafira, or it was edited.
-- The key has expired — the message gives its end date. Ask for a new key.
-- The key needs a newer version of the app — the message gives the key version. Update the app first, see [Updates](license-updates.md#updates).
+- [[ui:errors.license.malformed]]：密钥的一部分缺失或被更改。请重新复制密钥，确保为一行且没有多余字符。
+- [[ui:errors.license.badSignature]]：该密钥不是为 Glafira 签发的，或已被编辑。
+- 密钥已过期：消息中会给出其到期日期。请申请新密钥。
+- 密钥需要更新版本的应用：消息中会给出密钥版本。请先更新应用，参见[更新](license-updates.md#updates)。
 
-To remove the key, click [[ui:license.removeKey]]. The app asks [[ui:license.removeQuestion]] Click [[ui:license.removeYes]] to confirm. Your data stays.
+要移除密钥，请点击[[ui:license.removeKey]]。应用会询问“[[ui:license.removeQuestion]]”点击[[ui:license.removeYes]]确认。你的数据会保留。
 
-An organization can activate Pro for all users through a policy. The key field and buttons are then hidden, and the screen says [[ui:license.managed]] A key that you entered yourself is not used while the policy key is set. The [[ui:license.policyTitle]] section shows where the policy comes from and lists its errors. If the organization key is invalid, the reason is shown on the [[ui:tabs.license]] screen. Contact your administrators in this case. Administrators find the policy settings in `docs/admin.md` in the Glafira source code.
+组织可以通过策略为所有用户激活 Pro。此时密钥字段和按钮会被隐藏，页面会显示“[[ui:license.managed]]”设置了策略密钥时，你自己输入的密钥不会被使用。[[ui:license.policyTitle]]部分会显示策略的来源并列出其错误。如果组织密钥无效，[[ui:tabs.license]]页面上会显示原因，这时请联系你的管理员。管理员可以在 Glafira 源代码的 `docs/admin.md` 中找到策略设置。
 
-## Expiry {#expiry}
+## 到期 {#expiry}
 
-A key can have an end date, shown in [[ui:license.expires]]. The license is valid until the end of that day.
+密钥可以有到期日期，显示在[[ui:license.expires]]中。许可证在该日结束前有效。
 
-When fewer than 14 days are left, a notice above the tabs says how many days remain, and the [[ui:tabs.license]] screen shows the end date. [[ui:license.notice.more]] in the notice opens the [[ui:tabs.license]] screen. The `×` button hides the notice until the app restarts.
+剩余不到 14 天时，标签页上方的通知会显示剩余天数，[[ui:tabs.license]]页面会显示到期日期。通知中的[[ui:license.notice.more]]会打开[[ui:tabs.license]]页面。`×` 按钮会隐藏通知，直到应用重启。
 
-After the end date, the plan switches to Free. The notice and the [[ui:tabs.license]] screen say that the license has expired and that Pro features are disabled. What changes:
+到期日期过后，套餐切换为 Free。通知和[[ui:tabs.license]]页面会显示许可证已过期、Pro 功能已停用。变化如下：
 
-- New consumer sessions cannot be started. In a session that is already running, commits and pausing partitions are refused with an error that gives the end date.
-- Prod connections keep working with the same confirmations. New prod connections cannot be created, and [[ui:common.readOnly]] cannot be cleared on a prod connection.
+- 无法启动新的消费者会话。在已运行的会话中，提交和暂停分区会被拒绝，错误信息中会给出到期日期。
+- prod 连接继续可用，确认方式不变。无法创建新的 prod 连接，也无法在 prod 连接上取消[[ui:common.readOnly]]。
 
-Connections, passwords, templates and send history are kept. To continue with Pro, activate a new key as described in [Activate a key](license-updates.md#activate).
+连接、密码、模板和发送历史记录都会保留。要继续使用 Pro，请按[激活密钥](license-updates.md#activate)中的说明激活新密钥。
 
-## Updates {#updates}
+## 更新 {#updates}
 
-When it starts, the app checks once whether a new version is available. If there is one, a notice above the tabs gives its version. [[ui:license.notice.more]] opens the [[ui:sidebar.about]] screen. If the check fails, for example without internet access, no message is shown.
+应用启动时会检查一次是否有新版本。如果有，标签页上方的通知会显示其版本号。[[ui:license.notice.more]]会打开[[ui:sidebar.about]]页面。如果检查失败（例如无法访问互联网），不会显示任何消息。
 
-To check manually:
+手动检查：
 
-1. Open [[ui:sidebar.about]] at the bottom of the left panel.
-2. In [[ui:about.updates.title]], click [[ui:about.updates.check]].
-3. If a new version is available, the screen shows its number and release notes. Click [[ui:about.updates.install]].
+1. 打开左侧面板底部的[[ui:sidebar.about]]。
+2. 在[[ui:about.updates.title]]中，点击[[ui:about.updates.check]]。
+3. 如果有新版本，页面会显示其版本号和发行说明。点击[[ui:about.updates.install]]。
 
-The app downloads the update, checks its signature, installs it and restarts. A download interrupted by a network problem is retried automatically, up to three attempts in total. If all three attempts fail, the app reports [[ui:errors.updates.downloadInterrupted]]. If the signature check fails, the app reports [[ui:errors.updates.badSignature]].
+应用会下载更新、检查其签名、进行安装，然后重启。因网络问题中断的下载会自动重试，总共最多尝试三次。如果三次都失败，应用会报告[[ui:errors.updates.downloadInterrupted]]。如果签名检查失败，应用会报告[[ui:errors.updates.badSignature]]。
 
-Installing may ask for an administrator password, because the app is installed for all users of the computer: by the `.pkg` installer on macOS, the `.msi` installer on Windows, or a `.deb` or `.rpm` package on Linux. Users without administrator rights cannot update such an installation.
+安装时可能会要求输入管理员密码，因为应用是为这台计算机的所有用户安装的：在 macOS 上通过 `.pkg` 安装程序，在 Windows 上通过 `.msi` 安装程序，在 Linux 上通过 `.deb` 或 `.rpm` 软件包。没有管理员权限的用户无法更新此类安装。
 
-If messages are being read, a consumer session is running or a batch is being sent, the app asks first and says how many sessions are active. Click [[ui:about.updates.stopAndUpdate]] to stop them and continue, or [[ui:common.cancel]]. Connections, settings, the license key and other data are kept after an update.
+如果正在读取消息、消费者会话正在运行或正在批量发送，应用会先询问，并显示有多少个活动会话。点击[[ui:about.updates.stopAndUpdate]]可停止这些会话并继续，或点击[[ui:common.cancel]]。更新后，连接、设置、许可证密钥和其他数据都会保留。
 
-Updates are downloaded from the releases page on GitHub. If the check fails with [[ui:errors.updates.checkFailed]], check your network or proxy. [[ui:errors.updates.notConfigured]] means that this build was made without the updater key, for example a development or test build. In that case, download new versions from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+更新从 GitHub 上的发布页面下载。如果检查失败并显示[[ui:errors.updates.checkFailed]]，请检查网络或代理。[[ui:errors.updates.notConfigured]]表示此 build 在构建时未包含更新程序密钥，例如开发或测试 build。这种情况下，请从发布页面下载新版本：https://github.com/vvnovg/glafira-kafka-releases/releases
 
-An organization can turn off update checks through a policy, or point them to an internal mirror. When checks are turned off, the [[ui:about.updates.title]] section says [[ui:errors.updates.managed]] after you click [[ui:about.updates.check]]. Like [[ui:errors.updates.notConfigured]], this message appears only after the click; the check at startup shows nothing in these cases.
+组织可以通过策略关闭更新检查，或将其指向内部镜像。关闭检查后，点击[[ui:about.updates.check]]时，[[ui:about.updates.title]]部分会显示[[ui:errors.updates.managed]]。与[[ui:errors.updates.notConfigured]]一样，此消息只在点击后出现；在这些情况下，启动时的检查不会显示任何内容。
 
-## About {#about}
+## 关于 {#about}
 
-Open [[ui:sidebar.about]] at the bottom of the left panel. On macOS, it is also in the Help menu as [[ui:menu.about]].
+打开左侧面板底部的[[ui:sidebar.about]]。在 macOS 上，也可以在“帮助”菜单中找到[[ui:menu.about]]。
 
-The screen shows a short description of the app and:
+该页面显示应用的简短介绍以及：
 
-- [[ui:about.version]] — the version number, and [[ui:about.build]] — the identifier of the source code it was built from. Include both in a support request.
-- [[ui:about.system]] — the operating system and processor architecture.
-- [[ui:about.tier]] — Free or Pro.
-- [[ui:about.policy]] — [[ui:about.policySet]] or [[ui:about.policyNone]]. Errors in the policy are listed below.
-- [[ui:about.dataDir]] — the folder with connection profiles, templates, history, settings and the license key.
-- [[ui:about.logDir]] — the folder with log files. See [Logs](troubleshooting.md#logs).
+- [[ui:about.version]]：版本号；[[ui:about.build]]：构建所用源代码的标识符。提交支持请求时请同时附上这两项。
+- [[ui:about.system]]：操作系统和处理器架构。
+- [[ui:about.tier]]：Free 或 Pro。
+- [[ui:about.policy]]：[[ui:about.policySet]]或[[ui:about.policyNone]]。策略中的错误会列在下方。
+- [[ui:about.dataDir]]（存放连接配置、模板、历史记录、设置和许可证密钥的文件夹）。
+- [[ui:about.logDir]]（存放日志文件的文件夹）。参见[日志](troubleshooting.md#logs)。
 
-The [[ui:about.updates.title]] and [[ui:about.diagnostics.title]] sections are also on this screen.
+[[ui:about.updates.title]]和[[ui:about.diagnostics.title]]部分也位于此页面。
 
-## Diagnostics archive {#diagnostics}
+## 诊断归档 {#diagnostics}
 
-The diagnostics archive collects what support needs to understand a problem. To create it:
+诊断归档会收集技术支持了解问题所需的信息。创建方法：
 
-1. Open [[ui:sidebar.about]].
-2. In [[ui:about.diagnostics.title]], click [[ui:about.diagnostics.collect]]. On macOS, you can also choose [[ui:menu.diagnostics]] in the Help menu.
-3. Choose where to save the file. The suggested name is `diagnostics-<date>.zip`.
+1. 打开[[ui:sidebar.about]]。
+2. 在[[ui:about.diagnostics.title]]中，点击[[ui:about.diagnostics.collect]]。在 macOS 上，也可以在“帮助”菜单中选择[[ui:menu.diagnostics]]。
+3. 选择文件的保存位置。建议的文件名为 `diagnostics-<date>.zip`。
 
-When the archive is saved, the screen shows its path. The ZIP file contains:
+归档保存后，页面会显示其路径。ZIP 文件包含：
 
-- `info.json` — the app version and build, the operating system, the data and log folder paths, the policy status and the license status (plan, licensee, type, end date);
-- `connections.json` — connection profiles: names, environments, bootstrap servers, protocols, SASL usernames, certificate file paths, extra properties and timeouts;
-- `logs/` — the app log files.
+- `info.json`：应用版本和 build、操作系统、数据和日志文件夹路径、策略状态以及许可证状态（套餐、授权对象、类型、到期日期）；
+- `connections.json`：连接配置：名称、环境、Bootstrap 服务器、协议、SASL 用户名、证书文件路径、额外属性和超时设置；
+- `logs/`：应用日志文件。
 
-The archive contains no passwords: they are kept in the system secret store, and extra properties with passwords and secrets are refused when a connection is saved. The license key and certificate files are not included either. Host names, usernames and file paths are stored as plain text, and the logs contain broker addresses from Kafka error messages. Look through the archive before you send it outside your company.
+归档中不包含密码：密码保存在系统密钥存储中，而且保存连接时会拒绝包含密码和机密信息的额外属性。许可证密钥和证书文件也不包含在内。主机名、用户名和文件路径以纯文本形式存储，日志中还包含 Kafka 错误消息里的 Broker 地址。将归档发送到公司外部之前，请先检查其内容。
 
-The app sends nothing by itself. Attach the archive to your support request yourself, see [Contact support](troubleshooting.md#support).
+应用不会自行发送任何内容。请自行将归档附加到支持请求中，参见[联系技术支持](troubleshooting.md#support)。

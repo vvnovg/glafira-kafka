@@ -1,98 +1,98 @@
 # Consumer groups
 
-A consumer group is a set of consumers that share the reading of topics. Kafka gives each partition to one member of the group and stores, for each partition, the offset the group has committed. Applications continue reading from that offset after a restart.
+Un consumer group es un conjunto de consumidores que se reparten la lectura de los topics. Kafka asigna cada partición a un miembro del grupo y guarda, para cada partición, el offset del que el grupo ha hecho commit. Tras un reinicio, las aplicaciones siguen leyendo desde ese offset.
 
-Open [[ui:sidebar.groups]] under the connection in the [[ui:sidebar.connections]] panel. The groups of one topic are also on the [[ui:topics.details.tabGroups]] tab of the topic. See [Topic screen](topics.md#topic-details).
+Abre [[ui:sidebar.groups]] bajo la conexión en el panel [[ui:sidebar.connections]]. Los grupos de un topic también aparecen en la pestaña [[ui:topics.details.tabGroups]] del topic. Consulta [Pantalla del topic](topics.md#topic-details).
 
-## Group list {#group-list}
+## Lista de grupos {#group-list}
 
-The list shows all consumer groups of the cluster. The columns:
+La lista muestra todos los consumer groups del clúster. Las columnas:
 
-- [[ui:groups.list.colGroup]] — the group ID (`group.id`).
-- [[ui:groups.list.colState]] — the state reported by Kafka, for example `Stable` (members are reading), `Empty` (no members), `PreparingRebalance` or `CompletingRebalance` (partitions are being redistributed) and `Dead` (the group no longer exists).
-- [[ui:groups.list.colMembers]] — the number of active members.
-- `Assignor` — the strategy used to distribute partitions, for example `range`.
-- [[ui:groups.list.colLag]] — the total lag of the group. See [Lag](groups.md#lag).
-- [[ui:groups.list.colTopics]] — the topics the group has committed offsets for.
+- [[ui:groups.list.colGroup]]: el ID del grupo (`group.id`).
+- [[ui:groups.list.colState]]: el estado que indica Kafka, por ejemplo `Stable` (los miembros están leyendo), `Empty` (sin miembros), `PreparingRebalance` o `CompletingRebalance` (las particiones se están redistribuyendo) y `Dead` (el grupo ya no existe).
+- [[ui:groups.list.colMembers]]: el número de miembros activos.
+- `Assignor`: la estrategia con la que se reparten las particiones, por ejemplo `range`.
+- [[ui:groups.list.colLag]]: el lag total del grupo. Consulta [Lag](groups.md#lag).
+- [[ui:groups.list.colTopics]]: los topics para los que el grupo tiene offsets con commit.
 
-Type in [[ui:groups.list.search]] to show the groups whose ID contains the text; case does not matter. The state list next to it shows only groups in one state; [[ui:groups.list.allStates]] removes this filter. The counter shows how many groups are shown and how many there are in total.
+Escribe en [[ui:groups.list.search]] para mostrar los grupos cuyo ID contiene el texto; no se distingue entre mayúsculas y minúsculas. La lista de estados de al lado muestra solo los grupos en un estado; [[ui:groups.list.allStates]] quita este filtro. El contador indica cuántos grupos se muestran y cuántos hay en total.
 
-Members, assignor and lag are loaded only for the rows you see, while you scroll. Until they arrive, the cell shows `…`. If they cannot be loaded, the cell shows `—`; point at it to see the reason.
+Los miembros, el assignor y el lag se cargan solo para las filas visibles, a medida que te desplazas. Hasta que llegan, la celda muestra `…`. Si no se pueden cargar, la celda muestra `—`; sitúa el puntero sobre ella para ver el motivo.
 
-[[ui:groups.list.refresh]] reloads the list and the data in it. If some brokers did not respond, a warning says the list may be incomplete.
+[[ui:groups.list.refresh]] vuelve a cargar la lista y sus datos. Si algunos brokers no han respondido, un aviso indica que la lista puede estar incompleta.
 
 ## Lag {#lag}
 
-Lag is how many messages the group has not read yet. For each partition, it is the end of the log minus the committed offset. Lag is never shown below zero.
+El lag es el número de mensajes que el grupo aún no ha leído. Para cada partición, es el final del log menos el offset con commit. El lag nunca se muestra por debajo de cero.
 
-Lag depends only on committed offsets. An active consumer may have read further than it has committed, so its real lag can be smaller. When the group commits again, the lag drops.
+El lag depende solo de los offsets con commit. Un consumidor activo puede haber leído más allá de lo que ha confirmado con commit, así que su lag real puede ser menor. Cuando el grupo vuelve a hacer commit, el lag baja.
 
-A partition without a committed offset shows [[ui:groups.lag.noCommit]] and does not count in the total. The total lag of a group shows `—` when the group has no commits at all ([[ui:groups.lag.noCommits]]), or when the offsets of some partition could not be read ([[ui:groups.lag.unknown]]).
+Una partición sin offset con commit muestra [[ui:groups.lag.noCommit]] y no cuenta en el total. El lag total de un grupo muestra `—` cuando el grupo no tiene ningún commit ([[ui:groups.lag.noCommits]]) o cuando no se han podido leer los offsets de alguna partición ([[ui:groups.lag.unknown]]).
 
-Lag counts offsets, not messages. In topics with compaction or transactions, some offsets hold no visible messages, so the group may have fewer messages left to read than the lag shows.
+El lag cuenta offsets, no mensajes. En los topics con compactación o transacciones, algunos offsets no contienen mensajes visibles, así que al grupo le pueden quedar por leer menos mensajes de los que indica el lag.
 
-The values are a snapshot at the moment of loading. To follow the lag, open the group and turn on auto-refresh.
+Los valores son una instantánea del momento de la carga. Para seguir el lag, abre el grupo y activa la actualización automática.
 
-## Group details {#group-details}
+## Detalles del grupo {#group-details}
 
-Click a group in the list to open its tab. At the top, a summary shows the state, the number of members and the assignor.
+Haz clic en un grupo de la lista para abrir su pestaña. Arriba, un resumen muestra el estado, el número de miembros y el assignor.
 
-- [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] or [[ui:groups.details.refresh10]].
-- [[ui:groups.details.refresh]] — reload now.
-- [[ui:groups.details.join]] — start a [consumer session](consumer-sessions.md) in this group. The session form gets the group ID and the topics the group has commits for. This needs Pro, and the button is disabled on [[ui:common.readOnly]] connections; point at the button to see the reason.
+- [[ui:groups.details.autoRefresh]]: [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] o [[ui:groups.details.refresh10]].
+- [[ui:groups.details.refresh]]: vuelve a cargar al momento.
+- [[ui:groups.details.join]]: inicia una [sesión de consumer](consumer-sessions.md) en este grupo. El formulario de la sesión recibe el ID del grupo y los topics para los que el grupo tiene commits. Requiere Pro, y el botón está deshabilitado en las conexiones con la opción [[ui:common.readOnly]] activada; sitúa el puntero sobre el botón para ver el motivo.
 
-[[ui:groups.details.partitions]] lists the partitions the group has commits for, and the partitions assigned to its members. The total lag of the group is shown above the table. The columns are [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (the committed offset), `Log end` (the end offset of the partition), [[ui:groups.details.colLag]] and [[ui:groups.details.colMember]] (the client ID of the member that reads the partition).
+[[ui:groups.details.partitions]] muestra las particiones para las que el grupo tiene commits y las particiones asignadas a sus miembros. El lag total del grupo se muestra sobre la tabla. Las columnas son [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (el offset con commit), `Log end` (el offset final de la partición), [[ui:groups.details.colLag]] y [[ui:groups.details.colMember]] (el client ID del miembro que lee la partición).
 
-[[ui:groups.details.members]] lists the active members: `Client ID`, [[ui:groups.details.colHost]], `Member ID` and [[ui:groups.details.colAssignment]] (the partitions of the member as `topic:partition`). A group without members shows [[ui:groups.details.noMembers]].
+[[ui:groups.details.members]] muestra los miembros activos: `Client ID`, [[ui:groups.details.colHost]], `Member ID` y [[ui:groups.details.colAssignment]] (las particiones del miembro como `topic:partition`). Un grupo sin miembros muestra [[ui:groups.details.noMembers]].
 
-The second row has [[ui:groups.details.resetOffsets]] and [[ui:groups.details.deleteGroup]]. It is hidden on read-only connections.
+La segunda fila contiene [[ui:groups.details.resetOffsets]] y [[ui:groups.details.deleteGroup]]. Está oculta en las conexiones de solo lectura.
 
-## Reset offsets {#reset-offsets}
+## Restablecer offsets {#reset-offsets}
 
-Resetting offsets moves the committed offsets of a group. The group then rereads messages or skips them. Offsets can be reset only for a group without active members (state `Empty` or `Dead`). Otherwise the members would overwrite the new offsets with their own commits. Stop the applications of the group first.
+Restablecer offsets mueve los offsets con commit de un grupo. Después, el grupo vuelve a leer mensajes o se los salta. Los offsets solo se pueden restablecer en un grupo sin miembros activos (estado `Empty` o `Dead`). Si no, los miembros sobrescribirían los nuevos offsets con sus propios commits. Detén antes las aplicaciones del grupo.
 
-1. On the group tab, click [[ui:groups.details.resetOffsets]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Choose the [[ui:groups.reset.strategy]]. See [Reset strategies](groups.md#reset-strategies).
-3. Choose the [[ui:groups.reset.scope]]. See [Reset scope](groups.md#reset-scope).
-4. Click [[ui:groups.reset.preview]].
-5. Check the table and click the apply button. It shows the number of partitions that will change.
+1. En la pestaña del grupo, haz clic en [[ui:groups.details.resetOffsets]]. Mientras el grupo tiene miembros, el botón está deshabilitado; sitúa el puntero sobre el botón para ver el motivo.
+2. En [[ui:groups.reset.strategy]], elige la estrategia. Consulta [Estrategias de restablecimiento](groups.md#reset-strategies).
+3. En [[ui:groups.reset.scope]], elige el alcance. Consulta [Alcance del restablecimiento](groups.md#reset-scope).
+4. Haz clic en [[ui:groups.reset.preview]].
+5. Revisa la tabla y haz clic en el botón de aplicar. Muestra el número de particiones que cambiarán.
 
-The preview changes nothing. For each partition it shows the topic, the partition, [[ui:groups.reset.colCurrent]] (the committed offset), [[ui:groups.reset.colNew]] (the target offset), and `Low / High` (the first and end offsets of the partition). A partition for which no target can be computed is marked [[ui:groups.reset.noTarget]], with the reason. Such partitions are skipped.
+La vista previa no cambia nada. Para cada partición muestra el topic, la partición, [[ui:groups.reset.colCurrent]] (el offset con commit), [[ui:groups.reset.colNew]] (el offset de destino) y `Low / High` (los offsets inicial y final de la partición). Una partición para la que no se puede calcular un destino se marca con [[ui:groups.reset.noTarget]] y el motivo. Esas particiones se omiten.
 
-Only the plan shown in the preview is applied. Any change in the form hides the preview, and you need to click [[ui:groups.reset.preview]] again. On a prod connection, applying asks for the connection name; on other connections, it applies at once.
+Solo se aplica el plan que muestra la vista previa. Cualquier cambio en el formulario oculta la vista previa, y hay que volver a hacer clic en [[ui:groups.reset.preview]]. En una conexión prod, aplicar pide el nombre de la conexión; en las demás conexiones, se aplica al momento.
 
-Before applying, the app checks again that the group has no members. After applying, [[ui:groups.reset.result]] lists each partition with its new offset or an error.
+Antes de aplicar, la app vuelve a comprobar que el grupo no tiene miembros. Después de aplicar, [[ui:groups.reset.result]] enumera cada partición con su nuevo offset o un error.
 
-You can also prepare a reset from a message: see [Reset a group to a message](browse.md#reset-group-here). [[ui:common.close]] closes the reset panel.
+También puedes preparar un restablecimiento a partir de un mensaje: consulta [Restablecer un grupo a un mensaje](browse.md#reset-group-here). [[ui:common.close]] cierra el panel de restablecimiento.
 
-## Reset strategies {#reset-strategies}
+## Estrategias de restablecimiento {#reset-strategies}
 
-[[ui:groups.reset.strategy]] sets the target offset for each partition in the scope:
+[[ui:groups.reset.strategy]] determina el offset de destino de cada partición del alcance:
 
-- [[ui:groups.reset.strategyEarliest]] — the first offset that is still stored. The group rereads everything the topic keeps.
-- [[ui:groups.reset.strategyLatest]] — the end of the partition. The group skips everything accumulated and reads only new messages.
-- [[ui:groups.reset.strategyTimestamp]] — the first message written at or after [[ui:groups.reset.timestamp]]. In partitions without newer messages, the target is the end.
-- [[ui:groups.reset.strategyOffset]] — the given [[ui:groups.reset.offset]], an integer of 0 or more, in every partition. If a partition does not have this offset, the target is its first or end offset.
-- [[ui:groups.reset.strategyShift]] — moves the committed offset by [[ui:groups.reset.shift]]. A negative number rereads N messages back, a positive one skips N messages. The result stays within the first and end offsets. Partitions without a committed offset cannot be shifted and are skipped.
+- [[ui:groups.reset.strategyEarliest]]: el primer offset que aún se conserva. El grupo vuelve a leer todo lo que guarda el topic.
+- [[ui:groups.reset.strategyLatest]]: el final de la partición. El grupo se salta todo lo acumulado y lee solo los mensajes nuevos.
+- [[ui:groups.reset.strategyTimestamp]]: el primer mensaje escrito en la fecha y hora indicadas en [[ui:groups.reset.timestamp]] o después. En las particiones sin mensajes más recientes, el destino es el final.
+- [[ui:groups.reset.strategyOffset]]: el valor indicado en [[ui:groups.reset.offset]], un entero igual o mayor que 0, en todas las particiones. Si una partición no tiene ese offset, el destino es su offset inicial o final.
+- [[ui:groups.reset.strategyShift]]: mueve el offset con commit según el valor de [[ui:groups.reset.shift]]. Un número negativo vuelve a leer N mensajes hacia atrás; uno positivo se salta N mensajes. El resultado se mantiene entre los offsets inicial y final. Las particiones sin offset con commit no se pueden desplazar y se omiten.
 
-The time is your local time, with seconds. Kafka finds the offset by message timestamps.
+La hora es tu hora local, con segundos. Kafka busca el offset según las marcas de tiempo de los mensajes.
 
-## Reset scope {#reset-scope}
+## Alcance del restablecimiento {#reset-scope}
 
-[[ui:groups.reset.scope]] sets which partitions are reset. Other partitions keep their offsets.
+[[ui:groups.reset.scope]] determina qué particiones se restablecen. Las demás particiones conservan sus offsets.
 
-- [[ui:groups.reset.scopeAll]] — all partitions the group has committed offsets for. If the group has no commits yet, choose topics instead.
-- [[ui:groups.reset.scopeTopics]] — all partitions of the listed topics, including partitions without commits. Separate the names with commas, spaces or line breaks. Use this to make a group start reading a new topic from a chosen place.
-- [[ui:groups.reset.scopePartitions]] — only the listed partitions. Enter them in [[ui:groups.reset.partitionsLabel]] as `topic:partition`, separated by commas or spaces, for example `orders:0, orders:3`.
+- [[ui:groups.reset.scopeAll]]: todas las particiones para las que el grupo tiene offsets con commit. Si el grupo aún no tiene commits, elige topics.
+- [[ui:groups.reset.scopeTopics]]: todas las particiones de los topics indicados, incluidas las particiones sin commits. Separa los nombres con comas, espacios o saltos de línea. Úsalo para que un grupo empiece a leer un topic nuevo desde el punto elegido.
+- [[ui:groups.reset.scopePartitions]]: solo las particiones indicadas. Escríbelas en [[ui:groups.reset.partitionsLabel]] como `topic:partition`, separadas por comas o espacios, por ejemplo `orders:0, orders:3`.
 
-## Delete a group {#delete-group}
+## Eliminar un grupo {#delete-group}
 
-Deleting a group removes all its committed offsets. Only a group without members, in the `Empty` state, can be deleted.
+Al eliminar un grupo se eliminan todos sus offsets con commit. Solo se puede eliminar un grupo sin miembros, en estado `Empty`.
 
-1. On the group tab, click [[ui:groups.details.deleteGroup]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Type the group ID to confirm. On a prod connection, also type the connection name.
-3. Click [[ui:common.delete]].
+1. En la pestaña del grupo, haz clic en [[ui:groups.details.deleteGroup]]. Mientras el grupo tiene miembros, el botón está deshabilitado; sitúa el puntero sobre el botón para ver el motivo.
+2. Escribe el ID del grupo para confirmar. En una conexión prod, escribe también el nombre de la conexión.
+3. Haz clic en [[ui:common.delete]].
 
-After deleting, the group tab closes. If an application with this `group.id` starts again, Kafka creates the group anew. Without committed offsets, the application starts where its `auto.offset.reset` setting says: from the beginning or from the end.
+Tras la eliminación, la pestaña del grupo se cierra. Si una aplicación con este `group.id` vuelve a iniciarse, Kafka crea el grupo de nuevo. Sin offsets con commit, la aplicación empieza donde indica su ajuste `auto.offset.reset`: desde el principio o desde el final.
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+En las conexiones con la opción [[ui:common.readOnly]] activada, el botón está oculto.

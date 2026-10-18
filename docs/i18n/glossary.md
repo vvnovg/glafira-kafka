@@ -118,3 +118,14 @@ release page — page des versions; installer — programme d’installation; su
 support — assistance; timestamp — horodatage; tombstone — tombstone; listener — listener;
 macOS menu Help — menu « Aide »; to commit — commiter; read-only connection — connexion en lecture seule
 (с меткой: «connexions en [[ui:common.readOnly]]»).
+
+## Слова руководства (es)
+
+Термины, которые часто встречаются в `docs/guide/es` и отсутствуют в словаре интерфейса:
+tab — pestaña; screen — pantalla; panel (левая панель) — panel; button — botón; checkbox — casilla;
+logs — registros (archivos de registro, как «Registros:» в интерфейсе); batch send — envío por lotes, lote; batch (Kafka) — batch;
+release page — página de versiones; installer — instalador; build — build (m.); support request — solicitud de soporte;
+support — soporte; timestamp — marca de tiempo; tombstone — tombstone; listener — listener; handshake — handshake;
+purge — purgar, purga (как в интерфейсе); to commit — hacer commit; committed offsets — offsets con commit;
+macOS menu Help — menú Ayuda; Keychain — Llavero; Credential Manager — Administrador de credenciales;
+read-only connection — conexión de solo lectura (с меткой: «en las conexiones con la opción [[ui:common.readOnly]] activada»).

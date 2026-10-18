@@ -129,3 +129,16 @@ support — soporte; timestamp — marca de tiempo; tombstone — tombstone; lis
 purge — purgar, purga (как в интерфейсе); to commit — hacer commit; committed offsets — offsets con commit;
 macOS menu Help — menú Ayuda; Keychain — Llavero; Credential Manager — Administrador de credenciales;
 read-only connection — conexión de solo lectura (с меткой: «en las conexiones con la opción [[ui:common.readOnly]] activada»).
+
+## Слова руководства (it)
+
+Термины, которые часто встречаются в `docs/guide/it` и отсутствуют в словаре интерфейса:
+tab — scheda; screen — schermata; panel (левая панель) — pannello; button — pulsante; checkbox — casella di controllo;
+form — modulo (как в UI: Svuota modulo); template — modello; history — cronologia; logs — log (m., file di log);
+batch send — invio in batch (как в UI); batch (Kafka) — batch; release page — pagina delle release;
+installer — programma di installazione; build — build (f.); support request — richiesta di assistenza; support — assistenza;
+timestamp — timestamp; tombstone — tombstone; listener — listener; handshake — handshake; policy — policy (f., как в UI);
+browse (просмотр сообщений) — consultazione, lettura; purge — svuotare, svuotamento (как в UI: Svuota);
+to commit — eseguire il commit; committed offset — offset sottoposto a commit; lock icon — icona a forma di lucchetto;
+macOS menu Help — menu Aiuto; Keychain — Portachiavi; Credential Manager — Gestione credenziali;
+read-only connection — connessione in sola lettura (с меткой: «sulle connessioni con l’opzione [[ui:common.readOnly]] attiva»).

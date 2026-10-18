@@ -1,89 +1,89 @@
-# Consumer sessions
+# Sessioni consumer
 
-A consumer session reads topics as a real member of a consumer group. Consumer sessions are a Pro feature.
+Una sessione consumer legge i topic come un vero membro di un consumer group. Le sessioni consumer sono una funzione Pro.
 
-## What a session is {#what-is}
+## Che cos’è una sessione {#what-is}
 
-[Browsing](browse.md) reads messages without joining a group and changes nothing in the cluster. A session is different: it joins a group with the given `group.id`, gets partitions from Kafka and can commit offsets. Use it to read what a group would read, to move the offsets of a group by committing, or to watch how a group rebalances.
+La [consultazione](browse.md) legge i messaggi senza entrare in un gruppo e non modifica nulla nel cluster. Una sessione è diversa: entra in un gruppo con il `group.id` indicato, riceve le partizioni da Kafka e può eseguire il commit degli offset. Usala per leggere ciò che leggerebbe un gruppo, per spostare gli offset di un gruppo con i commit o per osservare il ribilanciamento di un gruppo.
 
-A session affects the cluster. When it joins or leaves, Kafka redistributes the partitions of the group, and the other members go through a rebalance. Commits change the offsets of the group, which its applications will use.
+Una sessione influisce sul cluster. Quando entra o esce, Kafka ridistribuisce le partizioni del gruppo e gli altri membri eseguono un ribilanciamento. I commit modificano gli offset del gruppo, che le sue applicazioni useranno.
 
-In Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] and [[ui:groups.details.join]] are disabled and marked with a lock and `Pro`. If a session tab opens without an active Pro license, it shows [[ui:consumer.proOnly]] and the link [[ui:common.openLicense]]. See [Activate a key](license-updates.md#activate).
+In Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] e [[ui:groups.details.join]] sono disattivati e contrassegnati da un lucchetto e da `Pro`. Se una scheda di sessione si apre senza una licenza Pro attiva, mostra [[ui:consumer.proOnly]] e il collegamento [[ui:common.openLicense]]. Vedi [Attivare una chiave](license-updates.md#activate).
 
-Sessions are not available on [[ui:common.readOnly]] connections: the tab shows [[ui:consumer.readOnlyBlocked]]. If a connection becomes read-only while a session runs, the session leaves the group.
+Le sessioni non sono disponibili sulle connessioni con l’opzione [[ui:common.readOnly]] attiva: la scheda mostra [[ui:consumer.readOnlyBlocked]]. Se una connessione passa in sola lettura mentre una sessione è in corso, la sessione esce dal gruppo.
 
-## Start a session {#start-session}
+## Avviare una sessione {#start-session}
 
-Open a session in one of three ways:
+Una sessione si apre in tre modi:
 
-- [[ui:sidebar.consumer]] under the connection in the [[ui:sidebar.connections]] panel — an empty form;
-- [[ui:topics.details.consume]] on a topic tab — the topic is filled in;
-- [[ui:groups.details.join]] on a group tab — the group and the topics it has commits for are filled in.
+- [[ui:sidebar.consumer]] sotto la connessione nel pannello [[ui:sidebar.connections]] — un modulo vuoto;
+- [[ui:topics.details.consume]] nella scheda di un topic — il topic è già compilato;
+- [[ui:groups.details.join]] nella scheda di un gruppo — sono già compilati il gruppo e i topic per cui ha commit.
 
-Each time, a new tab opens, so several sessions can run at once.
+Ogni volta si apre una nuova scheda, quindi più sessioni possono essere in corso contemporaneamente.
 
 In [[ui:consumer.form.groupTopics]]:
 
-- `group.id` — the group to join. If you do not enter one, the app suggests a new name such as `glafira-kafka-anna-1a2b3c`. A new group has no commits.
-- [[ui:consumer.form.topicsLabel]] — topic names separated by commas or spaces. Or select [[ui:consumer.form.useRegex]] and enter a [[ui:consumer.form.patternLabel]], for example `orders\..*`. The expression is matched from the start of the name: `^` is added if it is missing. Topics that match and are created later are added within a few minutes (on the metadata refresh); this causes a rebalance.
-- `auto.offset.reset` — where to start in partitions for which the group has no committed offset: [[ui:consumer.form.resetLatest]] (the default) or [[ui:consumer.form.resetEarliest]]. Where the group has a committed offset, reading continues from it.
-- [[ui:consumer.form.autoCommit]] — commit read offsets automatically. Off by default. See [Commits](consumer-sessions.md#commits).
-- `isolation.level` — `read_committed` (the default) shows only messages of committed transactions. `read_uncommitted` also shows messages of open and aborted transactions.
+- `group.id` — il gruppo in cui entrare. Se non ne inserisci uno, l’app propone un nuovo nome come `glafira-kafka-anna-1a2b3c`. Un nuovo gruppo non ha commit.
+- [[ui:consumer.form.topicsLabel]] — i nomi dei topic separati da virgole o spazi. In alternativa, seleziona [[ui:consumer.form.useRegex]] e inserisci un’espressione in [[ui:consumer.form.patternLabel]], per esempio `orders\..*`. L’espressione viene confrontata dall’inizio del nome: se manca, viene aggiunto `^`. I topic corrispondenti creati in seguito vengono aggiunti entro qualche minuto (all’aggiornamento dei metadati); questo causa un ribilanciamento.
+- `auto.offset.reset` — da dove iniziare nelle partizioni per cui il gruppo non ha un offset sottoposto a commit: [[ui:consumer.form.resetLatest]] (il valore predefinito) o [[ui:consumer.form.resetEarliest]]. Dove il gruppo ha un offset sottoposto a commit, la lettura riprende da quello.
+- [[ui:consumer.form.autoCommit]] — esegue automaticamente il commit degli offset letti. Disattivato per impostazione predefinita. Vedi [Commit](consumer-sessions.md#commits).
+- `isolation.level` — `read_committed` (il valore predefinito) mostra solo i messaggi delle transazioni confermate. `read_uncommitted` mostra anche i messaggi delle transazioni aperte e annullate.
 
-In [[ui:consumer.form.formatLegend]], choose the [[ui:consumer.form.keyFormat]] and the [[ui:consumer.form.valueFormat]], as in browsing. See [Formats](browse.md#formats). [[ui:consumer.form.buffer]] sets how many messages the table keeps, from 1 to 100000; the default is 5000.
+In [[ui:consumer.form.formatLegend]] scegli [[ui:consumer.form.keyFormat]] e [[ui:consumer.form.valueFormat]], come nella consultazione. Vedi [Formati](browse.md#formats). [[ui:consumer.form.buffer]] stabilisce quanti messaggi conserva la tabella, da 1 a 100000; il valore predefinito è 5000.
 
-The filters work as in browsing. See [Filters](browse.md#filters).
+I filtri funzionano come nella consultazione. Vedi [Filtri](browse.md#filters).
 
-Click [[ui:consumer.actions.connect]]. On a prod connection, the app asks you to type the connection name and confirm with [[ui:consumer.dialog.confirm]]. While the session runs, the form cannot be changed.
+Fai clic su [[ui:consumer.actions.connect]]. Su una connessione prod, l’app chiede di digitare il nome della connessione e di confermare con [[ui:consumer.dialog.confirm]]. Mentre la sessione è in corso, il modulo non si può modificare.
 
-## Reading {#reading}
+## Lettura {#reading}
 
-The state line next to the buttons shows [[ui:consumer.status.connecting]], then [[ui:consumer.status.inGroup]]. It also shows how many messages were read, how many matched the filters and how many are in the table. If the connection to the broker is lost, the session reconnects by itself and shows this in the state line.
+La riga di stato accanto ai pulsanti mostra [[ui:consumer.status.connecting]], poi [[ui:consumer.status.inGroup]]. Mostra anche quanti messaggi sono stati letti, quanti corrispondono ai filtri e quanti sono in tabella. Se la connessione al broker si interrompe, la sessione si riconnette da sola e lo segnala nella riga di stato.
 
-Messages appear in the table as they arrive, and the session keeps reading new messages until you stop it. When the table is full, the oldest messages are removed. Click a row to see the message details, as in browsing. See [Message details](browse.md#message-details). Select `UTC` to show times in UTC.
+I messaggi compaiono nella tabella man mano che arrivano, e la sessione continua a leggere i nuovi messaggi finché non la interrompi. Quando la tabella è piena, i messaggi più vecchi vengono rimossi. Fai clic su una riga per vedere i dettagli del messaggio, come nella consultazione. Vedi [Dettagli del messaggio](browse.md#message-details). Seleziona `UTC` per mostrare le ore in UTC.
 
-The session reads only the partitions Kafka has assigned to it. If the group has other members, they read the other partitions. If the group has more members than partitions, the session may get no partitions at all.
+La sessione legge solo le partizioni che Kafka le ha assegnato. Se il gruppo ha altri membri, questi leggono le altre partizioni. Se il gruppo ha più membri che partizioni, la sessione potrebbe non ricevere alcuna partizione.
 
-[[ui:consumer.disconnect]] leaves the group, and the other members get its partitions. Closing the session tab also leaves the group. When the session has ended, the state line shows [[ui:consumer.status.disconnected]].
+[[ui:consumer.disconnect]] fa uscire la sessione dal gruppo, e gli altri membri ricevono le sue partizioni. Anche la chiusura della scheda della sessione fa uscire dal gruppo. Quando la sessione è terminata, la riga di stato mostra [[ui:consumer.status.disconnected]].
 
-If a topic does not exist, the session stops with an error and shows the names to check.
+Se un topic non esiste, la sessione si arresta con un errore e mostra i nomi da controllare.
 
-## Commits {#commits}
+## Commit {#commits}
 
-A commit saves an offset for the group. The next member that reads the partition, or the same application after a restart, starts from that offset.
+Un commit salva un offset per il gruppo. Il membro successivo che legge la partizione, o la stessa applicazione dopo un riavvio, inizia da quell’offset.
 
-With [[ui:consumer.form.autoCommit]] on, the session commits read offsets in the background every few seconds, and once more when it leaves the group. Messages hidden by filters count as read.
+Con l’opzione [[ui:consumer.form.autoCommit]] attiva, la sessione esegue il commit degli offset letti in background ogni pochi secondi, e un’ultima volta quando esce dal gruppo. I messaggi nascosti dai filtri contano come letti.
 
-Without auto-commit, the session commits nothing by itself. Use the buttons:
+Senza commit automatico, la sessione non esegue alcun commit da sola. Usa i pulsanti:
 
-- [[ui:consumer.actions.commitSelected]] — commits the offset after the selected message, in its partition only. The group will continue from the next message. If the selected message is older than the current commit, the offset moves back.
-- [[ui:consumer.actions.commitAll]] — commits the current position in every assigned partition. This includes messages hidden by filters and messages already removed from the table.
+- [[ui:consumer.actions.commitSelected]] — esegue il commit dell’offset successivo al messaggio selezionato, solo nella sua partizione. Il gruppo riprenderà dal messaggio seguente. Se il messaggio selezionato è più vecchio del commit attuale, l’offset torna indietro.
+- [[ui:consumer.actions.commitAll]] — esegue il commit della posizione attuale in ogni partizione assegnata. Sono compresi i messaggi nascosti dai filtri e quelli già rimossi dalla tabella.
 
-After a commit, a line shows the committed offsets as `topic:partition → offset`. On a prod connection, each commit asks for the connection name.
+Dopo un commit, una riga mostra gli offset sottoposti a commit nella forma `topic:partition → offset`. Su una connessione prod, ogni commit chiede il nome della connessione.
 
-If the session does not answer in time, the app warns that it is unknown whether the commit was applied. Check the offsets on the group tab. See [Group details](groups.md#group-details).
+Se la sessione non risponde in tempo, l’app avvisa che non è noto se il commit sia stato applicato. Controlla gli offset nella scheda del gruppo. Vedi [Dettagli del gruppo](groups.md#group-details).
 
-## Pause partitions {#pause-partitions}
+## Mettere in pausa le partizioni {#pause-partitions}
 
-The panel to the right of the table lists the partitions assigned to the session as `topic:partition`. Click [[ui:consumer.assignment.pause]] next to a partition to stop reading it, and [[ui:consumer.assignment.resume]] to continue. A paused partition is marked [[ui:consumer.assignment.paused]].
+Il pannello a destra della tabella elenca le partizioni assegnate alla sessione nella forma `topic:partition`. Fai clic su [[ui:consumer.assignment.pause]] accanto a una partizione per interromperne la lettura e su [[ui:consumer.assignment.resume]] per continuare. Una partizione in pausa è contrassegnata da [[ui:consumer.assignment.paused]].
 
-Pausing does not leave the group, so there is no rebalance. The partition stays assigned to the session, and other members do not read it while it is paused. Pausing changes nothing in the cluster and needs no confirmation.
+La pausa non fa uscire dal gruppo, quindi non c’è ribilanciamento. La partizione resta assegnata alla sessione e, finché è in pausa, gli altri membri non la leggono. La pausa non modifica nulla nel cluster e non richiede conferma.
 
-After a rebalance, newly assigned partitions start unpaused. When the session leaves the group, all pauses end.
+Dopo un ribilanciamento, le partizioni appena assegnate partono non in pausa. Quando la sessione esce dal gruppo, tutte le pause terminano.
 
-## Rebalance log {#rebalance-log}
+## Registro dei ribilanciamenti {#rebalance-log}
 
-[[ui:consumer.assignment.logTitle]] under the partition list records every change of the assignment, newest first. Each entry has a time and one of three kinds: partitions assigned to the session, partitions revoked from it, or a rebalance error with its text.
+[[ui:consumer.assignment.logTitle]] sotto l’elenco delle partizioni registra ogni cambiamento dell’assegnazione, dal più recente. Ogni voce ha un’ora e uno di tre tipi: partizioni assegnate alla sessione, partizioni revocate alla sessione o un errore di ribilanciamento con il relativo testo.
 
-A rebalance happens when a member joins or leaves the group, when the subscribed topics change, or when a member stops responding in time. To watch it, start a second session with the same `group.id` in another tab: the partitions are split between the two sessions, and both logs show it.
+Un ribilanciamento avviene quando un membro entra nel gruppo o ne esce, quando cambiano i topic sottoscritti o quando un membro smette di rispondere in tempo. Per osservarlo, avvia in un’altra scheda una seconda sessione con lo stesso `group.id`: le partizioni vengono suddivise tra le due sessioni, ed entrambi i registri lo mostrano.
 
-The log keeps the last 200 entries. Before the first rebalance, it shows [[ui:consumer.assignment.logEmpty]].
+Il registro conserva le ultime 200 voci. Prima del primo ribilanciamento mostra [[ui:consumer.assignment.logEmpty]].
 
-## Limits {#limits}
+## Limiti {#limits}
 
-- Sessions need Pro. If Pro stops being active while a session runs, the session keeps reading, but commits, pauses and resumes are refused, and a new session cannot be started.
-- Sessions are not available on [[ui:common.readOnly]] connections.
-- A session cannot start from a chosen offset. To set the start, reset the offsets of the group first: see [Reset offsets](groups.md#reset-offsets). The reset needs a group without members, so disconnect sessions of this group before resetting.
-- The table keeps at most 100000 messages. Older messages are removed, but they still count as read.
-- Very large keys and values are shown only partly, as in browsing.
-- Do not join the group of a running application unless you mean to. The session takes partitions from the application, and the application does not process them while the session holds them. Commits from the session, including auto-commits, move the offsets of the application.
+- Le sessioni richiedono Pro. Se Pro smette di essere attivo mentre una sessione è in corso, la sessione continua a leggere, ma commit, pause e riprese vengono rifiutati e non si può avviare una nuova sessione.
+- Le sessioni non sono disponibili sulle connessioni con l’opzione [[ui:common.readOnly]] attiva.
+- Una sessione non può iniziare da un offset scelto. Per impostare il punto di partenza, reimposta prima gli offset del gruppo: vedi [Reimpostare gli offset](groups.md#reset-offsets). La reimpostazione richiede un gruppo senza membri, quindi disconnetti le sessioni di questo gruppo prima di reimpostare.
+- La tabella conserva al massimo 100000 messaggi. I messaggi più vecchi vengono rimossi, ma contano comunque come letti.
+- Chiavi e valori molto grandi vengono mostrati solo in parte, come nella consultazione.
+- Non entrare nel gruppo di un’applicazione in esecuzione se non è ciò che vuoi. La sessione sottrae partizioni all’applicazione, che non le elabora finché la sessione le detiene. I commit della sessione, compresi quelli automatici, spostano gli offset dell’applicazione.

@@ -107,7 +107,7 @@ test("publishGuide: главы всех языков и README со всеми �
   }
 });
 
-test("publishGuide на реальном репозитории: 8 языков, без меток и {#", () => {
+test("publishGuide на реальном репозитории: главы без меток и {#", () => {
   const out = mkdtempSync(join(tmpdir(), "guide-real-"));
   try {
     publishGuide(process.cwd(), out);

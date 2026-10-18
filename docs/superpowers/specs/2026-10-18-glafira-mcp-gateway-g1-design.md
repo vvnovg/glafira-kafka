@@ -70,7 +70,7 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 ## 3. Транспорт и шим
 
 **Файлы в каталоге данных приложения:**
-- `settings.json` — новый раздел `mcp: { enabled: bool, approvedClients: [{ name, version, firstSeen, lastSeen }] }`
+- `settings.json` — новый раздел `mcp: { enabled: bool, approvedClients: [{ name, version, firstSeenMs, lastSeenMs }] }`
   (`#[serde(default)]`, версия схемы не меняется; при откате на 0.2.x раздел теряется при первой записи старой версией);
 - `mcp.json` — `{ "version": 1, "endpoint": "<путь сокета или имя pipe>", "token": "<64 hex>", "pid": 123 }`, права 0600,
   атомарная запись. Существует, только пока приложение обслуживает MCP: удаляется при выключении и при выходе
@@ -140,7 +140,7 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
   в список ничего не пишется (при следующем подключении Glafira спросит снова).
 - Пока сессия `Pending`, инструменты отвечают ошибкой `client_not_approved`: «The user has not approved this MCP client
   in Glafira yet. Ask them to approve it in the Glafira window, then retry.» Сам вызов не ждёт.
-- Подтверждённому клиенту `lastSeen` обновляется при каждом новом сеансе.
+- Подтверждённому клиенту `lastSeenMs` обновляется при каждом новом сеансе.
 - Имя клиента можно подделать: подтверждение даёт видимость, а защиту — токен в файле с правами владельца.
 
 ## 5. Инструменты
@@ -175,7 +175,9 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
   `assignmentChanged { memberId, added [], removed [] }`, `coordinatorChanged { from, to }`, `sampleFailed { code, message }`;
   не больше 500 событий (дальше `truncated: true`); `summary { stateChanges, joins, leaves, rebalancingMs }`, где
   `rebalancingMs` — время в `PreparingRebalance` / `CompletingRebalance` (по образцам);
-- верхняя граница 50 с — ниже таймаута запроса 60 с, принятого по умолчанию в клиентах на TypeScript SDK;
+- верхняя граница 50 с — ниже таймаута запроса 60 с, принятого по умолчанию в клиентах на TypeScript SDK; после окна
+  наблюдения ждут последнее описание группы до `READ_GRACE_S` (3 с) и итоговый лаг до `LAG_WAIT_S` (3 с), поэтому вызов
+  длится не дольше ≈ `durationSeconds` + 6 с (≤ ~56 с при 50 с);
 - если клиент передал `progressToken` — уведомление о ходе после каждого образца; отмена запроса (`notifications/cancelled`)
   завершает наблюдение досрочно с уже собранной хронологией;
 - одно наблюдение на сессию одновременно; считается одним вызовом для лимита частоты, каждый образец занимает слот
@@ -209,8 +211,11 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 
 **Ошибки:** результат инструмента с `isError: true` и текстом `<code>: <message>` — `not_allowed`, `client_not_approved`,
 `client_rejected` (сессия закрывается), `mcp_disabled`, `rate_limited`, `invalid_argument` (например, `limit` вне
-диапазона), `not_found` (группы нет), `busy` (второе наблюдение в той же сессии), `internal`, коды Kafka из `ErrorCode`. Ошибка
-протокола JSON-RPC — только для неверно сформированного запроса (обрабатывает rmcp).
+диапазона), `not_found` (группы нет), `busy` (второе наблюдение в той же сессии), `response_too_large` (ответ не помещается
+в 100 КБ даже после усечения списков — `HARD_LIMIT_BYTES` в `rules.rs`; сузить запрос), `internal`, коды Kafka из `ErrorCode`.
+В хронологии `observe_consumer_group` событие `sampleFailed` с кодом `describe_error` — брокер вернул ошибку описания группы
+(это не ошибка вызова).
+Ошибка протокола JSON-RPC — только для неверно сформированного запроса (обрабатывает rmcp).
 
 ## 7. Журнал
 

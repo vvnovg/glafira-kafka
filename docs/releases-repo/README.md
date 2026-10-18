@@ -2,6 +2,8 @@
 
 Desktop client for Apache Kafka. Download the installer for your OS from [Releases](../../releases/latest).
 
+User guide: [English](guide/en/getting-started.md) · [Русский](guide/ru/getting-started.md) · [Deutsch](guide/de/getting-started.md) · [Français](guide/fr/getting-started.md) · [Español](guide/es/getting-started.md) · [Italiano](guide/it/getting-started.md) · [Polski](guide/pl/getting-started.md) · [Português (Brasil)](guide/pt-BR/getting-started.md)
+
 ## Unsigned builds (beta)
 Beta builds are not signed by Apple/Microsoft yet, so the OS warns on first launch.
 

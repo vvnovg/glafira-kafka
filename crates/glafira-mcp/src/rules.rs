@@ -5,6 +5,9 @@ use serde::Serialize;
 use crate::model::ConfigEntry;
 
 pub const MAX_RESPONSE_BYTES: usize = 100 * 1024;
+/// Страховка в обвязке инструментов: ответ больше этого (предел + запас на `truncated` и
+/// `hint`) не отправляется — обрезка списков не справилась.
+pub const HARD_LIMIT_BYTES: usize = MAX_RESPONSE_BYTES + 1024;
 pub const DEFAULT_LIMIT: usize = 200;
 pub const MAX_LIMIT: usize = 500;
 pub const MAX_TOPICS_PER_CALL: usize = 100;

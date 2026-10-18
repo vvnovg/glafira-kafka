@@ -22,6 +22,8 @@ struct Fake {
     seen: Mutex<Vec<SessionView>>,
     closed: Mutex<Vec<String>>,
     groups: Mutex<VecDeque<GroupDescription>>,
+    /// Задержка каждого описания группы (медленный кластер).
+    describe_delay: Mutex<Duration>,
 }
 
 impl Fake {
@@ -31,6 +33,7 @@ impl Fake {
             seen: Mutex::new(Vec::new()),
             closed: Mutex::new(Vec::new()),
             groups: Mutex::new(VecDeque::new()),
+            describe_delay: Mutex::new(Duration::ZERO),
         })
     }
 }
@@ -47,6 +50,13 @@ fn member(id: &str, host: &str) -> Member {
         }],
         target_assignment: None,
     }
+}
+
+/// 2000 участников с длинными id и хостами: описание группы ~1,4 МБ.
+fn crowd() -> Vec<Member> {
+    (0..2000)
+        .map(|i| member(&format!("m{i}-{}", "x".repeat(300)), &"h".repeat(300)))
+        .collect()
 }
 
 fn group(state: &str, members: Vec<Member>) -> GroupDescription {
@@ -156,7 +166,13 @@ impl Backend for Fake {
                         .collect(),
                 }),
                 ReadOp::DescribeGroup { group_id, .. } => {
-                    if group_id == "missing" {
+                    let delay = *self.describe_delay.lock().unwrap();
+                    if !delay.is_zero() {
+                        tokio::time::sleep(delay).await;
+                    }
+                    if group_id == "crowd" {
+                        ReadOutput::Group(group("Stable", crowd()))
+                    } else if group_id == "missing" {
                         let mut g = group("Dead", vec![]);
                         g.not_found = true;
                         ReadOutput::Group(g)
@@ -192,6 +208,17 @@ impl Backend for Fake {
                         })
                         .collect(),
                 ),
+                ReadOp::TopicGroups { topic, .. } => ReadOutput::TopicGroups(TopicGroups {
+                    groups: (0..if topic == "busy" { 5000 } else { 1 })
+                        .map(|i| TopicGroup {
+                            group_id: format!("group-{i}-{}", "g".repeat(100)),
+                            state: "Stable".into(),
+                            lag: Some(i),
+                            partitions: 3,
+                        })
+                        .collect(),
+                    incomplete: false,
+                }),
                 other => {
                     return Err(BackendError::new(
                         "internal",
@@ -585,6 +612,86 @@ async fn huge_observation_is_cut_to_the_size_limit() {
         v["summary"]["joins"].as_u64().unwrap() >= 200,
         "сводка считает все события"
     );
+}
+
+#[tokio::test]
+async fn long_group_lists_are_truncated_to_the_size_limit() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let r = call(
+        &c,
+        "get_topic_consumer_groups",
+        json!({"connectionId": "c1", "topic": "busy"}),
+    )
+    .await;
+    assert!(
+        text(&r).len() <= glafira_mcp::rules::HARD_LIMIT_BYTES,
+        "{}",
+        text(&r).len()
+    );
+    let v = ok(r);
+    assert_eq!(v["truncated"], true);
+    assert!(v["groups"].as_array().unwrap().len() < 5000);
+    let v = ok(call(
+        &c,
+        "get_topic_consumer_groups",
+        json!({"connectionId": "c1", "topic": "orders"}),
+    )
+    .await);
+    assert_eq!(v["truncated"], false);
+
+    let r = call(
+        &c,
+        "describe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "crowd"}),
+    )
+    .await;
+    assert!(
+        text(&r).len() <= glafira_mcp::rules::HARD_LIMIT_BYTES,
+        "{}",
+        text(&r).len()
+    );
+    let v = ok(r);
+    assert_eq!(v["truncated"], true);
+    assert!(v["members"].as_array().unwrap().len() < 2000);
+    assert_eq!(v["totalLag"], 10, "лаг посчитан до обрезки");
+}
+
+#[tokio::test]
+async fn response_that_cannot_be_cut_is_refused() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    // initial и final огромной группы не обрезаются: страховка не даёт отправить 2,8 МБ.
+    let r = call(
+        &c,
+        "observe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "crowd", "durationSeconds": 10}),
+    )
+    .await;
+    let msg = err(&r);
+    assert!(msg.starts_with("response_too_large:"), "{msg}");
+    let recent = e.audit.recent(1);
+    assert_eq!(recent[0]["code"], "response_too_large");
+}
+
+#[tokio::test]
+async fn observation_keeps_its_window_when_reads_are_slow() {
+    let fake = Fake::new(SessionAccess::Approved);
+    // Каждое описание — 80 «секунд» при единице 10 мс; окно — 10 «секунд».
+    *fake.describe_delay.lock().unwrap() = Duration::from_millis(80);
+    let e = env(fake).await;
+    let c = client(&e.ep).await;
+    let started = std::time::Instant::now();
+    let v = ok(call(
+        &c,
+        "observe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "orders-svc", "durationSeconds": 10}),
+    )
+    .await);
+    // Без расписания от начала: 6 чтений по 80 мс и 5 пауз по 20 мс — больше 580 мс.
+    let elapsed = started.elapsed();
+    assert!(elapsed < Duration::from_millis(400), "{elapsed:?}");
+    assert!(v["samples"].as_u64().unwrap() < 6, "{v}");
 }
 
 #[tokio::test]

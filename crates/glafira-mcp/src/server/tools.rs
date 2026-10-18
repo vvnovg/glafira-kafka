@@ -30,16 +30,20 @@ struct Fitted<T: Serialize> {
     hint: Option<&'static str>,
 }
 
-fn fitted<T: Serialize, I>(
-    mut body: T,
-    list: fn(&mut T) -> &mut Vec<I>,
-) -> Result<Value, BackendError> {
-    let truncated = rules::fit(&mut body, list);
+fn wrap<T: Serialize>(body: T, truncated: bool) -> Result<Value, BackendError> {
     to_value(&Fitted {
         body,
         truncated,
         hint: truncated.then_some(TRUNCATED_HINT),
     })
+}
+
+fn fitted<T: Serialize, I>(
+    mut body: T,
+    list: fn(&mut T) -> &mut Vec<I>,
+) -> Result<Value, BackendError> {
+    let truncated = rules::fit(&mut body, list);
+    wrap(body, truncated)
 }
 
 macro_rules! expect {
@@ -245,6 +249,14 @@ fn offsets_of(d: &mut GroupDetails) -> &mut Vec<GroupOffset> {
     &mut d.offsets
 }
 
+fn members_of(d: &mut GroupDetails) -> &mut Vec<Member> {
+    &mut d.group.members
+}
+
+fn topic_groups_of(g: &mut TopicGroups) -> &mut Vec<TopicGroup> {
+    &mut g.groups
+}
+
 fn events_of(o: &mut observe::Observation) -> &mut Vec<observe::Event> {
     &mut o.events
 }
@@ -297,6 +309,10 @@ impl GatewayServer {
             connection_id: p.connection_id.clone(),
             group_id: p.group_id.clone(),
         };
+        // Расписание — от начала наблюдения: время чтений не растягивает окно (спец. §5).
+        let (started_at_ms, started) = (now_ms(), tokio::time::Instant::now());
+        let unit = self.shared.options.observe_unit;
+        let reads_until = started + unit * (duration + READ_GRACE_S);
         let first = expect!(self.read(describe()).await?, Group)?;
         if first.not_found {
             return Err(BackendError::not_found(format!(
@@ -316,21 +332,33 @@ impl GatewayServer {
                 _ => None,
             }
         };
-        let (started_at_ms, started) = (now_ms(), tokio::time::Instant::now());
         let lag_start = lag().await;
         let total = (duration / interval) as usize + 1;
         let progress = ctx.meta.get_progress_token();
         let mut rec = Recorder::default();
-        rec.sample(0, &first);
+        rec.sample(started.elapsed().as_millis() as u64, &first);
         for i in 1..total {
+            let tick = started + unit * (interval * i as u32);
             tokio::select! {
                 _ = ctx.ct.cancelled() => break,
-                _ = tokio::time::sleep(self.shared.options.observe_unit * interval) => {}
+                _ = tokio::time::sleep_until(tick) => {}
             }
             let at = started.elapsed().as_millis() as u64;
-            match self.read(describe()).await.and_then(|o| expect!(o, Group)) {
-                Ok(g) => rec.sample(at, &g),
-                Err(e) => rec.failed(at, e),
+            match tokio::time::timeout_at(reads_until, self.read(describe())).await {
+                Err(_) => {
+                    rec.failed(
+                        at,
+                        BackendError::new(
+                            "TIMEOUT",
+                            "The group description did not arrive before the end of the observation",
+                        ),
+                    );
+                    break;
+                }
+                Ok(r) => match r.and_then(|o| expect!(o, Group)) {
+                    Ok(g) => rec.sample(at, &g),
+                    Err(e) => rec.failed(at, e),
+                },
             }
             if let Some(t) = &progress {
                 let note = ProgressNotificationParam::new(t.clone(), (i + 1) as f64)
@@ -338,7 +366,10 @@ impl GatewayServer {
                 let _ = ctx.peer.notify_progress(note).await;
             }
         }
-        let lag_end = lag().await;
+        let lag_end = tokio::time::timeout(unit * LAG_WAIT_S, lag())
+            .await
+            .ok()
+            .flatten();
         let mut observation = rec.finish(
             started_at_ms,
             started.elapsed().as_millis() as u64,
@@ -686,14 +717,15 @@ impl GatewayServer {
                         Offsets
                     )?;
                     let total_lag = offsets.iter().map(|o| o.lag).sum::<Option<i64>>();
-                    fitted(
-                        GroupDetails {
-                            group,
-                            offsets,
-                            total_lag,
-                        },
-                        offsets_of,
-                    )
+                    let mut details = GroupDetails {
+                        group,
+                        offsets,
+                        total_lag,
+                    };
+                    // Сначала оффсеты, затем участники: оба списка могут быть большими.
+                    let truncated =
+                        rules::fit(&mut details, offsets_of) | rules::fit(&mut details, members_of);
+                    wrap(details, truncated)
                 },
             )
             .await)
@@ -762,7 +794,7 @@ impl GatewayServer {
                         .await?,
                         TopicGroups
                     )?;
-                    to_value(&g)
+                    fitted(g, topic_groups_of)
                 },
             )
             .await)

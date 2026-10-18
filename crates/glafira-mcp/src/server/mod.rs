@@ -24,6 +24,7 @@ use crate::audit::{AuditConnection, AuditEvent, AuditLog, Outcome, now_ms, trunc
 use crate::endpoint::{BoxStream, Endpoint, Listener};
 use crate::limits::{CALLS_PER_MINUTE, GLOBAL_CONCURRENCY, RateLimiter, SESSION_CONCURRENCY};
 use crate::model::*;
+use crate::rules;
 
 mod tools;
 
@@ -421,6 +422,16 @@ impl GatewayServer {
             Ok(_flag) => body.await,
             Err(e) => Err(e),
         };
+        let result = result.and_then(|v| {
+            if serde_json::to_vec(&v).map_or(0, |b| b.len()) > rules::HARD_LIMIT_BYTES {
+                Err(BackendError::new(
+                    "response_too_large",
+                    "The response is larger than 100 KB even after truncation; narrow the request: a filter, fewer items or a smaller group",
+                ))
+            } else {
+                Ok(v)
+            }
+        });
         let (out, outcome, code, bytes) = match result {
             Ok(v) => {
                 let r = CallToolResult::structured(v);

@@ -14,6 +14,10 @@ pub const MIN_INTERVAL_S: u32 = 2;
 pub const MAX_INTERVAL_S: u32 = 10;
 pub const DEFAULT_INTERVAL_S: u32 = 2;
 pub const MAX_EVENTS: usize = 500;
+/// Сколько сверх окна ждать последнее описание группы и итоговый лаг: вместе с
+/// MAX_DURATION_S вызов укладывается в 60 с.
+pub const READ_GRACE_S: u32 = 3;
+pub const LAG_WAIT_S: u32 = 3;
 
 pub fn is_rebalancing(state: &str) -> bool {
     matches!(state, "PreparingRebalance" | "CompletingRebalance")

@@ -200,6 +200,29 @@ impl SettingsStore {
         })
     }
 
+    /// Только обновляет версию и время последнего сеанса уже запомненного клиента: проверка и
+    /// запись — под одной блокировкой, поэтому параллельный отзыв клиента не отменяется.
+    /// `Ok(false)` — клиента нет (файл не пишется). Блокирующий вызов.
+    pub fn touch_client(&self, name: &str, version: &str, now_ms: u64) -> AppResult<bool> {
+        let mut data = self.data.write_safe();
+        let Some(i) = data
+            .mcp
+            .approved_clients
+            .iter()
+            .position(|c| c.name == name)
+        else {
+            return Ok(false);
+        };
+        let mut next = data.clone();
+        let c = &mut next.mcp.approved_clients[i];
+        c.version = version.to_string();
+        c.last_seen_ms = now_ms;
+        next.schema_version = 1;
+        write_json(&self.path, &next)?;
+        *data = next;
+        Ok(true)
+    }
+
     /// Блокирующий вызов. `false` — такого клиента не было.
     pub fn revoke_client(&self, name: &str) -> AppResult<bool> {
         if !self.is_client_approved(name) {
@@ -393,6 +416,25 @@ mod tests {
         assert!(
             SettingsStore::open(dir.path()).mcp().enabled,
             "смена языка не сбрасывает MCP"
+        );
+    }
+
+    #[test]
+    fn touching_a_client_never_adds_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = SettingsStore::open(dir.path());
+        assert!(!s.touch_client("cursor", "2", 5).unwrap());
+        assert!(!s.is_client_approved("cursor"), "только обновление");
+        assert!(
+            !dir.path().join("settings.json").exists(),
+            "без записи файла"
+        );
+        s.remember_client("cursor", "1", 1).unwrap();
+        assert!(s.touch_client("cursor", "2", 5).unwrap());
+        let c = &s.mcp().approved_clients[0];
+        assert_eq!(
+            (c.version.as_str(), c.first_seen_ms, c.last_seen_ms),
+            ("2", 1, 5)
         );
     }
 

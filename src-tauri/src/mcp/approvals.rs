@@ -61,12 +61,17 @@ impl Approvals {
             }
             return (to_access(e.decision), false);
         }
-        if let Some(c) = &client
-            && self.settings.is_client_approved(&c.name)
-        {
-            if let Err(e) = self.settings.remember_client(&c.name, &c.version, now_ms) {
-                tracing::warn!("mcp client not remembered: {}", e.message);
-            }
+        // Только обновление записи (не upsert): отзыв клиента в это же время не отменяется.
+        // Ошибка возможна лишь при записи файла, то есть клиент найден — сессия разрешена.
+        let remembered = client.as_ref().is_some_and(|c| {
+            self.settings
+                .touch_client(&c.name, &c.version, now_ms)
+                .unwrap_or_else(|e| {
+                    tracing::warn!("mcp client lastSeen not saved: {}", e.message);
+                    true
+                })
+        });
+        if remembered {
             entries.push(Entry {
                 session_id: s.id.clone(),
                 client: client.clone(),
@@ -258,5 +263,50 @@ mod tests {
         a.access(&view("s3", Some("x")), 3);
         a.closed("s3");
         assert!(a.pending().is_empty());
+    }
+
+    #[test]
+    fn new_session_after_revoke_does_not_restore_the_client() {
+        let (_d, settings, a) = approvals();
+        settings.remember_client("claude-ai", "1", 0).unwrap();
+        a.access(&view("s1", Some("claude-ai")), 1);
+        assert!(a.revoke("claude-ai").unwrap());
+        assert_eq!(
+            a.access(&view("s2", Some("claude-ai")), 2),
+            (SessionAccess::Pending, true)
+        );
+        assert!(!settings.is_client_approved("claude-ai"));
+    }
+
+    /// Отзыв между проверкой «клиент запомнен» и обновлением `lastSeenMs` в `access` не должен
+    /// возвращать клиента в `approvedClients` (гонка access ↔ revoke).
+    #[test]
+    fn revoke_is_not_undone_by_a_concurrent_session() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let (_d, settings, a) = approvals();
+        let a = Arc::new(a);
+        let stop = Arc::new(AtomicBool::new(false));
+        let opener = {
+            let (a, stop) = (a.clone(), stop.clone());
+            std::thread::spawn(move || {
+                let mut n = 0u64;
+                while !stop.load(Ordering::Relaxed) {
+                    let id = format!("s{n}");
+                    a.access(&view(&id, Some("claude-ai")), n);
+                    a.closed(&id);
+                    n += 1;
+                }
+            })
+        };
+        for round in 0..100 {
+            settings.remember_client("claude-ai", "1", 0).unwrap();
+            a.revoke("claude-ai").unwrap();
+            assert!(
+                !settings.is_client_approved("claude-ai"),
+                "раунд {round}: отозванный клиент вернулся"
+            );
+        }
+        stop.store(true, Ordering::Relaxed);
+        opener.join().unwrap();
     }
 }

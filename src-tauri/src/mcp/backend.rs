@@ -27,12 +27,16 @@ pub struct AppBackend {
 
 /// Код ошибки — как в приложении (`CONNECTION_FAILED`, `TIMEOUT`…). Тексты ошибок настроек и
 /// файлов содержат пути к сертификатам (спец. §6) — LLM получает вместо них общий текст.
+/// Тексты ошибок Kafka (`errors.kafka.*`) — фиксированный английский без путей и адресов:
+/// они остаются, иначе неклассифицированная ошибка брокера (`errors.kafka.generic`) выглядела бы
+/// как сломанные сертификаты.
 fn to_backend(e: AppError) -> BackendError {
     let code = serde_json::to_value(e.code)
         .ok()
         .and_then(|v| v.as_str().map(String::from))
         .unwrap_or_else(|| "INTERNAL".into());
     let message = match e.code {
+        _ if e.key.starts_with("errors.kafka.") => e.message,
         ErrorCode::InvalidInput | ErrorCode::Internal => {
             "The settings or certificate files of this connection cannot be used; ask the user to check the connection in Glafira".to_string()
         }
@@ -474,5 +478,41 @@ mod tests {
             .unwrap_err();
         assert_eq!(e.code, "INVALID_INPUT", "{e:?}");
         assert!(!e.message.contains("secret-path"), "{e:?}");
+    }
+
+    #[test]
+    fn unclassified_kafka_error_keeps_its_text() {
+        // Опечатка в имени топика у get_topic_configs: AdminOp(UnknownTopicOrPartition) → Internal.
+        let e = to_backend(crate::error::from_kafka(
+            &rdkafka::error::KafkaError::AdminOp(
+                rdkafka::types::RDKafkaErrorCode::UnknownTopicOrPartition,
+            ),
+            None,
+        ));
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("INTERNAL", "Kafka error")
+        );
+        let e = to_backend(app_err!(
+            ErrorCode::Internal,
+            "errors.kafka.emptyResponse",
+            "Empty {{request}} response",
+            request = "DescribeConfigs"
+        ));
+        assert_eq!(e.message, "Empty DescribeConfigs response");
+    }
+
+    #[test]
+    fn file_errors_hide_the_path() {
+        let e = to_backend(
+            crate::storage::fs::atomic_write(
+                std::path::Path::new("/nonexistent/secret-path/ca.pem/x"),
+                b"x",
+            )
+            .unwrap_err(),
+        );
+        assert_eq!(e.code, "INTERNAL", "{e:?}");
+        assert!(!e.message.contains("secret-path"), "{e:?}");
+        assert!(e.message.contains("certificate files"), "{e:?}");
     }
 }

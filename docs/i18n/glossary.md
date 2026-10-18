@@ -81,7 +81,7 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | update | обновление | Update | mise à jour | actualización | aggiornamento | aktualizacja | atualização | 更新 | 更新 | アップデート | 업데이트 |
 | diagnostics archive | архив диагностики | Diagnosearchiv | archive de diagnostic | archivo de diagnóstico | archivio diagnostico | archiwum diagnostyczne | arquivo de diagnóstico | 诊断归档 | 診斷壓縮檔 | 診断アーカイブ | 진단 아카이브 |
 | set by your organization | задан вашей организацией | von Ihrer Organisation festgelegt | défini par votre organisation | establecido por tu organización | impostato dalla tua organizzazione | ustawione przez organizację | definido pela sua organização | 由你的组织设置 | 由你的組織設定 | 組織によって設定済み | 조직에서 설정함 |
-| System default (…) | Как в системе (…) | Systemsprache ({{name}}) | Langue du système ({{name}}) | Idioma del sistema ({{name}}) | Lingua di sistema ({{name}}) | Język systemu ({{name}}) | Idioma do sistema ({{name}}) | 系统语言（{{name}}） | 系統語言（{{name}}） | システムの言語（{{name}}） | 시스템 언어({{name}}) |
+| System default (…) | Как в системе (…) | Systemsprache ({{name}}) | Langue du système ({{name}}) | Idioma del sistema ({{name}}) | Lingua di sistema ({{name}}) | Język systemu ({{name}}) | Idioma do sistema ({{name}}) | 跟随系统（{{name}}） | 系統語言（{{name}}） | システムの言語（{{name}}） | 시스템 언어({{name}}) |
 
 ## Частые слова интерфейса
 
@@ -92,7 +92,7 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | Delete | Löschen | Supprimer | Eliminar | Elimina | Usuń | Excluir | 删除 | 刪除 | 削除 | 삭제 |
 | Close | Schließen | Fermer | Cerrar | Chiudi | Zamknij | Fechar | 关闭 | 關閉 | 閉じる | 닫기 |
 | Retry | Erneut versuchen | Réessayer | Reintentar | Riprova | Spróbuj ponownie | Tentar novamente | 重试 | 重試 | 再試行 | 다시 시도 |
-| Loading… | Wird geladen… | Chargement… | Cargando… | Caricamento… | Wczytywanie… | Carregando… | 正在加载… | 載入中… | 読み込み中… | 불러오는 중… |
+| Loading… | Wird geladen… | Chargement… | Cargando… | Caricamento… | Wczytywanie… | Carregando… | 加载中… | 載入中… | 読み込み中… | 불러오는 중… |
 | Details | Details | Détails | Detalles | Dettagli | Szczegóły | Detalhes | 详细信息 | 詳細資訊 | 詳細 | 세부 정보 |
 | Apply | Anwenden | Appliquer | Aplicar | Applica | Zastosuj | Aplicar | 应用 | 套用 | 適用 | 적용 |
 | Back | Zurück | Retour | Atrás | Indietro | Wstecz | Voltar | 返回 | 返回 | 戻る | 뒤로 |

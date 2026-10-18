@@ -230,5 +230,13 @@
     "topics.details.colLeader",
     "topics.details.tabGroups",
     "topics.groups.colLag"
+  ],
+  "zh-CN": [
+    "about.build",
+    "connections.form.prodPro",
+    "connections.form.step.tcp",
+    "sidebar.producer",
+    "tabs.producer",
+    "topics.details.colLeader"
   ]
 }

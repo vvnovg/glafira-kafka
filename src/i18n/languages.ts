@@ -1,4 +1,4 @@
-export type LanguageCode = "en" | "ru" | "de" | "fr" | "es" | "it" | "pl" | "pt-BR";
+export type LanguageCode = "en" | "ru" | "de" | "fr" | "es" | "it" | "pl" | "pt-BR" | "zh-CN";
 
 export const LANGUAGES: { code: LanguageCode; nativeName: string }[] = [
   { code: "en", nativeName: "English" },
@@ -9,4 +9,5 @@ export const LANGUAGES: { code: LanguageCode; nativeName: string }[] = [
   { code: "it", nativeName: "Italiano" },
   { code: "pl", nativeName: "Polski" },
   { code: "pt-BR", nativeName: "Português (Brasil)" },
+  { code: "zh-CN", nativeName: "简体中文" },
 ];

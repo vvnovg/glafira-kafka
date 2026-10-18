@@ -9,7 +9,7 @@ use crate::error::{AppResult, ErrorCode};
 use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::RwLockExt;
 
-pub const LANGUAGES: [&str; 8] = ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR"];
+pub const LANGUAGES: [&str; 9] = ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR", "zh-CN"];
 
 fn is_known(code: &str) -> bool {
     LANGUAGES.contains(&code)
@@ -203,9 +203,21 @@ mod tests {
 
     #[test]
     fn asian_tags_without_asian_languages() {
-        assert_eq!(match_language_in("zh-CN", &LANGUAGES), None);
-        assert_eq!(match_language_in("zh-Hant-TW", &LANGUAGES), None);
-        assert_eq!(match_language_in("ja-JP", &LANGUAGES), None);
+        const BEFORE_E: [&str; 8] = ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR"];
+        assert_eq!(match_language_in("zh-CN", &BEFORE_E), None);
+        assert_eq!(match_language_in("zh-Hant-TW", &BEFORE_E), None);
+        assert_eq!(match_language_in("ja-JP", &BEFORE_E), None);
+    }
+
+    #[test]
+    fn simplified_chinese_with_real_list() {
+        for tag in ["zh-Hans-CN", "zh-CN", "zh_CN", "zh-SG", "zh", "zh-Hans-HK"] {
+            assert_eq!(match_language(tag), Some("zh-CN"), "{tag}");
+        }
+        assert_eq!(
+            resolve(Some("zh-Hans-CN"), None, None),
+            ("zh-CN".into(), LanguageReason::System)
+        );
     }
 
     #[test]

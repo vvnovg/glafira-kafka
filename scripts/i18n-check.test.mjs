@@ -457,3 +457,12 @@ test("CJK: в прозе главы метка подставляется зна
   assert.deepEqual(p("打开[[ui:sidebar.settings]]。"), []);
   assert.ok(p("打开 [[ui:sidebar.settings]]。").some((x) => x.includes("пробел между иероглифами")), "в zh метка без пробелов");
 });
+
+test("CJK: глава-заготовка, совпадающая с en, типографикой языка не проверяется", () => {
+  const en = flatten({ sidebar: { settings: "Settings" } });
+  const enCh = "# Start\n\nOpen [[ui:sidebar.settings]].\n";
+  const zhFlat = flatten({ sidebar: { settings: "设置" } });
+  const p = (zh) => checkGuide({ "en/getting-started.md": enCh, "zh-CN/getting-started.md": zh }, ["en", "zh-CN"], en, ["getting-started"], { "zh-CN": zhFlat });
+  assert.deepEqual(p(enCh), []);
+  assert.ok(p(enCh.replace("Open", "Öffnen")).some((x) => x.includes("полуширинная")), "изменённая глава проверяется");
+});

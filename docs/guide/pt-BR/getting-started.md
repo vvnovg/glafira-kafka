@@ -98,16 +98,14 @@ Esses usuários e certificados servem apenas para testes locais.
 
 ## Idioma da interface {#language}
 
-A interface está disponível em inglês, russo, alemão, francês, espanhol, italiano, polonês e português (Brasil). Inglês e russo são gratuitos. Os demais idiomas exigem o Pro.
+A interface está disponível em inglês, russo, alemão, francês, espanhol, italiano, polonês e português (Brasil). Todos os idiomas são gratuitos.
 
 Para mudar o idioma:
 
 1. Clique em [[ui:sidebar.settings]] na parte inferior do painel esquerdo.
 2. Escolha um idioma em [[ui:settings.language.label]].
 
-A mudança vale na hora, inclusive para este guia e para o menu do macOS. A opção [[ui:settings.language.systemUnknown]] (o padrão) segue o idioma do sistema operacional. Se esse idioma não estiver na lista, ou se exigir o Pro e o Pro não estiver ativo, a interface fica em inglês.
-
-Sem o Pro, os idiomas Pro aparecem na lista, mas não podem ser selecionados. Se você escolheu um idioma Pro e a licença expirar depois, a interface muda para inglês. Sua escolha fica guardada e volta quando o Pro estiver ativo de novo.
+A mudança vale na hora, inclusive para este guia e para o menu do macOS. A opção [[ui:settings.language.systemUnknown]] (o padrão) segue o idioma do sistema operacional. Se esse idioma não estiver na lista, a interface fica em inglês.
 
 ## Configurações definidas pela sua organização {#managed-settings}
 

@@ -67,7 +67,7 @@ test("publishGuide: главы всех языков и README со всеми �
     mkdirSync(join(root, "src/i18n"), { recursive: true });
     writeFileSync(
       join(root, "src/i18n/languages.ts"),
-      `export const LANGUAGES = [\n${langs.map(([c, n]) => `  { code: "${c}", nativeName: "${n}", pro: false },`).join("\n")}\n];\n`,
+      `export const LANGUAGES = [\n${langs.map(([c, n]) => `  { code: "${c}", nativeName: "${n}" },`).join("\n")}\n];\n`,
     );
     mkdirSync(join(root, "src/locales"), { recursive: true });
     for (const [c] of langs) {

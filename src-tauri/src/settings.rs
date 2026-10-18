@@ -9,19 +9,10 @@ use crate::error::{AppResult, ErrorCode};
 use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::RwLockExt;
 
-pub const LANGUAGES: [(&str, bool); 8] = [
-    ("en", false),
-    ("ru", false),
-    ("de", true),
-    ("fr", true),
-    ("es", true),
-    ("it", true),
-    ("pl", true),
-    ("pt-BR", true),
-];
+pub const LANGUAGES: [&str; 8] = ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR"];
 
-fn is_pro(code: &str) -> Option<bool> {
-    LANGUAGES.iter().find(|(c, _)| *c == code).map(|(_, p)| *p)
+fn is_known(code: &str) -> bool {
+    LANGUAGES.contains(&code)
 }
 
 pub fn match_language(tag: &str) -> Option<&'static str> {
@@ -35,7 +26,7 @@ pub fn match_language(tag: &str) -> Option<&'static str> {
     }
     LANGUAGES
         .iter()
-        .map(|(c, _)| *c)
+        .copied()
         .find(|c| c.eq_ignore_ascii_case(&primary))
 }
 
@@ -46,15 +37,13 @@ pub enum LanguageReason {
     User,
     System,
     Default,
-    ProRequired,
 }
 
-/// Политика → выбор → ОС → en; Pro-язык без Pro → en (ProRequired).
+/// Политика → выбор → ОС → en. Все языки доступны без лицензии.
 pub fn resolve(
     system: Option<&str>,
     chosen: Option<&str>,
     policy: Option<&str>,
-    pro: bool,
 ) -> (String, LanguageReason) {
     let candidate = policy
         .map(|p| (p.to_string(), LanguageReason::Policy))
@@ -65,12 +54,8 @@ pub fn resolve(
                 .map(|s| (s.to_string(), LanguageReason::System))
         });
     match candidate {
-        Some((code, reason)) => match is_pro(&code) {
-            Some(true) if !pro => ("en".into(), LanguageReason::ProRequired),
-            Some(_) => (code, reason),
-            None => ("en".into(), LanguageReason::Default),
-        },
-        None => ("en".into(), LanguageReason::Default),
+        Some((code, reason)) if is_known(&code) => (code, reason),
+        _ => ("en".into(), LanguageReason::Default),
     }
 }
 
@@ -91,7 +76,7 @@ impl SettingsStore {
     pub fn open(dir: &Path) -> Self {
         let path = dir.join("settings.json");
         let language = match read_json_or_quarantine::<SettingsFile>(&path, 1) {
-            Ok(f) => f.and_then(|f| f.language).filter(|l| is_pro(l).is_some()),
+            Ok(f) => f.and_then(|f| f.language).filter(|l| is_known(l)),
             Err(e) => {
                 tracing::warn!("settings not read: {}", e.message);
                 None
@@ -107,10 +92,10 @@ impl SettingsStore {
         self.language.read_safe().clone()
     }
 
-    /// Блокирующий вызов (запись файла). Проверка Pro — в команде (нужна лицензия).
+    /// Блокирующий вызов (запись файла).
     pub fn set_language(&self, lang: Option<&str>) -> AppResult<()> {
         if let Some(l) = lang
-            && is_pro(l).is_none()
+            && !is_known(l)
         {
             return Err(crate::app_err!(
                 ErrorCode::InvalidInput,
@@ -140,7 +125,6 @@ pub struct LanguageSettings {
     pub policy: Option<String>,
     pub effective: String,
     pub reason: LanguageReason,
-    pub pro_languages: Vec<String>,
     pub languages: Vec<String>,
 }
 
@@ -152,9 +136,8 @@ pub fn language_settings(
     system: Option<String>,
     chosen: Option<String>,
     policy: Option<String>,
-    pro: bool,
 ) -> LanguageSettings {
-    let (effective, reason) = resolve(system.as_deref(), chosen.as_deref(), policy.as_deref(), pro);
+    let (effective, reason) = resolve(system.as_deref(), chosen.as_deref(), policy.as_deref());
     LanguageSettings {
         system_match: system.as_deref().and_then(match_language).map(String::from),
         system,
@@ -162,12 +145,7 @@ pub fn language_settings(
         policy,
         effective,
         reason,
-        pro_languages: LANGUAGES
-            .iter()
-            .filter(|(_, p)| *p)
-            .map(|(c, _)| c.to_string())
-            .collect(),
-        languages: LANGUAGES.iter().map(|(c, _)| c.to_string()).collect(),
+        languages: LANGUAGES.iter().map(|c| c.to_string()).collect(),
     }
 }
 
@@ -186,41 +164,20 @@ mod tests {
     }
 
     #[test]
-    fn priority_and_pro() {
+    fn priority_without_license() {
         use LanguageReason::*;
+        assert_eq!(resolve(Some("ru-RU"), None, None), ("ru".into(), System));
+        assert_eq!(resolve(Some("de-DE"), None, None), ("de".into(), System));
+        assert_eq!(resolve(Some("ru"), Some("en"), None), ("en".into(), User));
+        assert_eq!(resolve(Some("ru"), Some("fr"), None), ("fr".into(), User));
+        assert_eq!(resolve(None, Some("fr"), None), ("fr".into(), User));
         assert_eq!(
-            resolve(Some("ru-RU"), None, None, false),
-            ("ru".into(), System)
-        );
-        assert_eq!(
-            resolve(Some("de-DE"), None, None, false),
-            ("en".into(), ProRequired)
-        );
-        assert_eq!(
-            resolve(Some("de-DE"), None, None, true),
-            ("de".into(), System)
-        );
-        assert_eq!(
-            resolve(Some("ru"), Some("en"), None, false),
-            ("en".into(), User)
-        );
-        assert_eq!(
-            resolve(Some("ru"), Some("fr"), None, false),
-            ("en".into(), ProRequired)
-        );
-        assert_eq!(
-            resolve(Some("ru"), Some("fr"), Some("ru"), true),
+            resolve(Some("ru"), Some("fr"), Some("ru")),
             ("ru".into(), Policy)
         );
-        assert_eq!(
-            resolve(Some("ru"), None, Some("de"), false),
-            ("en".into(), ProRequired)
-        );
-        assert_eq!(
-            resolve(Some("uk"), None, None, false),
-            ("en".into(), Default)
-        );
-        assert_eq!(resolve(None, None, None, false), ("en".into(), Default));
+        assert_eq!(resolve(Some("ru"), None, Some("de")), ("de".into(), Policy));
+        assert_eq!(resolve(Some("uk"), None, None), ("en".into(), Default));
+        assert_eq!(resolve(None, None, None), ("en".into(), Default));
     }
 
     #[test]

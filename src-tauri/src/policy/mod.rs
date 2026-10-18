@@ -145,9 +145,7 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                 status.has_license_key = true;
             }
             (KEY_LANGUAGE, PolicyValue::Str(s))
-                if crate::settings::LANGUAGES
-                    .iter()
-                    .any(|(c, _)| *c == s.trim()) =>
+                if crate::settings::LANGUAGES.contains(&s.trim()) =>
             {
                 status.language = Some(s.trim().to_string());
             }

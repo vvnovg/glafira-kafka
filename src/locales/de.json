@@ -400,9 +400,7 @@
       "label": "Sprache der Oberfläche",
       "system": "Systemsprache ({{name}})",
       "systemUnknown": "Systemsprache",
-      "proSuffix": "{{name}} — Pro",
-      "policy": "Die Sprache ist von Ihrer Organisation festgelegt",
-      "proRequired": "Die gewählte Sprache ist in Pro verfügbar — die Oberfläche ist derzeit auf Englisch"
+      "policy": "Die Sprache ist von Ihrer Organisation festgelegt"
     }
   },
   "layout": {
@@ -966,7 +964,7 @@
     }
   },
   "about": {
-    "summary": "Glafira ist ein Desktop-Client für Apache Kafka für Tester und Entwickler. Verbindung zu Clustern über PLAINTEXT, SASL oder mTLS, Topics und Consumer Groups anzeigen, Nachrichten suchen, einzeln oder als Stapel aus einer Datei senden, Offsets zurücksetzen. Pro bietet zusätzlich Consumer-Sessions, Prod-Verbindungen und weitere Oberflächensprachen.",
+    "summary": "Glafira ist ein Desktop-Client für Apache Kafka für Tester und Entwickler. Verbindung zu Clustern über PLAINTEXT, SASL oder mTLS, Topics und Consumer Groups anzeigen, Nachrichten suchen, einzeln oder als Stapel aus einer Datei senden, Offsets zurücksetzen. Pro bietet zusätzlich Consumer-Sessions und Prod-Verbindungen.",
     "version": "Version",
     "build": "Build",
     "system": "System",

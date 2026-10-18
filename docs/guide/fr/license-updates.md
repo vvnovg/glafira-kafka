@@ -4,17 +4,16 @@ Ce chapitre décrit ce qu’apporte Pro, comment activer une clé de licence, ce
 
 ## Free et Pro {#free-and-pro}
 
-Free couvre le travail quotidien avec Kafka : tous les protocoles de sécurité, mTLS compris, l’aperçu du cluster et les topics, la lecture des messages, le Producer avec l’envoi par lot, les consumer groups et la réinitialisation des offsets. L’interface est disponible en anglais et en russe.
+Free couvre le travail quotidien avec Kafka : tous les protocoles de sécurité, mTLS compris, l’aperçu du cluster et les topics, la lecture des messages, le Producer avec l’envoi par lot, les consumer groups et la réinitialisation des offsets. Toutes les langues de l’interface sont également incluses. Voir [Langue de l’interface](getting-started.md#language).
 
 Pro ajoute :
 
 - les sessions consumer : lecture en tant que membre d’un groupe, commit d’offsets, mise en pause de partitions. Voir [Sessions consumer](consumer-sessions.md#what-is) ;
-- le mode prod : création de connexions prod, passage de connexions en prod et désactivation de [[ui:common.readOnly]] sur une connexion prod. Voir [Environnements et prod](connections.md#environments) ;
-- six langues d’interface supplémentaires : allemand, français, espagnol, italien, polonais et portugais (Brésil). Voir [Langue de l’interface](getting-started.md#language).
+- le mode prod : création de connexions prod, passage de connexions en prod et désactivation de [[ui:common.readOnly]] sur une connexion prod. Voir [Environnements et prod](connections.md#environments).
 
-Dans Free, ces fonctionnalités sont visibles mais indisponibles. Les commandes des sessions consumer sont désactivées et marquées d’un cadenas et de `Pro`. L’option prod s’affiche sous la forme [[ui:connections.form.prodPro]]. Les langues Pro sont marquées `Pro` dans la liste des langues. Si une action nécessite Pro, l’erreur indique [[ui:errors.license.proRequired]] et propose le bouton [[ui:common.openLicense]].
+Dans Free, ces fonctionnalités sont visibles mais indisponibles. Les commandes des sessions consumer sont désactivées et marquées d’un cadenas et de `Pro`. L’option prod s’affiche sous la forme [[ui:connections.form.prodPro]]. Si une action nécessite Pro, l’erreur indique [[ui:errors.license.proRequired]] et propose le bouton [[ui:common.openLicense]].
 
-L’écran [[ui:tabs.license]] liste les sessions consumer et le mode prod sous [[ui:license.whatProGives]]. Les langues supplémentaires ne figurent pas dans cette liste.
+L’écran [[ui:tabs.license]] liste les sessions consumer et le mode prod sous [[ui:license.whatProGives]].
 
 ## Activer une clé {#activate}
 
@@ -47,7 +46,6 @@ Après la date de fin, l’offre passe à Free. La notification et l’écran [[
 
 - Aucune nouvelle session consumer ne peut être lancée. Dans une session déjà en cours, les commits et la mise en pause de partitions sont refusés avec une erreur qui indique la date de fin.
 - Les connexions prod continuent de fonctionner, avec les mêmes confirmations. Aucune nouvelle connexion prod ne peut être créée, et [[ui:common.readOnly]] ne peut pas être désactivé sur une connexion prod.
-- Si une langue Pro était sélectionnée, l’interface passe en anglais. Votre choix est conservé.
 
 Les connexions, mots de passe, modèles et l’historique d’envoi sont conservés. Pour continuer avec Pro, activez une nouvelle clé comme décrit dans [Activer une clé](license-updates.md#activate).
 

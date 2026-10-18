@@ -242,7 +242,7 @@ test("типографика: многоточие и пробелы во фра
 });
 
 test("языки из languages.ts и файлы словарей", () => {
-  const ts = 'export const LANGUAGES = [\n  { code: "en", nativeName: "English", pro: false },\n  { code: "pt-BR", nativeName: "Português (Brasil)", pro: true },\n];';
+  const ts = 'export const LANGUAGES = [\n  { code: "en", nativeName: "English" },\n  { code: "pt-BR", nativeName: "Português (Brasil)" },\n];';
   assert.deepEqual(languageCodes(ts), ["en", "pt-BR"]);
   assert.deepEqual(checkLanguageFiles(["en", "ru", "de"], ["en", "ru"], { requireAll: false }), []);
   assert.deepEqual(checkLanguageFiles(["en", "ru", "de"], ["en", "ru"], { requireAll: true }), ["нет словаря src/locales/de.json"]);

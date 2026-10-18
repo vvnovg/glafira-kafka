@@ -98,16 +98,14 @@ Diese Benutzer und Zertifikate sind nur für lokale Tests gedacht.
 
 ## Sprache der Oberfläche {#language}
 
-Die Oberfläche ist auf Englisch, Russisch, Deutsch, Französisch, Spanisch, Italienisch, Polnisch und Portugiesisch (Brasilien) verfügbar. Englisch und Russisch sind kostenlos, die übrigen Sprachen erfordern Pro.
+Die Oberfläche ist auf Englisch, Russisch, Deutsch, Französisch, Spanisch, Italienisch, Polnisch und Portugiesisch (Brasilien) verfügbar. Alle Sprachen sind kostenlos.
 
 So ändern Sie die Sprache:
 
 1. Klicken Sie unten im linken Bereich auf [[ui:sidebar.settings]].
 2. Wählen Sie unter [[ui:settings.language.label]] eine Sprache.
 
-Die Änderung gilt sofort, auch für diese Anleitung und das macOS-Menü. [[ui:settings.language.systemUnknown]] (die Standardeinstellung) folgt der Sprache Ihres Betriebssystems. Ist diese Sprache nicht in der Liste oder erfordert sie Pro, ohne dass Pro aktiv ist, erscheint die Oberfläche auf Englisch.
-
-Ohne Pro werden die Pro-Sprachen in der Liste angezeigt, lassen sich aber nicht auswählen. Haben Sie eine Pro-Sprache gewählt und läuft die Lizenz später ab, wechselt die Oberfläche auf Englisch. Ihre Auswahl bleibt erhalten und gilt wieder, sobald Pro erneut aktiv ist.
+Die Änderung gilt sofort, auch für diese Anleitung und das macOS-Menü. [[ui:settings.language.systemUnknown]] (die Standardeinstellung) folgt der Sprache Ihres Betriebssystems. Ist diese Sprache nicht in der Liste, erscheint die Oberfläche auf Englisch.
 
 ## Von Ihrer Organisation festgelegte Einstellungen {#managed-settings}
 

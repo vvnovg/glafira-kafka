@@ -4,17 +4,16 @@ W tym rozdziale opisano, co daje Pro, jak aktywować klucz licencyjny, co się d
 
 ## Free i Pro {#free-and-pro}
 
-Free obejmuje codzienną pracę z Kafką: wszystkie protokoły zabezpieczeń, w tym mTLS, przegląd klastra i topiki, przeglądanie wiadomości, ekran Producer z wysyłką wsadową, grupy konsumentów i reset offsetów. Interfejs jest dostępny po angielsku i rosyjsku.
+Free obejmuje codzienną pracę z Kafką: wszystkie protokoły zabezpieczeń, w tym mTLS, przegląd klastra i topiki, przeglądanie wiadomości, ekran Producer z wysyłką wsadową, grupy konsumentów i reset offsetów. Free obejmuje też wszystkie języki interfejsu. Zob. [Język interfejsu](getting-started.md#language).
 
 Pro dodaje:
 
 - sesje konsumenta: odczyt jako członek grupy, zatwierdzanie offsetów, wstrzymywanie partycji. Zob. [Sesje konsumenta](consumer-sessions.md#what-is);
-- tryb prod: tworzenie połączeń prod, przełączanie połączeń na prod i wyłączanie opcji [[ui:common.readOnly]] w połączeniu prod. Zob. [Środowiska i prod](connections.md#environments);
-- sześć dodatkowych języków interfejsu: niemiecki, francuski, hiszpański, włoski, polski i portugalski (Brazylia). Zob. [Język interfejsu](getting-started.md#language).
+- tryb prod: tworzenie połączeń prod, przełączanie połączeń na prod i wyłączanie opcji [[ui:common.readOnly]] w połączeniu prod. Zob. [Środowiska i prod](connections.md#environments).
 
-W Free te funkcje są widoczne, ale niedostępne. Polecenia sesji konsumenta są nieaktywne i oznaczone kłódką oraz napisem `Pro`. Opcja prod jest wyświetlana jako [[ui:connections.form.prodPro]]. Języki Pro są oznaczone na liście języków napisem `Pro`. Jeśli działanie wymaga Pro, błąd brzmi [[ui:errors.license.proRequired]] i proponuje przycisk [[ui:common.openLicense]].
+W Free te funkcje są widoczne, ale niedostępne. Polecenia sesji konsumenta są nieaktywne i oznaczone kłódką oraz napisem `Pro`. Opcja prod jest wyświetlana jako [[ui:connections.form.prodPro]]. Jeśli działanie wymaga Pro, błąd brzmi [[ui:errors.license.proRequired]] i proponuje przycisk [[ui:common.openLicense]].
 
-Ekran [[ui:tabs.license]] wymienia sesje konsumenta i tryb prod w sekcji [[ui:license.whatProGives]]. Dodatkowych języków nie ma na tej liście.
+Ekran [[ui:tabs.license]] wymienia sesje konsumenta i tryb prod w sekcji [[ui:license.whatProGives]].
 
 ## Aktywacja klucza {#activate}
 
@@ -47,7 +46,6 @@ Po dacie wygaśnięcia plan przełącza się na Free. Powiadomienie i ekran [[ui
 
 - Nie można uruchamiać nowych sesji konsumenta. W już działającej sesji zatwierdzanie i wstrzymywanie partycji są odrzucane z błędem, który podaje datę wygaśnięcia.
 - Połączenia prod nadal działają z tymi samymi potwierdzeniami. Nie można tworzyć nowych połączeń prod ani wyłączyć opcji [[ui:common.readOnly]] w połączeniu prod.
-- Jeśli wybrano język Pro, interfejs przełącza się na angielski. Wybór zostaje zapamiętany.
 
 Połączenia, hasła, szablony i historia wysyłania są zachowywane. Aby dalej korzystać z Pro, należy aktywować nowy klucz zgodnie z opisem w sekcji [Aktywacja klucza](license-updates.md#activate).
 

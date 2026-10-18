@@ -98,16 +98,14 @@ Ci użytkownicy i certyfikaty służą wyłącznie do testów lokalnych.
 
 ## Język interfejsu {#language}
 
-Interfejs jest dostępny po angielsku, rosyjsku, niemiecku, francusku, hiszpańsku, włosku, polsku i portugalsku (Brazylia). Angielski i rosyjski są bezpłatne. Pozostałe języki wymagają Pro.
+Interfejs jest dostępny po angielsku, rosyjsku, niemiecku, francusku, hiszpańsku, włosku, polsku i portugalsku (Brazylia). Wszystkie języki są bezpłatne.
 
 Aby zmienić język:
 
 1. Kliknąć link [[ui:sidebar.settings]] na dole lewego panelu.
 2. Wybrać język z listy [[ui:settings.language.label]].
 
-Zmiana działa od razu, także w tym podręczniku i w menu macOS. Opcja [[ui:settings.language.systemUnknown]] (domyślna) przyjmuje język systemu operacyjnego. Jeśli tego języka nie ma na liście lub wymaga on Pro, a Pro nie jest aktywne, interfejs jest po angielsku.
-
-Bez Pro języki Pro są widoczne na liście, ale nie można ich wybrać. Jeśli wybrano język Pro, a licencja później wygaśnie, interfejs przełącza się na angielski. Wybór zostaje zapamiętany i wraca, gdy Pro znów jest aktywne.
+Zmiana działa od razu, także w tym podręczniku i w menu macOS. Opcja [[ui:settings.language.systemUnknown]] (domyślna) przyjmuje język systemu operacyjnego. Jeśli tego języka nie ma na liście, interfejs jest po angielsku.
 
 ## Ustawienia określone przez organizację {#managed-settings}
 

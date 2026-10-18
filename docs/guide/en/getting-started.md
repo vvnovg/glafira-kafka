@@ -98,16 +98,14 @@ These users and certificates are for local tests only.
 
 ## Interface language {#language}
 
-The interface is available in English, Russian, German, French, Spanish, Italian, Polish and Portuguese (Brazil). English and Russian are free. The other languages need Pro.
+The interface is available in English, Russian, German, French, Spanish, Italian, Polish and Portuguese (Brazil). All languages are free.
 
 To change the language:
 
 1. Click [[ui:sidebar.settings]] at the bottom of the left panel.
 2. Choose a language in [[ui:settings.language.label]].
 
-The change applies at once, including this guide and the macOS menu. [[ui:settings.language.systemUnknown]] (the default) follows the language of your operating system. If that language is not in the list, or it needs Pro and Pro is not active, the interface is in English.
-
-Without Pro, the Pro languages are shown in the list but cannot be selected. If you chose a Pro language and the license later expires, the interface switches to English. Your choice is kept and comes back when Pro is active again.
+The change applies at once, including this guide and the macOS menu. [[ui:settings.language.systemUnknown]] (the default) follows the language of your operating system. If that language is not in the list, the interface is in English.
 
 ## Settings set by your organization {#managed-settings}
 

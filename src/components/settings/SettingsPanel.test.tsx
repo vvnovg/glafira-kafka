@@ -7,7 +7,7 @@ import { renderWithClient } from "../../test/render";
 
 const base: LanguageSettings = {
   system: "ru-RU", systemMatch: "ru", chosen: null, policy: null, effective: "ru", reason: "system",
-  proLanguages: ["de", "fr", "es", "it", "pl", "pt-BR"], languages: ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR"],
+  languages: ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR"],
 };
 const FREE = { tier: "free", state: "none", source: null, licensee: null, kind: null, expires: null, daysLeft: null, error: null } as LicenseStatus;
 
@@ -27,13 +27,17 @@ beforeEach(() => {
 afterEach(() => i18n.changeLanguage("ru")); // выбор «en» в тесте переключает глобальный язык
 
 describe("SettingsPanel", () => {
-  it("выбор языка; Pro-языки без лицензии недоступны", async () => {
+  it("выбор языка; без лицензии доступны все языки", async () => {
     vi.mocked(api.getLanguageSettings).mockResolvedValue(base);
     vi.mocked(api.setLanguage).mockResolvedValue({ ...base, chosen: "en", effective: "en", reason: "user" });
     const user = userEvent.setup();
     renderWithClient(<SettingsPanel />);
     const select = await screen.findByLabelText("Язык интерфейса");
-    expect(screen.getByRole("option", { name: /Deutsch/ })).toBeDisabled();
+    for (const name of ["English", "Русский", "Deutsch", "Français", "Español", "Italiano", "Polski", "Português (Brasil)"]) {
+      const option = screen.getByRole("option", { name });
+      expect(option).toBeEnabled();
+      expect(option.textContent).not.toMatch(/Pro/);
+    }
     expect(screen.getByRole("option", { name: /Как в системе/ })).toBeInTheDocument();
     await user.selectOptions(select, "en");
     expect(api.setLanguage).toHaveBeenCalledWith("en");
@@ -46,9 +50,14 @@ describe("SettingsPanel", () => {
     expect(screen.getByText(/задан вашей организацией/)).toBeInTheDocument();
   });
 
-  it("английский вместо Pro-языка — причина видна", async () => {
-    vi.mocked(api.getLanguageSettings).mockResolvedValue({ ...base, chosen: "de", effective: "en", reason: "proRequired" });
+  it("Free выбирает Deutsch — язык применяется, подсказки о Pro нет", async () => {
+    vi.mocked(api.getLanguageSettings).mockResolvedValue(base);
+    vi.mocked(api.setLanguage).mockResolvedValue({ ...base, chosen: "de", effective: "de", reason: "user" });
+    const user = userEvent.setup();
     renderWithClient(<SettingsPanel />);
-    expect(await screen.findByText(/доступен в Pro/)).toBeInTheDocument();
+    await user.selectOptions(await screen.findByLabelText("Язык интерфейса"), "de");
+    expect(api.setLanguage).toHaveBeenCalledWith("de");
+    await vi.waitFor(() => expect(i18n.language).toBe("de"));
+    expect(screen.queryByText(/Pro/)).not.toBeInTheDocument();
   });
 });

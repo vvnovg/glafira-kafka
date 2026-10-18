@@ -2,21 +2,18 @@ use tauri::State;
 
 use super::blocking;
 use crate::error::{AppResult, ErrorCode};
-use crate::license::Tier;
-use crate::settings::{LANGUAGES, LanguageSettings, language_settings, system_locale};
+use crate::settings::{LanguageSettings, language_settings, system_locale};
 use crate::state::AppState;
 
 fn current(st: &AppState) -> LanguageSettings {
-    let pro = st.license.status().tier == Tier::Pro;
     language_settings(
         system_locale(),
         st.settings.language(),
         st.policy.status.language.clone(),
-        pro,
     )
 }
 
-/// Блокирующая часть `set_language` (запись файла, проверка лицензии).
+/// Блокирующая часть `set_language` (запись файла). Лицензия не проверяется: все языки бесплатны.
 fn apply_language(st: &AppState, lang: Option<&str>) -> AppResult<LanguageSettings> {
     if st.policy.status.language.is_some() {
         return Err(app_err!(
@@ -24,11 +21,6 @@ fn apply_language(st: &AppState, lang: Option<&str>) -> AppResult<LanguageSettin
             "errors.settings.languageByPolicy",
             "The language is set by your organization"
         ));
-    }
-    if let Some(l) = lang
-        && LANGUAGES.iter().any(|(c, p)| *c == l && *p)
-    {
-        st.license.require_pro()?;
     }
     st.settings.set_language(lang)?;
     Ok(current(st))
@@ -60,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn free_can_pick_free_language_only() {
+    fn free_can_pick_any_language() {
         let dir = tempfile::tempdir().unwrap();
         let st = state(dir.path());
         let r = apply_language(&st, Some("ru")).unwrap();
@@ -68,24 +60,25 @@ mod tests {
             (r.effective.as_str(), r.reason),
             ("ru", LanguageReason::User)
         );
+        let r = apply_language(&st, Some("de")).unwrap();
         assert_eq!(
-            apply_language(&st, Some("de")).unwrap_err().code,
-            ErrorCode::ProRequired
+            (r.effective.as_str(), r.reason),
+            ("de", LanguageReason::User)
         );
-        assert_eq!(st.settings.language().as_deref(), Some("ru"));
+        assert_eq!(st.settings.language().as_deref(), Some("de"));
         let r = apply_language(&st, None).unwrap();
         assert_eq!(r.chosen, None);
     }
 
     #[test]
-    fn pro_can_pick_pro_language() {
+    fn pro_can_pick_any_language() {
         let dir = tempfile::tempdir().unwrap();
         let mut st = state(dir.path());
         st.license = Arc::new(crate::license::pro_for_tests(dir.path()));
-        let r = apply_language(&st, Some("de")).unwrap();
+        let r = apply_language(&st, Some("pt-BR")).unwrap();
         assert_eq!(
             (r.effective.as_str(), r.reason),
-            ("de", LanguageReason::User)
+            ("pt-BR", LanguageReason::User)
         );
     }
 

@@ -8,13 +8,11 @@ import { ErrorBanner } from "../common/ErrorBanner";
 export function SettingsPanel() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const license = useQuery({ queryKey: ["license"], queryFn: api.getLicenseStatus, staleTime: 60_000 });
-  const tier = license.data?.tier;
-  const lang = useQuery({ queryKey: ["language", tier], queryFn: api.getLanguageSettings });
+  const lang = useQuery({ queryKey: ["language"], queryFn: api.getLanguageSettings });
   const change = useMutation({
     mutationFn: (value: string) => api.setLanguage(value || null),
     onSuccess: (st) => {
-      qc.setQueryData(["language", tier], st);
+      qc.setQueryData(["language"], st);
       void setLanguage(st.effective);
     },
   });
@@ -25,7 +23,6 @@ export function SettingsPanel() {
 
   const byCode = new Map(LANGUAGES.map((l) => [l.code, l]));
   const systemName = s.systemMatch ? byCode.get(s.systemMatch as never)?.nativeName : undefined;
-  const isFree = tier !== "pro";
   const byPolicy = s.policy !== null;
   // Псевдоязык — только dev-сборка, без сохранения: выбор не уходит в бэкенд.
   const pseudoOn = import.meta.env.DEV && i18n.language === "x-pseudo";
@@ -48,19 +45,15 @@ export function SettingsPanel() {
             <option value="">
               {systemName ? t("settings.language.system", { name: systemName }) : t("settings.language.systemUnknown")}
             </option>
-            {LANGUAGES.filter((l) => s.languages.includes(l.code)).map((l) => {
-              const locked = l.pro && s.proLanguages.includes(l.code) && isFree;
-              return (
-                <option key={l.code} value={l.code} disabled={locked}>
-                  {locked ? t("settings.language.proSuffix", { name: l.nativeName }) : l.nativeName}
-                </option>
-              );
-            })}
+            {LANGUAGES.filter((l) => s.languages.includes(l.code)).map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.nativeName}
+              </option>
+            ))}
             {import.meta.env.DEV && <option value="x-pseudo">Pseudo (dev)</option>}
           </select>
         </div>
         {byPolicy && <p className="hint">{t("settings.language.policy")}</p>}
-        {s.reason === "proRequired" && <p className="hint">{t("settings.language.proRequired")}</p>}
         {change.error && <ErrorBanner error={change.error} />}
       </section>
     </div>

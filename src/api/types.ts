@@ -554,7 +554,7 @@ export type UpdateCheck =
   | { status: "upToDate" }
   | { status: "available"; version: string; notes: string | null; date: string | null };
 
-export type LanguageReason = "policy" | "user" | "system" | "default" | "proRequired";
+export type LanguageReason = "policy" | "user" | "system" | "default";
 export interface LanguageSettings {
   system: string | null;
   systemMatch: string | null;
@@ -562,6 +562,5 @@ export interface LanguageSettings {
   policy: string | null;
   effective: string;
   reason: LanguageReason;
-  proLanguages: string[];
   languages: string[];
 }

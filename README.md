@@ -103,8 +103,7 @@ kubectl get secret kafka-client -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/ce
 Локальный стенд слушает mTLS на `localhost:9095` (сертификаты — `dev/certs/out`, см. `dev/certs/README.md`).
 
 ## Языки
-Интерфейс доступен на 8 языках: English, Русский (Free), Deutsch, Français, Español, Italiano, Polski, Português (Brasil) (Pro).
-Сейчас есть словари en и ru; остальные языки Pro появятся позже (до тех пор интерфейс на английском).
+Интерфейс доступен на 8 языках, все — бесплатно (Free): English, Русский, Deutsch, Français, Español, Italiano, Polski, Português (Brasil).
 Язык выбирается в «Настройки» («Как в системе» по умолчанию). Администратор может задать язык политикой `language`
 (см. `docs/admin.md`): тогда выбор пользователю недоступен. Как добавить строку или язык — `docs/i18n/README.md`.
 

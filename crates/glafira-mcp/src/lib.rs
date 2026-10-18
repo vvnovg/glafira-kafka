@@ -3,7 +3,15 @@
 //! Крейт ничего не знает о Kafka: данные он получает через трейт `Backend`, который
 //! реализует приложение, и умеет только читать — изменяющих операций в `ReadOp` нет.
 
+pub mod audit;
 pub mod endpoint;
 pub mod handshake;
+pub mod limits;
+pub mod model;
+pub mod rules;
 
+pub use audit::{AuditEvent, AuditLog};
 pub use endpoint::{BoxStream, Endpoint};
+pub use model::{
+    Backend, BackendError, BoxFuture, ClientIdent, ReadOp, ReadOutput, SessionAccess, SessionView,
+};

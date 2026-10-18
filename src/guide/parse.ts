@@ -24,7 +24,8 @@ export interface GuideHit {
   snippet: string;
 }
 
-const LABEL = /\[\[ui:([A-Za-z0-9_.-]+)\]\]/g;
+/** Метка и точка сразу после неё: точку убираем, если значение уже кончается на «.» или «:» (как в scripts/guide-publish.mjs). */
+const LABEL = /\[\[ui:([A-Za-z0-9_.-]+)\]\](\.)?/g;
 const SECTION = /^##\s+(.*?)\s*(?:\{#([a-z0-9-]+)\})?\s*$/;
 const FENCE = /^\s*(```|~~~)/;
 
@@ -35,7 +36,11 @@ const ESCAPED = /\\([\\`*_[\]<>#|~!])/g;
 const escapeMarkdown = (value: string) => value.replace(SPECIAL, (c) => `\\${c}`);
 
 function withLabels(text: string, label: (key: string) => string, bold: boolean): string {
-  return text.replace(LABEL, (_m, key: string) => (bold ? `**${escapeMarkdown(label(key))}**` : label(key)));
+  return text.replace(LABEL, (_m, key: string, dot: string | undefined) => {
+    const value = label(key);
+    const tail = dot && !/[.:]$/.test(value) ? dot : "";
+    return (bold ? `**${escapeMarkdown(value)}**` : value) + tail;
+  });
 }
 
 /** Разбирает главу: `# Заголовок`, разделы `## Заголовок {#id}`, метки `[[ui:ключ]]` → `**значение**`. */

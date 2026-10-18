@@ -6,7 +6,8 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GUIDE_CHAPTERS, flatten } from "./i18n-check.mjs";
 
-const LABEL = /\[\[ui:([A-Za-z0-9_.-]+)\]\]/g;
+/** Метка и точка сразу после неё: точку убираем, если значение уже кончается на «.» или «:» (как в src/guide/parse.ts). */
+const LABEL = /\[\[ui:([A-Za-z0-9_.-]+)\]\](\.)?/g;
 const HEADING = /^(#{1,6})\s+(.*?)\s*$/;
 const ANCHOR = /^(#{2,6}\s+.*?)\s*\{#([a-z0-9-]+)\}\s*$/;
 const FENCE = /^\s*(```|~~~)/;
@@ -17,10 +18,13 @@ const escapeMarkdown = (value) => value.replace(SPECIAL, (c) => `\\${c}`);
 
 /** Глава → Markdown для GitHub. labels: ключ → значение языка. Неизвестная метка — ошибка. */
 export function publishChapter(text, labels) {
-  const value = (key) => {
+  const raw = (key) => {
     if (!labels.has(key)) throw new Error(`метка [[ui:${key}]] — нет ключа ${key} в словаре`);
-    return escapeMarkdown(labels.get(key));
+    return labels.get(key);
   };
+  const tail = (key, dot) => (dot && !/[.:]$/.test(raw(key)) ? dot : "");
+  const plainLabels = (s) => s.replace(LABEL, (_m, k, dot) => escapeMarkdown(raw(k)) + tail(k, dot));
+  const boldLabels = (s) => s.replace(LABEL, (_m, k, dot) => `**${escapeMarkdown(raw(k))}**` + tail(k, dot));
   const out = [];
   let fence = false;
   for (const line of text.replace(/\r\n?/g, "\n").split("\n")) {
@@ -35,11 +39,10 @@ export function publishChapter(text, labels) {
     }
     const anchor = ANCHOR.exec(line);
     if (anchor) {
-      out.push(`<a id="${anchor[2]}"></a>`, "", anchor[1].replace(LABEL, (_m, k) => value(k)));
+      out.push(`<a id="${anchor[2]}"></a>`, "", plainLabels(anchor[1]));
       continue;
     }
-    if (HEADING.test(line)) out.push(line.replace(LABEL, (_m, k) => value(k)));
-    else out.push(line.replace(LABEL, (_m, k) => `**${value(k)}**`));
+    out.push(HEADING.test(line) ? plainLabels(line) : boldLabels(line));
   }
   return out.join("\n");
 }

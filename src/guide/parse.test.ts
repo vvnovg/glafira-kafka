@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { i18n } from "../i18n";
 import { parseChapter, searchGuide } from "./parse";
+import parseSource from "./parse.ts?raw";
+import publishSource from "../../scripts/guide-publish.mjs?raw";
 
 const label = (key: string) => i18n.t(key);
 
@@ -50,6 +52,23 @@ describe("parseChapter", () => {
     );
     const [hit] = searchGuide([ch], "[a](b) *z*");
     expect(hit.snippet).toBe("См. <code>x</code> [a](b) *z* \\ # | ~ ! _u_.");
+  });
+
+  it("drops the period after a label whose value already ends with '.' or ':'", () => {
+    const values: Record<string, string> = { dot: "Read-only.", colon: "Logs:", plain: "Help", ell: "Import…" };
+    const ch = parseChapter(
+      "topics",
+      "# T\n\nA [[ui:dot]]. B [[ui:colon]]. C [[ui:plain]]. D [[ui:ell]]. E [[ui:dot]], [[ui:dot]].x\n",
+      (k) => values[k],
+    );
+    expect(ch.sections[0].markdown).toBe("A **Read-only.** B **Logs:** C **Help**. D **Import…**. E **Read-only.**, **Read-only.**x");
+  });
+
+  it("uses the same markdown escape set as scripts/guide-publish.mjs", () => {
+    const literal = (text: string) => /const SPECIAL = (\/.*\/g);/.exec(text)?.[1];
+    const mine = literal(parseSource);
+    expect(mine).toBeTruthy();
+    expect(literal(publishSource)).toBe(mine);
   });
 
   it("keeps a heading without an anchor as a titled section", () => {

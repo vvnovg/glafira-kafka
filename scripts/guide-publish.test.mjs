@@ -15,6 +15,26 @@ test("метки → **значение** с экранированием Markdo
   assert.ok(!out.includes("[[ui:"), out);
 });
 
+test("точка после метки, значение которой уже кончается на «.» или «:», не дублируется", () => {
+  const labels = new Map([
+    ["dot", "Read-only."],
+    ["colon", "Logs:"],
+    ["plain", "Help"],
+    ["ell", "Import…"],
+  ]);
+  const out = publishChapter("# T\n\nA [[ui:dot]]. B [[ui:colon]]. C [[ui:plain]]. D [[ui:ell]]. E [[ui:dot]], [[ui:dot]].x\n## [[ui:dot]]. {#h}\n", labels);
+  assert.ok(out.includes("A **Read-only.** B **Logs:** C **Help**. D **Import…**. E **Read-only.**, **Read-only.**x"), out);
+  assert.ok(out.includes("## Read-only.\n"), out);
+});
+
+test("набор экранируемых символов совпадает с src/guide/parse.ts", () => {
+  const literal = (text) => /const SPECIAL = (\/.*\/g);/.exec(text)?.[1];
+  const parse = literal(readFileSync(new URL("../src/guide/parse.ts", import.meta.url), "utf8"));
+  const publish = literal(readFileSync(new URL("./guide-publish.mjs", import.meta.url), "utf8"));
+  assert.ok(parse, "SPECIAL не найден в parse.ts");
+  assert.equal(publish, parse);
+});
+
 test("неизвестная метка — ошибка", () => {
   assert.throws(() => publishChapter("# T\n\n[[ui:nope]]\n", new Map()), /nope/);
 });

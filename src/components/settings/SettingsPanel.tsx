@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import { LANGUAGES } from "../../i18n/languages";
 import { i18n, setLanguage } from "../../i18n";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { McpSection } from "./McpSection";
 
 export function SettingsPanel() {
   const { t } = useTranslation();
@@ -56,6 +57,7 @@ export function SettingsPanel() {
         {byPolicy && <p className="hint">{t("settings.language.policy")}</p>}
         {change.error && <ErrorBanner error={change.error} />}
       </section>
+      <McpSection />
     </div>
   );
 }

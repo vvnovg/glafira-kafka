@@ -408,6 +408,59 @@
       "system": "跟随系统（{{name}}）",
       "systemUnknown": "跟随系统",
       "policy": "语言由你的组织设置"
+    },
+    "mcp": {
+      "section": "LLM 助手（MCP）",
+      "intro": "LLM 助手（Claude Desktop、Claude Code、Cursor 等）可以通过 MCP 连接到 Glafira，并读取你为其开放的连接的元数据。它无法更改集群中的任何内容。",
+      "enable": "允许 MCP 服务器",
+      "policy": "MCP 已被你的组织禁用",
+      "state": {
+        "off": "服务器已关闭",
+        "running": "服务器正在运行",
+        "otherInstance": "MCP 由另一个 Glafira 窗口提供服务",
+        "error": "服务器未能启动",
+        "disabledByPolicy": "已被你的组织禁用"
+      },
+      "connectTitle": "连接客户端",
+      "connectHint": "将 Glafira 添加到客户端的 MCP 服务器中，然后重启客户端。如果 Glafira 未运行，客户端会自行启动它。",
+      "claudeDesktop": "Claude Desktop：添加到 claude_desktop_config.json",
+      "claudeCode": "Claude Code：在终端中运行",
+      "otherClient": "其他 stdio 客户端：命令和参数",
+      "copy": "复制",
+      "copied": "已复制",
+      "sessions": "活动会话",
+      "noSessions": "没有已连接的客户端。",
+      "colClient": "客户端",
+      "colSince": "连接时间",
+      "colCalls": "调用次数",
+      "waiting": "等待批准",
+      "disconnect": "断开连接",
+      "disconnectAll": "全部断开连接",
+      "clients": "已批准的客户端",
+      "noClients": "尚无已批准的客户端。",
+      "colFirstSeen": "首次连接",
+      "colLastSeen": "最近连接",
+      "revoke": "撤销",
+      "audit": {
+        "title": "MCP 日志",
+        "refresh": "刷新",
+        "reveal": "显示文件",
+        "empty": "日志为空。",
+        "colTime": "时间",
+        "colWhat": "工具或事件",
+        "colConnection": "连接",
+        "colResult": "结果",
+        "colMs": "ms",
+        "ok": "成功",
+        "error": "错误",
+        "sessionStarted": "会话已打开",
+        "sessionEnded": "会话已关闭",
+        "approved": "客户端已批准",
+        "rejected": "客户端已拒绝",
+        "revoked": "客户端访问权限已撤销",
+        "serverStarted": "服务器已启动",
+        "serverStopped": "服务器已停止"
+      }
     }
   },
   "layout": {
@@ -1037,6 +1090,9 @@
     "about": "关于 Glafira",
     "diagnostics": "收集诊断信息…"
   },
+  "mcp": {
+    "unknownClient": "未知的 MCP 客户端"
+  },
   "hints": {
     "label": "提示：{{name}}",
     "connections": {
@@ -1136,6 +1192,9 @@
     "import": {
       "target": "新文件夹和连接的存放位置。已有的保持原位。",
       "updateExisting": "已存在的连接将采用文件中的设置；你的密码及其在树中的位置保持不变。"
+    },
+    "settings": {
+      "mcpEnable": "为 LLM 助手启动本地 MCP 服务器。访问权限按连接分别开放，默认关闭；每个新客户端都需在对话框中确认。"
     }
   }
 }

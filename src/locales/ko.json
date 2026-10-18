@@ -408,6 +408,59 @@
       "system": "시스템 언어({{name}})",
       "systemUnknown": "시스템 언어",
       "policy": "언어는 조직에서 설정합니다"
+    },
+    "mcp": {
+      "section": "LLM 어시스턴트(MCP)",
+      "intro": "LLM 어시스턴트(Claude Desktop, Claude Code, Cursor 등)는 MCP로 Glafira에 연결해 어시스턴트에 열어 준 연결의 메타데이터를 읽을 수 있습니다. 클러스터에서는 아무것도 변경할 수 없습니다.",
+      "enable": "MCP 서버 허용",
+      "policy": "조직에서 MCP를 비활성화했습니다",
+      "state": {
+        "off": "서버가 꺼져 있습니다",
+        "running": "서버가 실행 중입니다",
+        "otherInstance": "MCP는 다른 Glafira 창에서 처리하고 있습니다",
+        "error": "서버를 시작하지 못했습니다",
+        "disabledByPolicy": "조직에서 비활성화했습니다"
+      },
+      "connectTitle": "클라이언트 연결",
+      "connectHint": "클라이언트의 MCP 서버에 Glafira를 추가하고 클라이언트를 다시 시작하세요. Glafira가 실행 중이 아니면 클라이언트가 직접 실행합니다.",
+      "claudeDesktop": "Claude Desktop: claude_desktop_config.json에 추가",
+      "claudeCode": "Claude Code: 터미널에서 실행",
+      "otherClient": "기타 stdio 클라이언트: 명령과 인수",
+      "copy": "복사",
+      "copied": "복사됨",
+      "sessions": "실행 중인 세션",
+      "noSessions": "연결된 클라이언트가 없습니다.",
+      "colClient": "클라이언트",
+      "colSince": "연결 시각",
+      "colCalls": "호출 수",
+      "waiting": "승인 대기 중",
+      "disconnect": "연결 해제",
+      "disconnectAll": "모두 연결 해제",
+      "clients": "승인된 클라이언트",
+      "noClients": "아직 승인된 클라이언트가 없습니다.",
+      "colFirstSeen": "처음 연결",
+      "colLastSeen": "마지막 연결",
+      "revoke": "승인 취소",
+      "audit": {
+        "title": "MCP 로그",
+        "refresh": "새로 고침",
+        "reveal": "파일 표시",
+        "empty": "로그가 비어 있습니다.",
+        "colTime": "시간",
+        "colWhat": "도구 또는 이벤트",
+        "colConnection": "연결",
+        "colResult": "결과",
+        "colMs": "ms",
+        "ok": "성공",
+        "error": "오류",
+        "sessionStarted": "세션 열림",
+        "sessionEnded": "세션 닫힘",
+        "approved": "클라이언트 승인됨",
+        "rejected": "클라이언트 거부됨",
+        "revoked": "클라이언트 접근 취소됨",
+        "serverStarted": "서버 시작됨",
+        "serverStopped": "서버 중지됨"
+      }
     }
   },
   "layout": {
@@ -1037,6 +1090,9 @@
     "about": "Glafira 정보",
     "diagnostics": "진단 정보 수집…"
   },
+  "mcp": {
+    "unknownClient": "알 수 없는 MCP 클라이언트"
+  },
   "hints": {
     "label": "도움말: {{name}}",
     "connections": {
@@ -1136,6 +1192,9 @@
     "import": {
       "target": "새 폴더와 연결이 들어갈 위치입니다. 기존 항목은 그대로 유지됩니다.",
       "updateExisting": "이미 있는 연결은 파일의 설정을 받으며, 비밀번호와 트리에서의 위치는 유지됩니다."
+    },
+    "settings": {
+      "mcpEnable": "LLM 어시스턴트용 로컬 MCP 서버를 시작합니다. 접근은 연결별로 따로 열며 기본적으로 꺼져 있습니다. 새 클라이언트는 대화 상자에서 확인합니다."
     }
   }
 }

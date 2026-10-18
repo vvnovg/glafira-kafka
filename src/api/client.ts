@@ -11,6 +11,9 @@ import type {
   UpdateCheck,
   LanguageSettings,
   LicenseStatus,
+  McpAuditEntry,
+  McpClientConfigs,
+  McpStatus,
   PolicyStatus,
   ProduceMessage,
   ProduceResult,
@@ -78,6 +81,15 @@ export const api = {
   setLicenseKey: (key: string) => call<LicenseStatus>("set_license_key", { key }),
   removeLicenseKey: () => call<LicenseStatus>("remove_license_key"),
   getPolicyStatus: () => call<PolicyStatus>("get_policy_status"),
+  getMcpStatus: () => call<McpStatus>("get_mcp_status"),
+  setMcpEnabled: (enabled: boolean) => call<McpStatus>("set_mcp_enabled", { enabled }),
+  answerMcpApproval: (sessionId: string, approve: boolean) =>
+    call<McpStatus>("answer_mcp_approval", { sessionId, approve }),
+  revokeMcpClient: (name: string) => call<McpStatus>("revoke_mcp_client", { name }),
+  disconnectMcpSessions: (sessionId: string | null) => call<McpStatus>("disconnect_mcp_sessions", { sessionId }),
+  getMcpAudit: (limit: number) => call<McpAuditEntry[]>("get_mcp_audit", { limit }),
+  getMcpClientConfigs: () => call<McpClientConfigs>("get_mcp_client_configs"),
+  revealMcpAudit: () => call<void>("reveal_mcp_audit"),
   listConnections: () => call<ConnectionProfile[]>("list_connections"),
   saveConnection: (profile: ConnectionProfile, saslPassword?: string, tlsPasswords?: TlsPasswordsInput) =>
     call<ConnectionProfile>("save_connection", {

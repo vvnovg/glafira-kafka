@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LanguageSettings } from "../../api/types";
 import { i18n } from "../../i18n";
+import { mcpStatus } from "../../test/mcp";
 import { renderWithClient } from "../../test/render";
 
 const base: LanguageSettings = {
@@ -12,7 +13,16 @@ const base: LanguageSettings = {
 
 vi.mock("../../api/client", async (importOriginal) => {
   const orig = await importOriginal<typeof import("../../api/client")>();
-  return { ...orig, api: { getLanguageSettings: vi.fn(), setLanguage: vi.fn() } };
+  return {
+    ...orig,
+    api: {
+      getLanguageSettings: vi.fn(),
+      setLanguage: vi.fn(),
+      getMcpStatus: vi.fn().mockResolvedValue(mcpStatus({ state: "off", enabled: false })),
+      getMcpClientConfigs: vi.fn().mockResolvedValue({ command: "/x", args: ["mcp"], claudeDesktop: "{}", claudeCode: "claude" }),
+      getMcpAudit: vi.fn().mockResolvedValue([]),
+    },
+  };
 });
 
 import { api } from "../../api/client";
@@ -56,6 +66,6 @@ describe("SettingsPanel", () => {
     await user.selectOptions(await screen.findByLabelText("Язык интерфейса"), "de");
     expect(api.setLanguage).toHaveBeenCalledWith("de");
     await vi.waitFor(() => expect(i18n.language).toBe("de"));
-    expect(screen.queryByText(/Pro/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\bPro\b/)).not.toBeInTheDocument();
   });
 });

@@ -408,6 +408,59 @@
       "system": "System default ({{name}})",
       "systemUnknown": "System default",
       "policy": "The language is set by your organization"
+    },
+    "mcp": {
+      "section": "LLM assistants (MCP)",
+      "intro": "An LLM assistant (Claude Desktop, Claude Code, Cursor and others) can connect to Glafira over MCP and read the metadata of the connections you open for it. It cannot change anything in the clusters.",
+      "enable": "Allow the MCP server",
+      "policy": "MCP is disabled by your organization",
+      "state": {
+        "off": "The server is off",
+        "running": "The server is running",
+        "otherInstance": "MCP is served by another Glafira window",
+        "error": "The server did not start",
+        "disabledByPolicy": "Disabled by your organization"
+      },
+      "connectTitle": "Connect a client",
+      "connectHint": "Add Glafira to the client's MCP servers and restart the client. If Glafira is not running, the client starts it.",
+      "claudeDesktop": "Claude Desktop: add to claude_desktop_config.json",
+      "claudeCode": "Claude Code: run in a terminal",
+      "otherClient": "Other stdio clients: command and arguments",
+      "copy": "Copy",
+      "copied": "Copied",
+      "sessions": "Active sessions",
+      "noSessions": "No clients are connected.",
+      "colClient": "Client",
+      "colSince": "Connected",
+      "colCalls": "Calls",
+      "waiting": "waiting for approval",
+      "disconnect": "Disconnect",
+      "disconnectAll": "Disconnect all",
+      "clients": "Approved clients",
+      "noClients": "No approved clients yet.",
+      "colFirstSeen": "First connected",
+      "colLastSeen": "Last connected",
+      "revoke": "Revoke",
+      "audit": {
+        "title": "MCP log",
+        "refresh": "Refresh",
+        "reveal": "Show file",
+        "empty": "The log is empty.",
+        "colTime": "Time",
+        "colWhat": "Tool or event",
+        "colConnection": "Connection",
+        "colResult": "Result",
+        "colMs": "ms",
+        "ok": "success",
+        "error": "error",
+        "sessionStarted": "Session opened",
+        "sessionEnded": "Session closed",
+        "approved": "Client approved",
+        "rejected": "Client rejected",
+        "revoked": "Client access revoked",
+        "serverStarted": "Server started",
+        "serverStopped": "Server stopped"
+      }
     }
   },
   "layout": {
@@ -1045,6 +1098,9 @@
     "about": "About Glafira",
     "diagnostics": "Collect Diagnostics…"
   },
+  "mcp": {
+    "unknownClient": "Unknown MCP client"
+  },
   "hints": {
     "label": "Hint: {{name}}",
     "connections": {
@@ -1144,6 +1200,9 @@
     "import": {
       "target": "Where new folders and connections go. Existing ones stay where they are.",
       "updateExisting": "Connections that already exist get the settings from the file; your passwords and their place in the tree are kept."
+    },
+    "settings": {
+      "mcpEnable": "Starts a local MCP server for LLM assistants. Access is opened per connection and is off by default; each new client is confirmed in a dialog."
     }
   }
 }

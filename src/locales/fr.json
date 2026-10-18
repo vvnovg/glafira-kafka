@@ -408,6 +408,59 @@
       "system": "Langue du système ({{name}})",
       "systemUnknown": "Langue du système",
       "policy": "La langue est définie par votre organisation"
+    },
+    "mcp": {
+      "section": "Assistants LLM (MCP)",
+      "intro": "Un assistant LLM (Claude Desktop, Claude Code, Cursor et d’autres) peut se connecter à Glafira via MCP et lire les métadonnées des connexions que vous lui ouvrez. Il ne peut rien modifier dans les clusters.",
+      "enable": "Autoriser le serveur MCP",
+      "policy": "MCP est désactivé par votre organisation",
+      "state": {
+        "off": "Le serveur est désactivé",
+        "running": "Le serveur est en cours d’exécution",
+        "otherInstance": "MCP est assuré par une autre fenêtre Glafira",
+        "error": "Le serveur n’a pas démarré",
+        "disabledByPolicy": "Désactivé par votre organisation"
+      },
+      "connectTitle": "Connecter un client",
+      "connectHint": "Ajouter Glafira aux serveurs MCP du client, puis redémarrer le client. Si Glafira n’est pas lancée, le client la lance lui-même.",
+      "claudeDesktop": "Claude Desktop : ajouter à claude_desktop_config.json",
+      "claudeCode": "Claude Code : exécuter dans un terminal",
+      "otherClient": "Autres clients stdio : commande et arguments",
+      "copy": "Copier",
+      "copied": "Copié",
+      "sessions": "Sessions actives",
+      "noSessions": "Aucun client n’est connecté.",
+      "colClient": "Client",
+      "colSince": "Connecté",
+      "colCalls": "Appels",
+      "waiting": "en attente d’approbation",
+      "disconnect": "Déconnecter",
+      "disconnectAll": "Tout déconnecter",
+      "clients": "Clients approuvés",
+      "noClients": "Aucun client approuvé pour le moment.",
+      "colFirstSeen": "Première connexion",
+      "colLastSeen": "Dernière connexion",
+      "revoke": "Révoquer",
+      "audit": {
+        "title": "Journal MCP",
+        "refresh": "Actualiser",
+        "reveal": "Afficher le fichier",
+        "empty": "Le journal est vide.",
+        "colTime": "Heure",
+        "colWhat": "Outil ou événement",
+        "colConnection": "Connexion",
+        "colResult": "Résultat",
+        "colMs": "ms",
+        "ok": "succès",
+        "error": "erreur",
+        "sessionStarted": "Session ouverte",
+        "sessionEnded": "Session fermée",
+        "approved": "Client approuvé",
+        "rejected": "Client rejeté",
+        "revoked": "Accès du client révoqué",
+        "serverStarted": "Serveur démarré",
+        "serverStopped": "Serveur arrêté"
+      }
     }
   },
   "layout": {
@@ -1053,6 +1106,9 @@
     "about": "À propos de Glafira",
     "diagnostics": "Collecter le diagnostic…"
   },
+  "mcp": {
+    "unknownClient": "Client MCP inconnu"
+  },
   "hints": {
     "label": "Aide : {{name}}",
     "connections": {
@@ -1152,6 +1208,9 @@
     "import": {
       "target": "Emplacement des nouveaux dossiers et connexions. Les éléments existants restent à leur place.",
       "updateExisting": "Les connexions existantes reçoivent les paramètres du fichier ; vos mots de passe et leur place dans l’arborescence sont conservés."
+    },
+    "settings": {
+      "mcpEnable": "Démarre un serveur MCP local pour les assistants LLM. L’accès s’ouvre connexion par connexion et est désactivé par défaut ; chaque nouveau client est confirmé dans une boîte de dialogue."
     }
   }
 }

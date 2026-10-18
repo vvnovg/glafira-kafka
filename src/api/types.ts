@@ -583,3 +583,60 @@ export interface LanguageSettings {
   reason: LanguageReason;
   languages: string[];
 }
+
+export type McpServerState = "off" | "running" | "otherInstance" | "error" | "disabledByPolicy";
+
+export interface McpSession {
+  id: string;
+  clientName: string | null;
+  clientVersion: string | null;
+  startedMs: number;
+  calls: number;
+  /** Идёт вызов. */
+  active: boolean;
+  approved: boolean;
+}
+
+export interface McpApprovalRequest {
+  sessionId: string;
+  clientName: string | null;
+  clientVersion: string | null;
+}
+
+export interface McpApprovedClient {
+  name: string;
+  version: string;
+  firstSeenMs: number;
+  lastSeenMs: number;
+}
+
+export interface McpStatus {
+  state: McpServerState;
+  enabled: boolean;
+  policyAllows: boolean;
+  error: LocalizedText | null;
+  sessions: McpSession[];
+  pending: McpApprovalRequest[];
+  approvedClients: McpApprovedClient[];
+  allowedConnections: number;
+}
+
+export interface McpClientConfigs {
+  command: string;
+  args: string[];
+  claudeDesktop: string;
+  claudeCode: string;
+}
+
+/** Запись журнала MCP (`mcp-audit.jsonl`), новые первыми. */
+export interface McpAuditEntry {
+  ts: number;
+  event: string;
+  session?: string;
+  client?: string | null;
+  tool?: string;
+  connection?: { id: string; name: string } | null;
+  outcome?: "ok" | "error";
+  code?: string | null;
+  ms?: number;
+}

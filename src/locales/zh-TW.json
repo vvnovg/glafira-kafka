@@ -408,6 +408,59 @@
       "system": "跟隨系統（{{name}}）",
       "systemUnknown": "跟隨系統",
       "policy": "語言由你的組織設定"
+    },
+    "mcp": {
+      "section": "LLM 助理（MCP）",
+      "intro": "LLM 助理（Claude Desktop、Claude Code、Cursor 等）可以透過 MCP 連線到 Glafira，並讀取你為其開放的連線的中繼資料。它無法變更叢集中的任何內容。",
+      "enable": "允許 MCP 伺服器",
+      "policy": "MCP 已被你的組織停用",
+      "state": {
+        "off": "伺服器已關閉",
+        "running": "伺服器正在執行",
+        "otherInstance": "MCP 由另一個 Glafira 視窗提供服務",
+        "error": "伺服器未能啟動",
+        "disabledByPolicy": "已被你的組織停用"
+      },
+      "connectTitle": "連接用戶端",
+      "connectHint": "將 Glafira 新增到用戶端的 MCP 伺服器中，然後重新啟動用戶端。如果 Glafira 未執行，用戶端會自行啟動它。",
+      "claudeDesktop": "Claude Desktop：新增到 claude_desktop_config.json",
+      "claudeCode": "Claude Code：在終端機中執行",
+      "otherClient": "其他 stdio 用戶端：指令和引數",
+      "copy": "複製",
+      "copied": "已複製",
+      "sessions": "使用中的工作階段",
+      "noSessions": "沒有已連線的用戶端。",
+      "colClient": "用戶端",
+      "colSince": "連線時間",
+      "colCalls": "呼叫次數",
+      "waiting": "等待核准",
+      "disconnect": "中斷連線",
+      "disconnectAll": "全部中斷連線",
+      "clients": "已核准的用戶端",
+      "noClients": "尚無已核准的用戶端。",
+      "colFirstSeen": "首次連線",
+      "colLastSeen": "最近連線",
+      "revoke": "撤銷",
+      "audit": {
+        "title": "MCP 日誌",
+        "refresh": "重新整理",
+        "reveal": "顯示檔案",
+        "empty": "日誌是空的。",
+        "colTime": "時間",
+        "colWhat": "工具或事件",
+        "colConnection": "連線",
+        "colResult": "結果",
+        "colMs": "ms",
+        "ok": "成功",
+        "error": "錯誤",
+        "sessionStarted": "工作階段已開啟",
+        "sessionEnded": "工作階段已關閉",
+        "approved": "用戶端已核准",
+        "rejected": "用戶端已拒絕",
+        "revoked": "用戶端存取權限已撤銷",
+        "serverStarted": "伺服器已啟動",
+        "serverStopped": "伺服器已停止"
+      }
     }
   },
   "layout": {
@@ -1037,6 +1090,9 @@
     "about": "關於 Glafira",
     "diagnostics": "收集診斷資訊…"
   },
+  "mcp": {
+    "unknownClient": "未知的 MCP 用戶端"
+  },
   "hints": {
     "label": "提示：{{name}}",
     "connections": {
@@ -1136,6 +1192,9 @@
     "import": {
       "target": "新資料夾和連線的存放位置。現有項目維持原位。",
       "updateExisting": "已存在的連線會套用檔案中的設定；你的密碼及連線在樹狀結構中的位置都會保留。"
+    },
+    "settings": {
+      "mcpEnable": "為 LLM 助理啟動本機 MCP 伺服器。存取權限依連線分別開放，預設為關閉；每個新用戶端都需在對話方塊中確認。"
     }
   }
 }

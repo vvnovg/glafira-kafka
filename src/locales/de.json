@@ -408,6 +408,59 @@
       "system": "Systemsprache ({{name}})",
       "systemUnknown": "Systemsprache",
       "policy": "Die Sprache ist von Ihrer Organisation festgelegt"
+    },
+    "mcp": {
+      "section": "LLM-Assistenten (MCP)",
+      "intro": "Ein LLM-Assistent (Claude Desktop, Claude Code, Cursor und andere) kann sich über MCP mit Glafira verbinden und die Metadaten der Verbindungen lesen, die Sie für ihn freigeben. In den Clustern kann er nichts ändern.",
+      "enable": "MCP-Server zulassen",
+      "policy": "MCP ist von Ihrer Organisation deaktiviert",
+      "state": {
+        "off": "Der Server ist ausgeschaltet",
+        "running": "Der Server läuft",
+        "otherInstance": "MCP wird von einem anderen Glafira-Fenster bereitgestellt",
+        "error": "Der Server konnte nicht gestartet werden",
+        "disabledByPolicy": "Von Ihrer Organisation deaktiviert"
+      },
+      "connectTitle": "Client verbinden",
+      "connectHint": "Glafira zu den MCP-Servern des Clients hinzufügen und den Client neu starten. Wenn Glafira nicht läuft, startet der Client das Programm selbst.",
+      "claudeDesktop": "Claude Desktop: in claude_desktop_config.json eintragen",
+      "claudeCode": "Claude Code: im Terminal ausführen",
+      "otherClient": "Andere stdio-Clients: Befehl und Argumente",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "sessions": "Aktive Sessions",
+      "noSessions": "Keine Clients verbunden.",
+      "colClient": "Client",
+      "colSince": "Verbunden",
+      "colCalls": "Aufrufe",
+      "waiting": "wartet auf Genehmigung",
+      "disconnect": "Trennen",
+      "disconnectAll": "Alle trennen",
+      "clients": "Genehmigte Clients",
+      "noClients": "Noch keine genehmigten Clients.",
+      "colFirstSeen": "Erstmals verbunden",
+      "colLastSeen": "Zuletzt verbunden",
+      "revoke": "Widerrufen",
+      "audit": {
+        "title": "MCP-Protokoll",
+        "refresh": "Aktualisieren",
+        "reveal": "Datei anzeigen",
+        "empty": "Das Protokoll ist leer.",
+        "colTime": "Zeit",
+        "colWhat": "Tool oder Ereignis",
+        "colConnection": "Verbindung",
+        "colResult": "Ergebnis",
+        "colMs": "ms",
+        "ok": "erfolgreich",
+        "error": "Fehler",
+        "sessionStarted": "Session geöffnet",
+        "sessionEnded": "Session geschlossen",
+        "approved": "Client genehmigt",
+        "rejected": "Client abgelehnt",
+        "revoked": "Zugriff des Clients widerrufen",
+        "serverStarted": "Server gestartet",
+        "serverStopped": "Server beendet"
+      }
     }
   },
   "layout": {
@@ -1045,6 +1098,9 @@
     "about": "Über Glafira",
     "diagnostics": "Diagnose erstellen…"
   },
+  "mcp": {
+    "unknownClient": "Unbekannter MCP-Client"
+  },
   "hints": {
     "label": "Hinweis: {{name}}",
     "connections": {
@@ -1144,6 +1200,9 @@
     "import": {
       "target": "Wohin neue Ordner und Verbindungen kommen. Vorhandene bleiben an ihrem Platz.",
       "updateExisting": "Vorhandene Verbindungen übernehmen die Einstellungen aus der Datei; gespeicherte Passwörter und ihr Platz im Baum bleiben erhalten."
+    },
+    "settings": {
+      "mcpEnable": "Startet einen lokalen MCP-Server für LLM-Assistenten. Der Zugriff wird für jede Verbindung einzeln freigegeben und ist standardmäßig aus; jeder neue Client wird in einem Dialog bestätigt."
     }
   }
 }

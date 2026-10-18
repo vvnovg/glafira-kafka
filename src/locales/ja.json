@@ -408,6 +408,59 @@
       "system": "システムの言語（{{name}}）",
       "systemUnknown": "システムの言語",
       "policy": "言語は組織によって設定されています"
+    },
+    "mcp": {
+      "section": "LLMアシスタント（MCP）",
+      "intro": "LLMアシスタント（Claude Desktop、Claude Code、Cursorなど）は、MCP経由でGlafiraに接続し、アシスタント用に開放した接続のメタデータを読み取れます。クラスターの内容を変更することはできません。",
+      "enable": "MCPサーバーを許可",
+      "policy": "MCPは組織によって無効にされています",
+      "state": {
+        "off": "サーバーはオフです",
+        "running": "サーバーは実行中です",
+        "otherInstance": "MCPは別のGlafiraウィンドウで処理されています",
+        "error": "サーバーを開始できませんでした",
+        "disabledByPolicy": "組織によって無効にされています"
+      },
+      "connectTitle": "クライアントの接続",
+      "connectHint": "クライアントのMCPサーバーにGlafiraを追加し、クライアントを再起動します。Glafiraが起動していない場合は、クライアントが自動的に起動します。",
+      "claudeDesktop": "Claude Desktop：claude_desktop_config.jsonに追加",
+      "claudeCode": "Claude Code：ターミナルで実行",
+      "otherClient": "その他のstdioクライアント：コマンドと引数",
+      "copy": "コピー",
+      "copied": "コピーしました",
+      "sessions": "実行中のセッション",
+      "noSessions": "接続中のクライアントはありません。",
+      "colClient": "クライアント",
+      "colSince": "接続日時",
+      "colCalls": "呼び出し数",
+      "waiting": "承認待ち",
+      "disconnect": "切断",
+      "disconnectAll": "すべて切断",
+      "clients": "承認済みクライアント",
+      "noClients": "承認済みのクライアントはまだありません。",
+      "colFirstSeen": "初回接続",
+      "colLastSeen": "最終接続",
+      "revoke": "取り消す",
+      "audit": {
+        "title": "MCPのログ",
+        "refresh": "更新",
+        "reveal": "ファイルを表示",
+        "empty": "ログは空です。",
+        "colTime": "時刻",
+        "colWhat": "ツールまたはイベント",
+        "colConnection": "接続",
+        "colResult": "結果",
+        "colMs": "ms",
+        "ok": "成功",
+        "error": "エラー",
+        "sessionStarted": "セッションを開始しました",
+        "sessionEnded": "セッションを終了しました",
+        "approved": "クライアントを承認しました",
+        "rejected": "クライアントを拒否しました",
+        "revoked": "クライアントのアクセスを取り消しました",
+        "serverStarted": "サーバーを起動しました",
+        "serverStopped": "サーバーを停止しました"
+      }
     }
   },
   "layout": {
@@ -1037,6 +1090,9 @@
     "about": "Glafiraについて",
     "diagnostics": "診断情報を収集…"
   },
+  "mcp": {
+    "unknownClient": "不明なMCPクライアント"
+  },
   "hints": {
     "label": "ヒント：{{name}}",
     "connections": {
@@ -1136,6 +1192,9 @@
     "import": {
       "target": "新しいフォルダーと接続の追加先。既存のものは元の場所に残ります。",
       "updateExisting": "すでにある接続にはファイルの設定が適用されます。パスワードとツリー内の位置は保持されます。"
+    },
+    "settings": {
+      "mcpEnable": "LLMアシスタント向けにローカルのMCPサーバーを起動します。アクセスは接続ごとに個別に開放され、デフォルトではオフです。新しいクライアントはダイアログで確認します。"
     }
   }
 }

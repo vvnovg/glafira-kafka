@@ -408,6 +408,59 @@
       "system": "Język systemu ({{name}})",
       "systemUnknown": "Język systemu",
       "policy": "Język jest ustawiony przez organizację"
+    },
+    "mcp": {
+      "section": "Asystenci LLM (MCP)",
+      "intro": "Asystent LLM (Claude Desktop, Claude Code, Cursor i inne) może połączyć się z aplikacją Glafira przez MCP i odczytywać metadane połączeń otwartych dla niego. Nie może niczego zmienić w klastrach.",
+      "enable": "Zezwalaj na serwer MCP",
+      "policy": "MCP jest wyłączony przez organizację",
+      "state": {
+        "off": "Serwer jest wyłączony",
+        "running": "Serwer działa",
+        "otherInstance": "MCP obsługuje inne okno Glafira",
+        "error": "Serwer nie uruchomił się",
+        "disabledByPolicy": "Wyłączone przez organizację"
+      },
+      "connectTitle": "Podłączanie klienta",
+      "connectHint": "Należy dodać aplikację Glafira do serwerów MCP klienta i uruchomić klienta ponownie. Jeśli Glafira nie jest uruchomiona, klient uruchomi ją sam.",
+      "claudeDesktop": "Claude Desktop: dodać do claude_desktop_config.json",
+      "claudeCode": "Claude Code: uruchomić w terminalu",
+      "otherClient": "Inni klienci stdio: polecenie i argumenty",
+      "copy": "Kopiuj",
+      "copied": "Skopiowano",
+      "sessions": "Aktywne sesje",
+      "noSessions": "Brak podłączonych klientów.",
+      "colClient": "Klient",
+      "colSince": "Połączono",
+      "colCalls": "Wywołania",
+      "waiting": "oczekuje na zatwierdzenie",
+      "disconnect": "Rozłącz",
+      "disconnectAll": "Rozłącz wszystkich",
+      "clients": "Zatwierdzeni klienci",
+      "noClients": "Brak zatwierdzonych klientów.",
+      "colFirstSeen": "Pierwsze połączenie",
+      "colLastSeen": "Ostatnie połączenie",
+      "revoke": "Odwołaj",
+      "audit": {
+        "title": "Log MCP",
+        "refresh": "Odśwież",
+        "reveal": "Pokaż plik",
+        "empty": "Log jest pusty.",
+        "colTime": "Czas",
+        "colWhat": "Narzędzie lub zdarzenie",
+        "colConnection": "Połączenie",
+        "colResult": "Wynik",
+        "colMs": "ms",
+        "ok": "sukces",
+        "error": "błąd",
+        "sessionStarted": "Sesja otwarta",
+        "sessionEnded": "Sesja zamknięta",
+        "approved": "Klient zatwierdzony",
+        "rejected": "Klient odrzucony",
+        "revoked": "Dostęp klienta odwołany",
+        "serverStarted": "Serwer uruchomiony",
+        "serverStopped": "Serwer zatrzymany"
+      }
     }
   },
   "layout": {
@@ -1061,6 +1114,9 @@
     "about": "O programie",
     "diagnostics": "Zbierz diagnostykę…"
   },
+  "mcp": {
+    "unknownClient": "Nieznany klient MCP"
+  },
   "hints": {
     "label": "Podpowiedź: {{name}}",
     "connections": {
@@ -1160,6 +1216,9 @@
     "import": {
       "target": "Gdzie trafią nowe foldery i połączenia. Istniejące pozostaną na swoich miejscach.",
       "updateExisting": "Istniejące połączenia otrzymają ustawienia z pliku; zapisane hasła i ich miejsce w drzewie zostaną zachowane."
+    },
+    "settings": {
+      "mcpEnable": "Uruchamia lokalny serwer MCP dla asystentów LLM. Dostęp otwiera się osobno dla każdego połączenia i domyślnie jest wyłączony; każdy nowy klient jest potwierdzany w oknie dialogowym."
     }
   }
 }

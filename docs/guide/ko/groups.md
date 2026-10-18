@@ -1,98 +1,98 @@
-# Consumer groups
+# 컨슈머 그룹
 
-A consumer group is a set of consumers that share the reading of topics. Kafka gives each partition to one member of the group and stores, for each partition, the offset the group has committed. Applications continue reading from that offset after a restart.
+컨슈머 그룹은 토픽 읽기를 나누어 맡는 컨슈머의 집합입니다. Kafka는 각 파티션을 그룹의 멤버 하나에게 할당하고, 파티션마다 그룹이 커밋한 오프셋을 저장합니다. 애플리케이션은 다시 시작한 후 그 오프셋부터 계속 읽습니다.
 
-Open [[ui:sidebar.groups]] under the connection in the [[ui:sidebar.connections]] panel. The groups of one topic are also on the [[ui:topics.details.tabGroups]] tab of the topic. See [Topic screen](topics.md#topic-details).
+[[ui:sidebar.connections]] 패널의 연결 아래에서 [[ui:sidebar.groups]]을 여세요. 토픽 하나의 그룹은 토픽의 [[ui:topics.details.tabGroups]] 탭에도 있습니다. [토픽 화면](topics.md#topic-details)을 참고하세요.
 
-## Group list {#group-list}
+## 그룹 목록 {#group-list}
 
-The list shows all consumer groups of the cluster. The columns:
+목록에는 클러스터의 모든 컨슈머 그룹이 표시됩니다. 열은 다음과 같습니다:
 
-- [[ui:groups.list.colGroup]] — the group ID (`group.id`).
-- [[ui:groups.list.colState]] — the state reported by Kafka, for example `Stable` (members are reading), `Empty` (no members), `PreparingRebalance` or `CompletingRebalance` (partitions are being redistributed) and `Dead` (the group no longer exists).
-- [[ui:groups.list.colMembers]] — the number of active members.
-- `Assignor` — the strategy used to distribute partitions, for example `range`.
-- [[ui:groups.list.colLag]] — the total lag of the group. See [Lag](groups.md#lag).
-- [[ui:groups.list.colTopics]] — the topics the group has committed offsets for.
+- [[ui:groups.list.colGroup]] — 그룹 ID(`group.id`).
+- [[ui:groups.list.colState]] — Kafka가 보고하는 상태. 예: `Stable`(멤버가 읽는 중), `Empty`(멤버 없음), `PreparingRebalance` 또는 `CompletingRebalance`(파티션 재분배 중), `Dead`(그룹이 더 이상 없음).
+- [[ui:groups.list.colMembers]] — 활성 멤버 수.
+- `Assignor` — 파티션을 분배하는 데 사용하는 전략. 예: `range`.
+- [[ui:groups.list.colLag]] — 그룹의 전체 랙. [랙](groups.md#lag)을 참고하세요.
+- [[ui:groups.list.colTopics]] — 그룹이 오프셋을 커밋한 토픽.
 
-Type in [[ui:groups.list.search]] to show the groups whose ID contains the text; case does not matter. The state list next to it shows only groups in one state; [[ui:groups.list.allStates]] removes this filter. The counter shows how many groups are shown and how many there are in total.
+[[ui:groups.list.search]] 필드에 입력하면 ID에 그 텍스트가 포함된 그룹이 표시됩니다. 대소문자는 구분하지 않습니다. 옆의 상태 목록은 한 상태의 그룹만 표시하며, [[ui:groups.list.allStates]]는 이 필터를 해제합니다. 카운터에는 표시된 그룹 수와 전체 그룹 수가 나옵니다.
 
-Members, assignor and lag are loaded only for the rows you see, while you scroll. Until they arrive, the cell shows `…`. If they cannot be loaded, the cell shows `—`; point at it to see the reason.
+멤버, 할당자, 랙은 스크롤하는 동안 화면에 보이는 행에 대해서만 불러옵니다. 불러오기 전까지 셀에는 `…`가 표시됩니다. 불러올 수 없으면 셀에 `—`가 표시되며, 포인터를 올리면 이유를 볼 수 있습니다.
 
-[[ui:groups.list.refresh]] reloads the list and the data in it. If some brokers did not respond, a warning says the list may be incomplete.
+[[ui:groups.list.refresh]]은 목록과 그 안의 데이터를 다시 불러옵니다. 일부 브로커가 응답하지 않으면 목록이 불완전할 수 있다는 경고가 표시됩니다.
 
-## Lag {#lag}
+## 랙 {#lag}
 
-Lag is how many messages the group has not read yet. For each partition, it is the end of the log minus the committed offset. Lag is never shown below zero.
+랙은 그룹이 아직 읽지 않은 메시지 수입니다. 파티션마다 로그 끝에서 커밋된 오프셋을 뺀 값입니다. 랙은 0보다 작게 표시되지 않습니다.
 
-Lag depends only on committed offsets. An active consumer may have read further than it has committed, so its real lag can be smaller. When the group commits again, the lag drops.
+랙은 커밋된 오프셋에만 의존합니다. 활성 컨슈머는 커밋한 것보다 더 많이 읽었을 수 있으므로 실제 랙은 더 작을 수 있습니다. 그룹이 다시 커밋하면 랙이 줄어듭니다.
 
-A partition without a committed offset shows [[ui:groups.lag.noCommit]] and does not count in the total. The total lag of a group shows `—` when the group has no commits at all ([[ui:groups.lag.noCommits]]), or when the offsets of some partition could not be read ([[ui:groups.lag.unknown]]).
+커밋된 오프셋이 없는 파티션에는 [[ui:groups.lag.noCommit]]이 표시되며 합계에 포함되지 않습니다. 그룹에 커밋이 전혀 없을 때([[ui:groups.lag.noCommits]])나 일부 파티션의 오프셋을 읽을 수 없을 때([[ui:groups.lag.unknown]])는 그룹의 전체 랙에 `—`가 표시됩니다.
 
-Lag counts offsets, not messages. In topics with compaction or transactions, some offsets hold no visible messages, so the group may have fewer messages left to read than the lag shows.
+랙은 메시지가 아니라 오프셋을 셉니다. 컴팩션이나 트랜잭션이 있는 토픽에서는 일부 오프셋에 보이는 메시지가 없으므로, 그룹이 읽을 남은 메시지가 랙보다 적을 수 있습니다.
 
-The values are a snapshot at the moment of loading. To follow the lag, open the group and turn on auto-refresh.
+값은 불러온 시점의 스냅샷입니다. 랙을 계속 지켜보려면 그룹을 열고 자동 새로 고침을 켜세요.
 
-## Group details {#group-details}
+## 그룹 세부 정보 {#group-details}
 
-Click a group in the list to open its tab. At the top, a summary shows the state, the number of members and the assignor.
+목록에서 그룹을 클릭하면 그룹 탭이 열립니다. 위쪽 요약에는 상태, 멤버 수, 할당자가 표시됩니다.
 
-- [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] or [[ui:groups.details.refresh10]].
-- [[ui:groups.details.refresh]] — reload now.
-- [[ui:groups.details.join]] — start a [consumer session](consumer-sessions.md) in this group. The session form gets the group ID and the topics the group has commits for. This needs Pro, and the button is disabled on [[ui:common.readOnly]] connections; point at the button to see the reason.
+- [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] 또는 [[ui:groups.details.refresh10]].
+- [[ui:groups.details.refresh]] — 지금 다시 불러옵니다.
+- [[ui:groups.details.join]] — 이 그룹에서 [컨슈머 세션](consumer-sessions.md)을 시작합니다. 세션 양식에 그룹 ID와 그룹이 커밋한 토픽이 채워집니다. Pro가 필요하며, [[ui:common.readOnly]] 연결에서는 버튼이 비활성화됩니다. 버튼에 포인터를 올리면 이유를 볼 수 있습니다.
 
-[[ui:groups.details.partitions]] lists the partitions the group has commits for, and the partitions assigned to its members. The total lag of the group is shown above the table. The columns are [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (the committed offset), `Log end` (the end offset of the partition), [[ui:groups.details.colLag]] and [[ui:groups.details.colMember]] (the client ID of the member that reads the partition).
+[[ui:groups.details.partitions]] 표에는 그룹이 커밋한 파티션과 멤버에게 할당된 파티션이 나열됩니다. 그룹의 전체 랙은 표 위에 표시됩니다. 열은 [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed`(커밋된 오프셋), `Log end`(파티션의 끝 오프셋), [[ui:groups.details.colLag]], [[ui:groups.details.colMember]](파티션을 읽는 멤버의 클라이언트 ID)입니다.
 
-[[ui:groups.details.members]] lists the active members: `Client ID`, [[ui:groups.details.colHost]], `Member ID` and [[ui:groups.details.colAssignment]] (the partitions of the member as `topic:partition`). A group without members shows [[ui:groups.details.noMembers]].
+[[ui:groups.details.members]] 표에는 활성 멤버가 나열됩니다: `Client ID`, [[ui:groups.details.colHost]], `Member ID`, [[ui:groups.details.colAssignment]](`topic:partition` 형식의 멤버 파티션). 멤버가 없는 그룹에는 다음 메시지가 표시됩니다: [[ui:groups.details.noMembers]]
 
-The second row has [[ui:groups.details.resetOffsets]] and [[ui:groups.details.deleteGroup]]. It is hidden on read-only connections.
+두 번째 줄에는 [[ui:groups.details.resetOffsets]] 버튼과 [[ui:groups.details.deleteGroup]] 버튼이 있습니다. 읽기 전용 연결에서는 이 줄이 숨겨집니다.
 
-## Reset offsets {#reset-offsets}
+## 오프셋 재설정 {#reset-offsets}
 
-Resetting offsets moves the committed offsets of a group. The group then rereads messages or skips them. Offsets can be reset only for a group without active members (state `Empty` or `Dead`). Otherwise the members would overwrite the new offsets with their own commits. Stop the applications of the group first.
+오프셋을 재설정하면 그룹의 커밋된 오프셋이 이동합니다. 그러면 그룹은 메시지를 다시 읽거나 건너뜁니다. 오프셋은 활성 멤버가 없는 그룹(상태 `Empty` 또는 `Dead`)에서만 재설정할 수 있습니다. 그렇지 않으면 멤버가 자신의 커밋으로 새 오프셋을 덮어씁니다. 먼저 그룹의 애플리케이션을 중지하세요.
 
-1. On the group tab, click [[ui:groups.details.resetOffsets]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Choose the [[ui:groups.reset.strategy]]. See [Reset strategies](groups.md#reset-strategies).
-3. Choose the [[ui:groups.reset.scope]]. See [Reset scope](groups.md#reset-scope).
-4. Click [[ui:groups.reset.preview]].
-5. Check the table and click the apply button. It shows the number of partitions that will change.
+1. 그룹 탭에서 [[ui:groups.details.resetOffsets]]을 클릭합니다. 그룹에 멤버가 있는 동안에는 버튼이 비활성화됩니다. 버튼에 포인터를 올리면 이유를 볼 수 있습니다.
+2. [[ui:groups.reset.strategy]]을 선택합니다. [재설정 전략](groups.md#reset-strategies)을 참고하세요.
+3. [[ui:groups.reset.scope]]를 선택합니다. [재설정 범위](groups.md#reset-scope)를 참고하세요.
+4. [[ui:groups.reset.preview]]를 클릭합니다.
+5. 표를 확인하고 적용 버튼을 클릭합니다. 버튼에는 변경될 파티션 수가 표시됩니다.
 
-The preview changes nothing. For each partition it shows the topic, the partition, [[ui:groups.reset.colCurrent]] (the committed offset), [[ui:groups.reset.colNew]] (the target offset), and `Low / High` (the first and end offsets of the partition). A partition for which no target can be computed is marked [[ui:groups.reset.noTarget]], with the reason. Such partitions are skipped.
+미리 보기는 아무것도 변경하지 않습니다. 파티션마다 토픽, 파티션, [[ui:groups.reset.colCurrent]](커밋된 오프셋), [[ui:groups.reset.colNew]](대상 오프셋), `Low / High`(파티션의 첫 오프셋과 끝 오프셋)가 표시됩니다. 대상을 계산할 수 없는 파티션에는 이유와 함께 [[ui:groups.reset.noTarget]]라는 표시가 붙습니다. 이런 파티션은 건너뜁니다.
 
-Only the plan shown in the preview is applied. Any change in the form hides the preview, and you need to click [[ui:groups.reset.preview]] again. On a prod connection, applying asks for the connection name; on other connections, it applies at once.
+미리 보기에 표시된 계획만 적용됩니다. 양식을 조금이라도 바꾸면 미리 보기가 숨겨지므로 [[ui:groups.reset.preview]]를 다시 클릭해야 합니다. 운영 환경 연결에서는 적용할 때 연결 이름을 묻고, 다른 연결에서는 즉시 적용됩니다.
 
-Before applying, the app checks again that the group has no members. After applying, [[ui:groups.reset.result]] lists each partition with its new offset or an error.
+적용하기 전에 앱은 그룹에 멤버가 없는지 다시 확인합니다. 적용한 후에는 [[ui:groups.reset.result]]에 각 파티션이 새 오프셋 또는 오류와 함께 나열됩니다.
 
-You can also prepare a reset from a message: see [Reset a group to a message](browse.md#reset-group-here). [[ui:common.close]] closes the reset panel.
+메시지에서 재설정을 준비할 수도 있습니다. [메시지로 그룹 재설정](browse.md#reset-group-here)을 참고하세요. [[ui:common.close]]는 재설정 패널을 닫습니다.
 
-## Reset strategies {#reset-strategies}
+## 재설정 전략 {#reset-strategies}
 
-[[ui:groups.reset.strategy]] sets the target offset for each partition in the scope:
+[[ui:groups.reset.strategy]]은 범위 안의 각 파티션에 대한 대상 오프셋을 정합니다:
 
-- [[ui:groups.reset.strategyEarliest]] — the first offset that is still stored. The group rereads everything the topic keeps.
-- [[ui:groups.reset.strategyLatest]] — the end of the partition. The group skips everything accumulated and reads only new messages.
-- [[ui:groups.reset.strategyTimestamp]] — the first message written at or after [[ui:groups.reset.timestamp]]. In partitions without newer messages, the target is the end.
-- [[ui:groups.reset.strategyOffset]] — the given [[ui:groups.reset.offset]], an integer of 0 or more, in every partition. If a partition does not have this offset, the target is its first or end offset.
-- [[ui:groups.reset.strategyShift]] — moves the committed offset by [[ui:groups.reset.shift]]. A negative number rereads N messages back, a positive one skips N messages. The result stays within the first and end offsets. Partitions without a committed offset cannot be shifted and are skipped.
+- [[ui:groups.reset.strategyEarliest]] — 아직 저장되어 있는 첫 오프셋. 그룹은 토픽에 보관된 모든 메시지를 다시 읽습니다.
+- [[ui:groups.reset.strategyLatest]] — 파티션의 끝. 그룹은 쌓인 메시지를 모두 건너뛰고 새 메시지만 읽습니다.
+- [[ui:groups.reset.strategyTimestamp]] — [[ui:groups.reset.timestamp]] 값 또는 그 이후에 기록된 첫 메시지. 더 새로운 메시지가 없는 파티션에서는 끝이 대상입니다.
+- [[ui:groups.reset.strategyOffset]] — 모든 파티션에서 지정한 [[ui:groups.reset.offset]] 값(0 이상의 정수). 파티션에 이 오프셋이 없으면 파티션의 첫 오프셋이나 끝 오프셋이 대상입니다.
+- [[ui:groups.reset.strategyShift]] — 커밋된 오프셋을 [[ui:groups.reset.shift]] 값만큼 이동합니다. 음수이면 N개 메시지를 거슬러 다시 읽고, 양수이면 N개 메시지를 건너뜁니다. 결과는 첫 오프셋과 끝 오프셋 사이에 머뭅니다. 커밋된 오프셋이 없는 파티션은 이동할 수 없으므로 건너뜁니다.
 
-The time is your local time, with seconds. Kafka finds the offset by message timestamps.
+시간은 초 단위까지의 로컬 시간입니다. Kafka는 메시지 타임스탬프로 오프셋을 찾습니다.
 
-## Reset scope {#reset-scope}
+## 재설정 범위 {#reset-scope}
 
-[[ui:groups.reset.scope]] sets which partitions are reset. Other partitions keep their offsets.
+[[ui:groups.reset.scope]]는 재설정할 파티션을 정합니다. 다른 파티션은 오프셋을 유지합니다.
 
-- [[ui:groups.reset.scopeAll]] — all partitions the group has committed offsets for. If the group has no commits yet, choose topics instead.
-- [[ui:groups.reset.scopeTopics]] — all partitions of the listed topics, including partitions without commits. Separate the names with commas, spaces or line breaks. Use this to make a group start reading a new topic from a chosen place.
-- [[ui:groups.reset.scopePartitions]] — only the listed partitions. Enter them in [[ui:groups.reset.partitionsLabel]] as `topic:partition`, separated by commas or spaces, for example `orders:0, orders:3`.
+- [[ui:groups.reset.scopeAll]] — 그룹이 오프셋을 커밋한 모든 파티션. 그룹에 아직 커밋이 없으면 대신 토픽을 선택하세요.
+- [[ui:groups.reset.scopeTopics]] — 나열한 토픽의 모든 파티션(커밋이 없는 파티션 포함). 이름은 쉼표, 공백 또는 줄 바꿈으로 구분합니다. 그룹이 새 토픽을 원하는 위치부터 읽기 시작하게 하려면 이 범위를 사용하세요.
+- [[ui:groups.reset.scopePartitions]] — 나열한 파티션만. [[ui:groups.reset.partitionsLabel]] 필드에 `topic:partition` 형식으로 쉼표나 공백으로 구분하여 입력합니다. 예: `orders:0, orders:3`.
 
-## Delete a group {#delete-group}
+## 그룹 삭제 {#delete-group}
 
-Deleting a group removes all its committed offsets. Only a group without members, in the `Empty` state, can be deleted.
+그룹을 삭제하면 커밋된 오프셋이 모두 제거됩니다. 멤버가 없는 `Empty` 상태의 그룹만 삭제할 수 있습니다.
 
-1. On the group tab, click [[ui:groups.details.deleteGroup]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Type the group ID to confirm. On a prod connection, also type the connection name.
-3. Click [[ui:common.delete]].
+1. 그룹 탭에서 [[ui:groups.details.deleteGroup]]를 클릭합니다. 그룹에 멤버가 있는 동안에는 버튼이 비활성화됩니다. 버튼에 포인터를 올리면 이유를 볼 수 있습니다.
+2. 그룹 ID를 입력하여 확인합니다. 운영 환경 연결에서는 연결 이름도 입력합니다.
+3. [[ui:common.delete]]를 클릭합니다.
 
-After deleting, the group tab closes. If an application with this `group.id` starts again, Kafka creates the group anew. Without committed offsets, the application starts where its `auto.offset.reset` setting says: from the beginning or from the end.
+삭제하면 그룹 탭이 닫힙니다. 이 `group.id`를 사용하는 애플리케이션이 다시 시작되면 Kafka가 그룹을 새로 만듭니다. 커밋된 오프셋이 없으므로 애플리케이션은 `auto.offset.reset` 설정에 따라 처음 또는 끝에서 시작합니다.
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+[[ui:common.readOnly]] 연결에서는 이 버튼이 숨겨집니다.

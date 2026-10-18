@@ -305,3 +305,24 @@ SmartScreen «More info / Run anyway» — 「詳細情報」/「実行」; Secr
 «prod (Pro)»), метка берётся в 「[[ui:…]]」 или рядом ставится полноширинная пунктуация («[[ui:connections.form.timeout]]：…»);
 сообщения об ошибках в прозе — в 「」 («「[[ui:errors.kafka.timeout]]」は…»), фразы-значения с «。» в конце — в 「」 или в конце абзаца после «：»;
 значение, которое кончается на «：» ([[ui:about.dataDir]], [[ui:about.logDir]]) в начале пункта списка, отделяется от текста пробелом.
+
+## Слова руководства (ko)
+
+Термины, которые часто встречаются в `docs/guide/ko` и отсутствуют в словаре интерфейса (-습니다, указания -하세요, шаги -합니다, ASCII-пунктуация, кавычки '…'):
+click — 클릭; right-click — 오른쪽 클릭; drag / drop — 드래그 / 놓기; tab — 탭; screen — 화면 (как «'라이선스' 화면» в UI); panel (левая панель) — 패널;
+header bar панели — 패널 헤더; button — 버튼; checkbox — 확인란; select / clear a box — 선택 / 선택 해제; field — 필드; form — 양식 (как в UI: 양식 지우기);
+section — 섹션; area (Batch send, Group and topics) — 영역; menu — 메뉴; Start menu — 시작 메뉴; dialog — 대화 상자; row — 행; column — 열;
+app — 앱; installer — 설치 프로그램; package — 패키지; release page — 릴리스 페이지; release notes — 릴리스 노트; build — 빌드 (как в `errors.updates.notConfigured`;
+подпись [[ui:about.build]] — «Build»); logs — 로그 (로그 파일); batch send — 일괄 전송; batch (Kafka) — 배치; copies — 사본 / 사본 수;
+support request — 지원 요청; support — 지원 담당자; timestamp — 타임스탬프; tombstone — tombstone (латиницей); delete marker — 삭제 마커;
+listener — 리스너; handshake — 핸드셰이크; transaction — 트랜잭션; port — 포트; timeout — 제한 시간 (ошибка — 제한 시간 초과); proxy — 프록시;
+hex — 16진수; point at (наведение) — 포인터를 올리다; lock icon — 자물쇠 아이콘; browse — 조회; purge — 비우기 (как в UI); to commit — 커밋하다;
+prod — 운영 환경 (prod connection — 운영 환경 연결, prod mode — 운영 환경 모드; `prod` — только как значение окружения);
+macOS: Applications — '응용 프로그램', Terminal — '터미널', System Settings → Privacy & Security — '시스템 설정' → '개인정보 보호 및 보안',
+Open Anyway — '확인 없이 열기', Open — '열기', Help menu — '도움말' 메뉴, quarantine flag — 격리 플래그; Keychain — 키체인; Credential Manager — 자격 증명 관리자;
+SmartScreen «More info / Run anyway» — '추가 정보' / '실행'; Secret Service — Secret Service;
+метки — с пробелами по 띄어쓰기; частица сразу после метки — по последнему слогу её значения в `ko.json` (을/를, 이/가, 은/는, 과/와, 으로/로),
+иначе — постоянное слово после метки («[[ui:…]] 버튼을», «[[ui:…]] 필드에», «[[ui:…]] 옵션을», «[[ui:…]] 값을», «[[ui:…]] 항목으로»);
+значение, которое кончается или начинается пунктуацией («…», «)», «:», «(»), отделяется пробелом (частицу после него не ставить);
+сообщения об ошибках в прозе — в '…' («'[[ui:errors.kafka.timeout]]' 오류는…»), кроме значений с собственными кавычками;
+фразы-значения с «.» в конце — после «다음 메시지가 표시됩니다:» в конце предложения.

@@ -1,146 +1,146 @@
 # Producer
 
-The [[ui:sidebar.producer]] sends messages to Kafka: one at a time from a form, or many at once. Open it from the connection in the [[ui:sidebar.connections]] panel, or with [[ui:topics.details.produce]] on a topic tab, which fills in the topic. Each connection has its own Producer tab.
+[[ui:sidebar.producer]] 화면은 Kafka에 메시지를 보냅니다. 양식에서 한 번에 하나씩 보내거나 여러 개를 한꺼번에 보낼 수 있습니다. [[ui:sidebar.connections]] 패널의 연결에서 열거나, 토픽 탭의 [[ui:topics.details.produce]]로 열면 토픽이 채워집니다. 연결마다 별도의 Producer 탭이 있습니다.
 
-On [[ui:common.readOnly]] connections, the Producer opens with the warning [[ui:producer.readOnly]]. The send buttons are hidden, but templates and history can still be viewed.
+[[ui:common.readOnly]] 연결에서는 Producer가 다음 경고와 함께 열립니다: [[ui:producer.readOnly]] 보내기 버튼은 숨겨지지만 템플릿과 기록은 계속 볼 수 있습니다.
 
-## Send a message {#send-message}
+## 메시지 보내기 {#send-message}
 
-1. Enter the [[ui:producer.topic]]. The field suggests the topics of the cluster, without internal topics.
-2. Optionally, enter a [[ui:producer.partition]] number. When the field shows [[ui:producer.partitionAuto]], the partition is chosen by the key: messages with the same key go to the same partition, as with the Java client. Messages without a key go to a random partition.
-3. Fill in the [[ui:producer.key]] and the [[ui:producer.value]], and choose their formats. See [Key and value formats](producer.md#key-value-formats).
-4. Optionally, add headers.
-5. Click [[ui:producer.send]].
+1. [[ui:producer.topic]]을 입력합니다. 필드에 내부 토픽을 제외한 클러스터의 토픽이 제안됩니다.
+2. 필요하면 [[ui:producer.partition]] 번호를 입력합니다. 필드에 [[ui:producer.partitionAuto]]이 표시되면 파티션은 키에 따라 선택됩니다. Java 클라이언트와 마찬가지로 같은 키의 메시지는 같은 파티션으로 갑니다. 키가 없는 메시지는 임의의 파티션으로 갑니다.
+3. [[ui:producer.key]]와 [[ui:producer.value]]을 입력하고 형식을 선택합니다. [키와 값의 형식](producer.md#key-value-formats)을 참고하세요.
+4. 필요하면 헤더를 추가합니다.
+5. [[ui:producer.send]]를 클릭합니다.
 
-After a successful send, a line below the form shows the partition, the offset and the time of the message. With `acks` set to `0`, the broker does not return an offset, and `—` is shown instead.
+전송에 성공하면 양식 아래 줄에 메시지의 파티션, 오프셋, 시간이 표시됩니다. `acks`가 `0`이면 브로커가 오프셋을 반환하지 않으므로 대신 `—`가 표시됩니다.
 
-If the partition number is too large, or the broker does not confirm the message within the connection timeout, the app shows an error. A topic that does not exist also gives an error, unless the broker creates topics automatically (`auto.create.topics.enable`). With auto-creation off, this error can take up to about 30 s to appear (the connection timeout). Errors in the form, such as invalid JSON or an unknown placeholder, are shown before anything is sent.
+파티션 번호가 너무 크거나 브로커가 연결 제한 시간 안에 메시지를 확인하지 않으면 앱이 오류를 표시합니다. 존재하지 않는 토픽도 오류가 됩니다. 단, 브로커가 토픽을 자동으로 만드는 경우(`auto.create.topics.enable`)는 예외입니다. 자동 생성이 꺼져 있으면 이 오류가 나타나기까지 최대 약 30초(연결 제한 시간)가 걸릴 수 있습니다. 잘못된 JSON이나 알 수 없는 플레이스홀더 같은 양식 오류는 전송 전에 표시됩니다.
 
-On a prod connection, sending asks you to type the connection name and confirm with [[ui:producer.confirmLabel]]. See [Environments and prod](connections.md#environments).
+운영 환경 연결에서는 보낼 때 연결 이름을 입력하고 [[ui:producer.confirmLabel]]로 확인해야 합니다. [환경과 운영 환경 연결](connections.md#environments)을 참고하세요.
 
-[[ui:producer.clearForm]] empties the form and returns the producer settings to their defaults. The topic stays.
+[[ui:producer.clearForm]]는 양식을 비우고 프로듀서 설정을 기본값으로 되돌립니다. 토픽은 그대로 남습니다.
 
-## Key and value formats {#key-value-formats}
+## 키와 값의 형식 {#key-value-formats}
 
-[[ui:producer.keyFormat]] and [[ui:producer.valueFormat]] set how the text in the field is turned into bytes:
+[[ui:producer.keyFormat]]과 [[ui:producer.valueFormat]]은 필드의 텍스트를 바이트로 바꾸는 방식을 정합니다:
 
-- `string` — the text as is, in UTF-8.
-- `json` — the text is checked to be valid JSON and sent as typed, without reformatting.
-- `hex` — two hex digits per byte, for example `48656c6c6f`. Spaces and line breaks are ignored.
-- `base64` — bytes in standard Base64.
-- `null` — no key or no value at all. The field is empty, and typing text switches the format to `string`.
+- `string` — 텍스트를 UTF-8로 그대로 보냅니다.
+- `json` — 텍스트가 올바른 JSON인지 확인하고, 형식을 바꾸지 않고 입력한 그대로 보냅니다.
+- `hex` — 바이트마다 16진수 두 자리. 예: `48656c6c6f`. 공백과 줄 바꿈은 무시됩니다.
+- `base64` — 표준 Base64로 된 바이트.
+- `null` — 키나 값이 아예 없습니다. 필드는 비어 있으며, 텍스트를 입력하면 형식이 `string`으로 바뀝니다.
 
-The default is `null` for the key and `json` for the value. To send a message with a key, just type it: the format changes to `string`. An empty string is still a key, not a missing one: if you choose `string` and leave the field empty, all such messages get the same hash and go to one partition.
+기본값은 키가 `null`, 값이 `json`입니다. 키가 있는 메시지를 보내려면 키를 입력하기만 하면 형식이 `string`으로 바뀝니다. 빈 문자열도 키가 없는 것이 아니라 키입니다. `string`을 선택하고 필드를 비워 두면 이런 메시지는 모두 같은 해시를 받아 한 파티션으로 갑니다.
 
-A message with a `null` value is a tombstone. In a topic with `cleanup.policy=compact`, it tells Kafka to remove older messages with the same key.
+값이 `null`인 메시지는 tombstone입니다. `cleanup.policy=compact`인 토픽에서는 같은 키의 이전 메시지를 제거하라고 Kafka에 알립니다.
 
-## Headers {#headers}
+## 헤더 {#headers}
 
-Headers are name and value pairs sent with the message. Click [[ui:producer.headers.add]] to add a row, then fill in [[ui:producer.headers.colName]], [[ui:producer.headers.colValue]] and [[ui:producer.headers.colFormat]]. The `×` button removes the row.
+헤더는 메시지와 함께 전송되는 이름과 값의 쌍입니다. [[ui:producer.headers.add]]를 클릭하여 행을 추가한 다음 [[ui:producer.headers.colName]], [[ui:producer.headers.colValue]], [[ui:producer.headers.colFormat]] 열을 입력하세요. `×` 버튼은 행을 제거합니다.
 
-The format of a header value is `string` (text in UTF-8) or `hex` (bytes as hex digits). Rows with an empty name are not sent. Kafka allows several headers with the same name, and they are all sent.
+헤더 값의 형식은 `string`(UTF-8 텍스트) 또는 `hex`(16진수로 된 바이트)입니다. 이름이 비어 있는 행은 전송되지 않습니다. Kafka에서는 같은 이름의 헤더를 여러 개 허용하며, 모두 전송됩니다.
 
-Placeholders work in header values, but not in header names.
+플레이스홀더는 헤더 값에서는 동작하지만 헤더 이름에서는 동작하지 않습니다.
 
-## Placeholders {#placeholders}
+## 플레이스홀더 {#placeholders}
 
-Placeholders are replaced with values at every send. They work in the key, the value and the header values. The list is shown below the headers:
+플레이스홀더는 전송할 때마다 값으로 치환됩니다. 키, 값, 헤더 값에서 동작합니다. 목록은 헤더 아래에 표시됩니다:
 
-- `{{uuid}}` — a new random UUID, for example `0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`.
-- `{{now}}` — the current time in UTC in ISO 8601 format with milliseconds, for example `2026-10-15T12:30:00.000Z`.
-- `{{nowMillis}}` — the current time in milliseconds since 1970-01-01 UTC.
-- `{{seq}}` — the number of the copy in a batch, starting at 0. For a single send, it is `0`.
-- `{{randomInt 1 100}}` — a random integer between the two numbers, both included.
-- `{{randomString 8}}` — a random string of Latin letters and digits of the given length, up to 100000.
-- `{{env NAME}}` — the value of the environment variable `NAME`. If it is not set, nothing is sent and an error is shown.
+- `{{uuid}}` — 새 임의 UUID. 예: `0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`.
+- `{{now}}` — 밀리초를 포함한 ISO 8601 형식의 현재 UTC 시간. 예: `2026-10-15T12:30:00.000Z`.
+- `{{nowMillis}}` — 1970-01-01 UTC부터 지난 현재 시간(밀리초).
+- `{{seq}}` — 일괄 전송에서 사본의 번호(0부터 시작). 단일 전송에서는 `0`입니다.
+- `{{randomInt 1 100}}` — 두 숫자 사이의 임의 정수. 두 숫자도 포함됩니다.
+- `{{randomString 8}}` — 지정한 길이(최대 100000)의 라틴 문자와 숫자로 된 임의 문자열.
+- `{{env NAME}}` — 환경 변수 `NAME`의 값. 설정되어 있지 않으면 아무것도 전송되지 않고 오류가 표시됩니다.
 
-Spaces inside the braces are allowed. An unknown placeholder or a missing `}}` stops the send with an error. To send `{{` as text, write `\{{`.
+중괄호 안의 공백은 허용됩니다. 알 수 없는 플레이스홀더나 빠진 `}}`가 있으면 오류와 함께 전송이 중지됩니다. `{{`를 텍스트로 보내려면 `\{{`라고 쓰세요.
 
-With the `json` format, the JSON is checked after the placeholders are replaced. Placeholders that produce text need quotes: `{"id": "{{uuid}}"}`. Numbers do not: `{"n": {{seq}}}`.
+`json` 형식에서는 플레이스홀더를 치환한 후에 JSON을 확인합니다. 텍스트를 만드는 플레이스홀더는 따옴표가 필요합니다: `{"id": "{{uuid}}"}`. 숫자는 필요하지 않습니다: `{"n": {{seq}}}`.
 
-`{{env NAME}}` reads the environment of the Glafira process. If you start Glafira from the Dock or the Start menu, variables set only in your terminal profile may be missing.
+`{{env NAME}}`은 Glafira 프로세스의 환경을 읽습니다. Dock이나 시작 메뉴에서 Glafira를 실행하면 터미널 프로필에서만 설정한 변수는 없을 수 있습니다.
 
-When a message comes from [Open in Producer](browse.md#open-in-producer) or from the history, every `{{` in it is written as `\{{`. The message is then sent exactly as it was, without replacing anything.
+[Producer에서 열기](browse.md#open-in-producer)나 기록에서 가져온 메시지에서는 모든 `{{`가 `\{{`로 기록됩니다. 그러면 메시지는 아무것도 치환되지 않고 원래 그대로 전송됩니다.
 
-## Templates {#templates}
+## 템플릿 {#templates}
 
-A template saves the whole form: topic, partition, key, value, headers, formats and producer settings. Placeholders are saved as written and are replaced at each send.
+템플릿은 토픽, 파티션, 키, 값, 헤더, 형식, 프로듀서 설정 등 양식 전체를 저장합니다. 플레이스홀더는 쓴 그대로 저장되고 전송할 때마다 치환됩니다.
 
-To save a template, click [[ui:producer.templates.saveAs]], enter the [[ui:producer.templates.nameLabel]] and click [[ui:common.save]]. The topic may be empty. By default, the template belongs to this connection. Select [[ui:producer.templates.global]] to show it on every connection; such templates are marked [[ui:producer.templates.allSuffix]] in the list.
+템플릿을 저장하려면 [[ui:producer.templates.saveAs]]을 클릭하고 [[ui:producer.templates.nameLabel]]을 입력한 다음 [[ui:common.save]]을 클릭하세요. 토픽은 비어 있어도 됩니다. 기본적으로 템플릿은 이 연결에 속합니다. 모든 연결에서 표시하려면 [[ui:producer.templates.global]]을 선택하세요. 이런 템플릿은 목록에서 [[ui:producer.templates.allSuffix]] 표시가 붙습니다.
 
-To use a template, choose it in the [[ui:producer.templates.label]] list. The form is replaced with the template. You can edit the form before sending; the template does not change.
+템플릿을 사용하려면 [[ui:producer.templates.label]] 목록에서 선택하세요. 양식이 템플릿 내용으로 바뀝니다. 보내기 전에 양식을 편집할 수 있으며, 템플릿은 바뀌지 않습니다.
 
-Saving always creates a new template. To change one, load it, edit the form, save it under a new name and delete the old one. To delete the selected template, click [[ui:producer.templates.delete]] and confirm with [[ui:common.delete]].
+저장하면 항상 새 템플릿이 만들어집니다. 템플릿을 변경하려면 불러와서 양식을 편집하고 새 이름으로 저장한 다음 이전 템플릿을 삭제하세요. 선택한 템플릿을 삭제하려면 [[ui:producer.templates.delete]]를 클릭하고 [[ui:common.delete]]로 확인하세요.
 
-Templates of a connection are deleted together with the connection.
+연결의 템플릿은 연결과 함께 삭제됩니다.
 
-## History {#history}
+## 기록 {#history}
 
-[[ui:producer.history.title]] lists the last 100 single sends of this connection, newest first. Messages from batch sends are not added. Each row shows the time, the topic, the partition and offset, and the start of the key.
+[[ui:producer.history.title]] 목록에는 이 연결에서 최근에 보낸 단일 전송 100개가 최신순으로 표시됩니다. 일괄 전송의 메시지는 추가되지 않습니다. 각 행에는 시간, 토픽, 파티션과 오프셋, 키의 앞부분이 표시됩니다.
 
-History stores the message as it was sent, with the placeholders already replaced. [[ui:producer.history.repeat]] loads it into the form together with its producer settings. Nothing is sent until you click [[ui:producer.send]]. The copy is sent exactly as stored: for example, the same UUID is sent again.
+기록에는 플레이스홀더가 이미 치환된, 전송된 그대로의 메시지가 저장됩니다. [[ui:producer.history.repeat]]은 메시지를 프로듀서 설정과 함께 양식으로 불러옵니다. [[ui:producer.send]]를 클릭하기 전에는 아무것도 전송되지 않습니다. 사본은 저장된 그대로 전송됩니다. 예를 들어 같은 UUID가 다시 전송됩니다.
 
-A key, value or header value longer than 64 KB is stored only partly. For such rows, [[ui:producer.history.repeat]] is disabled.
+64 KB보다 긴 키, 값 또는 헤더 값은 일부만 저장됩니다. 이런 행에서는 [[ui:producer.history.repeat]]이 비활성화됩니다.
 
-History is stored on this computer in plain text, including the values of `{{env NAME}}`. Do not send secrets through the Producer if this matters. The history of a connection is deleted together with the connection.
+기록은 `{{env NAME}}`의 값을 포함해 이 컴퓨터에 일반 텍스트로 저장됩니다. 이것이 문제가 된다면 Producer로 비밀 정보를 보내지 마세요. 연결의 기록은 연결과 함께 삭제됩니다.
 
-## N copies of the form {#batch-copies}
+## 양식 사본 N개 {#batch-copies}
 
-[[ui:producer.batch.legend]] below the form sends many messages in one run. In the [[ui:producer.batch.modeCopies]] mode, it sends the form the given number of times.
+양식 아래의 [[ui:producer.batch.legend]] 영역은 한 번의 실행으로 많은 메시지를 보냅니다. [[ui:producer.batch.modeCopies]] 모드에서는 양식을 지정한 횟수만큼 보냅니다.
 
-1. Fill in the form as for a single send.
-2. Select [[ui:producer.batch.modeCopies]] and enter the number of [[ui:producer.batch.count]], from 1 to 1000000.
-3. Optionally, set the [[ui:producer.batch.rate]]. See [Send rate](producer.md#batch-rate).
-4. Click [[ui:producer.batch.start]].
+1. 단일 전송과 같이 양식을 입력합니다.
+2. [[ui:producer.batch.modeCopies]] 모드를 선택하고 [[ui:producer.batch.count]]를 1부터 1000000 사이로 입력합니다.
+3. 필요하면 [[ui:producer.batch.rate]]를 설정합니다. [전송 속도](producer.md#batch-rate)를 참고하세요.
+4. [[ui:producer.batch.start]]을 클릭합니다.
 
-Placeholders are replaced separately for each copy. `{{seq}}` is the copy number, from 0 to N−1, so each message can get its own key, for example `order-{{seq}}`. Placeholder errors are checked on the first copy before the run starts.
+플레이스홀더는 사본마다 따로 치환됩니다. `{{seq}}`는 0부터 N−1까지의 사본 번호이므로 메시지마다 고유한 키를 줄 수 있습니다. 예: `order-{{seq}}`. 플레이스홀더 오류는 실행이 시작되기 전에 첫 번째 사본에서 확인합니다.
 
-During the run, the panel shows how many messages were sent and how many failed. At the end, it shows [[ui:producer.batch.done]]. Errors are listed with the copy number, counted from 1. The list shows the first 20 errors; if there are more, a note below gives the total.
+실행 중에는 패널에 보낸 메시지 수와 실패한 메시지 수가 표시됩니다. 끝나면 [[ui:producer.batch.done]]가 표시됩니다. 오류는 1부터 센 사본 번호와 함께 나열됩니다. 목록에는 처음 20개 오류가 표시되며, 더 많으면 아래에 전체 개수가 표시됩니다.
 
-[[ui:producer.batch.cancel]] stops the run. Messages that have not left the app yet are not sent, and the panel shows their count. The app waits up to 2 seconds for the broker to confirm messages already sent. Messages that are still not confirmed count as errors, because it is unknown whether they were written. Closing the Producer tab also stops the run.
+[[ui:producer.batch.cancel]]는 실행을 중지합니다. 아직 앱을 떠나지 않은 메시지는 전송되지 않으며, 패널에 그 수가 표시됩니다. 앱은 이미 보낸 메시지를 브로커가 확인할 때까지 최대 2초 동안 기다립니다. 그래도 확인되지 않은 메시지는 기록되었는지 알 수 없으므로 오류로 셉니다. Producer 탭을 닫아도 실행이 중지됩니다.
 
-On a prod connection, the run asks for the connection name and is confirmed with [[ui:producer.batch.confirmLabel]].
+운영 환경 연결에서는 실행할 때 연결 이름을 묻고 [[ui:producer.batch.confirmLabel]]으로 확인합니다.
 
-## Send from a file {#batch-file}
+## 파일에서 보내기 {#batch-file}
 
-In the [[ui:producer.batch.modeFile]] mode, each line or row of a file becomes a message. Supported files are JSON Lines (`.jsonl`, `.ndjson`) and CSV (`.csv`).
+[[ui:producer.batch.modeFile]] 모드에서는 파일의 각 줄 또는 행이 메시지가 됩니다. 지원되는 파일은 JSON Lines(`.jsonl`, `.ndjson`)와 CSV(`.csv`)입니다.
 
-1. Enter the [[ui:producer.topic]] in the form above. All messages go to this topic.
-2. Select [[ui:producer.batch.modeFile]] and click [[ui:producer.batch.chooseFile]].
-3. Click [[ui:producer.batch.start]].
+1. 위쪽 양식에 [[ui:producer.topic]]을 입력합니다. 모든 메시지가 이 토픽으로 갑니다.
+2. [[ui:producer.batch.modeFile]] 모드를 선택하고 [[ui:producer.batch.chooseFile]] 버튼을 클릭합니다.
+3. [[ui:producer.batch.start]]을 클릭합니다.
 
-The key, value, headers and partition from the form are not used, and placeholders are not replaced. The producer settings of the form apply.
+양식의 키, 값, 헤더, 파티션은 사용되지 않으며 플레이스홀더도 치환되지 않습니다. 양식의 프로듀서 설정은 적용됩니다.
 
-In JSON Lines, each line is one JSON object, for example `{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`. All fields are optional:
+JSON Lines에서는 각 줄이 JSON 객체 하나입니다. 예: `{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`. 모든 필드는 선택 사항입니다:
 
-- `key` and `value` — a JSON string is sent as its text, without quotes. Any other JSON value, such as an object or a number, is sent as JSON text. `null` or a missing field means no key or no value.
-- `headers` — an object of string values.
-- `partition` — a partition number. Without it, the partition is chosen by the key.
+- `key`, `value` — JSON 문자열은 따옴표 없이 그 텍스트로 전송됩니다. 객체나 숫자 같은 다른 JSON 값은 JSON 텍스트로 전송됩니다. `null`이거나 필드가 없으면 키나 값이 없다는 뜻입니다.
+- `headers` — 문자열 값으로 된 객체.
+- `partition` — 파티션 번호. 없으면 키에 따라 파티션이 선택됩니다.
 
-Empty lines are skipped. The file must be in UTF-8.
+빈 줄은 건너뜁니다. 파일은 UTF-8이어야 합니다.
 
-In CSV, the first row holds the column names. The `value` column is required; `key`, `partition` and `header.NAME` columns are optional, for example `header.source`. An empty `key` cell means no key, and an empty header cell means no such header. An empty `value` cell sends an empty value, not `null`, so a tombstone cannot be sent from CSV.
+CSV에서는 첫 번째 행에 열 이름이 있습니다. `value` 열은 필수이며, `key`, `partition`, `header.NAME` 열은 선택 사항입니다. 예: `header.source`. 빈 `key` 셀은 키가 없다는 뜻이고, 빈 헤더 셀은 해당 헤더가 없다는 뜻입니다. 빈 `value` 셀은 `null`이 아니라 빈 값을 보내므로 CSV로는 tombstone을 보낼 수 없습니다.
 
-The file is read as a stream, so the total number is not known in advance and is shown as `—`. A line or record larger than 16 MB, invalid JSON or a negative partition counts as an error for that line, and the run goes on with the next line. Errors are shown with the line number.
+파일은 스트림으로 읽으므로 전체 개수를 미리 알 수 없으며 `—`로 표시됩니다. 16 MB보다 큰 줄이나 레코드, 잘못된 JSON, 음수 파티션은 해당 줄의 오류로 세고, 실행은 다음 줄로 계속됩니다. 오류는 줄 번호와 함께 표시됩니다.
 
-## Send rate {#batch-rate}
+## 전송 속도 {#batch-rate}
 
-[[ui:producer.batch.rate]] limits a batch to the given number of messages per second. Enter an integer of 1 or more. An empty field means [[ui:producer.batch.rateUnlimited]].
+[[ui:producer.batch.rate]]는 일괄 전송을 초당 지정한 메시지 수로 제한합니다. 1 이상의 정수를 입력하세요. 필드가 비어 있으면 [[ui:producer.batch.rateUnlimited]]을 뜻합니다.
 
-The messages are spread evenly over time: at 10 messages per second, one message leaves about every 100 ms. Use the limit to avoid overloading a shared cluster, or to imitate a steady load.
+메시지는 시간에 걸쳐 고르게 분산됩니다. 초당 10개라면 약 100 ms마다 메시지 하나가 전송됩니다. 공유 클러스터에 과부하를 주지 않거나 일정한 부하를 흉내 내려면 제한을 사용하세요.
 
-Without a limit, the app sends as fast as the broker accepts. The rate applies to both batch modes.
+제한이 없으면 앱은 브로커가 받아들이는 만큼 빠르게 보냅니다. 속도는 두 일괄 전송 모드에 모두 적용됩니다.
 
-## Producer settings {#producer-settings}
+## 프로듀서 설정 {#producer-settings}
 
-[[ui:producer.settings.legend]] apply to single sends and batches. They are saved in templates and history.
+[[ui:producer.settings.legend]]은 단일 전송과 일괄 전송에 적용됩니다. 설정은 템플릿과 기록에 저장됩니다.
 
-`acks` sets how many replicas must confirm a write:
+`acks`는 쓰기를 확인해야 하는 복제본 수를 정합니다:
 
-- `all` — the default. The leader waits for all in-sync replicas. This is the safest choice. If fewer replicas are in sync than the topic setting `min.insync.replicas` requires, the write fails.
-- `1` — only the leader confirms. Faster, but a message can be lost if the leader fails before the followers copy it.
-- `0` — the producer does not wait for a confirmation. Messages can be lost, and no offset is returned.
+- `all` — 기본값. 리더가 동기화된 모든 복제본을 기다립니다. 가장 안전한 선택입니다. 동기화된 복제본 수가 토픽 설정 `min.insync.replicas`에서 요구하는 수보다 적으면 쓰기가 실패합니다.
+- `1` — 리더만 확인합니다. 더 빠르지만, 팔로워가 메시지를 복사하기 전에 리더가 실패하면 메시지가 손실될 수 있습니다.
+- `0` — 프로듀서가 확인을 기다리지 않습니다. 메시지가 손실될 수 있으며 오프셋이 반환되지 않습니다.
 
-[[ui:producer.settings.compression]] compresses message batches: `none` (the default), `gzip`, `snappy`, `lz4` or `zstd`. Compression saves network traffic and disk space at the cost of some CPU. `zstd` and `lz4` are common choices. For a single small message, the gain is small.
+[[ui:producer.settings.compression]]은 메시지 배치를 압축합니다: `none`(기본값), `gzip`, `snappy`, `lz4` 또는 `zstd`. 압축은 약간의 CPU를 사용하는 대신 네트워크 트래픽과 디스크 공간을 절약합니다. 흔히 `zstd`와 `lz4`를 선택합니다. 작은 메시지 하나에서는 이점이 적습니다.
 
-[[ui:producer.settings.idempotence]] sets `enable.idempotence`. It prevents duplicates when the client retries a send after a network error. It requires `acks` set to `all`; with other values, the app shows an error and sends nothing.
+[[ui:producer.settings.idempotence]]은 `enable.idempotence`를 설정합니다. 네트워크 오류 후 클라이언트가 전송을 재시도할 때 중복을 방지합니다. `acks`가 `all`이어야 하며, 다른 값이면 앱이 오류를 표시하고 아무것도 보내지 않습니다.

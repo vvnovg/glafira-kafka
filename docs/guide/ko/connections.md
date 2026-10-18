@@ -1,163 +1,163 @@
-# Connections
+# 연결
 
-A connection is a saved profile of one Kafka cluster: addresses, security settings and passwords. Connections are listed in the [[ui:sidebar.connections]] panel on the left. You can sort them into folders and move them to another computer with export and import.
+연결은 Kafka 클러스터 하나에 대해 저장된 프로필로, 주소, 보안 설정, 비밀번호가 포함됩니다. 연결은 왼쪽의 [[ui:sidebar.connections]] 패널에 표시됩니다. 연결을 폴더로 정리할 수 있고, 내보내기와 가져오기로 다른 컴퓨터에 옮길 수 있습니다.
 
-## Create a connection {#create}
+## 연결 만들기 {#create}
 
-1. Click `+` ( [[ui:sidebar.newConnection]] ) in the header of the [[ui:sidebar.connections]] panel. To create the connection right in a folder, open the folder menu and choose [[ui:sidebar.folder.newConnection]].
-2. Enter a [[ui:connections.form.name]]. It is shown in the panel and in tab titles.
-3. In [[ui:connections.form.bootstrap]], enter one or more addresses in `host:port` format, separated by commas, for example `kafka1:9092,kafka2:9092`. One reachable broker is enough: the client discovers the others by itself.
-4. Choose a [[ui:connections.form.protocol]] and fill in the fields it adds. See [Security protocols](connections.md#security).
-5. Optionally, choose a [[ui:connections.form.folder]], an [[ui:connections.form.environment]] and a [[ui:connections.form.color]] for the dot next to the name.
-6. Click [[ui:connections.form.test]], then [[ui:common.save]].
+1. [[ui:sidebar.connections]] 패널 헤더에서 `+` 버튼([[ui:sidebar.newConnection]])을 클릭합니다. 폴더 안에 바로 연결을 만들려면 폴더 메뉴를 열고 [[ui:sidebar.folder.newConnection]]을 선택합니다.
+2. [[ui:connections.form.name]]을 입력합니다. 이름은 패널과 탭 제목에 표시됩니다.
+3. [[ui:connections.form.bootstrap]] 필드에 `host:port` 형식의 주소를 하나 이상 쉼표로 구분하여 입력합니다. 예: `kafka1:9092,kafka2:9092`. 연결할 수 있는 브로커가 하나만 있어도 충분합니다. 나머지 브로커는 클라이언트가 직접 찾습니다.
+4. [[ui:connections.form.protocol]]을 선택하고 프로토콜에 따라 추가되는 필드를 입력합니다. [보안 프로토콜](connections.md#security)을 참고하세요.
+5. 필요하면 [[ui:connections.form.folder]], [[ui:connections.form.environment]], 이름 옆 점의 [[ui:connections.form.color]] 항목을 선택합니다.
+6. [[ui:connections.form.test]]를 클릭한 다음 [[ui:common.save]]을 클릭합니다.
 
-After saving, the form closes and the cluster overview opens.
+저장하면 양식이 닫히고 클러스터 개요가 열립니다.
 
-Two more fields are for special cases. [[ui:connections.form.timeout]] is how long to wait for a broker response. The default is `30000` ms, the minimum is `1000`. Increase it for slow networks and VPNs. [[ui:connections.form.props]] takes any librdkafka setting as `key=value`, one per line. Lines that start with `#` are ignored. Passwords and keys are not allowed there: properties whose names contain `password` or `secret`, `sasl.jaas.config`, `ssl.key.pem` and `ssl.keystore.key` are rejected on save.
+특수한 경우를 위한 필드가 두 개 더 있습니다. [[ui:connections.form.timeout]] 값은 브로커 응답을 기다리는 시간입니다. 기본값은 `30000` ms이고 최솟값은 `1000`입니다. 느린 네트워크나 VPN에서는 값을 늘리세요. [[ui:connections.form.props]]에는 모든 librdkafka 설정을 한 줄에 하나씩 `key=value` 형식으로 입력할 수 있습니다. `#`로 시작하는 줄은 무시됩니다. 비밀번호와 키는 여기에 입력할 수 없습니다. 이름에 `password` 또는 `secret`이 포함된 속성, `sasl.jaas.config`, `ssl.key.pem`, `ssl.keystore.key`는 저장할 때 거부됩니다.
 
-To change a connection later, click `✎` ( [[ui:sidebar.editConnection]] ) next to its name. To delete it, open the form, click [[ui:common.delete]] and confirm with [[ui:connections.form.deleteYes]].
+나중에 연결을 변경하려면 이름 옆의 `✎` 버튼([[ui:sidebar.editConnection]])을 클릭하세요. 연결을 삭제하려면 양식을 열고 [[ui:common.delete]]를 클릭한 다음 [[ui:connections.form.deleteYes]]로 확인하세요.
 
-## Test the connection {#test}
+## 연결 테스트 {#test}
 
-[[ui:connections.form.test]] checks the settings in the form step by step and stops at the first failed step:
+[[ui:connections.form.test]]는 양식의 설정을 단계별로 확인하고, 처음 실패한 단계에서 멈춥니다:
 
-1. [[ui:connections.form.step.config]] — the addresses, certificate files, passwords and the SASL username.
-2. [[ui:connections.form.step.tcp]] — the host names resolve, and a TCP connection to at least one bootstrap server opens.
-3. [[ui:connections.form.step.kafka]] — the TLS handshake and SASL login succeed, and the broker returns metadata. On success, the step shows the number of brokers and topics.
+1. [[ui:connections.form.step.config]] — 주소, 인증서 파일, 비밀번호, SASL 사용자 이름.
+2. [[ui:connections.form.step.tcp]] — 호스트 이름이 확인되고, 하나 이상의 부트스트랩 서버에 TCP 연결이 열립니다.
+3. [[ui:connections.form.step.kafka]] — TLS 핸드셰이크와 SASL 로그인이 성공하고, 브로커가 메타데이터를 반환합니다. 성공하면 이 단계에 브로커 수와 토픽 수가 표시됩니다.
 
-The test uses the values currently in the form, including passwords you typed but have not saved. Nothing is saved or changed in the cluster. If a step fails, its error text and details are shown under it. Common errors are explained in [Cannot connect](troubleshooting.md#cannot-connect).
+테스트에는 입력했지만 아직 저장하지 않은 비밀번호를 포함해 현재 양식에 있는 값이 사용됩니다. 아무것도 저장되지 않으며 클러스터에서도 아무것도 변경되지 않습니다. 단계가 실패하면 그 아래에 오류 내용과 세부 정보가 표시됩니다. 자주 발생하는 오류는 [연결할 수 없음](troubleshooting.md#cannot-connect)에서 설명합니다.
 
-## Security protocols {#security}
+## 보안 프로토콜 {#security}
 
-The [[ui:connections.form.protocol]] must match the broker listener you connect to. Your Kafka administrators know which one to use.
+[[ui:connections.form.protocol]]은 연결하려는 브로커 리스너와 일치해야 합니다. 어떤 프로토콜을 사용해야 하는지는 Kafka 관리자가 알고 있습니다.
 
-- `PLAINTEXT` — no encryption and no login. Typical for local and test clusters.
-- `SSL` — traffic is encrypted with TLS. With a client certificate, this is mTLS.
-- `SASL_PLAINTEXT` — login with a username and password, without encryption.
-- `SASL_SSL` — login with a username and password over TLS.
+- `PLAINTEXT` — 암호화와 로그인이 없습니다. 로컬 및 테스트 클러스터에서 흔히 사용합니다.
+- `SSL` — 트래픽이 TLS로 암호화됩니다. 클라이언트 인증서를 함께 사용하면 mTLS입니다.
+- `SASL_PLAINTEXT` — 암호화 없이 사용자 이름과 비밀번호로 로그인합니다.
+- `SASL_SSL` — TLS를 통해 사용자 이름과 비밀번호로 로그인합니다.
 
-When you change the protocol, the form shows only the fields that the protocol needs. All protocols, including mTLS, are available in Free.
+프로토콜을 바꾸면 양식에는 해당 프로토콜에 필요한 필드만 표시됩니다. mTLS를 포함한 모든 프로토콜을 Free에서 사용할 수 있습니다.
 
 ## SASL {#sasl}
 
-For `SASL_PLAINTEXT` and `SASL_SSL`, fill in three fields:
+`SASL_PLAINTEXT`와 `SASL_SSL`에서는 다음 세 필드를 입력합니다:
 
-- [[ui:connections.form.saslMechanism]] — `PLAIN`, `SCRAM-SHA-256` or `SCRAM-SHA-512`. The cluster defines which one works.
+- [[ui:connections.form.saslMechanism]] — `PLAIN`, `SCRAM-SHA-256` 또는 `SCRAM-SHA-512`. 어떤 메커니즘이 동작하는지는 클러스터가 정합니다.
 - [[ui:connections.form.username]].
-- [[ui:connections.form.password]]. It is saved in the system secret store, not in the profile. See [Passwords](connections.md#passwords).
+- [[ui:connections.form.password]]. 비밀번호는 프로필이 아니라 시스템 보안 저장소에 저장됩니다. [비밀번호](connections.md#passwords)를 참고하세요.
 
-SCRAM never sends the password itself. `PLAIN` sends it as is, so over `SASL_PLAINTEXT` the password travels in clear text. Use `SASL_SSL` for clusters outside your computer when possible.
+SCRAM은 비밀번호 자체를 보내지 않습니다. `PLAIN`은 비밀번호를 그대로 보내므로 `SASL_PLAINTEXT`에서는 비밀번호가 평문으로 전송됩니다. 내 컴퓨터 밖에 있는 클러스터에는 가능하면 `SASL_SSL`을 사용하세요.
 
-## SSL and the trusted CA {#tls}
+## SSL과 신뢰할 수 있는 CA {#tls}
 
-For `SSL` and `SASL_SSL`, the form adds TLS settings.
+`SSL`과 `SASL_SSL`에서는 양식에 TLS 설정이 추가됩니다.
 
-[[ui:connections.tls.ca]] is the certificate of the authority (CA) that signed the broker certificates. Leave it empty if the operating system already trusts this CA: the system root certificates are then used. Otherwise enter the full path to the file or click [[ui:connections.tls.pick]]. After you choose a file, the [[ui:connections.tls.caFormat]] field appears. For PKCS#12 and JKS, there is also a [[ui:connections.tls.truststorePassword]] field.
+[[ui:connections.tls.ca]]는 브로커 인증서에 서명한 인증 기관(CA)의 인증서입니다. 운영 체제가 이미 이 CA를 신뢰한다면 비워 두세요. 이 경우 시스템 루트 인증서가 사용됩니다. 그렇지 않으면 파일의 전체 경로를 입력하거나 [[ui:connections.tls.pick]] 버튼을 클릭하세요. 파일을 선택하면 [[ui:connections.tls.caFormat]] 필드가 나타납니다. PKCS#12와 JKS에는 [[ui:connections.tls.truststorePassword]] 필드도 있습니다.
 
-[[ui:connections.tls.verifyHostname]] is on by default. It checks that the broker certificate was issued for the host name you connect to. Turn it off only in test environments, for example when brokers use self-signed certificates with other names.
+[[ui:connections.tls.verifyHostname]]은 기본적으로 켜져 있습니다. 브로커 인증서가 연결하려는 호스트 이름으로 발급되었는지 확인합니다. 예를 들어 브로커가 다른 이름의 자체 서명 인증서를 사용할 때처럼 테스트 환경에서만 끄세요.
 
-## Client certificate (mTLS) {#mtls}
+## 클라이언트 인증서(mTLS) {#mtls}
 
-If brokers authenticate clients by certificate, turn on [[ui:connections.tls.mtls]]. Your Kafka administrators issue the certificate and key. Then fill in:
+브로커가 인증서로 클라이언트를 인증한다면 [[ui:connections.tls.mtls]] 옵션을 켜세요. 인증서와 키는 Kafka 관리자가 발급합니다. 그런 다음 다음 항목을 입력합니다:
 
-- [[ui:connections.tls.cert]] — the path to the certificate file.
-- [[ui:connections.tls.certFormat]] — PEM, PKCS#12 or JKS.
-- For PEM: [[ui:connections.tls.key]] — the path to the private key file, and [[ui:connections.tls.keyPasswordPem]] if the key is encrypted.
-- For PKCS#12: [[ui:connections.tls.keystorePassword]].
-- For JKS: [[ui:connections.tls.keystorePassword]], [[ui:connections.tls.keyPasswordJks]] if the key has its own password, and [[ui:connections.tls.alias]] if the store has several keys.
+- [[ui:connections.tls.cert]] — 인증서 파일 경로.
+- [[ui:connections.tls.certFormat]] — PEM, PKCS#12 또는 JKS.
+- PEM: [[ui:connections.tls.key]] — 개인 키 파일 경로. 키가 암호화되어 있으면 [[ui:connections.tls.keyPasswordPem]] 필드도 입력합니다.
+- PKCS#12: [[ui:connections.tls.keystorePassword]].
+- JKS: [[ui:connections.tls.keystorePassword]]. 키에 별도의 비밀번호가 있으면 [[ui:connections.tls.keyPasswordJks]] 필드, 저장소에 키가 여러 개 있으면 [[ui:connections.tls.alias]] 필드도 입력합니다.
 
-Paths must be absolute. The files are read every time the app connects, so after the certificate is renewed you only need to reconnect. The app checks that the key matches the certificate and that the certificate has not expired.
+경로는 절대 경로여야 합니다. 파일은 앱이 연결할 때마다 읽으므로, 인증서를 갱신한 후에는 다시 연결하기만 하면 됩니다. 앱은 키가 인증서와 일치하는지, 인증서가 만료되지 않았는지 확인합니다.
 
-A common case is a cluster in Kubernetes, where the client secret holds `tls.crt`, `tls.key` and `ca.crt`. Save them to files, choose protocol `SSL`, set [[ui:connections.tls.ca]] to `ca.crt`, and use `tls.crt` and `tls.key` as a PEM client certificate and key with empty passwords.
+흔한 예로 Kubernetes 클러스터에서는 클라이언트 시크릿에 `tls.crt`, `tls.key`, `ca.crt`가 들어 있습니다. 이 파일들을 저장하고, 프로토콜 `SSL`을 선택하고, [[ui:connections.tls.ca]]에 `ca.crt`를 지정한 다음 `tls.crt`와 `tls.key`를 비밀번호 없는 PEM 클라이언트 인증서와 키로 사용하세요.
 
-## Certificate formats {#certificate-formats}
+## 인증서 형식 {#certificate-formats}
 
-Glafira reads three formats. The format is chosen automatically by the file extension; check it in the format field and change it if needed.
+Glafira는 세 가지 형식을 읽습니다. 형식은 파일 확장자에 따라 자동으로 선택됩니다. 형식 필드에서 확인하고 필요하면 변경하세요.
 
-- PEM — a text file that starts with `-----BEGIN`. Extensions `.pem`, `.crt`, `.cer`, `.key`. For a client certificate, the key is a separate file. The trusted CA can also be a binary DER certificate.
-- PKCS#12 — a binary store with a certificate and key. Extensions `.p12`, `.pfx`.
-- JKS — a Java keystore. Extensions `.jks`, `.keystore`, `.truststore`.
+- PEM — `-----BEGIN`으로 시작하는 텍스트 파일입니다. 확장자는 `.pem`, `.crt`, `.cer`, `.key`입니다. 클라이언트 인증서의 경우 키는 별도 파일입니다. 신뢰할 수 있는 CA는 바이너리 DER 인증서여도 됩니다.
+- PKCS#12 — 인증서와 키가 들어 있는 바이너리 저장소입니다. 확장자는 `.p12`, `.pfx`입니다.
+- JKS — Java 키스토어입니다. 확장자는 `.jks`, `.keystore`, `.truststore`입니다.
 
-Two kinds of files need converting first:
+다음 두 종류의 파일은 먼저 변환해야 합니다:
 
-- JCEKS stores are not supported. Convert them to PKCS#12:
+- JCEKS 저장소는 지원되지 않습니다. PKCS#12로 변환하세요:
 
 ```bash
 keytool -importkeystore -srcstoretype JCEKS -srckeystore client.jceks -deststoretype PKCS12 -destkeystore client.p12
 ```
 
-- PKCS#12 stores encrypted with legacy algorithms (RC2, 3DES) may fail to open. If the app reports a legacy algorithm, recreate the file with AES:
+- 레거시 알고리즘(RC2, 3DES)으로 암호화된 PKCS#12 저장소는 열리지 않을 수 있습니다. 앱이 레거시 알고리즘을 보고하면 AES로 파일을 다시 만드세요:
 
 ```bash
 openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -inkey tls.key -out client.p12
 ```
 
-## Passwords {#passwords}
+## 비밀번호 {#passwords}
 
-The SASL password and the passwords of keys and stores are saved in the system secret store: Keychain on macOS, Credential Manager on Windows, Secret Service on Linux. They are never written to the connection profile, export files or the diagnostics archive.
+SASL 비밀번호와 키 및 저장소의 비밀번호는 시스템 보안 저장소에 저장됩니다. macOS에서는 키체인, Windows에서는 자격 증명 관리자, Linux에서는 Secret Service입니다. 비밀번호는 연결 프로필, 내보내기 파일, 진단 아카이브에 절대 기록되지 않습니다.
 
-When you edit a saved connection, password fields are empty and show [[ui:connections.form.passwordKeep]]. Leave a field empty to keep the saved password, or type a new one to replace it. To delete a saved certificate password, select [[ui:connections.tls.clear]] next to the field. When you save, passwords that the connection no longer uses are deleted, for example after switching the protocol to `PLAINTEXT`.
+저장된 연결을 편집할 때 비밀번호 필드는 비어 있고 [[ui:connections.form.passwordKeep]]라는 안내가 표시됩니다. 저장된 비밀번호를 유지하려면 필드를 비워 두고, 바꾸려면 새 비밀번호를 입력하세요. 저장된 인증서 비밀번호를 삭제하려면 필드 옆의 [[ui:connections.tls.clear]]를 선택하세요. 저장할 때 연결에서 더 이상 사용하지 않는 비밀번호는 삭제됩니다. 예를 들어 프로토콜을 `PLAINTEXT`로 바꾼 경우입니다.
 
-If the app cannot access the secret store, an error is shown when you save. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+앱이 보안 저장소에 접근할 수 없으면 저장할 때 오류가 표시됩니다. Linux에서는 세션에서 GNOME Keyring, KWallet 또는 다른 Secret Service 제공자가 실행 중인지 확인하세요.
 
-## Environments and prod {#environments}
+## 환경과 운영 환경 연결 {#environments}
 
-[[ui:connections.form.environment]] marks the connection: `local`, `dev`, `test`, `stage` or `prod`. The environment is shown as a colored badge next to the name in the panel, so you always see which cluster you work with.
+[[ui:connections.form.environment]]은 연결에 `local`, `dev`, `test`, `stage`, `prod` 중 하나를 표시합니다. 환경은 패널에서 이름 옆에 색상 배지로 표시되므로 어떤 클러스터에서 작업 중인지 항상 알 수 있습니다.
 
-`prod` adds protection. Any change on a prod connection, such as creating a topic, sending a message, resetting offsets or starting a consumer session, asks you to type the connection name. Deleting and purging ask for the name of the object on any connection (deleting several topics asks for their count), and on prod you type both. These confirmations appear inside the app window.
+`prod`는 보호 기능을 추가합니다. 운영 환경 연결에서 토픽 만들기, 메시지 보내기, 오프셋 재설정, 컨슈머 세션 시작 같은 변경을 하려면 연결 이름을 입력해야 합니다. 삭제와 비우기는 모든 연결에서 대상의 이름을 입력해야 하고(토픽 여러 개를 삭제할 때는 개수), 운영 환경 연결에서는 둘 다 입력합니다. 이러한 확인은 앱 창 안에 표시됩니다.
 
-Creating prod connections and switching connections to prod need Pro. In Free, this option is shown as [[ui:connections.form.prodPro]] and cannot be selected. Prod connections created earlier keep working in Free, with the same confirmations.
+운영 환경 연결을 만들거나 연결을 운영 환경으로 바꾸려면 Pro가 필요합니다. Free에서는 이 옵션이 [[ui:connections.form.prodPro]] 항목으로 표시되며 선택할 수 없습니다. 이전에 만든 운영 환경 연결은 Free에서도 같은 확인 절차와 함께 계속 동작합니다.
 
-A new prod connection starts as [[ui:common.readOnly]]. Clear the box if you need to make changes.
+새 운영 환경 연결은 [[ui:common.readOnly]] 상태로 시작합니다. 변경이 필요하면 확인란을 선택 해제하세요.
 
-## Read-only {#read-only}
+## 읽기 전용 {#read-only}
 
-[[ui:common.readOnly]] blocks everything that changes the cluster: creating, changing, purging and deleting topics, sending messages, resetting offsets, deleting groups and starting consumer sessions. The buttons for these actions are hidden or disabled, and the app core rejects such operations as well. Browsing and reading stay available. A lock icon next to the name in the panel marks read-only connections.
+[[ui:common.readOnly]] 모드는 클러스터를 변경하는 모든 작업을 차단합니다. 토픽 만들기, 변경, 비우기, 삭제, 메시지 보내기, 오프셋 재설정, 그룹 삭제, 컨슈머 세션 시작이 해당됩니다. 이러한 작업의 버튼은 숨겨지거나 비활성화되며, 앱 코어도 이런 작업을 거부합니다. 조회와 읽기는 계속 사용할 수 있습니다. 패널에서 이름 옆의 자물쇠 아이콘은 읽기 전용 연결을 나타냅니다.
 
-Use this mode when you only need to look at the data, especially on shared clusters. Read-only is a protection inside the app: it does not replace access rights (ACLs) in Kafka.
+데이터를 보기만 하면 될 때, 특히 공유 클러스터에서는 이 모드를 사용하세요. 읽기 전용은 앱 내부의 보호 기능이며 Kafka의 접근 권한(ACL)을 대신하지 않습니다.
 
-In Free, the box cannot be cleared on a read-only prod connection: lifting this protection needs Pro.
+Free에서는 읽기 전용인 운영 환경 연결의 확인란을 선택 해제할 수 없습니다. 이 보호를 해제하려면 Pro가 필요합니다.
 
-## Folders {#folders}
+## 폴더 {#folders}
 
-Folders help to sort connections, for example by project or by environment. Folders can be nested.
+폴더를 사용하면 프로젝트별이나 환경별 등으로 연결을 정리할 수 있습니다. 폴더는 중첩할 수 있습니다.
 
-- To create a folder at the top level, click `+📁` ( [[ui:sidebar.newFolder]] ) in the panel header. To create a subfolder, open the folder menu and choose [[ui:sidebar.newFolder]]. Type the name and press `Enter`, or press `Esc` to cancel.
-- To open the folder menu, click `⋯` ( [[ui:sidebar.menu]] ) on the folder row or right-click the folder. The menu has [[ui:sidebar.folder.rename]], [[ui:sidebar.folder.delete]] and the export and import commands.
-- Only an empty folder can be deleted. Move or delete its connections and subfolders first.
-- Folder names must be unique within one level and at most 100 characters long.
+- 최상위 수준에 폴더를 만들려면 패널 헤더에서 `+📁` 버튼([[ui:sidebar.newFolder]])을 클릭합니다. 하위 폴더를 만들려면 폴더 메뉴를 열고 [[ui:sidebar.newFolder]]를 선택합니다. 이름을 입력하고 `Enter`를 누르거나, `Esc`를 눌러 취소합니다.
+- 폴더 메뉴를 열려면 폴더 행의 `⋯` 버튼([[ui:sidebar.menu]])을 클릭하거나 폴더를 오른쪽 클릭합니다. 메뉴에는 [[ui:sidebar.folder.rename]], [[ui:sidebar.folder.delete]], 내보내기 및 가져오기 명령이 있습니다.
+- 빈 폴더만 삭제할 수 있습니다. 먼저 그 안의 연결과 하위 폴더를 옮기거나 삭제하세요.
+- 폴더 이름은 같은 수준 안에서 고유해야 하며 최대 100자입니다.
 
-To move a connection, drag it onto a folder, or onto another connection to place it before that one. To move it to the top level, drop it onto the panel header or the empty space below the list. You can also choose a [[ui:connections.form.folder]] in the connection form; [[ui:connections.form.folderRoot]] means the top level. Folders are dragged the same way. Drop a folder onto the upper edge of another folder to place it before that folder. A folder cannot be moved into its own subfolder.
+연결을 옮기려면 폴더 위로 드래그하거나, 다른 연결 위로 드래그하여 그 앞에 놓습니다. 최상위 수준으로 옮기려면 패널 헤더나 목록 아래 빈 공간에 놓으세요. 연결 양식에서 [[ui:connections.form.folder]]를 선택할 수도 있습니다. 목록의 [[ui:connections.form.folderRoot]] 항목은 최상위 수준을 뜻합니다. 폴더도 같은 방법으로 드래그합니다. 폴더를 다른 폴더의 위쪽 가장자리에 놓으면 그 폴더 앞에 배치됩니다. 폴더를 자기 하위 폴더 안으로 옮길 수는 없습니다.
 
-Click a folder name to collapse or expand it. The app remembers which folders are collapsed. Use [[ui:sidebar.filter]] above the tree to find connections and folders by name. Matching folders are shown with all their contents.
+폴더 이름을 클릭하면 접히거나 펼쳐집니다. 앱은 어떤 폴더가 접혀 있는지 기억합니다. 트리 위의 [[ui:sidebar.filter]] 필드를 사용하면 이름으로 연결과 폴더를 찾을 수 있습니다. 일치하는 폴더는 모든 내용과 함께 표시됩니다.
 
-## Export {#export}
+## 내보내기 {#export}
 
-Export saves connections and folders to a file, for example to share them with colleagues or move them to another computer.
+내보내기는 연결과 폴더를 파일로 저장합니다. 예를 들어 동료와 공유하거나 다른 컴퓨터로 옮길 때 사용합니다.
 
-1. To export everything, open the panel header menu `⋯` and choose [[ui:sidebar.exportAll]]. To export one folder with its subfolders, choose [[ui:sidebar.folder.export]] in its menu.
-2. Choose where to save the file. The suggested name is `glafira-connections-<date>.glafira-connections.json` or `<folder>.glafira-connections.json`.
+1. 모두 내보내려면 패널 헤더 메뉴 `⋯`를 열고 [[ui:sidebar.exportAll]] 항목을 선택합니다. 폴더 하나를 하위 폴더와 함께 내보내려면 그 폴더의 메뉴에서 [[ui:sidebar.folder.export]] 항목을 선택합니다.
+2. 파일을 저장할 위치를 선택합니다. 제안되는 이름은 `glafira-connections-<date>.glafira-connections.json` 또는 `<folder>.glafira-connections.json`입니다.
 
-When the file is saved, the panel shows how many connections and folders it contains.
+파일이 저장되면 패널에 파일에 포함된 연결과 폴더의 수가 표시됩니다.
 
-The file has the connection settings and the folder structure. It does not contain passwords or secret properties. Certificate files are not included either: the file only keeps their paths. Hosts, usernames and paths are stored as plain text, so share the file only with people who may see them.
+파일에는 연결 설정과 폴더 구조가 들어 있습니다. 비밀번호와 비밀 속성은 포함되지 않습니다. 인증서 파일도 포함되지 않으며 경로만 저장됩니다. 호스트, 사용자 이름, 경로는 일반 텍스트로 저장되므로 이를 봐도 되는 사람과만 파일을 공유하세요.
 
-## Import {#import}
+## 가져오기 {#import}
 
-1. Open the panel header menu `⋯` and choose [[ui:sidebar.import]]. To import straight into a folder, choose [[ui:sidebar.folder.importHere]] in its menu.
-2. Choose a `.glafira-connections.json` file. The [[ui:exchange.import.title]] dialog opens.
-3. In [[ui:exchange.import.target]], choose where new folders and connections go. [[ui:connections.form.folderRoot]] is the top level.
-4. Leave [[ui:exchange.import.updateExisting]] on to update connections that already exist from the file. Turn it off to keep them as they are.
-5. Check the preview and click [[ui:exchange.import.apply]], or [[ui:common.cancel]] to close the dialog without changes.
+1. 패널 헤더 메뉴 `⋯`를 열고 [[ui:sidebar.import]] 항목을 선택합니다. 폴더 안으로 바로 가져오려면 그 폴더의 메뉴에서 [[ui:sidebar.folder.importHere]] 항목을 선택합니다.
+2. `.glafira-connections.json` 파일을 선택합니다. [[ui:exchange.import.title]] 대화 상자가 열립니다.
+3. [[ui:exchange.import.target]]에서 새 폴더와 연결이 들어갈 곳을 선택합니다. [[ui:connections.form.folderRoot]] 항목은 최상위 수준입니다.
+4. 이미 있는 연결을 파일 내용으로 업데이트하려면 [[ui:exchange.import.updateExisting]] 옵션을 켜 둡니다. 기존 연결을 그대로 두려면 끕니다.
+5. 미리 보기를 확인하고 [[ui:exchange.import.apply]]를 클릭합니다. 변경 없이 대화 상자를 닫으려면 [[ui:common.cancel]]를 클릭합니다.
 
-The preview updates after each change in the dialog. It shows the totals and expandable lists: [[ui:exchange.import.groupAdded]], [[ui:exchange.import.groupUpdated]], [[ui:exchange.import.groupUnchanged]] and [[ui:exchange.import.groupSkipped]] with the reason for each skipped connection.
+미리 보기는 대화 상자에서 무언가를 바꿀 때마다 업데이트됩니다. 합계와 펼칠 수 있는 목록이 표시됩니다: [[ui:exchange.import.groupAdded]], [[ui:exchange.import.groupUpdated]], [[ui:exchange.import.groupUnchanged]], [[ui:exchange.import.groupSkipped]]. 건너뛴 연결마다 그 이유가 표시됩니다.
 
-How the app matches the file with your connections:
+앱이 파일과 기존 연결을 대조하는 방식은 다음과 같습니다:
 
-- Connections are matched by an internal ID, not by name. A connection counts as existing if the file contains the same connection: for example, it was exported from this computer, or imported from the same source before.
-- An updated connection gets the settings from the file. Your passwords and its place in the tree are kept.
-- Existing folders are not renamed or moved. New connections from the file still go into them.
-- If a new connection has the same name as another one in the same folder, a number is added, for example `kafka-dev (2)`.
-- Connections that this version of Glafira does not support, or that contain secrets in extra properties, are skipped.
+- 연결은 이름이 아니라 내부 ID로 대조합니다. 파일에 같은 연결이 들어 있으면 기존 연결로 간주합니다. 예를 들어 이 컴퓨터에서 내보냈거나 이전에 같은 출처에서 가져온 경우입니다.
+- 업데이트되는 연결은 파일의 설정을 받습니다. 비밀번호와 트리에서의 위치는 유지됩니다.
+- 기존 폴더의 이름은 바뀌지 않고 위치도 옮겨지지 않습니다. 파일의 새 연결은 그대로 그 폴더에 들어갑니다.
+- 새 연결의 이름이 같은 폴더의 다른 연결과 같으면 번호가 붙습니다. 예: `kafka-dev (2)`.
+- 이 버전의 Glafira가 지원하지 않는 연결이나 추가 속성에 비밀 정보가 들어 있는 연결은 건너뜁니다.
 
-The preview also warns when certificate files are not found on this computer, and when prod connections will become read-only because Pro is not active. Passwords are not in the file, so after import the panel says how many connections need them. Open each of these connections, enter the passwords and save.
+미리 보기는 이 컴퓨터에서 인증서 파일을 찾을 수 없을 때와, Pro가 활성화되어 있지 않아 운영 환경 연결이 읽기 전용이 될 때에도 경고합니다. 비밀번호는 파일에 없으므로 가져온 후 패널에 비밀번호가 필요한 연결 수가 표시됩니다. 해당 연결을 하나씩 열어 비밀번호를 입력하고 저장하세요.

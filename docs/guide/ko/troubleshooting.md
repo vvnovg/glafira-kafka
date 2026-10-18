@@ -1,109 +1,109 @@
-# Troubleshooting
+# 문제 해결
 
-This chapter explains common connection errors and what to check for each of them. It also shows where the logs are and what to include in a support request. On macOS, the Help menu opens this chapter with [[ui:menu.troubleshooting]].
+이 장에서는 자주 발생하는 연결 오류와 각 오류에서 확인할 사항을 설명합니다. 로그 위치와 지원 요청에 포함할 내용도 안내합니다. macOS에서는 '도움말' 메뉴의 [[ui:menu.troubleshooting]] 항목으로 이 장을 열 수 있습니다.
 
-An error message has a short text and, on most screens, the error code in brackets, for example `TIMEOUT`. Expand [[ui:common.details]] to see the original message from the Kafka client (librdkafka). It often names the exact broker address and cause.
+오류 메시지에는 짧은 텍스트가 있고, 대부분의 화면에서는 괄호 안에 오류 코드가 표시됩니다. 예: `TIMEOUT`. [[ui:common.details]]를 펼치면 Kafka 클라이언트(librdkafka)의 원래 메시지를 볼 수 있습니다. 이 메시지에는 정확한 브로커 주소와 원인이 나오는 경우가 많습니다.
 
-## Cannot connect {#cannot-connect}
+## 연결할 수 없음 {#cannot-connect}
 
-Start with [[ui:connections.form.test]] in the connection form, see [Test the connection](connections.md#test). The test stops at the first failed step, and the step shows where to look:
+먼저 연결 양식에서 [[ui:connections.form.test]]를 실행하세요. [연결 테스트](connections.md#test)를 참고하세요. 테스트는 처음 실패한 단계에서 멈추며, 그 단계를 보면 어디를 확인해야 하는지 알 수 있습니다:
 
-- [[ui:connections.form.step.config]] — the problem is in the form itself: an address without a port, a missing or unreadable certificate file, a wrong certificate password. The error names the field. For certificate files, see [TLS errors](troubleshooting.md#tls-errors).
-- [[ui:connections.form.step.tcp]] — the computer cannot reach the bootstrap servers. See [DNS and TCP](troubleshooting.md#dns-tcp).
-- [[ui:connections.form.step.kafka]] — the network works, but the TLS handshake, the SASL login or the metadata request failed. See [TLS errors](troubleshooting.md#tls-errors), [SASL errors](troubleshooting.md#sasl-errors) and [Timeouts](troubleshooting.md#timeouts).
+- [[ui:connections.form.step.config]] — 양식 자체의 문제입니다. 포트가 없는 주소, 없거나 읽을 수 없는 인증서 파일, 잘못된 인증서 비밀번호 등이 해당합니다. 오류에 필드 이름이 표시됩니다. 인증서 파일은 [TLS 오류](troubleshooting.md#tls-errors)를 참고하세요.
+- [[ui:connections.form.step.tcp]] — 컴퓨터가 부트스트랩 서버에 도달할 수 없습니다. [DNS와 TCP](troubleshooting.md#dns-tcp)를 참고하세요.
+- [[ui:connections.form.step.kafka]] — 네트워크는 동작하지만 TLS 핸드셰이크, SASL 로그인 또는 메타데이터 요청이 실패했습니다. [TLS 오류](troubleshooting.md#tls-errors), [SASL 오류](troubleshooting.md#sasl-errors), [제한 시간 초과](troubleshooting.md#timeouts)를 참고하세요.
 
-The most common cause is a protocol that does not match the port. Each broker listener has its own port and protocol. Ask your Kafka administrators which port belongs to which protocol, see [Security protocols](connections.md#security).
+가장 흔한 원인은 포트와 맞지 않는 프로토콜입니다. 브로커 리스너마다 고유한 포트와 프로토콜이 있습니다. 어떤 포트가 어떤 프로토콜에 해당하는지 Kafka 관리자에게 문의하세요. [보안 프로토콜](connections.md#security)을 참고하세요.
 
-If the test passes but reading or sending fails, the cause is often the broker addresses. The client gets the list of brokers from the bootstrap server and then connects to each broker at the address the broker advertises (`advertised.listeners`). If these addresses are internal, for example Docker or Kubernetes host names, they cannot be reached from your computer. The addresses are listed in the broker table of the cluster overview, see [Cluster overview](topics.md#cluster-overview). Ask your administrators for a listener that is reachable from outside.
+테스트는 통과하는데 읽기나 보내기가 실패한다면 원인은 브로커 주소인 경우가 많습니다. 클라이언트는 부트스트랩 서버에서 브로커 목록을 받은 다음, 각 브로커가 알리는 주소(`advertised.listeners`)로 각 브로커에 연결합니다. 이 주소가 Docker나 Kubernetes 호스트 이름 같은 내부 주소라면 내 컴퓨터에서 도달할 수 없습니다. 주소는 클러스터 개요의 브로커 표에 나열됩니다. [클러스터 개요](topics.md#cluster-overview)를 참고하세요. 외부에서 도달할 수 있는 리스너를 관리자에게 요청하세요.
 
-## DNS and TCP {#dns-tcp}
+## DNS와 TCP {#dns-tcp}
 
-[[ui:errors.kafka.tcpUnreachable]] means that the app could not open a TCP connection to any address in [[ui:connections.form.bootstrap]]. Each address gets up to 5 seconds. The details show the last address tried and the reason. `DNS` in the details means the host name could not be resolved.
+'[[ui:errors.kafka.tcpUnreachable]]' 오류는 앱이 [[ui:connections.form.bootstrap]]의 어떤 주소로도 TCP 연결을 열 수 없었다는 뜻입니다. 주소마다 최대 5초가 주어집니다. 세부 정보에는 마지막으로 시도한 주소와 원인이 표시됩니다. 세부 정보의 `DNS`는 호스트 이름을 확인할 수 없었다는 뜻입니다.
 
-Check:
+다음을 확인하세요:
 
-- the host name and port, without a protocol prefix such as `https://`;
-- that a VPN is on, if the cluster is in a private network;
-- that a firewall does not block the port;
-- for a broker in Docker, that the port is published to the host, for example `-p 9092:9092`.
+- `https://` 같은 프로토콜 접두사가 없는 호스트 이름과 포트.
+- 클러스터가 사설 네트워크에 있다면 VPN이 켜져 있는지.
+- 방화벽이 포트를 차단하지 않는지.
+- Docker의 브로커라면 포트가 호스트에 게시되어 있는지. 예: `-p 9092:9092`.
 
-To check the port outside the app, run `nc -vz <host> <port>` on macOS or Linux, or `Test-NetConnection <host> -Port <port>` in PowerShell on Windows.
+앱 밖에서 포트를 확인하려면 macOS나 Linux에서는 `nc -vz <host> <port>`를, Windows의 PowerShell에서는 `Test-NetConnection <host> -Port <port>`를 실행하세요.
 
-[[ui:errors.kafka.connectionFailed]] after the TCP step has passed usually means that a broker closed the connection or could not be reached later. Also check the broker addresses, see [Cannot connect](troubleshooting.md#cannot-connect).
+TCP 단계를 통과한 후의 '[[ui:errors.kafka.connectionFailed]]' 오류는 보통 브로커가 연결을 닫았거나 나중에 도달할 수 없게 되었다는 뜻입니다. 브로커 주소도 확인하세요. [연결할 수 없음](troubleshooting.md#cannot-connect)을 참고하세요.
 
-## TLS errors {#tls-errors}
+## TLS 오류 {#tls-errors}
 
-Errors on the [[ui:connections.form.step.kafka]] step during the TLS handshake:
+TLS 핸드셰이크 중 [[ui:connections.form.step.kafka]] 단계에서 발생하는 오류:
 
 - [[ui:errors.kafka.plaintextListener]].
-- [[ui:errors.kafka.caUntrusted]]. Set [[ui:connections.tls.ca]] to the file of the CA that signed the broker certificates. Your administrators can give you this file. With an empty field, only the system root certificates are trusted.
-- [[ui:errors.kafka.hostnameMismatch]]. Connect by the name that the certificate was issued for, not by an IP address or an alias. In test environments only, you can turn off [[ui:connections.tls.verifyHostname]].
-- [[ui:errors.kafka.clientCertRejected]]. The broker requires a client certificate, or it does not trust the one you use. Check that [[ui:connections.tls.mtls]] is on and that the certificate was issued for this cluster. See [Client certificate (mTLS)](connections.md#mtls).
-- [[ui:errors.kafka.tlsError]] — another TLS problem. Expand [[ui:common.details]] for the cause.
+- [[ui:errors.kafka.caUntrusted]]. [[ui:connections.tls.ca]]에 브로커 인증서에 서명한 CA의 파일을 지정하세요. 이 파일은 관리자에게 받을 수 있습니다. 필드가 비어 있으면 시스템 루트 인증서만 신뢰합니다.
+- [[ui:errors.kafka.hostnameMismatch]]. IP 주소나 별칭이 아니라 인증서가 발급된 이름으로 연결하세요. 테스트 환경에서만 [[ui:connections.tls.verifyHostname]]을 끌 수 있습니다.
+- [[ui:errors.kafka.clientCertRejected]]. 브로커가 클라이언트 인증서를 요구하거나, 사용 중인 인증서를 신뢰하지 않습니다. [[ui:connections.tls.mtls]] 옵션이 켜져 있는지, 인증서가 이 클러스터용으로 발급되었는지 확인하세요. [클라이언트 인증서(mTLS)](connections.md#mtls)를 참고하세요.
+- [[ui:errors.kafka.tlsError]] — 그 밖의 TLS 문제. 원인을 보려면 [[ui:common.details]]를 펼치세요.
 
-If you chose a protocol without SSL and still see a TLS error, the port is probably a TLS listener. The details then say `connecting to a SSL listener?`. Choose `SSL` or `SASL_SSL`, or use the port of a listener without TLS.
+SSL이 없는 프로토콜을 선택했는데도 TLS 오류가 나타난다면 그 포트는 TLS 리스너일 가능성이 높습니다. 이 경우 세부 정보에 `connecting to a SSL listener?`가 표시됩니다. `SSL` 또는 `SASL_SSL`을 선택하거나 TLS가 없는 리스너의 포트를 사용하세요.
 
-Problems with certificate files are reported on the [[ui:connections.form.step.config]] step, before the app connects. The message starts with the field name: trusted CA, client certificate or client key. Common cases:
+인증서 파일 문제는 앱이 연결하기 전에 [[ui:connections.form.step.config]] 단계에서 보고됩니다. 메시지는 필드 이름(신뢰할 수 있는 CA, 클라이언트 인증서 또는 클라이언트 개인 키)으로 시작합니다. 흔한 경우:
 
-- The path is not absolute or the file cannot be read. Enter the full path or choose the file with [[ui:connections.tls.pick]].
-- [[ui:errors.tls.keyEncrypted]], [[ui:errors.tls.keyBadPassword]], [[ui:errors.tls.clientPkcs12BadPassword]] or [[ui:errors.tls.jksBadStorePassword]] — enter the right password in the form.
-- [[ui:errors.tls.keyMismatch]] — the key file belongs to another certificate.
-- The client certificate has expired or is not valid yet — the message gives the date. Ask for a new certificate.
-- The PKCS#12 store uses a legacy algorithm, or the store is in JCEKS format. Convert the file as shown in [Certificate formats](connections.md#certificate-formats).
+- 경로가 절대 경로가 아니거나 파일을 읽을 수 없습니다. 전체 경로를 입력하거나 [[ui:connections.tls.pick]] 버튼으로 파일을 선택하세요.
+- [[ui:errors.tls.keyEncrypted]], [[ui:errors.tls.keyBadPassword]], [[ui:errors.tls.clientPkcs12BadPassword]] 또는 [[ui:errors.tls.jksBadStorePassword]] — 양식에 올바른 비밀번호를 입력하세요.
+- [[ui:errors.tls.keyMismatch]] — 키 파일이 다른 인증서에 속합니다.
+- 클라이언트 인증서가 만료되었거나 아직 유효하지 않음 — 메시지에 날짜가 표시됩니다. 새 인증서를 요청하세요.
+- PKCS#12 저장소가 레거시 알고리즘을 사용하거나 저장소가 JCEKS 형식입니다. [인증서 형식](connections.md#certificate-formats)에 나온 대로 파일을 변환하세요.
 
-## SASL errors {#sasl-errors}
+## SASL 오류 {#sasl-errors}
 
-[[ui:errors.kafka.authFailed]] means that the broker did not accept the SASL login. Check:
+'[[ui:errors.kafka.authFailed]]' 오류는 브로커가 SASL 로그인을 받아들이지 않았다는 뜻입니다. 다음을 확인하세요:
 
-- the username and password. When you edit a saved connection, an empty password field keeps the saved password. Type the password again if you are not sure it is right;
-- [[ui:connections.form.saslMechanism]]. It must be the mechanism your user was created for. SCRAM credentials are created separately for `SCRAM-SHA-256` and `SCRAM-SHA-512`, and `PLAIN` users are configured separately again;
-- the protocol: `SASL_SSL` and `SASL_PLAINTEXT` usually use different ports.
+- 사용자 이름과 비밀번호. 저장된 연결을 편집할 때 비밀번호 필드를 비워 두면 저장된 비밀번호가 유지됩니다. 비밀번호가 맞는지 확실하지 않으면 다시 입력하세요.
+- [[ui:connections.form.saslMechanism]]. 사용자가 만들어진 메커니즘이어야 합니다. SCRAM 자격 증명은 `SCRAM-SHA-256`과 `SCRAM-SHA-512`에 대해 따로 만들어지며, `PLAIN` 사용자는 또 따로 구성됩니다.
+- 프로토콜: `SASL_SSL`과 `SASL_PLAINTEXT`는 보통 서로 다른 포트를 사용합니다.
 
-[[ui:errors.connections.saslPasswordMissing]] — no password is saved for this connection, for example after an import. Open the connection, enter the password and save it. See [Passwords](connections.md#passwords).
+[[ui:errors.connections.saslPasswordMissing]] — 예를 들어 가져오기 후처럼 이 연결에 저장된 비밀번호가 없습니다. 연결을 열고 비밀번호를 입력한 다음 저장하세요. [비밀번호](connections.md#passwords)를 참고하세요.
 
-[[ui:errors.secrets.keychain]] — the app cannot read the password from the system secret store. On macOS, allow access when Keychain asks. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+[[ui:errors.secrets.keychain]] — 앱이 시스템 보안 저장소에서 비밀번호를 읽을 수 없습니다. macOS에서는 키체인이 요청할 때 접근을 허용하세요. Linux에서는 세션에서 GNOME Keyring, KWallet 또는 다른 Secret Service 제공자가 실행 중인지 확인하세요.
 
-[[ui:errors.kafka.notAuthorized]] is different: the login succeeded, but the Kafka user has no rights (ACLs) for this operation, for example reading a topic or a group. Ask your administrators for the rights. Note that Kafka does not report an error for topics that you are not allowed to describe: they are simply missing from the topic list.
+'[[ui:errors.kafka.notAuthorized]]' 오류는 다릅니다. 로그인은 성공했지만 Kafka 사용자에게 토픽이나 그룹 읽기 같은 이 작업에 대한 권한(ACL)이 없습니다. 관리자에게 권한을 요청하세요. Kafka는 조회 권한이 없는 토픽에 대해 오류를 보고하지 않으며, 그런 토픽은 토픽 목록에 나타나지 않을 뿐입니다.
 
-## Timeouts {#timeouts}
+## 제한 시간 초과 {#timeouts}
 
-[[ui:errors.kafka.timeout]] means that the broker did not answer in time. Typical causes are a slow network or VPN, an overloaded cluster, or broker addresses that cannot be reached, see [Cannot connect](troubleshooting.md#cannot-connect).
+'[[ui:errors.kafka.timeout]]' 오류는 브로커가 제때 응답하지 않았다는 뜻입니다. 대표적인 원인은 느린 네트워크나 VPN, 과부하된 클러스터, 도달할 수 없는 브로커 주소입니다. [연결할 수 없음](troubleshooting.md#cannot-connect)을 참고하세요.
 
-A TLS or SASL problem can look like a timeout. The app tries to find the real cause and shows it instead, but this is not always possible. Expand [[ui:common.details]]: messages such as `SSL handshake failed` or `SASL authentication error` point to the cause.
+TLS나 SASL 문제가 제한 시간 초과처럼 보일 수 있습니다. 앱은 실제 원인을 찾아 대신 표시하려고 하지만 항상 가능한 것은 아닙니다. [[ui:common.details]]를 펼치세요. `SSL handshake failed`나 `SASL authentication error` 같은 메시지가 원인을 알려 줍니다.
 
-If the network is just slow, increase [[ui:connections.form.timeout]] in the connection form. The default is `30000` ms. This value applies to requests to the brokers, to sending messages and to reading. The connection test uses its own limits (5 seconds for each TCP address and 10 seconds for the Kafka step), so a larger value does not change the test.
+네트워크가 단지 느린 것이라면 연결 양식에서 [[ui:connections.form.timeout]] 값을 늘리세요. 기본값은 `30000` ms입니다. 이 값은 브로커에 대한 요청, 메시지 보내기, 읽기에 적용됩니다. 연결 테스트는 자체 제한(TCP 주소당 5초, Kafka 단계 10초)을 사용하므로 값을 늘려도 테스트는 달라지지 않습니다.
 
-## An action is unavailable or refused {#read-only-blocked}
+## 작업을 사용할 수 없거나 거부됨 {#read-only-blocked}
 
-If a button is hidden or disabled, or an action is refused, check these causes:
+버튼이 숨겨져 있거나 비활성화되어 있거나 작업이 거부되면 다음 원인을 확인하세요:
 
-- The connection is read-only. A lock icon next to its name marks it. Buttons that change the cluster are hidden or disabled. If such a request still reaches the app core, for example after the mode was turned on while a screen was open, the error says that the connection is read-only. To make changes, open the connection, clear [[ui:common.readOnly]] and save. In Free, this box cannot be cleared on a prod connection. See [Read-only](connections.md#read-only).
-- The connection is prod. Changes ask you to type the connection name. Until the name matches, the action is not performed. See [Environments and prod](connections.md#environments).
-- The feature needs Pro. The error says [[ui:errors.license.proRequired]], or gives the end date if the license has expired. See [Free and Pro](license-updates.md#free-and-pro).
-- The consumer group has active members. Offsets can be reset and a group can be deleted only when it has no members. See [Reset offsets](groups.md#reset-offsets).
-- The setting is managed by your organization. A policy can set the interface language, the license key and update checks, and these cannot be changed in the app. See [Settings set by your organization](getting-started.md#managed-settings).
-- Kafka refused the operation with [[ui:errors.kafka.notAuthorized]]. This is a matter of rights in the cluster, not of Glafira settings. See [SASL errors](troubleshooting.md#sasl-errors).
+- 연결이 읽기 전용입니다. 이름 옆의 자물쇠 아이콘으로 표시됩니다. 클러스터를 변경하는 버튼은 숨겨지거나 비활성화됩니다. 예를 들어 화면이 열려 있는 동안 모드가 켜진 경우처럼 이런 요청이 앱 코어에 도달하면 연결이 읽기 전용이라는 오류가 표시됩니다. 변경하려면 연결을 열고 [[ui:common.readOnly]] 확인란을 선택 해제한 다음 저장하세요. Free에서는 운영 환경 연결에서 이 확인란을 선택 해제할 수 없습니다. [읽기 전용](connections.md#read-only)을 참고하세요.
+- 운영 환경 연결입니다. 변경하려면 연결 이름을 입력해야 합니다. 이름이 일치할 때까지 작업은 수행되지 않습니다. [환경과 운영 환경 연결](connections.md#environments)을 참고하세요.
+- Pro가 필요한 기능입니다. 오류 메시지가 [[ui:errors.license.proRequired]] 형태로 표시되거나, 라이선스가 만료되었다면 만료 날짜가 표시됩니다. [Free와 Pro](license-updates.md#free-and-pro)를 참고하세요.
+- 컨슈머 그룹에 활성 멤버가 있습니다. 오프셋 재설정과 그룹 삭제는 멤버가 없을 때만 할 수 있습니다. [오프셋 재설정](groups.md#reset-offsets)을 참고하세요.
+- 조직에서 관리하는 설정입니다. 정책으로 표시 언어, 라이선스 키, 업데이트 확인을 설정할 수 있으며, 이러한 설정은 앱에서 변경할 수 없습니다. [조직에서 설정한 항목](getting-started.md#managed-settings)을 참고하세요.
+- Kafka가 '[[ui:errors.kafka.notAuthorized]]' 오류로 작업을 거부했습니다. 이는 Glafira 설정이 아니라 클러스터 권한의 문제입니다. [SASL 오류](troubleshooting.md#sasl-errors)를 참고하세요.
 
-## Logs {#logs}
+## 로그 {#logs}
 
-The app writes a log of its work and of Kafka client errors. The exact folder is shown on the [[ui:sidebar.about]] screen in [[ui:about.logDir]]. By default:
+앱은 작업 내용과 Kafka 클라이언트 오류를 로그에 기록합니다. 정확한 폴더는 [[ui:sidebar.about]] 화면의 [[ui:about.logDir]] 항목에 표시됩니다. 기본 위치는 다음과 같습니다:
 
 - macOS: `~/Library/Logs/io.github.vvnovg.glafira.kafka`
 - Windows: `%LOCALAPPDATA%\io.github.vvnovg.glafira.kafka\logs`
 - Linux: `~/.local/share/io.github.vvnovg.glafira.kafka/logs`
 
-The current file is `app.log`. When it reaches 5 MB, it is renamed to `app.1.log`, and older files move on to `app.2.log` and so on. The app keeps up to five files and deletes the oldest one.
+현재 파일은 `app.log`입니다. 이 파일이 5 MB에 도달하면 `app.1.log`로 이름이 바뀌고, 이전 파일은 `app.2.log` 등으로 차례로 밀려납니다. 앱은 최대 다섯 개의 파일을 보관하며 가장 오래된 파일을 삭제합니다.
 
-Passwords are not written to the logs. Broker addresses and the texts of Kafka errors are written. You do not need to collect the files by hand: the diagnostics archive includes them, see [Diagnostics archive](license-updates.md#diagnostics).
+비밀번호는 로그에 기록되지 않습니다. 브로커 주소와 Kafka 오류 텍스트는 기록됩니다. 파일을 직접 모을 필요는 없습니다. 진단 아카이브에 포함되어 있습니다. [진단 아카이브](license-updates.md#diagnostics)를 참고하세요.
 
-## Contact support {#support}
+## 지원 문의 {#support}
 
-Before you contact support, run [[ui:connections.form.test]] and note which step fails. Then send the request to whoever supports Glafira for you, for example your administrators. Include:
+지원을 요청하기 전에 [[ui:connections.form.test]]를 실행하고 어떤 단계가 실패하는지 기록해 두세요. 그런 다음 Glafira를 지원하는 담당자(예: 관리자)에게 요청을 보내세요. 다음을 포함하세요:
 
-- the diagnostics archive, see [Diagnostics archive](license-updates.md#diagnostics). It contains the version, the build, the logs and the connection profiles without passwords;
-- what you did, what you expected and what happened, step by step;
-- the full error text, together with the [[ui:common.details]] content. You can select and copy this text;
-- a screenshot, if the problem is in the interface;
-- the time when the error happened, to find it in the logs.
+- 진단 아카이브. [진단 아카이브](license-updates.md#diagnostics)를 참고하세요. 아카이브에는 버전, 빌드, 로그, 비밀번호를 제외한 연결 프로필이 들어 있습니다.
+- 수행한 작업, 예상한 결과, 실제로 일어난 일을 단계별로.
+- [[ui:common.details]] 내용을 포함한 전체 오류 텍스트. 이 텍스트는 선택하여 복사할 수 있습니다.
+- 인터페이스 문제라면 스크린샷.
+- 로그에서 찾을 수 있도록 오류가 발생한 시간.
 
-If you cannot create the archive, give the [[ui:about.version]] and [[ui:about.build]] values from the [[ui:sidebar.about]] screen and attach the log files from the logs folder.
+아카이브를 만들 수 없다면 [[ui:sidebar.about]] 화면의 [[ui:about.version]] 값과 [[ui:about.build]] 값을 알려 주고 로그 폴더의 로그 파일을 첨부하세요.

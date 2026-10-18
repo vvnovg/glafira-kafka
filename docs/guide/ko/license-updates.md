@@ -1,103 +1,103 @@
-# License and updates
+# 라이선스 및 업데이트
 
-This chapter covers what Pro adds, how to activate a license key, what happens when the license expires, how to update the app, the [[ui:sidebar.about]] screen and the diagnostics archive.
+이 장에서는 Pro에 추가되는 기능, 라이선스 키 활성화 방법, 라이선스가 만료되면 어떻게 되는지, 앱 업데이트 방법, [[ui:sidebar.about]] 화면, 진단 아카이브를 설명합니다.
 
-## Free and Pro {#free-and-pro}
+## Free와 Pro {#free-and-pro}
 
-Free covers everyday work with Kafka: all security protocols including mTLS, the cluster overview and topics, browsing messages, the Producer with batch sending, consumer groups and offset reset. All interface languages are included as well. See [Interface language](getting-started.md#language).
+Free로 Kafka의 일상적인 작업을 모두 할 수 있습니다. mTLS를 포함한 모든 보안 프로토콜, 클러스터 개요와 토픽, 메시지 조회, 일괄 전송을 포함한 Producer, 컨슈머 그룹, 오프셋 재설정이 포함됩니다. 모든 표시 언어도 포함됩니다. [표시 언어](getting-started.md#language)를 참고하세요.
 
-Pro adds:
+Pro에서 추가되는 기능:
 
-- consumer sessions: reading as a group member, committing offsets, pausing partitions. See [Consumer sessions](consumer-sessions.md#what-is);
-- prod mode: creating prod connections, switching connections to prod and clearing [[ui:common.readOnly]] on a prod connection. See [Environments and prod](connections.md#environments).
+- 컨슈머 세션: 그룹 멤버로 읽기, 오프셋 커밋, 파티션 일시 중지. [컨슈머 세션](consumer-sessions.md#what-is)을 참고하세요.
+- 운영 환경 모드: 운영 환경 연결 만들기, 연결을 운영 환경으로 바꾸기, 운영 환경 연결에서 [[ui:common.readOnly]] 해제. [환경과 운영 환경 연결](connections.md#environments)을 참고하세요.
 
-In Free, these features are visible but unavailable. The consumer session commands are disabled and marked with a lock and `Pro`. The prod option is shown as [[ui:connections.form.prodPro]]. If an action needs Pro, the error says [[ui:errors.license.proRequired]] and offers the [[ui:common.openLicense]] button.
+Free에서는 이러한 기능이 보이지만 사용할 수 없습니다. 컨슈머 세션 명령은 비활성화되고 자물쇠와 `Pro` 표시가 붙습니다. 운영 환경 옵션은 [[ui:connections.form.prodPro]] 항목으로 표시됩니다. Pro가 필요한 작업을 하면 [[ui:common.openLicense]] 버튼과 함께 다음 오류가 표시됩니다: [[ui:errors.license.proRequired]].
 
-The [[ui:tabs.license]] screen lists consumer sessions and prod mode under [[ui:license.whatProGives]].
+[[ui:tabs.license]] 화면의 [[ui:license.whatProGives]] 아래에 컨슈머 세션과 운영 환경 모드가 나열됩니다.
 
-## Activate a key {#activate}
+## 키 활성화 {#activate}
 
-A license key is a line of text issued to a person or to an organization. The app checks the key on your computer and does not contact any server.
+라이선스 키는 개인 또는 조직에 발급되는 한 줄의 텍스트입니다. 앱은 컴퓨터에서 키를 확인하며 어떤 서버에도 접속하지 않습니다.
 
-1. Click [[ui:tabs.license]] at the bottom of the left panel.
-2. Paste the whole key into [[ui:license.keyLabel]].
-3. Click [[ui:license.activate]].
+1. 왼쪽 패널 아래쪽에서 [[ui:tabs.license]]를 클릭합니다.
+2. [[ui:license.keyLabel]] 필드에 키 전체를 붙여 넣습니다.
+3. [[ui:license.activate]]를 클릭합니다.
 
-Pro features become available at once. The screen shows [[ui:license.tier]] (Pro), [[ui:license.licensee]], [[ui:license.kind]] ( [[ui:license.kindPersonal]] or [[ui:license.kindOrganization]] ) and [[ui:license.expires]]: a date, or [[ui:license.perpetual]]. The key is saved in the app data folder, so it stays after a restart or an update. A new key replaces the previous one.
+Pro 기능을 즉시 사용할 수 있습니다. 화면에는 [[ui:license.tier]](Pro), [[ui:license.licensee]], [[ui:license.kind]]([[ui:license.kindPersonal]] 또는 [[ui:license.kindOrganization]]), [[ui:license.expires]](날짜 또는 [[ui:license.perpetual]])가 표시됩니다. 키는 앱 데이터 폴더에 저장되므로 다시 시작하거나 업데이트한 후에도 유지됩니다. 새 키는 이전 키를 대체합니다.
 
-If the key is not accepted, the reason is shown under the field:
+키가 받아들여지지 않으면 필드 아래에 이유가 표시됩니다:
 
-- [[ui:errors.license.malformed]] — part of the key is missing or changed. Copy the key again as one line, without extra characters.
-- [[ui:errors.license.badSignature]] — the key was not issued for Glafira, or it was edited.
-- The key has expired — the message gives its end date. Ask for a new key.
-- The key needs a newer version of the app — the message gives the key version. Update the app first, see [Updates](license-updates.md#updates).
+- [[ui:errors.license.malformed]] — 키의 일부가 빠졌거나 변경되었습니다. 추가 문자 없이 한 줄로 키를 다시 복사하세요.
+- [[ui:errors.license.badSignature]] — 키가 Glafira용으로 발급되지 않았거나 편집되었습니다.
+- 키가 만료됨 — 메시지에 만료 날짜가 표시됩니다. 새 키를 요청하세요.
+- 키에 더 새로운 버전의 앱이 필요함 — 메시지에 키 버전이 표시됩니다. 먼저 앱을 업데이트하세요. [업데이트](license-updates.md#updates)를 참고하세요.
 
-To remove the key, click [[ui:license.removeKey]]. The app asks [[ui:license.removeQuestion]] Click [[ui:license.removeYes]] to confirm. Your data stays.
+키를 제거하려면 [[ui:license.removeKey]]를 클릭하세요. 앱이 다음과 같이 묻습니다: [[ui:license.removeQuestion]] 확인하려면 [[ui:license.removeYes]]를 클릭하세요. 데이터는 그대로 유지됩니다.
 
-An organization can activate Pro for all users through a policy. The key field and buttons are then hidden, and the screen says [[ui:license.managed]] A key that you entered yourself is not used while the policy key is set. The [[ui:license.policyTitle]] section shows where the policy comes from and lists its errors. If the organization key is invalid, the reason is shown on the [[ui:tabs.license]] screen. Contact your administrators in this case. Administrators find the policy settings in `docs/admin.md` in the Glafira source code.
+조직은 정책을 통해 모든 사용자의 Pro를 활성화할 수 있습니다. 이 경우 키 필드와 버튼이 숨겨지고 화면에 다음 문구가 표시됩니다: [[ui:license.managed]] 정책 키가 설정되어 있는 동안에는 직접 입력한 키가 사용되지 않습니다. [[ui:license.policyTitle]] 섹션에는 정책의 출처와 오류 목록이 표시됩니다. 조직 키가 올바르지 않으면 [[ui:tabs.license]] 화면에 이유가 표시됩니다. 이 경우 관리자에게 문의하세요. 관리자는 Glafira 소스 코드의 `docs/admin.md`에서 정책 설정을 확인할 수 있습니다.
 
-## Expiry {#expiry}
+## 만료 {#expiry}
 
-A key can have an end date, shown in [[ui:license.expires]]. The license is valid until the end of that day.
+키에는 만료 날짜가 있을 수 있으며 [[ui:license.expires]]에 표시됩니다. 라이선스는 그날이 끝날 때까지 유효합니다.
 
-When fewer than 14 days are left, a notice above the tabs says how many days remain, and the [[ui:tabs.license]] screen shows the end date. [[ui:license.notice.more]] in the notice opens the [[ui:tabs.license]] screen. The `×` button hides the notice until the app restarts.
+남은 기간이 14일 미만이면 탭 위의 알림에 남은 일수가 표시되고, [[ui:tabs.license]] 화면에 만료 날짜가 표시됩니다. 알림의 [[ui:license.notice.more]]를 클릭하면 [[ui:tabs.license]] 화면이 열립니다. `×` 버튼은 앱을 다시 시작할 때까지 알림을 숨깁니다.
 
-After the end date, the plan switches to Free. The notice and the [[ui:tabs.license]] screen say that the license has expired and that Pro features are disabled. What changes:
+만료 날짜가 지나면 플랜이 Free로 바뀝니다. 알림과 [[ui:tabs.license]] 화면에 라이선스가 만료되어 Pro 기능이 비활성화되었다고 표시됩니다. 바뀌는 점은 다음과 같습니다:
 
-- New consumer sessions cannot be started. In a session that is already running, commits and pausing partitions are refused with an error that gives the end date.
-- Prod connections keep working with the same confirmations. New prod connections cannot be created, and [[ui:common.readOnly]] cannot be cleared on a prod connection.
+- 새 컨슈머 세션을 시작할 수 없습니다. 이미 실행 중인 세션에서는 커밋과 파티션 일시 중지가 만료 날짜를 알려 주는 오류와 함께 거부됩니다.
+- 운영 환경 연결은 같은 확인 절차와 함께 계속 동작합니다. 새 운영 환경 연결을 만들 수 없으며, 운영 환경 연결에서 [[ui:common.readOnly]] 설정을 해제할 수 없습니다.
 
-Connections, passwords, templates and send history are kept. To continue with Pro, activate a new key as described in [Activate a key](license-updates.md#activate).
+연결, 비밀번호, 템플릿, 전송 기록은 유지됩니다. Pro를 계속 사용하려면 [키 활성화](license-updates.md#activate)에 설명된 대로 새 키를 활성화하세요.
 
-## Updates {#updates}
+## 업데이트 {#updates}
 
-When it starts, the app checks once whether a new version is available. If there is one, a notice above the tabs gives its version. [[ui:license.notice.more]] opens the [[ui:sidebar.about]] screen. If the check fails, for example without internet access, no message is shown.
+앱은 시작할 때 새 버전이 있는지 한 번 확인합니다. 새 버전이 있으면 탭 위의 알림에 그 버전이 표시됩니다. [[ui:license.notice.more]]를 클릭하면 [[ui:sidebar.about]] 화면이 열립니다. 인터넷에 연결되어 있지 않은 경우처럼 확인에 실패하면 아무 메시지도 표시되지 않습니다.
 
-To check manually:
+직접 확인하려면:
 
-1. Open [[ui:sidebar.about]] at the bottom of the left panel.
-2. In [[ui:about.updates.title]], click [[ui:about.updates.check]].
-3. If a new version is available, the screen shows its number and release notes. Click [[ui:about.updates.install]].
+1. 왼쪽 패널 아래쪽에서 [[ui:sidebar.about]]를 엽니다.
+2. [[ui:about.updates.title]] 섹션에서 [[ui:about.updates.check]]을 클릭합니다.
+3. 새 버전이 있으면 화면에 버전 번호와 릴리스 노트가 표시됩니다. [[ui:about.updates.install]]을 클릭합니다.
 
-The app downloads the update, checks its signature, installs it and restarts. A download interrupted by a network problem is retried automatically, up to three attempts in total. If all three attempts fail, the app reports [[ui:errors.updates.downloadInterrupted]]. If the signature check fails, the app reports [[ui:errors.updates.badSignature]].
+앱은 업데이트를 다운로드하고 서명을 확인한 다음 설치하고 다시 시작합니다. 네트워크 문제로 다운로드가 중단되면 자동으로 다시 시도하며, 시도는 모두 세 번까지입니다. 세 번 모두 실패하면 앱이 다음 오류를 표시합니다: [[ui:errors.updates.downloadInterrupted]]. 서명 확인에 실패하면 앱이 다음 오류를 표시합니다: [[ui:errors.updates.badSignature]].
 
-Installing may ask for an administrator password, because the app is installed for all users of the computer: by the `.pkg` installer on macOS, the `.msi` installer on Windows, or a `.deb` or `.rpm` package on Linux. Users without administrator rights cannot update such an installation.
+앱은 컴퓨터의 모든 사용자를 위해 설치되므로 설치할 때 관리자 비밀번호를 물을 수 있습니다. macOS에서는 `.pkg` 설치 프로그램, Windows에서는 `.msi` 설치 프로그램, Linux에서는 `.deb` 또는 `.rpm` 패키지로 설치한 경우입니다. 관리자 권한이 없는 사용자는 이런 설치를 업데이트할 수 없습니다.
 
-If messages are being read, a consumer session is running or a batch is being sent, the app asks first and says how many sessions are active. Click [[ui:about.updates.stopAndUpdate]] to stop them and continue, or [[ui:common.cancel]]. Connections, settings, the license key and other data are kept after an update.
+메시지를 읽는 중이거나, 컨슈머 세션이 실행 중이거나, 일괄 전송이 진행 중이면 앱은 먼저 확인을 요청하고 활성 세션 수를 알려 줍니다. 세션을 중지하고 계속하려면 [[ui:about.updates.stopAndUpdate]]를, 그렇지 않으면 [[ui:common.cancel]]를 클릭하세요. 연결, 설정, 라이선스 키 및 기타 데이터는 업데이트 후에도 유지됩니다.
 
-Updates are downloaded from the releases page on GitHub. If the check fails with [[ui:errors.updates.checkFailed]], check your network or proxy. [[ui:errors.updates.notConfigured]] means that this build was made without the updater key, for example a development or test build. In that case, download new versions from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+업데이트는 GitHub의 릴리스 페이지에서 다운로드됩니다. '[[ui:errors.updates.checkFailed]]' 오류로 확인에 실패하면 네트워크나 프록시를 확인하세요. '[[ui:errors.updates.notConfigured]]' 메시지는 이 빌드가 업데이트 키 없이 만들어졌다는 뜻입니다. 예를 들어 개발용 또는 테스트용 빌드입니다. 이 경우 릴리스 페이지에서 새 버전을 다운로드하세요: https://github.com/vvnovg/glafira-kafka-releases/releases
 
-An organization can turn off update checks through a policy, or point them to an internal mirror. When checks are turned off, the [[ui:about.updates.title]] section says [[ui:errors.updates.managed]] after you click [[ui:about.updates.check]]. Like [[ui:errors.updates.notConfigured]], this message appears only after the click; the check at startup shows nothing in these cases.
+조직은 정책을 통해 업데이트 확인을 끄거나 내부 미러로 지정할 수 있습니다. 확인이 꺼져 있으면 [[ui:about.updates.check]]을 클릭한 후 [[ui:about.updates.title]] 섹션에 '[[ui:errors.updates.managed]]'라는 메시지가 표시됩니다. '[[ui:errors.updates.notConfigured]]' 메시지와 마찬가지로 이 메시지는 클릭한 후에만 나타나며, 이런 경우 시작할 때의 확인에서는 아무것도 표시되지 않습니다.
 
-## About {#about}
+## Glafira 정보 {#about}
 
-Open [[ui:sidebar.about]] at the bottom of the left panel. On macOS, it is also in the Help menu as [[ui:menu.about]].
+왼쪽 패널 아래쪽에서 [[ui:sidebar.about]]를 여세요. macOS에서는 '도움말' 메뉴의 [[ui:menu.about]] 항목으로도 열 수 있습니다.
 
-The screen shows a short description of the app and:
+화면에는 앱에 대한 짧은 설명과 다음 항목이 표시됩니다:
 
-- [[ui:about.version]] — the version number, and [[ui:about.build]] — the identifier of the source code it was built from. Include both in a support request.
-- [[ui:about.system]] — the operating system and processor architecture.
-- [[ui:about.tier]] — Free or Pro.
-- [[ui:about.policy]] — [[ui:about.policySet]] or [[ui:about.policyNone]]. Errors in the policy are listed below.
-- [[ui:about.dataDir]] — the folder with connection profiles, templates, history, settings and the license key.
-- [[ui:about.logDir]] — the folder with log files. See [Logs](troubleshooting.md#logs).
+- [[ui:about.version]] — 버전 번호. [[ui:about.build]] — 앱을 빌드한 소스 코드의 식별자. 지원 요청에는 둘 다 포함하세요.
+- [[ui:about.system]] — 운영 체제와 프로세서 아키텍처.
+- [[ui:about.tier]] — Free 또는 Pro.
+- [[ui:about.policy]] — [[ui:about.policySet]] 또는 [[ui:about.policyNone]]. 정책의 오류는 아래에 나열됩니다.
+- [[ui:about.dataDir]] 연결 프로필, 템플릿, 기록, 설정, 라이선스 키가 있는 폴더.
+- [[ui:about.logDir]] 로그 파일이 있는 폴더. [로그](troubleshooting.md#logs)를 참고하세요.
 
-The [[ui:about.updates.title]] and [[ui:about.diagnostics.title]] sections are also on this screen.
+이 화면에는 [[ui:about.updates.title]] 섹션과 [[ui:about.diagnostics.title]] 섹션도 있습니다.
 
-## Diagnostics archive {#diagnostics}
+## 진단 아카이브 {#diagnostics}
 
-The diagnostics archive collects what support needs to understand a problem. To create it:
+진단 아카이브는 지원 담당자가 문제를 파악하는 데 필요한 정보를 모읍니다. 아카이브를 만들려면:
 
-1. Open [[ui:sidebar.about]].
-2. In [[ui:about.diagnostics.title]], click [[ui:about.diagnostics.collect]]. On macOS, you can also choose [[ui:menu.diagnostics]] in the Help menu.
-3. Choose where to save the file. The suggested name is `diagnostics-<date>.zip`.
+1. [[ui:sidebar.about]]를 엽니다.
+2. [[ui:about.diagnostics.title]] 섹션에서 [[ui:about.diagnostics.collect]]을 클릭합니다. macOS에서는 '도움말' 메뉴의 [[ui:menu.diagnostics]] 항목을 선택해도 됩니다.
+3. 파일을 저장할 위치를 선택합니다. 제안되는 이름은 `diagnostics-<date>.zip`입니다.
 
-When the archive is saved, the screen shows its path. The ZIP file contains:
+아카이브가 저장되면 화면에 그 경로가 표시됩니다. ZIP 파일에는 다음이 들어 있습니다:
 
-- `info.json` — the app version and build, the operating system, the data and log folder paths, the policy status and the license status (plan, licensee, type, end date);
-- `connections.json` — connection profiles: names, environments, bootstrap servers, protocols, SASL usernames, certificate file paths, extra properties and timeouts;
-- `logs/` — the app log files.
+- `info.json` — 앱 버전과 빌드, 운영 체제, 데이터 및 로그 폴더 경로, 정책 상태, 라이선스 상태(플랜, 라이선스 소유자, 유형, 만료 날짜).
+- `connections.json` — 연결 프로필: 이름, 환경, 부트스트랩 서버, 프로토콜, SASL 사용자 이름, 인증서 파일 경로, 추가 속성, 제한 시간.
+- `logs/` — 앱 로그 파일.
 
-The archive contains no passwords: they are kept in the system secret store, and extra properties with passwords and secrets are refused when a connection is saved. The license key and certificate files are not included either. Host names, usernames and file paths are stored as plain text, and the logs contain broker addresses from Kafka error messages. Look through the archive before you send it outside your company.
+아카이브에는 비밀번호가 없습니다. 비밀번호는 시스템 보안 저장소에 보관되며, 비밀번호와 비밀 정보가 들어 있는 추가 속성은 연결을 저장할 때 거부됩니다. 라이선스 키와 인증서 파일도 포함되지 않습니다. 호스트 이름, 사용자 이름, 파일 경로는 일반 텍스트로 저장되며, 로그에는 Kafka 오류 메시지의 브로커 주소가 들어 있습니다. 회사 밖으로 보내기 전에 아카이브를 살펴보세요.
 
-The app sends nothing by itself. Attach the archive to your support request yourself, see [Contact support](troubleshooting.md#support).
+앱은 스스로 아무것도 보내지 않습니다. 지원 요청에 아카이브를 직접 첨부하세요. [지원 문의](troubleshooting.md#support)를 참고하세요.

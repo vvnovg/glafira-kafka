@@ -1,104 +1,104 @@
-# Browsing messages
+# 메시지 조회
 
-You browse messages on the [[ui:topics.details.tabMessages]] tab of a topic. Browsing does not join a consumer group and commits nothing, so the cluster does not change. It also works on [[ui:common.readOnly]] connections. To read as a member of a group, use a [consumer session](consumer-sessions.md).
+메시지는 토픽의 [[ui:topics.details.tabMessages]] 탭에서 조회합니다. 조회는 컨슈머 그룹에 참여하지 않고 아무것도 커밋하지 않으므로 클러스터가 변경되지 않습니다. [[ui:common.readOnly]] 연결에서도 동작합니다. 그룹 멤버로 읽으려면 [컨슈머 세션](consumer-sessions.md)을 사용하세요.
 
-## Start reading {#start-reading}
+## 읽기 시작 {#start-reading}
 
-1. Open a topic from the [[ui:sidebar.topics]] list. The [[ui:topics.details.tabMessages]] tab opens first.
-2. Choose where to start in [[ui:browse.form.from]]. See [Start position](browse.md#start-position).
-3. Optionally, set the formats and the filters.
-4. Click [[ui:browse.panel.read]].
+1. [[ui:sidebar.topics]] 목록에서 토픽을 엽니다. [[ui:topics.details.tabMessages]] 탭이 먼저 열립니다.
+2. [[ui:browse.form.from]]에서 시작 위치를 선택합니다. [시작 위치](browse.md#start-position)를 참고하세요.
+3. 필요하면 형식과 필터를 설정합니다.
+4. [[ui:browse.panel.read]]를 클릭합니다.
 
-Messages appear in the table as they arrive. The line next to the buttons shows how many messages were scanned, how many matched the filters and how many are in the table. It also shows the state: [[ui:browse.panel.reading]], [[ui:browse.panel.finishLimit]], [[ui:browse.panel.finishEnd]] or [[ui:browse.panel.finishCancelled]].
+메시지는 도착하는 대로 표에 나타납니다. 버튼 옆의 줄에는 검사한 메시지 수, 필터와 일치한 메시지 수, 표에 있는 메시지 수가 표시됩니다. 상태도 표시됩니다: [[ui:browse.panel.reading]], [[ui:browse.panel.finishLimit]], [[ui:browse.panel.finishEnd]] 또는 [[ui:browse.panel.finishCancelled]].
 
-Without `Live tail`, reading stops at the end of the topic as it was when you clicked [[ui:browse.panel.read]], or earlier when the [[ui:browse.form.limit]] is reached. The limit counts messages that match the filters. It can be from 1 to 100000; large values make reading slower.
+`Live tail`이 꺼져 있으면 [[ui:browse.panel.read]]를 클릭한 시점의 토픽 끝에서 읽기가 멈추며, [[ui:browse.form.limit]]에 도달하면 더 일찍 멈춥니다. 제한은 필터와 일치하는 메시지 수를 셉니다. 값은 1부터 100000까지이며, 값이 크면 읽기가 느려집니다.
 
-With `Live tail` on, reading does not stop at the end: new messages are added as they are written. When all old messages are read, the state shows [[ui:browse.panel.waiting]]. The table keeps the last messages up to the limit and drops the oldest ones.
+`Live tail`을 켜면 끝에서 멈추지 않고 새 메시지가 기록되는 대로 추가됩니다. 이전 메시지를 모두 읽으면 [[ui:browse.panel.waiting]] 상태가 표시됩니다. 표에는 제한만큼 최근 메시지가 유지되고 가장 오래된 메시지는 제거됩니다.
 
-[[ui:browse.panel.stop]] stops reading and keeps the table. While reading runs, the [[ui:browse.panel.read]] button becomes [[ui:browse.panel.restart]]: it starts again with the current settings and clears the table. If the connection to the broker is lost, the app reconnects by itself and shows that in the state line.
+[[ui:browse.panel.stop]]는 읽기를 멈추고 표를 유지합니다. 읽는 동안에는 [[ui:browse.panel.read]] 버튼이 [[ui:browse.panel.restart]] 버튼으로 바뀝니다. 이 버튼은 현재 설정으로 다시 시작하고 표를 지웁니다. 브로커와의 연결이 끊어지면 앱이 자동으로 다시 연결하고 상태 줄에 그 사실을 표시합니다.
 
-Messages from different partitions are mixed in the table. Kafka keeps the order only within one partition. The `P` column shows the partition, and `Offset` shows the position in it. Select `UTC` to show times in UTC instead of local time.
+표에는 여러 파티션의 메시지가 섞여 있습니다. Kafka는 한 파티션 안에서만 순서를 유지합니다. `P` 열은 파티션을, `Offset` 열은 파티션 안의 위치를 보여 줍니다. 시간을 로컬 시간 대신 UTC로 표시하려면 `UTC`를 선택하세요.
 
-## Start position {#start-position}
+## 시작 위치 {#start-position}
 
-[[ui:browse.form.startPosition]] sets where reading begins in each partition:
+[[ui:browse.form.startPosition]]는 각 파티션에서 읽기를 시작할 위치를 정합니다:
 
-- [[ui:browse.form.startLatest]] — the last N messages. N is split evenly between the partitions, so with 100 messages and 4 partitions the app takes up to 25 from each.
-- [[ui:browse.form.startEarliest]] — from the oldest message that is still stored.
-- [[ui:browse.form.startOffset]] — from the same offset in each partition. If a partition has no such offset, reading starts at its beginning or end. This mode is most useful with one partition.
-- [[ui:browse.form.startTimestamp]] — from the first message with a timestamp at or after the given local time. In partitions without newer messages, reading starts at the end.
-- [[ui:browse.form.startLastMinutes]] — the same, counted back from now.
+- [[ui:browse.form.startLatest]] — 마지막 N개 메시지. N은 파티션에 균등하게 나뉘므로, 메시지 100개와 파티션 4개라면 각 파티션에서 최대 25개를 가져옵니다.
+- [[ui:browse.form.startEarliest]] — 아직 저장되어 있는 가장 오래된 메시지부터.
+- [[ui:browse.form.startOffset]] — 각 파티션에서 같은 오프셋부터. 파티션에 그 오프셋이 없으면 파티션의 처음이나 끝에서 읽기 시작합니다. 이 모드는 파티션이 하나일 때 가장 유용합니다.
+- [[ui:browse.form.startTimestamp]] — 지정한 로컬 시간 이후의 타임스탬프를 가진 첫 메시지부터. 더 새로운 메시지가 없는 파티션에서는 끝에서 읽기 시작합니다.
+- [[ui:browse.form.startLastMinutes]] — 위와 같지만 현재 시각부터 거슬러 계산합니다.
 
-The field with [[ui:browse.form.partitionsPlaceholder]] limits reading to some partitions. Enter partition numbers separated by commas, for example `0,2`. Leave it empty to read all partitions.
+[[ui:browse.form.partitionsPlaceholder]] 필드는 읽기를 일부 파티션으로 제한합니다. 파티션 번호를 쉼표로 구분하여 입력하세요. 예: `0,2`. 모든 파티션을 읽으려면 비워 두세요.
 
-## Filters {#filters}
+## 필터 {#filters}
 
-Filters show only matching messages. The app still reads all messages from the start position and checks each one, so filters do not make reading faster. All filled fields must match.
+필터는 일치하는 메시지만 표시합니다. 앱은 여전히 시작 위치부터 모든 메시지를 읽고 하나씩 검사하므로, 필터를 사용해도 읽기가 빨라지지 않습니다. 입력한 모든 필드가 일치해야 합니다.
 
-- [[ui:browse.filters.keyContains]] and [[ui:browse.filters.valueContains]] — text in the key or the value.
-- `regex` — treat these fields, and the header value, as regular expressions.
-- `Aa` — match case. By default, case does not matter.
-- [[ui:browse.filters.header]] — the message has a header with this exact name. [[ui:browse.filters.headerValue]] also checks its value.
-- `JSONPath` — a condition on a JSON value, for example `$.order.status == "FAILED"`. Without `==` or `!=`, the path must simply exist, for example `$.error`. Messages whose value is not valid JSON do not match.
-- [[ui:browse.filters.timeFrom]] and [[ui:browse.filters.timeTo]] — the message timestamp is within this range, in local time. Both ends are included.
+- [[ui:browse.filters.keyContains]], [[ui:browse.filters.valueContains]] — 키 또는 값에 포함된 텍스트.
+- `regex` — 이 필드들과 헤더 값을 정규식으로 처리합니다.
+- `Aa` — 대소문자를 구분합니다. 기본적으로 대소문자는 구분하지 않습니다.
+- [[ui:browse.filters.header]] — 메시지에 정확히 이 이름의 헤더가 있습니다. [[ui:browse.filters.headerValue]] 필드는 헤더의 값도 확인합니다.
+- `JSONPath` — JSON 값에 대한 조건. 예: `$.order.status == "FAILED"`. `==` 또는 `!=`가 없으면 경로가 존재하기만 하면 됩니다. 예: `$.error`. 값이 올바른 JSON이 아닌 메시지는 일치하지 않습니다.
+- [[ui:browse.filters.timeFrom]], [[ui:browse.filters.timeTo]] — 메시지 타임스탬프가 로컬 시간 기준으로 이 범위 안에 있습니다. 양 끝이 포함됩니다.
 
-Filters check the text shown in the table, after decoding. If the value format is `hex`, the value filter searches the hex text. Filters apply when you click [[ui:browse.panel.read]]; after changing them, read again.
+필터는 디코딩 후 표에 표시되는 텍스트를 검사합니다. 값 형식이 `hex`이면 값 필터는 16진수 텍스트를 검색합니다. 필터는 [[ui:browse.panel.read]]를 클릭할 때 적용되므로, 필터를 바꾼 후에는 다시 읽으세요.
 
-A filter does not move the start position. For example, [[ui:browse.form.startLatest]] with a filter finds matches only among the last N messages. To search the whole topic, start from [[ui:browse.form.startEarliest]].
+필터는 시작 위치를 옮기지 않습니다. 예를 들어 [[ui:browse.form.startLatest]]와 필터를 함께 사용하면 마지막 N개 메시지 안에서만 일치 항목을 찾습니다. 토픽 전체를 검색하려면 [[ui:browse.form.startEarliest]] 위치에서 시작하세요.
 
-## Formats {#formats}
+## 형식 {#formats}
 
-[[ui:browse.form.format]] sets how keys and values are decoded, separately for the [[ui:browse.form.key]] and the [[ui:browse.form.value]]. Only the display changes, not the data.
+[[ui:browse.form.format]]은 키와 값을 디코딩하는 방식을 [[ui:browse.form.key]]와 [[ui:browse.form.value]]에 대해 따로 정합니다. 데이터는 바뀌지 않고 표시만 바뀝니다.
 
-- `auto` — the default. Valid JSON objects and arrays are shown as JSON, other UTF-8 text as a string, binary data as hex.
-- `string` — text in UTF-8. Bytes that are not valid UTF-8 are replaced with `�`.
-- `json` — JSON with indents in the message details. If the value is not valid JSON, the details show the error.
-- `hex` — every byte as two hex digits.
-- `base64` — the bytes in Base64.
+- `auto` — 기본값. 올바른 JSON 객체와 배열은 JSON으로, 그 밖의 UTF-8 텍스트는 문자열로, 바이너리 데이터는 16진수로 표시합니다.
+- `string` — UTF-8 텍스트. 올바른 UTF-8이 아닌 바이트는 `�`로 바뀝니다.
+- `json` — 메시지 세부 정보에서 들여쓰기된 JSON. 값이 올바른 JSON이 아니면 세부 정보에 오류가 표시됩니다.
+- `hex` — 각 바이트를 16진수 두 자리로 표시합니다.
+- `base64` — 바이트를 Base64로 표시합니다.
 
-The details show which format was actually used, for example `json` when `auto` detected JSON. Header values are shown as text; binary header values are shown as `0x` followed by hex. A missing key or value is shown as `null`.
+세부 정보에는 실제로 사용된 형식이 표시됩니다. 예를 들어 `auto`가 JSON을 감지했다면 `json`입니다. 헤더 값은 텍스트로 표시되며, 바이너리 헤더 값은 `0x` 뒤에 16진수로 표시됩니다. 키나 값이 없으면 `null`로 표시됩니다.
 
-Very large keys and values are shown only partly, about the first 1 MB of text. This also applies to `hex` and `base64`. The message details then show a warning.
+아주 큰 키와 값은 일부만, 텍스트의 처음 약 1 MB만 표시됩니다. 이는 `hex`와 `base64`에도 적용됩니다. 이 경우 메시지 세부 정보에 경고가 표시됩니다.
 
-## Message details {#message-details}
+## 메시지 세부 정보 {#message-details}
 
-Click a row to open the message details next to the table. At the top are the partition, the offset and the time. Below:
+행을 클릭하면 표 옆에 메시지 세부 정보가 열립니다. 위쪽에는 파티션, 오프셋, 시간이 있습니다. 그 아래에는 다음이 있습니다:
 
-- [[ui:browse.details.value]] and [[ui:browse.details.key]] — the full text, with the format and size in bytes. JSON is shown with indents. [[ui:browse.details.copy]] copies the text.
-- [[ui:browse.table.colHeaders]] — a table of header names and values.
+- [[ui:browse.details.value]], [[ui:browse.details.key]] — 형식과 바이트 단위 크기를 포함한 전체 텍스트. JSON은 들여쓰기하여 표시됩니다. [[ui:browse.details.copy]]는 텍스트를 복사합니다.
+- [[ui:browse.table.colHeaders]] — 헤더 이름과 값의 표.
 
-The table columns are `P`, `Offset`, [[ui:browse.table.colTime]], [[ui:browse.table.colKey]], [[ui:browse.table.colValue]], [[ui:browse.table.colHeaders]] (their number) and [[ui:browse.table.colSize]] (the key and value size in bytes). The time is the message timestamp. Depending on the topic setting `message.timestamp.type`, it is set by the producer or by the broker.
+표의 열은 `P`, `Offset`, [[ui:browse.table.colTime]], [[ui:browse.table.colKey]], [[ui:browse.table.colValue]], [[ui:browse.table.colHeaders]](헤더 수), [[ui:browse.table.colSize]](키와 값의 바이트 단위 크기)입니다. 시간은 메시지 타임스탬프입니다. 토픽 설정 `message.timestamp.type`에 따라 프로듀서 또는 브로커가 설정합니다.
 
-## Copy messages {#export-messages}
+## 메시지 복사 {#export-messages}
 
-Glafira does not save browsed messages to a file. To take a message out of the app, copy it:
+Glafira는 조회한 메시지를 파일로 저장하지 않습니다. 메시지를 앱 밖으로 가져가려면 복사하세요:
 
-- [[ui:browse.details.copyJson]] copies the whole message as JSON: topic, partition, offset, timestamp, key, value, headers and size. Key and value are included as decoded, with their format.
-- [[ui:browse.details.copy]] next to [[ui:browse.details.value]] or [[ui:browse.details.key]] copies only that text.
+- [[ui:browse.details.copyJson]]는 메시지 전체를 JSON으로 복사합니다. 토픽, 파티션, 오프셋, 타임스탬프, 키, 값, 헤더, 크기가 포함됩니다. 키와 값은 디코딩된 상태로 형식과 함께 포함됩니다.
+- [[ui:browse.details.value]] 또는 [[ui:browse.details.key]] 옆의 [[ui:browse.details.copy]]는 그 텍스트만 복사합니다.
 
-The copied text uses the format chosen for reading. To copy binary data exactly, read it as `hex` or `base64`. Very large keys and values are copied only partly, as shown, even in `hex` and `base64`. See [Formats](browse.md#formats).
+복사한 텍스트에는 읽을 때 선택한 형식이 사용됩니다. 바이너리 데이터를 정확히 복사하려면 `hex` 또는 `base64`로 읽으세요. 아주 큰 키와 값은 `hex`와 `base64`에서도 표시된 대로 일부만 복사됩니다. [형식](browse.md#formats)을 참고하세요.
 
-## Open in Producer {#open-in-producer}
+## Producer에서 열기 {#open-in-producer}
 
-[[ui:browse.details.resend]] opens the message in the [[ui:sidebar.producer]] of the same connection. The form gets the topic, key, value, headers and formats of the message. The partition is left to Kafka. Placeholders in the message text are not replaced: the copy is sent as it was read.
+[[ui:browse.details.resend]]은 같은 연결의 [[ui:sidebar.producer]] 화면에서 메시지를 엽니다. 양식에 메시지의 토픽, 키, 값, 헤더, 형식이 채워집니다. 파티션은 Kafka에 맡깁니다. 메시지 텍스트의 플레이스홀더는 치환되지 않으며, 읽은 그대로의 사본이 전송됩니다.
 
-Nothing is sent right away. Check the form, change it if needed, and send it from the Producer. See [Producer](producer.md).
+바로 전송되지는 않습니다. 양식을 확인하고 필요하면 변경한 다음 Producer에서 보내세요. [Producer](producer.md)를 참고하세요.
 
-The button is disabled in two cases, and the reason is shown:
+다음 두 경우에는 버튼이 비활성화되고 이유가 표시됩니다:
 
-- the key or value was shown only partly because it is too large;
-- the text was decoded with losses because it is not valid UTF-8. Read it as `hex` or `base64` to send an exact copy.
+- 키나 값이 너무 커서 일부만 표시된 경우.
+- 텍스트가 올바른 UTF-8이 아니어서 손실이 있는 상태로 디코딩된 경우. 정확한 사본을 보내려면 `hex` 또는 `base64`로 읽으세요.
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+[[ui:common.readOnly]] 연결에서는 이 버튼이 숨겨집니다.
 
-## Reset a group to a message {#reset-group-here}
+## 메시지로 그룹 재설정 {#reset-group-here}
 
-[[ui:browse.details.resetHere]] prepares an offset reset so that a consumer group starts reading from this message.
+[[ui:browse.details.resetHere]] 기능은 컨슈머 그룹이 이 메시지부터 읽기 시작하도록 오프셋 재설정을 준비합니다.
 
-1. In the message details, click [[ui:browse.details.resetHere]].
-2. Choose a group in the list. Only existing groups are listed.
-3. Click [[ui:browse.details.goToReset]].
+1. 메시지 세부 정보에서 [[ui:browse.details.resetHere]] 버튼을 클릭합니다.
+2. 목록에서 그룹을 선택합니다. 기존 그룹만 표시됩니다.
+3. [[ui:browse.details.goToReset]]을 클릭합니다.
 
-The group tab opens with the reset form filled in. [[ui:groups.reset.strategy]] is [[ui:groups.reset.strategyOffset]] with the offset of the message. [[ui:groups.reset.scope]] is [[ui:groups.reset.scopePartitions]] with the topic and partition of the message. Nothing changes yet: click [[ui:groups.reset.preview]] to see the new offsets, then apply the reset there. The group must have no active members. See [Consumer groups](groups.md).
+재설정 양식이 채워진 상태로 그룹 탭이 열립니다. [[ui:groups.reset.strategy]]에는 메시지의 오프셋과 함께 [[ui:groups.reset.strategyOffset]]이 선택되고, [[ui:groups.reset.scope]]에는 메시지의 토픽 및 파티션과 함께 [[ui:groups.reset.scopePartitions]]이 선택됩니다. 아직 아무것도 변경되지 않습니다. [[ui:groups.reset.preview]]를 클릭하여 새 오프셋을 확인한 다음 그곳에서 재설정을 적용하세요. 그룹에 활성 멤버가 없어야 합니다. [컨슈머 그룹](groups.md)을 참고하세요.
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+[[ui:common.readOnly]] 연결에서는 이 버튼이 숨겨집니다.

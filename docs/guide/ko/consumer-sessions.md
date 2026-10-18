@@ -1,89 +1,89 @@
-# Consumer sessions
+# 컨슈머 세션
 
-A consumer session reads topics as a real member of a consumer group. Consumer sessions are a Pro feature.
+컨슈머 세션은 컨슈머 그룹의 실제 멤버로서 토픽을 읽습니다. 컨슈머 세션은 Pro 기능입니다.
 
-## What a session is {#what-is}
+## 세션이란 {#what-is}
 
-[Browsing](browse.md) reads messages without joining a group and changes nothing in the cluster. A session is different: it joins a group with the given `group.id`, gets partitions from Kafka and can commit offsets. Use it to read what a group would read, to move the offsets of a group by committing, or to watch how a group rebalances.
+[조회](browse.md)는 그룹에 참여하지 않고 메시지를 읽으며 클러스터에서 아무것도 변경하지 않습니다. 세션은 다릅니다. 세션은 지정한 `group.id`로 그룹에 참여하고, Kafka에서 파티션을 할당받고, 오프셋을 커밋할 수 있습니다. 그룹이 읽게 될 내용을 읽거나, 커밋으로 그룹의 오프셋을 옮기거나, 그룹이 리밸런싱되는 과정을 지켜볼 때 사용하세요.
 
-A session affects the cluster. When it joins or leaves, Kafka redistributes the partitions of the group, and the other members go through a rebalance. Commits change the offsets of the group, which its applications will use.
+세션은 클러스터에 영향을 줍니다. 세션이 참여하거나 나가면 Kafka가 그룹의 파티션을 재분배하고, 다른 멤버는 리밸런싱을 거칩니다. 커밋은 그룹의 오프셋을 변경하며, 그룹의 애플리케이션은 그 오프셋을 사용합니다.
 
-In Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] and [[ui:groups.details.join]] are disabled and marked with a lock and `Pro`. If a session tab opens without an active Pro license, it shows [[ui:consumer.proOnly]] and the link [[ui:common.openLicense]]. See [Activate a key](license-updates.md#activate).
+Free에서는 [[ui:sidebar.consumer]], [[ui:topics.details.consume]], [[ui:groups.details.join]] 항목이 비활성화되고 자물쇠와 `Pro` 표시가 붙습니다. 활성 Pro 라이선스 없이 세션 탭이 열리면 [[ui:common.openLicense]] 링크와 함께 다음 메시지가 표시됩니다: [[ui:consumer.proOnly]] [키 활성화](license-updates.md#activate)를 참고하세요.
 
-Sessions are not available on [[ui:common.readOnly]] connections: the tab shows [[ui:consumer.readOnlyBlocked]]. If a connection becomes read-only while a session runs, the session leaves the group.
+[[ui:common.readOnly]] 연결에서는 세션을 사용할 수 없으며, 탭에 다음 메시지가 표시됩니다: [[ui:consumer.readOnlyBlocked]] 세션이 실행되는 동안 연결이 읽기 전용이 되면 세션은 그룹에서 나갑니다.
 
-## Start a session {#start-session}
+## 세션 시작 {#start-session}
 
-Open a session in one of three ways:
+세션은 다음 세 가지 방법 중 하나로 엽니다:
 
-- [[ui:sidebar.consumer]] under the connection in the [[ui:sidebar.connections]] panel — an empty form;
-- [[ui:topics.details.consume]] on a topic tab — the topic is filled in;
-- [[ui:groups.details.join]] on a group tab — the group and the topics it has commits for are filled in.
+- [[ui:sidebar.connections]] 패널의 연결 아래에 있는 [[ui:sidebar.consumer]] — 빈 양식.
+- 토픽 탭의 [[ui:topics.details.consume]] — 토픽이 채워집니다.
+- 그룹 탭의 [[ui:groups.details.join]] — 그룹과 그룹이 커밋한 토픽이 채워집니다.
 
-Each time, a new tab opens, so several sessions can run at once.
+매번 새 탭이 열리므로 여러 세션을 동시에 실행할 수 있습니다.
 
-In [[ui:consumer.form.groupTopics]]:
+[[ui:consumer.form.groupTopics]] 영역:
 
-- `group.id` — the group to join. If you do not enter one, the app suggests a new name such as `glafira-kafka-anna-1a2b3c`. A new group has no commits.
-- [[ui:consumer.form.topicsLabel]] — topic names separated by commas or spaces. Or select [[ui:consumer.form.useRegex]] and enter a [[ui:consumer.form.patternLabel]], for example `orders\..*`. The expression is matched from the start of the name: `^` is added if it is missing. Topics that match and are created later are added within a few minutes (on the metadata refresh); this causes a rebalance.
-- `auto.offset.reset` — where to start in partitions for which the group has no committed offset: [[ui:consumer.form.resetLatest]] (the default) or [[ui:consumer.form.resetEarliest]]. Where the group has a committed offset, reading continues from it.
-- [[ui:consumer.form.autoCommit]] — commit read offsets automatically. Off by default. See [Commits](consumer-sessions.md#commits).
-- `isolation.level` — `read_committed` (the default) shows only messages of committed transactions. `read_uncommitted` also shows messages of open and aborted transactions.
+- `group.id` — 참여할 그룹. 입력하지 않으면 앱이 `glafira-kafka-anna-1a2b3c` 같은 새 이름을 제안합니다. 새 그룹에는 커밋이 없습니다.
+- [[ui:consumer.form.topicsLabel]] — 쉼표나 공백으로 구분한 토픽 이름. 또는 [[ui:consumer.form.useRegex]]을 선택하고 [[ui:consumer.form.patternLabel]]을 입력합니다. 예: `orders\..*`. 식은 이름의 시작부터 대조하며, `^`가 없으면 추가됩니다. 일치하는 토픽이 나중에 만들어지면 몇 분 안에(메타데이터를 새로 고칠 때) 추가되며, 이때 리밸런싱이 발생합니다.
+- `auto.offset.reset` — 그룹에 커밋된 오프셋이 없는 파티션에서 시작할 위치. 기본값은 [[ui:consumer.form.resetLatest]] 옵션이며, [[ui:consumer.form.resetEarliest]] 옵션도 선택할 수 있습니다. 그룹에 커밋된 오프셋이 있는 파티션에서는 그 오프셋부터 계속 읽습니다.
+- [[ui:consumer.form.autoCommit]] — 읽은 오프셋을 자동으로 커밋합니다. 기본적으로 꺼져 있습니다. [커밋](consumer-sessions.md#commits)을 참고하세요.
+- `isolation.level` — `read_committed`(기본값)는 커밋된 트랜잭션의 메시지만 표시합니다. `read_uncommitted`는 열려 있거나 중단된 트랜잭션의 메시지도 표시합니다.
 
-In [[ui:consumer.form.formatLegend]], choose the [[ui:consumer.form.keyFormat]] and the [[ui:consumer.form.valueFormat]], as in browsing. See [Formats](browse.md#formats). [[ui:consumer.form.buffer]] sets how many messages the table keeps, from 1 to 100000; the default is 5000.
+[[ui:consumer.form.formatLegend]] 영역에서 조회와 마찬가지로 [[ui:consumer.form.keyFormat]]과 [[ui:consumer.form.valueFormat]]을 선택합니다. [형식](browse.md#formats)을 참고하세요. [[ui:consumer.form.buffer]] 값은 표에 보관할 메시지 수로, 1부터 100000까지이며 기본값은 5000입니다.
 
-The filters work as in browsing. See [Filters](browse.md#filters).
+필터는 조회와 같이 동작합니다. [필터](browse.md#filters)를 참고하세요.
 
-Click [[ui:consumer.actions.connect]]. On a prod connection, the app asks you to type the connection name and confirm with [[ui:consumer.dialog.confirm]]. While the session runs, the form cannot be changed.
+[[ui:consumer.actions.connect]]를 클릭합니다. 운영 환경 연결에서는 앱이 연결 이름을 입력하고 [[ui:consumer.dialog.confirm]]으로 확인하라고 요청합니다. 세션이 실행되는 동안에는 양식을 변경할 수 없습니다.
 
-## Reading {#reading}
+## 읽기 {#reading}
 
-The state line next to the buttons shows [[ui:consumer.status.connecting]], then [[ui:consumer.status.inGroup]]. It also shows how many messages were read, how many matched the filters and how many are in the table. If the connection to the broker is lost, the session reconnects by itself and shows this in the state line.
+버튼 옆의 상태 줄에는 먼저 [[ui:consumer.status.connecting]] 상태가, 이어서 [[ui:consumer.status.inGroup]] 상태가 표시됩니다. 읽은 메시지 수, 필터와 일치한 메시지 수, 표에 있는 메시지 수도 표시됩니다. 브로커와의 연결이 끊어지면 세션이 자동으로 다시 연결하고 상태 줄에 그 사실을 표시합니다.
 
-Messages appear in the table as they arrive, and the session keeps reading new messages until you stop it. When the table is full, the oldest messages are removed. Click a row to see the message details, as in browsing. See [Message details](browse.md#message-details). Select `UTC` to show times in UTC.
+메시지는 도착하는 대로 표에 나타나며, 세션은 중지할 때까지 새 메시지를 계속 읽습니다. 표가 가득 차면 가장 오래된 메시지가 제거됩니다. 행을 클릭하면 조회와 마찬가지로 메시지 세부 정보를 볼 수 있습니다. [메시지 세부 정보](browse.md#message-details)를 참고하세요. 시간을 UTC로 표시하려면 `UTC`를 선택하세요.
 
-The session reads only the partitions Kafka has assigned to it. If the group has other members, they read the other partitions. If the group has more members than partitions, the session may get no partitions at all.
+세션은 Kafka가 할당한 파티션만 읽습니다. 그룹에 다른 멤버가 있으면 그 멤버가 나머지 파티션을 읽습니다. 그룹의 멤버가 파티션보다 많으면 세션이 파티션을 하나도 받지 못할 수 있습니다.
 
-[[ui:consumer.disconnect]] leaves the group, and the other members get its partitions. Closing the session tab also leaves the group. When the session has ended, the state line shows [[ui:consumer.status.disconnected]].
+[[ui:consumer.disconnect]]는 그룹에서 나가며, 세션의 파티션은 다른 멤버가 받습니다. 세션 탭을 닫아도 그룹에서 나갑니다. 세션이 끝나면 상태 줄에 [[ui:consumer.status.disconnected]] 상태가 표시됩니다.
 
-If a topic does not exist, the session stops with an error and shows the names to check.
+토픽이 없으면 세션은 오류와 함께 중지되고 확인할 이름을 표시합니다.
 
-## Commits {#commits}
+## 커밋 {#commits}
 
-A commit saves an offset for the group. The next member that reads the partition, or the same application after a restart, starts from that offset.
+커밋은 그룹의 오프셋을 저장합니다. 그 파티션을 다음에 읽는 멤버나 다시 시작한 같은 애플리케이션은 그 오프셋부터 시작합니다.
 
-With [[ui:consumer.form.autoCommit]] on, the session commits read offsets in the background every few seconds, and once more when it leaves the group. Messages hidden by filters count as read.
+[[ui:consumer.form.autoCommit]]이 켜져 있으면 세션은 몇 초마다 백그라운드에서 읽은 오프셋을 커밋하고, 그룹에서 나갈 때 한 번 더 커밋합니다. 필터로 숨겨진 메시지도 읽은 것으로 셉니다.
 
-Without auto-commit, the session commits nothing by itself. Use the buttons:
+자동 커밋이 꺼져 있으면 세션은 스스로 아무것도 커밋하지 않습니다. 다음 버튼을 사용하세요:
 
-- [[ui:consumer.actions.commitSelected]] — commits the offset after the selected message, in its partition only. The group will continue from the next message. If the selected message is older than the current commit, the offset moves back.
-- [[ui:consumer.actions.commitAll]] — commits the current position in every assigned partition. This includes messages hidden by filters and messages already removed from the table.
+- [[ui:consumer.actions.commitSelected]] — 선택한 메시지 다음의 오프셋을 그 메시지의 파티션에서만 커밋합니다. 그룹은 다음 메시지부터 계속 읽습니다. 선택한 메시지가 현재 커밋보다 오래되었으면 오프셋이 뒤로 이동합니다.
+- [[ui:consumer.actions.commitAll]] — 할당된 모든 파티션에서 현재 위치를 커밋합니다. 필터로 숨겨진 메시지와 이미 표에서 제거된 메시지도 포함됩니다.
 
-After a commit, a line shows the committed offsets as `topic:partition → offset`. On a prod connection, each commit asks for the connection name.
+커밋하면 커밋된 오프셋이 `topic:partition → offset` 형식으로 한 줄에 표시됩니다. 운영 환경 연결에서는 커밋할 때마다 연결 이름을 묻습니다.
 
-If the session does not answer in time, the app warns that it is unknown whether the commit was applied. Check the offsets on the group tab. See [Group details](groups.md#group-details).
+세션이 제때 응답하지 않으면 앱은 커밋이 적용되었는지 알 수 없다고 경고합니다. 그룹 탭에서 오프셋을 확인하세요. [그룹 세부 정보](groups.md#group-details)를 참고하세요.
 
-## Pause partitions {#pause-partitions}
+## 파티션 일시 중지 {#pause-partitions}
 
-The panel to the right of the table lists the partitions assigned to the session as `topic:partition`. Click [[ui:consumer.assignment.pause]] next to a partition to stop reading it, and [[ui:consumer.assignment.resume]] to continue. A paused partition is marked [[ui:consumer.assignment.paused]].
+표 오른쪽의 패널에는 세션에 할당된 파티션이 `topic:partition` 형식으로 나열됩니다. 파티션 읽기를 멈추려면 그 옆의 [[ui:consumer.assignment.pause]]를, 계속하려면 [[ui:consumer.assignment.resume]]를 클릭하세요. 일시 중지된 파티션에는 [[ui:consumer.assignment.paused]] 표시가 붙습니다.
 
-Pausing does not leave the group, so there is no rebalance. The partition stays assigned to the session, and other members do not read it while it is paused. Pausing changes nothing in the cluster and needs no confirmation.
+일시 중지는 그룹에서 나가지 않으므로 리밸런싱이 없습니다. 파티션은 세션에 할당된 상태로 남으며, 일시 중지되어 있는 동안 다른 멤버도 그 파티션을 읽지 않습니다. 일시 중지는 클러스터에서 아무것도 변경하지 않으며 확인도 필요하지 않습니다.
 
-After a rebalance, newly assigned partitions start unpaused. When the session leaves the group, all pauses end.
+리밸런싱 후 새로 할당된 파티션은 일시 중지되지 않은 상태로 시작합니다. 세션이 그룹에서 나가면 모든 일시 중지가 해제됩니다.
 
-## Rebalance log {#rebalance-log}
+## 리밸런싱 로그 {#rebalance-log}
 
-[[ui:consumer.assignment.logTitle]] under the partition list records every change of the assignment, newest first. Each entry has a time and one of three kinds: partitions assigned to the session, partitions revoked from it, or a rebalance error with its text.
+파티션 목록 아래의 [[ui:consumer.assignment.logTitle]]는 할당의 모든 변경을 최신순으로 기록합니다. 각 항목에는 시간과 세 가지 종류 중 하나가 있습니다: 세션에 할당된 파티션, 세션에서 회수된 파티션, 또는 리밸런싱 오류와 그 내용.
 
-A rebalance happens when a member joins or leaves the group, when the subscribed topics change, or when a member stops responding in time. To watch it, start a second session with the same `group.id` in another tab: the partitions are split between the two sessions, and both logs show it.
+리밸런싱은 멤버가 그룹에 참여하거나 나갈 때, 구독한 토픽이 바뀔 때, 멤버가 제때 응답하지 않을 때 발생합니다. 리밸런싱을 지켜보려면 다른 탭에서 같은 `group.id`로 두 번째 세션을 시작하세요. 파티션이 두 세션에 나뉘고, 두 로그 모두에 그 내용이 표시됩니다.
 
-The log keeps the last 200 entries. Before the first rebalance, it shows [[ui:consumer.assignment.logEmpty]].
+로그에는 최근 항목 200개가 보관됩니다. 첫 리밸런싱 전에는 다음 메시지가 표시됩니다: [[ui:consumer.assignment.logEmpty]]
 
-## Limits {#limits}
+## 제한 사항 {#limits}
 
-- Sessions need Pro. If Pro stops being active while a session runs, the session keeps reading, but commits, pauses and resumes are refused, and a new session cannot be started.
-- Sessions are not available on [[ui:common.readOnly]] connections.
-- A session cannot start from a chosen offset. To set the start, reset the offsets of the group first: see [Reset offsets](groups.md#reset-offsets). The reset needs a group without members, so disconnect sessions of this group before resetting.
-- The table keeps at most 100000 messages. Older messages are removed, but they still count as read.
-- Very large keys and values are shown only partly, as in browsing.
-- Do not join the group of a running application unless you mean to. The session takes partitions from the application, and the application does not process them while the session holds them. Commits from the session, including auto-commits, move the offsets of the application.
+- 세션에는 Pro가 필요합니다. 세션이 실행되는 동안 Pro가 비활성화되면 세션은 계속 읽지만 커밋, 일시 중지, 재개는 거부되며 새 세션을 시작할 수 없습니다.
+- [[ui:common.readOnly]] 연결에서는 세션을 사용할 수 없습니다.
+- 세션은 지정한 오프셋부터 시작할 수 없습니다. 시작 위치를 정하려면 먼저 그룹의 오프셋을 재설정하세요. [오프셋 재설정](groups.md#reset-offsets)을 참고하세요. 재설정하려면 멤버가 없는 그룹이어야 하므로 재설정하기 전에 이 그룹의 세션 연결을 해제하세요.
+- 표에는 최대 100000개 메시지가 보관됩니다. 더 오래된 메시지는 제거되지만 여전히 읽은 것으로 셉니다.
+- 아주 큰 키와 값은 조회와 마찬가지로 일부만 표시됩니다.
+- 의도한 것이 아니라면 실행 중인 애플리케이션의 그룹에 참여하지 마세요. 세션이 애플리케이션의 파티션을 가져가며, 세션이 파티션을 가지고 있는 동안 애플리케이션은 그 파티션을 처리하지 않습니다. 자동 커밋을 포함한 세션의 커밋은 애플리케이션의 오프셋을 이동시킵니다.

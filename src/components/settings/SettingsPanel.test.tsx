@@ -1,19 +1,18 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LanguageSettings, LicenseStatus } from "../../api/types";
+import type { LanguageSettings } from "../../api/types";
 import { i18n } from "../../i18n";
 import { renderWithClient } from "../../test/render";
 
 const base: LanguageSettings = {
   system: "ru-RU", systemMatch: "ru", chosen: null, policy: null, effective: "ru", reason: "system",
-  languages: ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR"],
+  languages: ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR", "zh-CN", "zh-TW", "ja", "ko"],
 };
-const FREE = { tier: "free", state: "none", source: null, licensee: null, kind: null, expires: null, daysLeft: null, error: null } as LicenseStatus;
 
 vi.mock("../../api/client", async (importOriginal) => {
   const orig = await importOriginal<typeof import("../../api/client")>();
-  return { ...orig, api: { getLanguageSettings: vi.fn(), setLanguage: vi.fn(), getLicenseStatus: vi.fn() } };
+  return { ...orig, api: { getLanguageSettings: vi.fn(), setLanguage: vi.fn() } };
 });
 
 import { api } from "../../api/client";
@@ -21,7 +20,6 @@ import { SettingsPanel } from "./SettingsPanel";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(api.getLicenseStatus).mockResolvedValue(FREE);
 });
 
 afterEach(() => i18n.changeLanguage("ru")); // выбор «en» в тесте переключает глобальный язык

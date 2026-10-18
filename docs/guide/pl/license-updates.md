@@ -4,7 +4,7 @@ W tym rozdziale opisano, co daje Pro, jak aktywować klucz licencyjny, co się d
 
 ## Free i Pro {#free-and-pro}
 
-Free obejmuje codzienną pracę z Kafką: wszystkie protokoły zabezpieczeń, w tym mTLS, przegląd klastra i topiki, przeglądanie wiadomości, ekran Producer z wysyłką wsadową, grupy konsumentów i reset offsetów. Free obejmuje też wszystkie języki interfejsu. Zob. [Język interfejsu](getting-started.md#language).
+Free obejmuje codzienną pracę z Kafką: wszystkie protokoły zabezpieczeń, w tym mTLS, przegląd klastra i topiki, przeglądanie wiadomości, ekran Producer z wysyłką wsadową, grupy konsumentów i reset offsetów. Obejmuje też wszystkie języki interfejsu. Zob. [Język interfejsu](getting-started.md#language).
 
 Pro dodaje:
 

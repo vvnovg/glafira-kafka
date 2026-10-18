@@ -75,7 +75,7 @@ Pro 功能會立即可用。畫面會顯示[[ui:license.tier]]（Pro）、[[ui:l
 
 畫面會顯示應用程式的簡短說明，以及：
 
-- [[ui:about.version]]：版本號碼；[[ui:about.build]]：建置所用原始碼的識別碼。提出支援要求時請附上這兩項。
+- [[ui:about.version]]：版本號碼；[[ui:about.build]]：此 build 所用原始碼的識別碼。提出支援要求時請附上這兩項。
 - [[ui:about.system]]：作業系統和處理器架構。
 - [[ui:about.tier]]：Free 或 Pro。
 - [[ui:about.policy]]：[[ui:about.policySet]]或[[ui:about.policyNone]]。原則中的錯誤會列在下方。

@@ -80,7 +80,7 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | about | о программе | Über Glafira | À propos | Acerca de | Informazioni | O programie | Sobre | 关于 Glafira | 關於 Glafira | Glafiraについて | Glafira 정보 |
 | update | обновление | Update | mise à jour | actualización | aggiornamento | aktualizacja | atualização | 更新 | 更新 | アップデート | 업데이트 |
 | diagnostics archive | архив диагностики | Diagnosearchiv | archive de diagnostic | archivo de diagnóstico | archivio diagnostico | archiwum diagnostyczne | arquivo de diagnóstico | 诊断归档 | 診斷壓縮檔 | 診断アーカイブ | 진단 아카이브 |
-| set by your organization | задан вашей организацией | von Ihrer Organisation festgelegt | défini par votre organisation | establecido por tu organización | impostato dalla tua organizzazione | ustawione przez organizację | definido pela sua organização | 由你的组织设置 | 由你的組織設定 | 組織によって設定済み | 조직에서 설정함 |
+| set by your organization | задан вашей организацией | von Ihrer Organisation festgelegt | défini par votre organisation | establecido por tu organización | impostato dalla tua organizzazione | ustawione przez organizację | definido pela sua organização | 由你的组织设置 | 由你的組織設定 | 言語は組織によって設定されています | 언어는 조직에서 설정합니다 |
 | System default (…) | Как в системе (…) | Systemsprache ({{name}}) | Langue du système ({{name}}) | Idioma del sistema ({{name}}) | Lingua di sistema ({{name}}) | Język systemu ({{name}}) | Idioma do sistema ({{name}}) | 跟随系统（{{name}}） | 跟隨系統（{{name}}） | システムの言語（{{name}}） | 시스템 언어({{name}}) |
 
 ## Частые слова интерфейса
@@ -254,7 +254,7 @@ read-only connection — conexão somente leitura (с меткой: «nas conex�
 Термины, которые часто встречаются в `docs/guide/zh-CN` и отсутствуют в словаре интерфейса:
 tab — 标签页; screen — 页面 (как «“许可证”页面» в UI); panel (левая панель) — 面板; button — 按钮; checkbox — 复选框;
 field — 字段; form — 表单; section — 部分; header bar панели — 标题栏; logs — 日志 (日志文件); batch send — 批量发送;
-batch (Kafka) — 批次; release page — 发布页面; release notes — 发行说明; installer — 安装程序; build — build (латиницей, как в UI);
+batch (Kafka) — 批次; release page — 发布页面; release notes — 发行说明; installer — 安装程序; build — build (латиницей, как в UI и в `errors.updates.notConfigured`; существительное не переводить, глагол — 构建);
 support request — 支持请求; support — 技术支持; timestamp — 时间戳; tombstone — tombstone (при первом упоминании «tombstone（墓碑消息）»);
 listener — 监听器; handshake — 握手; policy — 策略 (как в UI); browse — 浏览; purge — 清空 (как в UI);
 to commit — 提交; committed offset — 已提交的偏移量; lag в прозе — 延迟 / 消费延迟; lock icon — 锁形图标;
@@ -271,7 +271,7 @@ read-only connection — 只读连接 (с меткой: «在[[ui:common.readOnl
 click — 按一下 (повтор в той же фразе — 按); right-click — 按右鍵; drag — 拖曳; tab — 分頁; screen — 畫面 (как «「授權」畫面» в UI);
 panel (левая панель) — 面板; header bar панели — 標題列; button — 按鈕; checkbox — 核取方塊; select/clear a box — 勾選 / 取消勾選;
 field — 欄位; form — 表單; section — 區段; menu — 選單; Start menu — 「開始」功能表; dialog — 對話框; row — 列; column — 欄;
-app — 應用程式; installer — 安裝程式; package — 套件; release page — 發行頁面; release notes — 版本資訊; build — build (латиницей, как в UI);
+app — 應用程式; installer — 安裝程式; package — 套件; release page — 發行頁面; release notes — 版本資訊; build — build (латиницей, как в UI и в `errors.updates.notConfigured`; существительное не переводить, глагол — 建置);
 logs — 日誌 (日誌檔案); batch send — 批次傳送; batch (Kafka) — 批次; copy при пакетной отправке — 份 / 份序號 (не 副本);
 support request — 支援要求; support — 支援人員; timestamp — 時間戳記; tombstone — tombstone (при первом упоминании «tombstone（墓碑訊息）»);
 listener — 監聽器; handshake — 交握; policy — 原則 (как в UI); browse — 瀏覽; purge — 清除 (как в UI); to commit — 提交;

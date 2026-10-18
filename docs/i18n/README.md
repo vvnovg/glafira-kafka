@@ -1,7 +1,7 @@
 # Локализация (i18n)
 
 Интерфейс и тексты Rust локализуются через словари `src/locales/<код>.json`: `en` — эталон ключей и параметров,
-`ru` — эталон смысла, `de`, `fr`, `es`, `it`, `pl`, `pt-BR` — переводы. Все языки бесплатны, лицензия на выбор языка не влияет.
+`ru` — эталон смысла, `de`, `fr`, `es`, `it`, `pl`, `pt-BR`, `zh-CN`, `zh-TW`, `ja`, `ko` — переводы. Все языки бесплатны, лицензия на выбор языка не влияет.
 Термины и стиль переводов — [glossary.md](glossary.md), выборочная проверка носителем — [review-checklist.md](review-checklist.md).
 
 ## Соглашение о ключах
@@ -46,7 +46,8 @@ ru, pl — `one`/`few`/`many`/`other`; zh-CN, zh-TW, ja, ko — только `ot
 1. Код и самоназвание — в `src/i18n/languages.ts` и в списке языков Rust (`src-tauri/src/settings.rs`); если язык ОС
    сопоставляется не по первой части тега (как `pt-PT` → `pt-BR`, `zh-HK` → `zh-TW`), — правило в `match_language_in`.
 2. Столбец в `glossary.md`, затем `src/locales/<код>.json` переводом `en.json`.
-3. `pnpm i18n:check`, `pnpm vitest run src/i18n/locales.test.ts`, смоук по `docs/smoke/b2.md`.
+3. `pnpm i18n:check`, `pnpm vitest run src/i18n/locales.test.ts`, смоук по `docs/smoke/e.md` (12 языков, `lang`, сопоставление языка ОС, поиск по иероглифам).
+4. Главы `docs/guide/<код>/*.md` — все 9, переводом: копия en не проходит `pnpm i18n:check` («глава не переведена»), поэтому словарь и главы нового языка приходят вместе.
 
 ## Подсказки
 Значок «?» — компонент `<Hint k="hints.<экран>.<поле>" label={t("…подпись…")} />` (`src/components/common/Hint.tsx`).

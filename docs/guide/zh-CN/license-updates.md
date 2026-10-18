@@ -75,7 +75,7 @@ Pro 功能立即可用。页面会显示[[ui:license.tier]]（Pro）、[[ui:lice
 
 该页面显示应用的简短介绍以及：
 
-- [[ui:about.version]]：版本号；[[ui:about.build]]：构建所用源代码的标识符。提交支持请求时请同时附上这两项。
+- [[ui:about.version]]：版本号；[[ui:about.build]]：此 build 所用源代码的标识符。提交支持请求时请同时附上这两项。
 - [[ui:about.system]]：操作系统和处理器架构。
 - [[ui:about.tier]]：Free 或 Pro。
 - [[ui:about.policy]]：[[ui:about.policySet]]或[[ui:about.policyNone]]。策略中的错误会列在下方。

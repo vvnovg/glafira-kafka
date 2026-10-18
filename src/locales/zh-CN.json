@@ -51,7 +51,7 @@
     },
     "updates": {
       "managed": "更新由你的组织管理",
-      "notConfigured": "此版本中未配置更新",
+      "notConfigured": "此 build 未配置更新",
       "badPolicyUrl": "策略中的更新地址无效：{{url}}",
       "unavailable": "更新不可用",
       "noRelease": "更新服务器上没有已发布的版本（或暂时不可用）",

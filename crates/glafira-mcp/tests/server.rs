@@ -745,6 +745,18 @@ async fn disconnect_and_shutdown_close_sessions() {
 }
 
 #[tokio::test]
+async fn shutdown_does_not_wait_for_a_silent_handshake() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    // Соединение без строки рукопожатия: сервер ждал бы её до 5 с.
+    let _silent = endpoint::connect(&e.ep).await.unwrap();
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    let started = std::time::Instant::now();
+    e.handle.shutdown().await;
+    let elapsed = started.elapsed();
+    assert!(elapsed < Duration::from_secs(1), "{elapsed:?}");
+}
+
+#[tokio::test]
 async fn wrong_token_is_rejected_before_mcp() {
     let e = env(Fake::new(SessionAccess::Approved)).await;
     let mut s = endpoint::connect(&e.ep).await.unwrap();

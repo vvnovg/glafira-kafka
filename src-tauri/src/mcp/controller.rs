@@ -57,6 +57,8 @@ pub trait McpUi: Send + Sync {
 
 struct Inner {
     handle: Option<McpServerHandle>,
+    /// Записанный этим сервером `mcp.json`: удаляется только он.
+    file: Option<McpFile>,
     state: ServerState,
     error: Option<LocalizedText>,
 }
@@ -82,6 +84,7 @@ impl McpController {
             ui: OnceLock::new(),
             inner: Mutex::new(Inner {
                 handle: None,
+                file: None,
                 state: ServerState::Off,
                 error: None,
             }),
@@ -165,13 +168,16 @@ impl McpController {
     }
 
     async fn start(self: &Arc<Self>) {
-        if let Some(f) = files::read(&self.data_dir)
-            && glafira_mcp::endpoint::connect(&f.endpoint).await.is_ok()
-        {
-            let mut inner = self.inner();
-            inner.state = ServerState::OtherInstance;
-            inner.error = None;
-            return;
+        if let Some(f) = files::read(&self.data_dir) {
+            if glafira_mcp::endpoint::connect(&f.endpoint).await.is_ok() {
+                let mut inner = self.inner();
+                inner.state = ServerState::OtherInstance;
+                inner.error = None;
+                return;
+            }
+            // Сервер из файла не отвечает (крах прежнего запуска): файл удаляется до bind, чтобы
+            // шим не ходил по мёртвому адресу, если новый сервер не поднимется.
+            files::remove_if(&self.data_dir, &f);
         }
         let endpoint = glafira_mcp::endpoint::choose(&self.data_dir, &files::new_suffix());
         let token = files::new_token();
@@ -223,23 +229,25 @@ impl McpController {
             handle.shutdown().await;
             let mut inner = self.inner();
             inner.state = ServerState::Error;
-            inner.error = Some(LocalizedText {
-                key: e.key,
-                params: e.params,
-                text: e.message,
-            });
+            inner.error = Some(e.text());
             return;
         }
         tracing::info!("mcp server started");
         let mut inner = self.inner();
         inner.handle = Some(handle);
+        inner.file = Some(file);
         inner.state = ServerState::Running;
         inner.error = None;
     }
 
     async fn stop(&self) {
-        files::remove(&self.data_dir);
-        let handle = self.inner().handle.take();
+        let (handle, file) = {
+            let mut inner = self.inner();
+            (inner.handle.take(), inner.file.take())
+        };
+        if let Some(f) = &file {
+            files::remove_if(&self.data_dir, f);
+        }
         if let Some(h) = handle {
             h.shutdown().await;
         }
@@ -253,6 +261,19 @@ impl McpController {
         let _op = self.ops.lock().await;
         if self.inner().handle.is_some() {
             self.stop().await;
+        }
+    }
+
+    /// Выход мимо `RunEvent::Exit` (установщик обновления на Windows вызывает `process::exit` из
+    /// синхронного хука, runtime не дождаться): свой `mcp.json` удаляется сразу, сессии
+    /// закрываются; слушатель уходит вместе с процессом.
+    pub fn exit_now(&self) {
+        let inner = self.inner();
+        if let Some(f) = &inner.file {
+            files::remove_if(&self.data_dir, f);
+        }
+        if let Some(h) = &inner.handle {
+            h.disconnect_all();
         }
     }
 
@@ -390,6 +411,64 @@ mod tests {
         assert_eq!(second.status().state, ServerState::OtherInstance);
         first.shutdown().await;
         assert_eq!(files::read(dir.path()), None);
+    }
+
+    #[tokio::test]
+    async fn stale_file_of_a_crashed_instance_is_removed_before_bind() {
+        let (dir, c, _) = controller(true);
+        files::write(
+            dir.path(),
+            &McpFile {
+                version: files::VERSION,
+                endpoint: dir.path().join("dead.sock").to_string_lossy().into_owned(),
+                token: files::new_token(),
+                pid: 1,
+            },
+        )
+        .unwrap();
+        // Сервер не поднимется (на месте сокета — каталог), но старый файл уже не нужен.
+        #[cfg(unix)]
+        std::fs::create_dir(dir.path().join(glafira_mcp::endpoint::SOCKET_NAME)).unwrap();
+        let s = c.set_enabled(true).await.unwrap();
+        #[cfg(unix)]
+        assert_eq!(s.state, ServerState::Error);
+        #[cfg(not(unix))]
+        let _ = s;
+        let left = files::read(dir.path());
+        assert!(
+            left.as_ref().is_none_or(|f| f.pid == std::process::id()),
+            "{left:?}"
+        );
+        c.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn only_own_file_is_removed() {
+        let (dir, c, _) = controller(true);
+        c.set_enabled(true).await.unwrap();
+        let own = files::read(dir.path()).unwrap();
+        let foreign = McpFile {
+            token: files::new_token(),
+            pid: own.pid + 1,
+            ..own
+        };
+        files::write(dir.path(), &foreign).unwrap();
+        c.set_enabled(false).await.unwrap();
+        assert_eq!(
+            files::read(dir.path()),
+            Some(foreign),
+            "файл другого экземпляра остаётся"
+        );
+    }
+
+    #[tokio::test]
+    async fn exit_without_runtime_removes_the_file() {
+        let (dir, c, _) = controller(true);
+        c.set_enabled(true).await.unwrap();
+        assert!(files::read(dir.path()).is_some());
+        c.exit_now();
+        assert_eq!(files::read(dir.path()), None);
+        c.shutdown().await;
     }
 
     #[tokio::test]

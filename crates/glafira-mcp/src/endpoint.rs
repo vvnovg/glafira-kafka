@@ -118,11 +118,20 @@ mod imp {
             })
         }
 
-        pub async fn accept(&mut self) -> io::Result<BoxStream> {
-            self.next.connect().await?;
-            let fresh = ServerOptions::new()
+        fn create(&self) -> io::Result<NamedPipeServer> {
+            ServerOptions::new()
                 .reject_remote_clients(true)
-                .create(&self.name)?;
+                .create(&self.name)
+        }
+
+        pub async fn accept(&mut self) -> io::Result<BoxStream> {
+            if let Err(e) = self.next.connect().await {
+                // Экземпляр после неудачного connect (ERROR_NO_DATA: клиент уже отключился и т. п.)
+                // больше не примет соединение — иначе каждый следующий accept падал бы сразу.
+                self.next = self.create()?;
+                return Err(e);
+            }
+            let fresh = self.create()?;
             Ok(Box::new(std::mem::replace(&mut self.next, fresh)))
         }
     }

@@ -33,8 +33,17 @@ pub fn read(dir: &Path) -> Option<McpFile> {
         .filter(|f| f.version == VERSION)
 }
 
-pub fn remove(dir: &Path) {
-    let _ = std::fs::remove_file(dir.join(FILE_NAME));
+/// Удаляет `mcp.json`, только если в нём `pid` и `token` из `f`: файл, который успел записать
+/// другой экземпляр Glafira, остаётся. Ошибки — в журнал.
+pub fn remove_if(dir: &Path, f: &McpFile) {
+    if !read(dir).is_some_and(|cur| cur.pid == f.pid && cur.token == f.token) {
+        return;
+    }
+    if let Err(e) = std::fs::remove_file(dir.join(FILE_NAME))
+        && e.kind() != std::io::ErrorKind::NotFound
+    {
+        tracing::warn!("mcp.json not removed: {e}");
+    }
 }
 
 /// Каталог данных без Tauri — так его находит шим. Совпадает с `app_data_dir()` Tauri
@@ -72,7 +81,7 @@ mod tests {
             pid: 42,
         };
         write(dir.path(), &f).unwrap();
-        assert_eq!(read(dir.path()), Some(f));
+        assert_eq!(read(dir.path()), Some(f.clone()));
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -83,8 +92,15 @@ mod tests {
                 & 0o777;
             assert_eq!(mode, 0o600);
         }
-        remove(dir.path());
+        let foreign = McpFile {
+            token: new_token(),
+            ..f.clone()
+        };
+        remove_if(dir.path(), &foreign);
+        assert_eq!(read(dir.path()), Some(f.clone()), "чужой файл не удаляется");
+        remove_if(dir.path(), &f);
         assert_eq!(read(dir.path()), None);
+        remove_if(dir.path(), &f);
     }
 
     #[test]

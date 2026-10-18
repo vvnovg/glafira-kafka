@@ -41,6 +41,35 @@ pub(crate) fn shutdown_sessions<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     }
 }
 
+/// Сколько ждать остановки MCP-сервера при выходе (сессии закрываются сразу, ожидание —
+/// страховка от зависшего соединения).
+const MCP_EXIT_GRACE: std::time::Duration = std::time::Duration::from_secs(3);
+
+/// MCP при выходе из приложения: клиенты отключаются, `mcp.json` удаляется (шим поймёт, что
+/// Glafira закрыта). Вызывается из `RunEvent::Exit`.
+fn shutdown_mcp<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    let mcp = app
+        .state::<Arc<crate::mcp::McpController>>()
+        .inner()
+        .clone();
+    let stopped = tauri::async_runtime::block_on(async {
+        tokio::time::timeout(MCP_EXIT_GRACE, mcp.shutdown())
+            .await
+            .is_ok()
+    });
+    if !stopped {
+        tracing::warn!(
+            "mcp server did not stop within {MCP_EXIT_GRACE:?}: exiting without waiting"
+        );
+    }
+}
+
+/// MCP перед `process::exit` в хуке updater на Windows: runtime там не дождаться, поэтому
+/// синхронно — только `mcp.json` и закрытие сессий.
+pub(crate) fn exit_mcp_now<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    app.state::<Arc<crate::mcp::McpController>>().exit_now();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -163,12 +192,7 @@ pub fn run() {
             if let tauri::RunEvent::Exit = event {
                 // Процесс завершится сразу после колбэка: даём сессиям завершиться.
                 shutdown_sessions(app);
-                // MCP: клиенты отключаются, mcp.json удаляется (шим поймёт, что Glafira закрыта).
-                let mcp = app
-                    .state::<Arc<crate::mcp::McpController>>()
-                    .inner()
-                    .clone();
-                tauri::async_runtime::block_on(mcp.shutdown());
+                shutdown_mcp(app);
             }
         });
 }

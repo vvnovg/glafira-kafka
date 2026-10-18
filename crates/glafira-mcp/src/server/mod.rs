@@ -210,7 +210,12 @@ async fn handle_conn(
     token: String,
     ct: CancellationToken,
 ) {
-    if let Err(e) = crate::handshake::server(&mut stream, &token).await {
+    // Остановка сервера не ждёт молчащее рукопожатие (до 5 с).
+    let handshake = tokio::select! {
+        _ = ct.cancelled() => return,
+        r = crate::handshake::server(&mut stream, &token) => r,
+    };
+    if let Err(e) = handshake {
         tracing::debug!("mcp handshake failed: {e}");
         return;
     }

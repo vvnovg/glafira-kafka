@@ -354,6 +354,7 @@
     "connections": "连接",
     "newConnection": "新建连接",
     "editConnection": "编辑连接",
+    "llmAccess": "已通过 MCP 向 LLM 助手开放",
     "emptyHint": "添加第一个连接。本地 Kafka：<code>docker compose -f dev/docker-compose.yml up -d</code>，Bootstrap 服务器 <code>localhost:9092</code>。",
     "cluster": "集群概览",
     "topics": "主题",
@@ -416,6 +417,7 @@
       "folderRoot": "（根目录）",
       "environment": "环境",
       "prodPro": "prod (Pro)",
+      "llmAccess": "LLM 访问（仅元数据）",
       "color": "颜色",
       "bootstrap": "Bootstrap 服务器",
       "protocol": "协议",
@@ -1034,6 +1036,7 @@
     "connections": {
       "environment": "用颜色标记连接。生产环境连接（Pro）在任何更改前都要求输入连接名称。",
       "readOnly": "阻止所有会改变集群的操作：发送、重置偏移量、删除主题和组、消费者会话。",
+      "llmAccess": "允许通过 MCP 连接的 LLM 助手读取此集群的元数据：Broker、主题、配置、消费者组。消息和密码绝不会被共享。",
       "bootstrap": "一个或多个 <code>host:port</code>，以逗号分隔。客户端会自动发现其他 Broker。",
       "protocol": "PLAINTEXT：不加密、不登录。SSL：TLS 加密。SASL_*：使用密码登录；SASL_SSL 还会加密。",
       "saslMechanism": "集群使用哪种机制，请咨询你的 Kafka 管理员。SCRAM 从不发送密码本身；不带 TLS 的 PLAIN 会以明文发送密码。",

@@ -354,6 +354,7 @@
     "connections": "連線",
     "newConnection": "新增連線",
     "editConnection": "編輯連線",
+    "llmAccess": "已透過 MCP 對 LLM 助理開放",
     "emptyHint": "新增第一個連線。本機 Kafka：<code>docker compose -f dev/docker-compose.yml up -d</code>，Bootstrap 伺服器 <code>localhost:9092</code>。",
     "cluster": "叢集概觀",
     "topics": "主題",
@@ -416,6 +417,7 @@
       "folderRoot": "（根目錄）",
       "environment": "環境",
       "prodPro": "prod (Pro)",
+      "llmAccess": "LLM 存取（僅中繼資料）",
       "color": "顏色",
       "bootstrap": "Bootstrap 伺服器",
       "protocol": "通訊協定",
@@ -1034,6 +1036,7 @@
     "connections": {
       "environment": "以顏色標示連線。正式環境連線（Pro）在任何變更前都會要求輸入連線名稱。",
       "readOnly": "封鎖所有會改變叢集的操作：傳送、重設偏移量、刪除主題和群組、消費者工作階段。",
+      "llmAccess": "允許透過 MCP 連線的 LLM 助理讀取此叢集的中繼資料：Broker、主題、設定、消費者群組。訊息和密碼絕不會被分享。",
       "bootstrap": "一個或多個 <code>host:port</code>，以逗號分隔。用戶端會自動找到其他 Broker。",
       "protocol": "PLAINTEXT：不加密、不登入。SSL：TLS 加密。SASL_*：使用密碼登入；SASL_SSL 還會加密。",
       "saslMechanism": "叢集使用哪種機制，請洽詢你的 Kafka 管理員。SCRAM 絕不傳送密碼本身；未搭配 TLS 的 PLAIN 會以明文傳送密碼。",

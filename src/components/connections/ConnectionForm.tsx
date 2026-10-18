@@ -176,6 +176,19 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           )}
         </span>
 
+        <span className="field-label">
+          <label htmlFor="cf-llm">{t("connections.form.llmAccess")}</label>
+          <Hint k="hints.connections.llmAccess" label={t("connections.form.llmAccess")} />
+        </span>
+        <span>
+          <input
+            id="cf-llm"
+            type="checkbox"
+            checked={profile.llmAccess === "metadata"}
+            onChange={(e) => update({ llmAccess: e.target.checked ? "metadata" : "off" })}
+          />
+        </span>
+
         <label htmlFor="cf-color">{t("connections.form.color")}</label>
         <input id="cf-color" type="color" value={profile.color} onChange={(e) => update({ color: e.target.value })} />
 

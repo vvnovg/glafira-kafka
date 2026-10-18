@@ -354,6 +354,7 @@
     "connections": "接続",
     "newConnection": "新しい接続",
     "editConnection": "接続を編集",
+    "llmAccess": "MCP経由でLLMアシスタントに開放中",
     "emptyHint": "最初の接続を追加してください。ローカルのKafkaの場合：<code>docker compose -f dev/docker-compose.yml up -d</code>を実行し、ブートストラップサーバーに<code>localhost:9092</code>を指定します。",
     "cluster": "クラスターの概要",
     "topics": "トピック",
@@ -416,6 +417,7 @@
       "folderRoot": "（ルート）",
       "environment": "環境",
       "prodPro": "prod (Pro)",
+      "llmAccess": "LLMアクセス（メタデータのみ）",
       "color": "色",
       "bootstrap": "ブートストラップサーバー",
       "protocol": "プロトコル",
@@ -1034,6 +1036,7 @@
     "connections": {
       "environment": "接続を色で区別します。本番接続（Pro）では、変更のたびに接続名の入力を求められます。",
       "readOnly": "クラスターを変更する操作をすべてブロックします：送信、オフセットのリセット、トピックとグループの削除、コンシューマーセッション。",
+      "llmAccess": "MCP経由で接続したLLMアシスタントが、このクラスターのメタデータを読み取れるようにします：ブローカー、トピック、設定、コンシューマーグループ。メッセージとパスワードが共有されることはありません。",
       "bootstrap": "1つ以上の<code>host:port</code>をカンマ区切りで指定します。他のブローカーはクライアントが自動的に検出します。",
       "protocol": "PLAINTEXT：暗号化もログインもなし。SSL：TLSで暗号化。SASL_*：パスワードでログイン。SASL_SSLは暗号化も行います。",
       "saslMechanism": "クラスターで使われているメカニズムはKafkaの管理者が知っています。SCRAMはパスワード自体を送信しません。TLSなしのPLAINはパスワードを平文で送信します。",

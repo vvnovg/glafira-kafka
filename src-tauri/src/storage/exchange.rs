@@ -12,8 +12,8 @@ use crate::kafka::config::{
 };
 use crate::secrets::{SecretStore, secret_key};
 use crate::storage::connections::{
-    ConnectionFolder, ConnectionProfile, ConnectionStore, Environment, SecurityConfig, StoreData,
-    check_tree, folder_not_found, is_secret_property, unique_name, validate_profile,
+    ConnectionFolder, ConnectionProfile, ConnectionStore, Environment, LlmAccess, SecurityConfig,
+    StoreData, check_tree, folder_not_found, is_secret_property, unique_name, validate_profile,
 };
 use crate::storage::tree::TreeItemKind;
 
@@ -134,6 +134,8 @@ pub fn build_export(
         .filter(|p| in_scope(p.folder_id.as_deref()))
         .map(|mut profile| {
             profile.extra.clear();
+            // Доступ LLM — локальное решение получателя (спец. G1 §4): Off в файл не пишется.
+            profile.llm_access = LlmAccess::Off;
             // Профили с диска не валидируются: секреты в дополнительных свойствах не выносим.
             profile
                 .extra_properties
@@ -405,6 +407,7 @@ fn same_settings(a: &ConnectionProfile, b: &ConnectionProfile) -> bool {
         id: String::new(),
         folder_id: None,
         order: 0,
+        llm_access: LlmAccess::Off,
         extra: Default::default(),
         ..p.clone()
     };
@@ -494,6 +497,7 @@ pub(crate) fn plan_import(
             // Место в дереве и неизвестные поля — локальные; пароли получателя не трогаются.
             profile.folder_id = slot.folder_id.clone();
             profile.order = slot.order;
+            profile.llm_access = slot.llm_access;
             profile.extra = std::mem::take(&mut slot.extra);
             prod_read_only += usize::from(forced_read_only);
             missing_files += usize::from(misses_files(&profile, file_exists));
@@ -531,6 +535,7 @@ pub(crate) fn plan_import(
             .unwrap_or(0);
         profile.folder_id = folder;
         profile.name = name;
+        profile.llm_access = LlmAccess::Off;
         profile.extra = Default::default();
         prod_read_only += usize::from(forced_read_only);
         missing_files += usize::from(misses_files(&profile, file_exists));
@@ -966,6 +971,50 @@ mod tests {
         let p = plan(&data, &same, &opts(None));
         assert_eq!(preview_ids(&p.preview.unchanged), ["a"]);
         assert_eq!(conn(&p.next, "a"), &local);
+    }
+
+    #[test]
+    fn llm_access_is_never_exported_or_imported() {
+        let (_d, s) = store();
+        let mut open = sample_profile("a");
+        open.llm_access = LlmAccess::Metadata;
+        s.upsert(open).unwrap();
+        let out = build_export(&s, &MemoryStore::default(), None, "1", "now").unwrap();
+        let json = serde_json::to_value(&out).unwrap();
+        assert!(json["connections"][0].get("llmAccess").is_none(), "{json}");
+
+        let mut local = sample_profile("a");
+        local.llm_access = LlmAccess::Metadata;
+        let data = StoreData {
+            connections: vec![local],
+            ..Default::default()
+        };
+        let mut incoming_a = conn_json("a", "conn-a", None);
+        incoming_a["llmAccess"] = "off".into();
+        incoming_a["bootstrapServers"] = "other:9092".into();
+        let mut incoming_b = conn_json("b", "conn-b", None);
+        incoming_b["llmAccess"] = "metadata".into();
+        let p = plan(
+            &data,
+            &file(vec![], vec![incoming_a, incoming_b]),
+            &opts(None),
+        );
+        assert_eq!(
+            conn(&p.next, "a").llm_access,
+            LlmAccess::Metadata,
+            "своё решение сохраняется"
+        );
+        assert_eq!(
+            conn(&p.next, "b").llm_access,
+            LlmAccess::Off,
+            "файл не открывает доступ"
+        );
+
+        // Отличие только в llmAccess — «без изменений».
+        let mut same = conn_json("a", "conn-a", None);
+        same["llmAccess"] = "off".into();
+        let p = plan(&data, &file(vec![], vec![same]), &opts(None));
+        assert_eq!(preview_ids(&p.preview.unchanged), ["a"]);
     }
 
     #[test]

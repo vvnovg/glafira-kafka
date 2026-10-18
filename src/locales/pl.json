@@ -354,6 +354,7 @@
     "connections": "Połączenia",
     "newConnection": "Nowe połączenie",
     "editConnection": "Edytuj połączenie",
+    "llmAccess": "Otwarte dla asystentów LLM przez MCP",
     "emptyHint": "Dodaj pierwsze połączenie. Dla lokalnej Kafki: <code>docker compose -f dev/docker-compose.yml up -d</code> i bootstrap <code>localhost:9092</code>.",
     "cluster": "Przegląd klastra",
     "topics": "Topiki",
@@ -416,6 +417,7 @@
       "folderRoot": "(poziom główny)",
       "environment": "Środowisko",
       "prodPro": "prod (Pro)",
+      "llmAccess": "Dostęp dla LLM (tylko metadane)",
       "color": "Kolor",
       "bootstrap": "Serwery bootstrap",
       "protocol": "Protokół",
@@ -1058,6 +1060,7 @@
     "connections": {
       "environment": "Oznacza połączenie kolorem. W połączeniach prod (Pro) każdą zmianę trzeba potwierdzić, wpisując nazwę połączenia.",
       "readOnly": "Blokuje wszystko, co zmienia klaster: wysyłanie, resetowanie offsetów, usuwanie topików i grup, sesje konsumenta.",
+      "llmAccess": "Pozwala asystentowi LLM połączonemu przez MCP odczytywać metadane tego klastra: brokery, topiki, konfiguracje, grupy konsumentów. Wiadomości i hasła nigdy nie są udostępniane.",
       "bootstrap": "Jeden lub kilka adresów <code>host:port</code>, rozdzielonych przecinkami. Pozostałe brokery klient znajdzie sam.",
       "protocol": "PLAINTEXT — bez szyfrowania i logowania. SSL — szyfrowanie TLS. SASL_* — logowanie loginem i hasłem; SASL_SSL dodatkowo szyfruje.",
       "saslMechanism": "Jakiego mechanizmu używa klaster, wiedzą administratorzy Kafki. SCRAM nie przesyła samego hasła; PLAIN bez TLS przesyła je otwartym tekstem.",

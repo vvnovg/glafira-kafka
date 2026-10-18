@@ -81,7 +81,11 @@ export interface ConnectionProfile {
   requestTimeoutMs: number;
   folderId?: string | null;
   order?: number;
+  /** Доступ LLM через MCP; нет поля — "off". */
+  llmAccess?: LlmAccess;
 }
+
+export type LlmAccess = "off" | "metadata";
 
 export interface ConnectionFolder {
   id: string;

@@ -103,6 +103,17 @@ describe("ConnectionForm", () => {
     expect(screen.getByLabelText("Только чтение")).toBeChecked();
   });
 
+  it("флажок «Доступ для LLM» сохраняется в профиле", async () => {
+    vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "n", name: "m", llmAccess: "metadata" });
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={{ ...newProfile(), name: "m" }} tabId="t" />);
+    const box = screen.getByLabelText("Доступ для LLM (только метаданные)");
+    expect(box).not.toBeChecked();
+    await user.click(box);
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    expect(api.saveConnection).toHaveBeenCalledWith(expect.objectContaining({ llmAccess: "metadata" }), undefined, undefined);
+  });
+
   it("невалидные доп. свойства показывают ошибку и не вызывают сохранение", async () => {
     const user = userEvent.setup();
     renderWithClient(<ConnectionForm initial={{ ...newProfile(), name: "x" }} tabId="t" />);

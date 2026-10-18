@@ -59,6 +59,7 @@ pub fn plaintext_profile(bs: &str) -> ConnectionProfile {
         request_timeout_ms: 10_000,
         folder_id: None,
         order: 0,
+        llm_access: Default::default(),
         extra: Default::default(),
     }
 }

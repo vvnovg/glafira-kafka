@@ -354,6 +354,7 @@
     "connections": "Connexions",
     "newConnection": "Nouvelle connexion",
     "editConnection": "Modifier la connexion",
+    "llmAccess": "Ouvert aux assistants LLM via MCP",
     "emptyHint": "Ajoutez votre première connexion. Pour un Kafka local : <code>docker compose -f dev/docker-compose.yml up -d</code> et le serveur bootstrap <code>localhost:9092</code>.",
     "cluster": "Aperçu du cluster",
     "topics": "Topics",
@@ -416,6 +417,7 @@
       "folderRoot": "(racine)",
       "environment": "Environnement",
       "prodPro": "prod (Pro)",
+      "llmAccess": "Accès LLM (métadonnées uniquement)",
       "color": "Couleur",
       "bootstrap": "Serveurs bootstrap",
       "protocol": "Protocole",
@@ -1050,6 +1052,7 @@
     "connections": {
       "environment": "Marque la connexion d’une couleur. Pour les connexions prod (Pro), toute modification doit être confirmée en saisissant le nom de la connexion.",
       "readOnly": "Bloque tout ce qui modifie le cluster : envoi, réinitialisation des offsets, suppression de topics et de groupes, sessions consumer.",
+      "llmAccess": "Permet à un assistant LLM connecté via MCP de lire les métadonnées de ce cluster : brokers, topics, configurations, consumer groups. Les messages et les mots de passe ne sont jamais partagés.",
       "bootstrap": "Un ou plusieurs <code>host:port</code>, séparés par des virgules. Le client trouve lui-même les autres brokers.",
       "protocol": "PLAINTEXT — sans chiffrement ni authentification. SSL — chiffrement TLS. SASL_* — authentification par identifiant et mot de passe ; SASL_SSL chiffre en plus.",
       "saslMechanism": "Les administrateurs Kafka savent quel mécanisme le cluster utilise. SCRAM ne transmet jamais le mot de passe lui-même ; PLAIN sans TLS l’envoie en clair.",

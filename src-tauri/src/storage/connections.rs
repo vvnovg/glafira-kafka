@@ -104,6 +104,23 @@ impl SecurityConfig {
     }
 }
 
+/// Доступ LLM к подключению через MCP (спец. G1 §4). Неизвестное значение из более новой
+/// версии читается как `Off`: старая версия доступ только сужает.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LlmAccess {
+    Metadata,
+    #[default]
+    #[serde(other)]
+    Off,
+}
+
+impl LlmAccess {
+    pub fn is_off(&self) -> bool {
+        *self == LlmAccess::Off
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionProfile {
@@ -122,6 +139,9 @@ pub struct ConnectionProfile {
     pub folder_id: Option<String>,
     #[serde(default)]
     pub order: i64,
+    /// Локальное поле, как папка и порядок: экспорт его не пишет, импорт не переносит.
+    #[serde(default, skip_serializing_if = "LlmAccess::is_off")]
+    pub llm_access: LlmAccess,
     /// Поля из более новой версии Glafira: сохраняются при записи как есть.
     /// `ConnectionStore::upsert` входящий `extra` не принимает: у существующего профиля
     /// остаётся сохранённый, новый получает пустой.
@@ -737,6 +757,7 @@ pub fn sample_profile(id: &str) -> ConnectionProfile {
         request_timeout_ms: 30_000,
         folder_id: None,
         order: 0,
+        llm_access: LlmAccess::Off,
         extra: Default::default(),
     }
 }
@@ -745,6 +766,22 @@ pub fn sample_profile(id: &str) -> ConnectionProfile {
 mod tests {
     use super::*;
     use crate::error::ErrorCode;
+
+    #[test]
+    fn llm_access_defaults_to_off_and_is_written_only_when_open() {
+        let mut v = serde_json::to_value(sample_profile("a")).unwrap();
+        assert!(v.get("llmAccess").is_none(), "Off не пишется");
+        let p: ConnectionProfile = serde_json::from_value(v.clone()).unwrap();
+        assert_eq!(p.llm_access, LlmAccess::Off);
+        v["llmAccess"] = "metadata".into();
+        let p: ConnectionProfile = serde_json::from_value(v.clone()).unwrap();
+        assert_eq!(p.llm_access, LlmAccess::Metadata);
+        assert_eq!(serde_json::to_value(&p).unwrap()["llmAccess"], "metadata");
+        // Значение из более новой версии (G4) старая версия читает как Off.
+        v["llmAccess"] = "samples".into();
+        let p: ConnectionProfile = serde_json::from_value(v).unwrap();
+        assert_eq!(p.llm_access, LlmAccess::Off);
+    }
 
     #[test]
     fn old_tls_profiles_get_defaults() {

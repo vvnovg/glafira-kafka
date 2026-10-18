@@ -66,7 +66,7 @@ Pour désactiver complètement MCP, décochez [[ui:settings.mcp.enable]] : les 
 Le client affiche un message de Glafira :
 
 - `MCP is disabled in Glafira` — cochez [[ui:settings.mcp.enable]] et redémarrez le serveur MCP dans le client ;
-- `MCP is disabled by the administrator` — MCP est interdit par la politique de votre organisation ;
+- `MCP is disabled by your organization` — MCP est interdit par la politique de votre organisation ;
 - `Glafira did not start the MCP server within 30 s` — lancez Glafira manuellement et consultez l’état dans la section [[ui:settings.mcp.section]] ;
 - `Invalid MCP token` — redémarrez le serveur MCP dans le client : Glafira délivre un nouveau jeton à chaque démarrage.
 

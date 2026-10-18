@@ -66,7 +66,7 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 用戶端會顯示來自 Glafira 的訊息：
 
 - `MCP is disabled in Glafira`：請勾選[[ui:settings.mcp.enable]]，然後在用戶端中重新啟動 MCP 伺服器；
-- `MCP is disabled by the administrator`：MCP 已被組織的原則停用；
+- `MCP is disabled by your organization`：MCP 已被組織的原則停用；
 - `Glafira did not start the MCP server within 30 s`：請手動啟動 Glafira，並在「[[ui:settings.mcp.section]]」區段查看狀態；
 - `Invalid MCP token`：請在用戶端中重新啟動 MCP 伺服器，Glafira 每次啟動都會發出新的權杖。
 

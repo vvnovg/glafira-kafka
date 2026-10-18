@@ -66,7 +66,7 @@ Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor
 客户端会显示来自 Glafira 的消息：
 
 - `MCP is disabled in Glafira`：请选中[[ui:settings.mcp.enable]]，然后在客户端中重启 MCP 服务器；
-- `MCP is disabled by the administrator`：MCP 被组织的策略禁用；
+- `MCP is disabled by your organization`：MCP 被组织的策略禁用；
 - `Glafira did not start the MCP server within 30 s`：请手动启动 Glafira，并在“[[ui:settings.mcp.section]]”部分查看状态；
 - `Invalid MCP token`：请在客户端中重启 MCP 服务器，Glafira 每次启动都会签发新的令牌。
 

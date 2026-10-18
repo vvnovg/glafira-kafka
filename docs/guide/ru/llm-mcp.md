@@ -66,7 +66,7 @@ Glafira может работать шлюзом для LLM-ассистента
 Клиент показывает сообщение из Glafira:
 
 - `MCP is disabled in Glafira` — включите [[ui:settings.mcp.enable]] и перезапустите MCP-сервер в клиенте;
-- `MCP is disabled by the administrator` — MCP запрещён политикой организации;
+- `MCP is disabled by your organization` — MCP запрещён политикой организации;
 - `Glafira did not start the MCP server within 30 s` — запустите Glafira вручную и посмотрите статус в разделе [[ui:settings.mcp.section]];
 - `Invalid MCP token` — перезапустите MCP-сервер в клиенте: Glafira выдаёт новый токен при каждом запуске.
 

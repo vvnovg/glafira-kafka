@@ -48,17 +48,20 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
   контракт для LLM, не зависящий от DTO интерфейса; фильтры, страницы, обрезку, скрытие чувствительных значений;
   логику `observe_consumer_group`; лимиты; реестр сессий; формат и запись журнала; протокол рукопожатия;
   прослушивание сокета или pipe;
-- наружу: `McpServer::start(endpoint, token, backend, audit) -> McpServerHandle` с методами `sessions()`, `disconnect(id)`,
-  `disconnect_all()`, `shutdown()`.
+- наружу: свободная функция `glafira_mcp::start(endpoint, token, backend, audit, options) -> McpServerHandle` с методами
+  `sessions()`, `disconnect(id)`, `disconnect_client(name)` (отзыв клиента), `disconnect_all()`, `shutdown()`.
 
 **Трейт `Backend`** (реализует приложение):
-- `read(session, ReadOp) -> Result<ReadResult, BackendError>`. `ReadOp` — перечисление операций чтения:
+- `read(ReadOp) -> BoxFuture<Result<ReadOutput, BackendError>>`. `ReadOp` — перечисление операций чтения:
   `ListConnections`, `ClusterOverview`, `BrokerConfig`, `ListTopics`, `DescribeTopic`, `TopicConfigs`, `TopicsMessageCounts`,
   `ListGroups`, `DescribeGroup`, `GroupOffsets`, `GroupsLag`, `TopicGroups`. Приложение реализует его одним `match`,
   каждая ветка вызывает существующую функцию чтения через `AppState::with_handles` / `with_pooled` на blocking-потоке
   и преобразует DTO приложения в типы крейта;
-- `session_opened(session, client_info) -> SessionAccess` (`Approved` | `Pending`), `session_closed(session)`;
-- `session_access(session) -> SessionAccess` (`Approved` | `Pending` | `Rejected`) — проверяется при каждом вызове.
+- `access(SessionView) -> SessionAccess` (`Approved` | `Pending` | `Rejected` | `Disabled` — политика запрещает MCP) —
+  при `initialize` и при каждом вызове; `SessionView` — id сессии и клиент (`ClientIdent { name, version }`), если он уже
+  известен;
+- `connection_name(id)` — имя подключения для журнала; `session_closed(session_id)`; `sessions_changed()` — сессии
+  изменились (открыта, закрыта, опознан клиент, начат или закончен вызов), статус для интерфейса.
 
 `BackendError { code: String, message: String }`: код — из `ErrorCode` приложения (`AUTH_FAILED`, `TLS_ERROR`,
 `TIMEOUT`, …) или `not_allowed`; сообщение — английский текст `AppError.message`.
@@ -97,7 +100,7 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 диагностика — в stderr. Порядок:
 1. Каталог данных — `dirs::data_dir()/<IDENTIFIER>` (совпадает с `app_data_dir()` Tauri; приложение при старте
    сравнивает оба пути и пишет предупреждение в журнал при расхождении).
-2. Политика запрещает → stderr «MCP is disabled by the administrator», код 1. `settings.json` → `mcp.enabled = false`
+2. Политика запрещает → stderr «MCP is disabled by your organization», код 1. `settings.json` → `mcp.enabled = false`
    → «MCP is disabled in Glafira settings», код 1.
 3. Читает `mcp.json` и подключается. Нет файла или соединение не удаётся → запускает Glafira (один раз) и каждые 250 мс
    перечитывает `mcp.json` и пробует снова, до 30 с; не дождался → «Glafira did not start the MCP server within 30 s», код 1.
@@ -146,20 +149,22 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 ## 5. Инструменты
 
 Все инструменты помечены `readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: false`. Описания и сообщения —
-по-английски. Ответ — JSON в `structuredContent` и его копия текстом. Тест-«сторожок» сверяет точный список имён.
+по-английски. Ответ — JSON в `structuredContent` и его копия текстом. `structuredContent` — всегда объект, поэтому
+ответы-списки обёрнуты: `{ connections }`, `{ configs, truncated }`, `{ topics }`, `{ groups }`. Тест-«сторожок» сверяет
+точный список имён.
 
 | Инструмент | Параметры | Ответ |
 |---|---|---|
-| `list_connections` | — | подключения с `llmAccess ≠ off`: `id`, `name`, `environment`, `folderPath: [String]`, `readOnly` |
+| `list_connections` | — | `{ connections [...] }` — подключения с `llmAccess ≠ off`: `id`, `name`, `environment`, `folderPath: [String]`, `readOnly` |
 | `get_cluster_overview` | `connectionId` | `clusterId`, `controllerId`, `brokers [{ id, host, port }]`, `topicCount`, `internalTopicCount`, `partitionCount`, `underReplicatedPartitions`, `offlinePartitions` |
-| `get_broker_config` | `connectionId`, `brokerId`, `names?: [String]`, `includeDefaults = false` | `[{ name, value, source, isDefault, isReadOnly, isSensitive, hidden }]`; при `names` — ровно эти ключи вместе со значениями по умолчанию |
+| `get_broker_config` | `connectionId`, `brokerId`, `names?: [String]`, `includeDefaults = false` | `{ configs [{ name, value, source, isDefault, isReadOnly, isSensitive, hidden }], truncated }`; при `names` — ровно эти ключи вместе со значениями по умолчанию |
 | `list_topics` | `connectionId`, `filter?` (подстрока без учёта регистра), `includeInternal = false`, `offset = 0`, `limit = 200` (≤ 500) | `{ total, items [{ name, internal, partitions, replicationFactor, underReplicated }], nextOffset? }`, по имени |
 | `describe_topic` | `connectionId`, `topic` (внутренние разрешены, например `__consumer_offsets`) | `name`, `internal`, `replicationFactor`, `messageCount`, `partitions [{ id, leader, replicas, isr, low, high, messageCount, underReplicated, error? }]` |
 | `get_topic_configs` | `connectionId`, `topic`, `names?`, `includeDefaults = false` | как у `get_broker_config` |
-| `get_topics_message_counts` | `connectionId`, `topics` (≤ 100) | `[{ name, messageCount, error? }]` |
+| `get_topics_message_counts` | `connectionId`, `topics` (≤ 100) | `{ topics [{ name, messageCount, error? }] }` |
 | `list_consumer_groups` | `connectionId`, `filter?`, `state?`, `offset`, `limit` (≤ 500) | `{ total, items [{ groupId, state, isSimple }], errors [], nextOffset? }` |
 | `describe_consumer_group` | `connectionId`, `groupId` | `groupId`, `state`, `groupType` (`classic`/`consumer`), `assignor`, `coordinator { id, host, port }`, `members [{ memberId, clientId, host, groupInstanceId?, assignment [], targetAssignment? }]`, `offsets [{ topic, partition, committed, logEnd, lag, memberClientId, error? }]`, `totalLag` |
-| `get_consumer_groups_lag` | `connectionId`, `groupIds` (≤ 50) | `[{ groupId, totalLag, topics, error? }]` |
+| `get_consumer_groups_lag` | `connectionId`, `groupIds` (≤ 50) | `{ groups [{ groupId, totalLag, topics, error? }] }` |
 | `get_topic_consumer_groups` | `connectionId`, `topic` | `{ groups [{ groupId, state, lag, partitions }], incomplete }` |
 | `observe_consumer_group` | `connectionId`, `groupId`, `durationSeconds = 30` (10–50), `intervalSeconds = 2` (2–10) | хронология, см. ниже |
 
@@ -231,7 +236,7 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 
 **«Настройки» → раздел «LLM-ассистенты (MCP)»:**
 - выключатель «Разрешить MCP-сервер» (по умолчанию выключен) с подсказкой «?»; при `mcpEnabled = false` в политике —
-  неактивен с пометкой «Отключено администратором»;
+  неактивен с пометкой «Отключено вашей организацией»;
 - статус: работает / выключен / работает в другом окне Glafira / ошибка (текст);
 - «Подключить клиент» — фрагменты конфига с кнопкой «Копировать»: Claude Desktop (`claude_desktop_config.json`:
   `{"mcpServers": {"glafira": {"command": "<путь>", "args": ["mcp"]}}}`), Claude Code

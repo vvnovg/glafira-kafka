@@ -66,7 +66,7 @@ MCP를 완전히 끄려면 [[ui:settings.mcp.enable]] 확인란의 선택을 해
 클라이언트에 Glafira의 메시지가 표시됩니다:
 
 - `MCP is disabled in Glafira` — [[ui:settings.mcp.enable]] 확인란을 선택하고 클라이언트에서 MCP 서버를 다시 시작하세요.
-- `MCP is disabled by the administrator` — 조직 정책으로 MCP가 비활성화되어 있습니다.
+- `MCP is disabled by your organization` — 조직 정책으로 MCP가 비활성화되어 있습니다.
 - `Glafira did not start the MCP server within 30 s` — Glafira를 직접 실행하고 [[ui:settings.mcp.section]] 섹션에서 상태를 확인하세요.
 - `Invalid MCP token` — 클라이언트에서 MCP 서버를 다시 시작하세요. Glafira는 실행할 때마다 새 토큰을 발급합니다.
 

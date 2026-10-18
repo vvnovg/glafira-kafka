@@ -66,7 +66,7 @@ To turn MCP off completely, clear [[ui:settings.mcp.enable]]: clients are discon
 The client shows a message from Glafira:
 
 - `MCP is disabled in Glafira` — select [[ui:settings.mcp.enable]] and restart the MCP server in the client;
-- `MCP is disabled by the administrator` — MCP is disabled by your organization's policy;
+- `MCP is disabled by your organization` — MCP is disabled by your organization's policy;
 - `Glafira did not start the MCP server within 30 s` — start Glafira manually and check the status in [[ui:settings.mcp.section]];
 - `Invalid MCP token` — restart the MCP server in the client: Glafira issues a new token every time it starts.
 

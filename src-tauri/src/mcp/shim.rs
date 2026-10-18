@@ -35,7 +35,7 @@ impl fmt::Display for ShimError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NoDataDir => write!(f, "Cannot find the Glafira data directory"),
-            Self::DisabledByPolicy => write!(f, "MCP is disabled by the administrator"),
+            Self::DisabledByPolicy => write!(f, "MCP is disabled by your organization"),
             Self::DisabledInSettings => write!(
                 f,
                 "MCP is disabled in Glafira: turn it on in Settings → LLM assistants (MCP)"
@@ -279,6 +279,11 @@ mod tests {
             connect(&e, WAIT).await,
             Err(ShimError::DisabledByPolicy)
         ));
+        // Формулировка политики — как в приложении («вашей организацией»).
+        assert_eq!(
+            ShimError::DisabledByPolicy.to_string(),
+            "MCP is disabled by your organization"
+        );
         let e = env(dir.path(), true, false);
         assert!(matches!(
             connect(&e, WAIT).await,

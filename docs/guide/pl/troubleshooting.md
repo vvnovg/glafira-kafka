@@ -56,14 +56,14 @@ Problemy z plikami certyfikatów są zgłaszane w kroku [[ui:connections.form.st
 Komunikat [[ui:errors.kafka.authFailed]] oznacza, że broker nie przyjął logowania SASL. Należy sprawdzić:
 
 - nazwę użytkownika i hasło. Podczas edycji zapisanego połączenia puste pole hasła zachowuje zapisane hasło. W razie wątpliwości co do poprawności hasła należy wpisać je ponownie;
-- pole [[ui:connections.form.saslMechanism]]. Musi to być mechanizm, dla którego utworzono użytkownika. Poświadczenia SCRAM są tworzone osobno dla `SCRAM-SHA-256` i `SCRAM-SHA-512`, a użytkownicy `PLAIN` są konfigurowani jeszcze osobno;
+- pole [[ui:connections.form.saslMechanism]]. Musi to być mechanizm, dla którego utworzono użytkownika. Poświadczenia SCRAM są tworzone osobno dla `SCRAM-SHA-256` i `SCRAM-SHA-512`, a użytkownicy `PLAIN` są konfigurowani niezależnie od nich;
 - protokół: `SASL_SSL` i `SASL_PLAINTEXT` zwykle używają różnych portów.
 
 [[ui:errors.connections.saslPasswordMissing]] — dla tego połączenia nie zapisano hasła, na przykład po imporcie. Należy otworzyć połączenie, wpisać hasło i zapisać. Zob. [Hasła](connections.md#passwords).
 
 [[ui:errors.secrets.keychain]] — aplikacja nie może odczytać hasła z systemowego magazynu sekretów. W systemie macOS należy zezwolić na dostęp, gdy pyta o to pęk kluczy. W systemie Linux należy sprawdzić, czy w sesji działa GNOME Keyring, KWallet lub inny dostawca Secret Service.
 
-Komunikat [[ui:errors.kafka.notAuthorized]] oznacza coś innego: logowanie się powiodło, ale użytkownik Kafki nie ma uprawnień (ACL) do tej operacji, na przykład do odczytu topiku lub grupy. Należy poprosić administratorów o uprawnienia. Warto pamiętać, że Kafka nie zgłasza błędu dla topików, których opis jest niedozwolony: po prostu nie ma ich na liście topików.
+Komunikat [[ui:errors.kafka.notAuthorized]] oznacza coś innego: logowanie się powiodło, ale użytkownik Kafki nie ma uprawnień (ACL) do tej operacji, na przykład do odczytu topiku lub grupy. Należy poprosić administratorów o uprawnienia. Warto pamiętać, że Kafka nie zgłasza błędu dla topików, do których użytkownik nie ma uprawnienia Describe: po prostu nie ma ich na liście topików.
 
 ## Limity czasu {#timeouts}
 

@@ -28,7 +28,7 @@ Funkcje Pro stają się dostępne od razu. Ekran pokazuje pozycje [[ui:license.t
 
 Jeśli klucz nie zostanie przyjęty, pod polem wyświetlana jest przyczyna:
 
-- [[ui:errors.license.malformed]] — brakuje części klucza lub została zmieniona. Należy ponownie skopiować klucz jako jeden wiersz, bez dodatkowych znaków.
+- [[ui:errors.license.malformed]] — część klucza jest niekompletna lub zmieniona. Należy ponownie skopiować klucz jako jeden wiersz, bez dodatkowych znaków.
 - [[ui:errors.license.badSignature]] — klucz nie został wydany dla Glafiry lub był edytowany.
 - Klucz wygasł — komunikat podaje datę jego wygaśnięcia. Należy poprosić o nowy klucz.
 - Klucz wymaga nowszej wersji aplikacji — komunikat podaje wersję klucza. Najpierw trzeba zaktualizować aplikację, zob. [Aktualizacje](license-updates.md#updates).
@@ -73,7 +73,7 @@ Organizacja może za pomocą zasad wyłączyć sprawdzanie aktualizacji lub skie
 
 ## O programie {#about}
 
-Ekran [[ui:sidebar.about]] otwiera się z dołu lewego panelu. W systemie macOS jest też dostępny w menu Pomoc jako [[ui:menu.about]].
+Ekran [[ui:sidebar.about]] otwiera się linkiem na dole lewego panelu. W systemie macOS jest też dostępny w menu Pomoc jako [[ui:menu.about]].
 
 Ekran pokazuje krótki opis aplikacji oraz:
 

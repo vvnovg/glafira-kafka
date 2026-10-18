@@ -2,7 +2,7 @@
 
 Grupa konsumentów to zbiór konsumentów, którzy wspólnie czytają topiki. Kafka przydziela każdą partycję jednemu członkowi grupy i przechowuje dla każdej partycji offset zatwierdzony przez grupę. Po ponownym uruchomieniu aplikacje kontynuują odczyt od tego offsetu.
 
-Ekran [[ui:sidebar.groups]] otwiera się pod połączeniem w panelu [[ui:sidebar.connections]]. Grupy jednego topiku są też dostępne na karcie [[ui:topics.details.tabGroups]] tego topiku. Zob. [Ekran topiku](topics.md#topic-details).
+Ekran [[ui:sidebar.groups]] otwiera się z linku pod połączeniem w panelu [[ui:sidebar.connections]]. Grupy jednego topiku są też dostępne na karcie [[ui:topics.details.tabGroups]] tego topiku. Zob. [Ekran topiku](topics.md#topic-details).
 
 ## Lista grup {#group-list}
 
@@ -25,7 +25,7 @@ Przycisk [[ui:groups.list.refresh]] wczytuje ponownie listę i jej dane. Jeśli 
 
 Lag to liczba wiadomości, których grupa jeszcze nie przeczytała. Dla każdej partycji jest to koniec logu minus zatwierdzony offset. Lag nigdy nie jest pokazywany poniżej zera.
 
-Lag zależy wyłącznie od zatwierdzonych offsetów. Aktywny konsument mógł przeczytać więcej, niż zatwierdził, więc jego rzeczywisty lag może być mniejszy. Gdy grupa ponownie zatwierdzi offsety, lag spada.
+Lag zależy wyłącznie od zatwierdzonych offsetów. Aktywny konsument mógł przeczytać więcej, niż zatwierdził, więc jego rzeczywisty lag może być mniejszy. Gdy grupa ponownie zatwierdzi offsety, lag spadnie.
 
 Partycja bez zatwierdzonego offsetu pokazuje [[ui:groups.lag.noCommit]] i nie jest wliczana do sumy. Łączny lag grupy pokazuje `—`, gdy grupa nie ma żadnych zatwierdzonych offsetów ([[ui:groups.lag.noCommits]]) lub gdy nie udało się odczytać offsetów którejś partycji ([[ui:groups.lag.unknown]]).
 
@@ -41,7 +41,7 @@ Kliknięcie grupy na liście otwiera jej kartę. U góry podsumowanie pokazuje s
 - [[ui:groups.details.refresh]] — natychmiastowe ponowne wczytanie.
 - [[ui:groups.details.join]] — uruchamia [sesję konsumenta](consumer-sessions.md) w tej grupie. Formularz sesji otrzymuje ID grupy i topiki, dla których grupa ma zatwierdzone offsety. Wymaga Pro, a w połączeniach z włączoną opcją [[ui:common.readOnly]] przycisk jest nieaktywny; po najechaniu na przycisk widać przyczynę.
 
-Tabela [[ui:groups.details.partitions]] zawiera partycje, dla których grupa ma zatwierdzone offsety, oraz partycje przypisane jej członkom. Łączny lag grupy jest wyświetlany nad tabelą. Kolumny to [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (zatwierdzony offset), `Log end` (końcowy offset partycji), [[ui:groups.details.colLag]] i [[ui:groups.details.colMember]] (client ID członka, który czyta partycję).
+Tabela [[ui:groups.details.partitions]] zawiera partycje, dla których grupa ma zatwierdzone offsety, oraz partycje przydzielone jej członkom. Łączny lag grupy jest wyświetlany nad tabelą. Kolumny to [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (zatwierdzony offset), `Log end` (końcowy offset partycji), [[ui:groups.details.colLag]] i [[ui:groups.details.colMember]] (client ID członka, który czyta partycję).
 
 Tabela [[ui:groups.details.members]] zawiera aktywnych członków: `Client ID`, [[ui:groups.details.colHost]], `Member ID` i [[ui:groups.details.colAssignment]] (partycje członka w postaci `topic:partition`). Grupa bez członków pokazuje komunikat [[ui:groups.details.noMembers]].
 
@@ -73,7 +73,7 @@ Pole [[ui:groups.reset.strategy]] określa docelowy offset dla każdej partycji 
 - [[ui:groups.reset.strategyLatest]] — koniec partycji. Grupa pomija wszystko, co się nagromadziło, i czyta tylko nowe wiadomości.
 - [[ui:groups.reset.strategyTimestamp]] — pierwsza wiadomość zapisana w chwili podanej w polu [[ui:groups.reset.timestamp]] lub później. W partycjach bez nowszych wiadomości celem jest koniec.
 - [[ui:groups.reset.strategyOffset]] — wartość z pola [[ui:groups.reset.offset]], liczba całkowita równa 0 lub większa, w każdej partycji. Jeśli partycja nie ma tego offsetu, celem jest jej pierwszy lub końcowy offset.
-- [[ui:groups.reset.strategyShift]] — przesuwa zatwierdzony offset o wartość z pola [[ui:groups.reset.shift]]. Liczba ujemna oznacza ponowny odczyt N wiadomości wstecz, dodatnia — pominięcie N wiadomości. Wynik nie wykracza poza pierwszy i końcowy offset. Partycji bez zatwierdzonego offsetu nie można przesunąć i są pomijane.
+- [[ui:groups.reset.strategyShift]] — przesuwa zatwierdzony offset o wartość z pola [[ui:groups.reset.shift]]. Liczba ujemna oznacza ponowny odczyt N wiadomości wstecz, dodatnia — pominięcie N wiadomości. Wynik nie wykracza poza pierwszy i końcowy offset. Partycje bez zatwierdzonego offsetu nie mogą zostać przesunięte i są pomijane.
 
 Czas jest czasem lokalnym, z sekundami. Kafka wyszukuje offset według znaczników czasu wiadomości.
 

@@ -104,7 +104,7 @@ Jeśli aplikacja nie ma dostępu do magazynu sekretów, przy zapisie wyświetlan
 
 Pole [[ui:connections.form.environment]] oznacza połączenie: `local`, `dev`, `test`, `stage` lub `prod`. Środowisko jest wyświetlane jako kolorowa plakietka obok nazwy w panelu, dzięki czemu zawsze widać, z którym klastrem się pracuje.
 
-`prod` dodaje ochronę. Każda zmiana w połączeniu prod, na przykład utworzenie topiku, wysłanie wiadomości, reset offsetów lub uruchomienie sesji konsumenta, wymaga wpisania nazwy połączenia. Usuwanie i czyszczenie w każdym połączeniu wymaga wpisania nazwy obiektu (usuwanie kilku topików — ich liczby), a w połączeniu prod trzeba wpisać oba. Te potwierdzenia pojawiają się w oknie aplikacji.
+`prod` dodaje ochronę. Każda zmiana w połączeniu prod, na przykład utworzenie topiku, wysłanie wiadomości, reset offsetów lub uruchomienie sesji konsumenta, wymaga wpisania nazwy połączenia. Usuwanie i czyszczenie w każdym połączeniu wymaga wpisania nazwy obiektu (usuwanie kilku topików — ich liczby), a w połączeniu prod trzeba wpisać obie nazwy. Te potwierdzenia pojawiają się w oknie aplikacji.
 
 Tworzenie połączeń prod i przełączanie połączeń na prod wymaga Pro. W Free ta opcja jest wyświetlana jako [[ui:connections.form.prodPro]] i nie można jej wybrać. Utworzone wcześniej połączenia prod nadal działają w Free, z tymi samymi potwierdzeniami.
 

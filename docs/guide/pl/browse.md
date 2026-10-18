@@ -39,7 +39,7 @@ Filtry pokazują tylko pasujące wiadomości. Aplikacja i tak czyta wszystkie wi
 - `regex` — traktuje te pola oraz wartość nagłówka jako wyrażenia regularne.
 - `Aa` — uwzględnia wielkość liter. Domyślnie wielkość liter nie ma znaczenia.
 - [[ui:browse.filters.header]] — wiadomość ma nagłówek o dokładnie takiej nazwie. Pole [[ui:browse.filters.headerValue]] sprawdza też jego wartość.
-- `JSONPath` — warunek dotyczący wartości JSON, na przykład `$.order.status == "FAILED"`. Bez `==` lub `!=` ścieżka musi po prostu istnieć, na przykład `$.error`. Wiadomości, których wartość nie jest poprawnym JSON, nie pasują.
+- `JSONPath` — warunek dotyczący wartości JSON, na przykład `$.order.status == "FAILED"`. Bez `==` lub `!=` ścieżka musi po prostu istnieć, na przykład `$.error`. Wiadomości, których wartość nie jest poprawnym dokumentem JSON, nie pasują.
 - [[ui:browse.filters.timeFrom]] i [[ui:browse.filters.timeTo]] — znacznik czasu wiadomości mieści się w tym zakresie, w czasie lokalnym. Oba końce są uwzględniane.
 
 Filtry sprawdzają tekst wyświetlany w tabeli, po zdekodowaniu. Jeśli format wartości to `hex`, filtr wartości przeszukuje tekst szesnastkowy. Filtry są stosowane po kliknięciu przycisku [[ui:browse.panel.read]]; po ich zmianie trzeba odczytać ponownie.
@@ -52,11 +52,11 @@ Pole [[ui:browse.form.format]] określa, jak dekodowane są klucze i wartości, 
 
 - `auto` — domyślnie. Poprawne obiekty i tablice JSON są wyświetlane jako JSON, inny tekst UTF-8 jako ciąg znaków, dane binarne jako hex.
 - `string` — tekst w UTF-8. Bajty, które nie są poprawnym UTF-8, są zastępowane znakiem `�`.
-- `json` — JSON z wcięciami w szczegółach wiadomości. Jeśli wartość nie jest poprawnym JSON, szczegóły pokazują błąd.
+- `json` — JSON z wcięciami w szczegółach wiadomości. Jeśli wartość nie jest poprawnym dokumentem JSON, szczegóły pokazują błąd.
 - `hex` — każdy bajt jako dwie cyfry szesnastkowe.
 - `base64` — bajty w Base64.
 
-Szczegóły pokazują, jaki format został faktycznie użyty, na przykład `json`, gdy `auto` wykrył JSON. Wartości nagłówków są wyświetlane jako tekst; binarne wartości nagłówków — jako `0x` i ciąg szesnastkowy. Brakujący klucz lub wartość jest wyświetlany jako `null`.
+Szczegóły pokazują, jaki format został faktycznie użyty, na przykład `json`, gdy `auto` wykrył JSON. Wartości nagłówków są wyświetlane jako tekst; binarne wartości nagłówków — jako `0x` i ciąg szesnastkowy. Brakujący klucz lub brakująca wartość są wyświetlane jako `null`.
 
 Bardzo duże klucze i wartości są wyświetlane tylko częściowo, mniej więcej pierwszy 1 MB tekstu. Dotyczy to także `hex` i `base64`. Szczegóły wiadomości pokazują wtedy ostrzeżenie.
 

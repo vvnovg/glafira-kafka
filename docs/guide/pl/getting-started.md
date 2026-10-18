@@ -14,7 +14,7 @@ Należy wybrać plik odpowiedni dla danego Maca: `aarch64` dla Apple silicon (M1
 
 Można też użyć instalatora `.pkg`. Instaluje on aplikację w `/Applications` dla wszystkich użytkowników.
 
-Wersje beta nie są jeszcze podpisane przez Apple, dlatego macOS blokuje pierwsze uruchomienie. Aby na nie zezwolić:
+Buildy beta nie są jeszcze podpisane przez Apple, dlatego macOS blokuje pierwsze uruchomienie. Aby na nie zezwolić:
 
 1. Spróbować raz otworzyć aplikację i zamknąć ostrzeżenie.
 2. Otworzyć Ustawienia systemowe → Prywatność i ochrona.
@@ -44,7 +44,7 @@ Instalator `.msi` (`x64`) można pobrać ze strony wydań: https://github.com/vv
 2. Potwierdzić instalację w oknie systemu Windows. Aplikacja jest instalowana dla wszystkich użytkowników komputera, dlatego potrzebne są uprawnienia administratora.
 3. Uruchomić Glafira for Apache Kafka z menu Start.
 
-Wersje beta nie są jeszcze podpisane. Jeśli SmartScreen zablokuje instalator, należy kliknąć „Więcej informacji”, a następnie „Uruchom mimo to”. Można też odblokować plik w PowerShell przed jego uruchomieniem:
+Buildy beta nie są jeszcze podpisane. Jeśli SmartScreen zablokuje instalator, należy kliknąć „Więcej informacji”, a następnie „Uruchom mimo to”. Można też odblokować plik w PowerShell przed jego uruchomieniem:
 
 ```powershell
 Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en-US.msi"

@@ -1,6 +1,6 @@
 # Producer
 
-Ekran [[ui:sidebar.producer]] wysyła wiadomości do Kafki: pojedynczo z formularza lub wiele naraz. Otwiera się go z poziomu połączenia w panelu [[ui:sidebar.connections]] albo przyciskiem [[ui:topics.details.produce]] na karcie topiku, który wypełnia pole topiku. Każde połączenie ma własną kartę Producer.
+Ekran [[ui:sidebar.producer]] wysyła wiadomości do Kafki: pojedynczo z formularza lub wiele naraz. Otwiera się go z poziomu połączenia w panelu [[ui:sidebar.connections]] albo przyciskiem [[ui:topics.details.produce]] na karcie topiku; przycisk wypełnia pole topiku. Każde połączenie ma własną kartę Producer.
 
 W połączeniach z włączoną opcją [[ui:common.readOnly]] ekran Producer otwiera się z ostrzeżeniem [[ui:producer.readOnly]]. Przyciski wysyłania są ukryte, ale szablony i historię nadal można przeglądać.
 
@@ -95,7 +95,7 @@ Sekcja [[ui:producer.batch.legend]] pod formularzem wysyła wiele wiadomości w 
 
 Symbole zastępcze są podstawiane osobno dla każdej kopii. `{{seq}}` to numer kopii, od 0 do N−1, więc każda wiadomość może otrzymać własny klucz, na przykład `order-{{seq}}`. Błędy symboli zastępczych są sprawdzane na pierwszej kopii przed rozpoczęciem przebiegu.
 
-W trakcie przebiegu panel pokazuje, ile wiadomości wysłano, a ile się nie powiodło. Na koniec pokazuje stan [[ui:producer.batch.done]]. Błędy są wyświetlane z numerem kopii, liczonym od 1. Lista pokazuje pierwsze 20 błędów; jeśli jest ich więcej, uwaga pod listą podaje łączną liczbę.
+W trakcie przebiegu panel pokazuje, ile wiadomości wysłano, a ilu nie udało się wysłać. Na koniec pokazuje stan [[ui:producer.batch.done]]. Błędy są wyświetlane z numerem kopii, liczonym od 1. Lista pokazuje pierwsze 20 błędów; jeśli jest ich więcej, uwaga pod listą podaje łączną liczbę.
 
 Przycisk [[ui:producer.batch.cancel]] zatrzymuje przebieg. Wiadomości, które jeszcze nie opuściły aplikacji, nie są wysyłane, a panel pokazuje ich liczbę. Aplikacja czeka do 2 sekund, aż broker potwierdzi już wysłane wiadomości. Wiadomości, które nadal nie są potwierdzone, liczą się jako błędy, ponieważ nie wiadomo, czy zostały zapisane. Zamknięcie karty Producer również zatrzymuje przebieg.
 
@@ -141,6 +141,6 @@ Bez limitu aplikacja wysyła tak szybko, jak broker przyjmuje wiadomości. Szybk
 - `1` — potwierdza tylko leader. Szybciej, ale wiadomość może zostać utracona, jeśli leader ulegnie awarii, zanim followery ją skopiują.
 - `0` — producent nie czeka na potwierdzenie. Wiadomości mogą zostać utracone, a offset nie jest zwracany.
 
-Opcja [[ui:producer.settings.compression]] kompresuje partie wiadomości: `none` (domyślnie), `gzip`, `snappy`, `lz4` lub `zstd`. Kompresja oszczędza ruch sieciowy i miejsce na dysku kosztem pewnego obciążenia procesora. Często wybierane są `zstd` i `lz4`. Przy pojedynczej małej wiadomości zysk jest niewielki.
+Pole [[ui:producer.settings.compression]] kompresuje partie wiadomości: `none` (domyślnie), `gzip`, `snappy`, `lz4` lub `zstd`. Kompresja oszczędza ruch sieciowy i miejsce na dysku kosztem pewnego obciążenia procesora. Często wybierane są `zstd` i `lz4`. Przy pojedynczej małej wiadomości zysk jest niewielki.
 
 Opcja [[ui:producer.settings.idempotence]] ustawia `enable.idempotence`. Zapobiega duplikatom, gdy klient ponawia wysłanie po błędzie sieci. Wymaga `acks` ustawionego na `all`; przy innych wartościach aplikacja pokazuje błąd i niczego nie wysyła.

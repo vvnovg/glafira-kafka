@@ -99,7 +99,7 @@ pub struct Summary {
     pub state_changes: usize,
     pub joins: usize,
     pub leaves: usize,
-    /// Время в PreparingRebalance / CompletingRebalance по образцам.
+    /// Время в PreparingRebalance / CompletingRebalance по образцам: интервал до следующего удачного образца; неудачные образцы состояние не меняют.
     pub rebalancing_ms: u64,
 }
 
@@ -155,6 +155,11 @@ impl Recorder {
     }
 
     pub fn sample(&mut self, at_ms: u64, g: &GroupDescription) {
+        // Ошибка брокера (координатор переезжает и т. п.) — не снимок группы: иначе в хронологии
+        // появились бы ложные выходы и входы всех участников.
+        if let Some(message) = &g.error {
+            return self.failed(at_ms, BackendError::new("describe_error", message.clone()));
+        }
         let next = GroupState::from(g);
         self.samples += 1;
         let Some((prev, prev_at)) = self.prev.take() else {
@@ -372,5 +377,39 @@ pub(crate) mod tests {
         assert_eq!(o.events.len(), MAX_EVENTS);
         assert!(o.truncated);
         assert_eq!(o.summary.joins + o.summary.leaves, MAX_EVENTS + 20);
+    }
+
+    #[test]
+    fn broker_error_is_a_failed_sample_not_an_empty_group() {
+        let mut r = Recorder::default();
+        r.sample(
+            0,
+            &group(
+                "Stable",
+                1,
+                vec![member("a", "h1", &[0]), member("b", "h2", &[1])],
+            ),
+        );
+        let mut broken = group("Unknown", 2, vec![]);
+        broken.error = Some("COORDINATOR_NOT_AVAILABLE: The coordinator is not available".into());
+        r.sample(2000, &broken);
+        r.sample(
+            4000,
+            &group(
+                "Stable",
+                1,
+                vec![member("a", "h1", &[0]), member("b", "h2", &[1])],
+            ),
+        );
+        let o = r.finish(0, 4000, None, None);
+        assert_eq!(o.samples, 3);
+        assert_eq!(o.events.len(), 1, "{:?}", o.events);
+        let e = serde_json::to_value(&o.events[0]).unwrap();
+        assert_eq!(
+            (e["kind"].as_str(), e["code"].as_str()),
+            (Some("sampleFailed"), Some("describe_error"))
+        );
+        assert_eq!(o.summary, Summary::default());
+        assert_eq!(o.last.unwrap().members.len(), 2);
     }
 }

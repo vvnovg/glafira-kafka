@@ -169,7 +169,7 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 
 **`observe_consumer_group`** — опрос группы на протяжении окна:
 - каждые `intervalSeconds` — описание группы; в начале и в конце — лаг;
-- ответ: `{ startedAt, durationMs, samples, initial, final, lagStart, lagEnd, events [...], summary }`;
+- ответ: `{ startedAtMs, durationMs, samples, initial, final, lagStart, lagEnd, events [...], summary }`;
   `initial`/`final` — состояние, участники, координатор; `events` — `{ atMs, kind, … }` с видами
   `stateChanged { from, to }`, `memberJoined { memberId, clientId, host, groupInstanceId }`, `memberLeft { … }`,
   `assignmentChanged { memberId, added [], removed [] }`, `coordinatorChanged { from, to }`, `sampleFailed { code, message }`;

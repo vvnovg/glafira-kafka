@@ -8,7 +8,7 @@ Une connexion est le profil enregistré d’un cluster Kafka : adresses, param�
 2. Saisissez un nom dans le champ [[ui:connections.form.name]]. Il apparaît dans le panneau et dans les titres des onglets.
 3. Dans [[ui:connections.form.bootstrap]], saisissez une ou plusieurs adresses au format `host:port`, séparées par des virgules, par exemple `kafka1:9092,kafka2:9092`. Un seul broker joignable suffit : le client découvre les autres lui-même.
 4. Choisissez le [[ui:connections.form.protocol]] et remplissez les champs qu’il ajoute. Voir [Protocoles de sécurité](connections.md#security).
-5. Si vous le souhaitez, choisissez [[ui:connections.form.folder]], [[ui:connections.form.environment]] et [[ui:connections.form.color]] du point affiché à côté du nom.
+5. Si vous le souhaitez, choisissez un [[ui:connections.form.folder]], un [[ui:connections.form.environment]] et une [[ui:connections.form.color]] pour le point affiché à côté du nom.
 6. Cliquez sur [[ui:connections.form.test]], puis sur [[ui:common.save]].
 
 Après l’enregistrement, le formulaire se ferme et l’aperçu du cluster s’ouvre.
@@ -94,7 +94,7 @@ openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -ink
 
 ## Mots de passe {#passwords}
 
-Le mot de passe SASL et les mots de passe des clés et des magasins sont enregistrés dans le trousseau du système : Trousseau sur macOS, Gestionnaire d’identification sur Windows, Secret Service sur Linux. Ils ne sont jamais écrits dans le profil de connexion, les fichiers d’export ou l’archive de diagnostic.
+Le mot de passe SASL et les mots de passe des clés et des magasins sont enregistrés dans le stockage sécurisé du système : Trousseau sur macOS, Gestionnaire d’identification sur Windows, Secret Service sur Linux. Ils ne sont jamais écrits dans le profil de connexion, les fichiers d’export ou l’archive de diagnostic.
 
 Lorsque vous modifiez une connexion enregistrée, les champs de mot de passe sont vides et affichent [[ui:connections.form.passwordKeep]]. Laissez un champ vide pour conserver le mot de passe enregistré, ou saisissez-en un nouveau pour le remplacer. Pour supprimer le mot de passe enregistré d’un certificat, cochez [[ui:connections.tls.clear]] à côté du champ. À l’enregistrement, les mots de passe que la connexion n’utilise plus sont supprimés, par exemple après le passage du protocole à `PLAINTEXT`.
 
@@ -112,7 +112,7 @@ Une nouvelle connexion prod est d’abord en [[ui:common.readOnly]]. Décochez l
 
 ## Lecture seule {#read-only}
 
-Le mode [[ui:common.readOnly]] bloque tout ce qui modifie le cluster : création, modification, purge et suppression de topics, envoi de messages, réinitialisation d’offsets, suppression de groupes et lancement de sessions consumer. Les boutons de ces actions sont masqués ou désactivés, et le cœur de l’app refuse lui aussi ces opérations. La navigation et la lecture restent disponibles. Une icône de cadenas à côté du nom dans le panneau signale les connexions en lecture seule.
+Le mode [[ui:common.readOnly]] bloque tout ce qui modifie le cluster : création, modification, purge et suppression de topics, envoi de messages, réinitialisation d’offsets, suppression de groupes et lancement de sessions consumer. Les boutons de ces actions sont masqués ou désactivés, et le cœur de l’app refuse lui aussi ces opérations. Le parcours des messages et la lecture restent disponibles. Une icône de cadenas à côté du nom dans le panneau signale les connexions en lecture seule.
 
 Utilisez ce mode lorsque vous avez seulement besoin de consulter les données, en particulier sur des clusters partagés. La lecture seule est une protection propre à l’app : elle ne remplace pas les droits d’accès (ACL) de Kafka.
 

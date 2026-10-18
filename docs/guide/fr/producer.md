@@ -60,7 +60,7 @@ Au format `json`, le JSON est vérifié après le remplacement des variables. Le
 
 `{{env NAME}}` lit l’environnement du processus Glafira. Si vous lancez Glafira depuis le Dock ou le menu Démarrer, les variables définies uniquement dans le profil de votre terminal peuvent manquer.
 
-Lorsqu’un message provient de [Ouvrir dans le Producer](browse.md#open-in-producer) ou de l’historique, chaque `{{` qu’il contient est écrit `\{{`. Le message est alors envoyé exactement tel quel, sans aucun remplacement.
+Lorsqu’un message provient de la commande [Ouvrir dans le Producer](browse.md#open-in-producer) ou de l’historique, chaque `{{` qu’il contient est écrit `\{{`. Le message est alors envoyé exactement tel quel, sans aucun remplacement.
 
 ## Modèles {#templates}
 

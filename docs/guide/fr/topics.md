@@ -7,7 +7,7 @@ Ce chapitre traite de l’aperçu du cluster, de la liste des topics, de la cré
 L’écran [[ui:cluster.overview.title]] montre l’état du cluster au moment de son chargement. Cliquez sur [[ui:cluster.overview.refresh]] pour le recharger.
 
 - `Cluster ID` — l’identifiant du cluster.
-- [[ui:cluster.overview.controller]] — l’ID du broker que le cluster déclare comme contrôleur. Dans les clusters KRaft, les clients ne communiquent pas directement avec les contrôleurs : le cluster indique ici un broker aléatoire, et non le contrôleur actif, qui peut changer d’une actualisation à l’autre.
+- [[ui:cluster.overview.controller]] — l’ID du broker que le cluster déclare comme contrôleur. Dans les clusters KRaft, les clients ne communiquent pas directement avec les contrôleurs : le cluster indique ici un broker aléatoire, et non le contrôleur actif ; ce broker peut changer d’une actualisation à l’autre.
 - [[ui:cluster.overview.brokers]] — le nombre de brokers.
 - [[ui:cluster.overview.topicsInternal]] — tous les topics, avec le nombre de topics internes entre parenthèses.
 - [[ui:cluster.overview.partitions]] — le nombre de partitions de tous les topics.

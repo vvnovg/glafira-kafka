@@ -238,5 +238,13 @@
     "sidebar.producer",
     "tabs.producer",
     "topics.details.colLeader"
+  ],
+  "zh-TW": [
+    "about.build",
+    "connections.form.prodPro",
+    "connections.form.step.tcp",
+    "sidebar.producer",
+    "tabs.producer",
+    "topics.details.colLeader"
   ]
 }

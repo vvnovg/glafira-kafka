@@ -9,7 +9,9 @@ use crate::error::{AppResult, ErrorCode};
 use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::RwLockExt;
 
-pub const LANGUAGES: [&str; 9] = ["en", "ru", "de", "fr", "es", "it", "pl", "pt-BR", "zh-CN"];
+pub const LANGUAGES: [&str; 10] = [
+    "en", "ru", "de", "fr", "es", "it", "pl", "pt-BR", "zh-CN", "zh-TW",
+];
 
 fn is_known(code: &str) -> bool {
     LANGUAGES.contains(&code)
@@ -217,6 +219,26 @@ mod tests {
         assert_eq!(
             resolve(Some("zh-Hans-CN"), None, None),
             ("zh-CN".into(), LanguageReason::System)
+        );
+    }
+
+    #[test]
+    fn traditional_chinese_with_real_list() {
+        for tag in [
+            "zh-Hant-TW",
+            "zh-TW",
+            "zh_TW",
+            "zh-HK",
+            "zh-MO",
+            "zh-Hant",
+            "zh-Hant-HK",
+        ] {
+            assert_eq!(match_language(tag), Some("zh-TW"), "{tag}");
+        }
+        assert_eq!(match_language("zh-Hans-TW"), Some("zh-CN"));
+        assert_eq!(
+            resolve(Some("zh-Hant-TW"), None, None),
+            ("zh-TW".into(), LanguageReason::System)
         );
     }
 

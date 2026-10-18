@@ -301,10 +301,23 @@ jobs:
       - name: Сборка руководства
         working-directory: src
         run: node scripts/guide-publish.mjs ../guide-out
+      # Атомарно: черновик со всеми ассетами, и только потом — публикация с пометкой latest.
+      # Бета публикуется обычным релизом: updater берёт releases/latest/download/latest.json,
+      # а без явного --latest GitHub может не пометить тег -beta как последний.
+      - name: Публикация в репозиторий релизов
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          gh release create "$TAG" release/assets/* --repo "$RELEASES_REPO" --title "$TAG" --notes-file release/notes.md --draft
+          gh release edit "$TAG" --repo "$RELEASES_REPO" --draft=false --latest
       # Каталог guide/ и README репозитория релизов — одним коммитом «guide: $TAG», только если что-то изменилось.
       # Токен — только через GH_TOKEN и credential helper gh, в URL и логи не попадает.
+      # После публикации релиза: руководство не опережает релиз, если тот не создался. Сборка руководства —
+      # выше, до релиза, и ломает job заранее. Сбой самого push релиз не отменяет (continue-on-error):
+      # повтор job упадёт на gh release create, поэтому руководство тогда докладывают вручную
+      # (pnpm guide:publish и коммит в guide/ репозитория релизов).
       - name: Руководство и README в репозиторий релизов
-        if: ${{ !inputs.dry_run }}
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
@@ -319,12 +332,3 @@ jobs:
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -m "guide: $TAG"
           git push origin HEAD
-      # Атомарно: черновик со всеми ассетами, и только потом — публикация с пометкой latest.
-      # Бета публикуется обычным релизом: updater берёт releases/latest/download/latest.json,
-      # а без явного --latest GitHub может не пометить тег -beta как последний.
-      - name: Публикация в репозиторий релизов
-        env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        run: |
-          gh release create "$TAG" release/assets/* --repo "$RELEASES_REPO" --title "$TAG" --notes-file release/notes.md --draft
-          gh release edit "$TAG" --repo "$RELEASES_REPO" --draft=false --latest

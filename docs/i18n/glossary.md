@@ -157,3 +157,18 @@ to commit — zatwierdzić, zatwierdzanie (как в UI: Zatwierdź); commit (с
 Credential Manager — Menedżer poświadczeń; lock icon — ikona kłódki;
 метки — только в именительном: «w polu [[ui:…]] wpisać…», «przycisk [[ui:…]]», «sekcja [[ui:…]]»;
 read-only connection — połączenie tylko do odczytu (с меткой: «w połączeniach z włączoną opcją [[ui:common.readOnly]]»).
+
+## Слова руководства (pt-BR)
+
+Термины, которые часто встречаются в `docs/guide/pt-BR` и отсутствуют в словаре интерфейса:
+обращение — você, по возможности без местоимения или безличными оборотами («É possível…»); бразильская норма: arquivo, tela, excluir, usuário;
+app — aplicativo (как в UI; приложения-потребители группы — тоже aplicativos); tab — aba; screen — tela; panel (левая панель) — painel;
+button — botão; checkbox — caixa de seleção; option — opção; field — campo; section — seção; form — formulário; template — modelo;
+history — histórico; logs — logs (m., arquivos de log); batch send — envio em lote (как в UI), lote; batch (Kafka) — batch;
+release page — página de releases; installer — instalador; build — build (m.); support request — solicitação de suporte; support — suporte;
+timestamp — timestamp; tombstone — tombstone; listener — listener; handshake — handshake; policy — política (как в UI);
+browse (просмотр сообщений) — navegação, navegar pelas mensagens; purge — limpar, limpeza (как в UI: Limpar);
+to commit — fazer commit; committed offset — offset com commit; timeout — tempo limite; lock icon — ícone de cadeado;
+macOS menu Help — menu Ajuda; Keychain — Chaves; Credential Manager — Gerenciador de Credenciais;
+метки полей — «em [[ui:…]], digite/escolha…», «o campo [[ui:…]]», «a seção [[ui:…]]», «a tela [[ui:…]]»;
+read-only connection — conexão somente leitura (с меткой: «nas conexões com a opção [[ui:common.readOnly]] ativada»).

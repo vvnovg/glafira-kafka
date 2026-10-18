@@ -91,7 +91,7 @@
 - [[ui:topics.details.tabMessages]] — 메시지를 조회합니다. [메시지 조회](browse.md)를 참고하세요.
 - [[ui:topics.details.tabPartitions]] — 파티션별 표: [[ui:topics.details.colLeader]], [[ui:topics.details.colReplicas]], `ISR`(동기화된 복제본), 시작(`Low`) 오프셋과 끝(`High`) 오프셋, 메시지 수. 리더가 없는 파티션에는 [[ui:topics.details.noLeader]]이 표시됩니다.
 - [[ui:topics.details.tabConfigs]] — 토픽 매개변수. [토픽 구성](topics.md#topic-config)을 참고하세요.
-- [[ui:topics.details.tabGroups]] — 이 토픽에 커밋된 오프셋이 있는 컨슈머 그룹과 [[ui:topics.groups.colState]], [[ui:topics.groups.colPartitions]], [[ui:topics.groups.colLag]]. 그룹을 클릭하면 그룹이 열립니다. [컨슈머 그룹](groups.md)을 참고하세요.
+- [[ui:topics.details.tabGroups]] — 이 토픽에 커밋된 오프셋이 있는 컨슈머 그룹이 [[ui:topics.groups.colState]], [[ui:topics.groups.colPartitions]], [[ui:topics.groups.colLag]] 열과 함께 표시됩니다. 그룹을 클릭하면 그룹이 열립니다. [컨슈머 그룹](groups.md)을 참고하세요.
 
 ## 토픽 구성 {#topic-config}
 

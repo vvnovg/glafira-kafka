@@ -71,7 +71,7 @@
 
 - [[ui:groups.reset.strategyEarliest]] — 아직 저장되어 있는 첫 오프셋. 그룹은 토픽에 보관된 모든 메시지를 다시 읽습니다.
 - [[ui:groups.reset.strategyLatest]] — 파티션의 끝. 그룹은 쌓인 메시지를 모두 건너뛰고 새 메시지만 읽습니다.
-- [[ui:groups.reset.strategyTimestamp]] — [[ui:groups.reset.timestamp]] 값 또는 그 이후에 기록된 첫 메시지. 더 새로운 메시지가 없는 파티션에서는 끝이 대상입니다.
+- [[ui:groups.reset.strategyTimestamp]] — [[ui:groups.reset.timestamp]] 값과 같거나 그 이후 시각에 기록된 첫 메시지. 더 새로운 메시지가 없는 파티션에서는 끝이 대상입니다.
 - [[ui:groups.reset.strategyOffset]] — 모든 파티션에서 지정한 [[ui:groups.reset.offset]] 값(0 이상의 정수). 파티션에 이 오프셋이 없으면 파티션의 첫 오프셋이나 끝 오프셋이 대상입니다.
 - [[ui:groups.reset.strategyShift]] — 커밋된 오프셋을 [[ui:groups.reset.shift]] 값만큼 이동합니다. 음수이면 N개 메시지를 거슬러 다시 읽고, 양수이면 N개 메시지를 건너뜁니다. 결과는 첫 오프셋과 끝 오프셋 사이에 머뭅니다. 커밋된 오프셋이 없는 파티션은 이동할 수 없으므로 건너뜁니다.
 

@@ -63,7 +63,7 @@ SSL이 없는 프로토콜을 선택했는데도 TLS 오류가 나타난다면 �
 
 [[ui:errors.secrets.keychain]] — 앱이 시스템 보안 저장소에서 비밀번호를 읽을 수 없습니다. macOS에서는 키체인이 요청할 때 접근을 허용하세요. Linux에서는 세션에서 GNOME Keyring, KWallet 또는 다른 Secret Service 제공자가 실행 중인지 확인하세요.
 
-'[[ui:errors.kafka.notAuthorized]]' 오류는 다릅니다. 로그인은 성공했지만 Kafka 사용자에게 토픽이나 그룹 읽기 같은 이 작업에 대한 권한(ACL)이 없습니다. 관리자에게 권한을 요청하세요. Kafka는 조회 권한이 없는 토픽에 대해 오류를 보고하지 않으며, 그런 토픽은 토픽 목록에 나타나지 않을 뿐입니다.
+'[[ui:errors.kafka.notAuthorized]]' 오류는 다릅니다. 로그인은 성공했지만 Kafka 사용자에게 토픽이나 그룹 읽기 같은 이 작업에 대한 권한(ACL)이 없습니다. 관리자에게 권한을 요청하세요. Kafka는 Describe 권한이 없는 토픽에 대해 오류를 보고하지 않으며, 그런 토픽은 토픽 목록에 나타나지 않을 뿐입니다.
 
 ## 제한 시간 초과 {#timeouts}
 

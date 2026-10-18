@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../../api/client";
 import type { ImportPreview, PreviewItem } from "../../../api/types";
 import { tr } from "../../../i18n/text";
+import { trapTab } from "../../../lib/focusTrap";
 import { ErrorBanner } from "../../common/ErrorBanner";
 import { Hint } from "../../common/Hint";
 import { folderPaths } from "./folderTree";
@@ -17,9 +18,6 @@ interface Props {
   /** Импорт применён: итог для сообщения в панели. */
   onImported: (result: ImportPreview) => void;
 }
-
-/** Элементы, на которые попадает фокус по Tab (отключённые пропускаются). */
-const FOCUSABLE = "button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled]), summary, a[href], [tabindex]:not([tabindex='-1'])";
 
 const itemLabel = (item: PreviewItem) => [...item.path, item.name].join(" / ");
 
@@ -71,22 +69,6 @@ export function ImportDialog({ path, initialTargetId, onClose, onImported }: Pro
     };
   }, []);
 
-  /** Tab и Shift+Tab ходят по кругу внутри диалога: дерево за ним недоступно, пока диалог открыт. */
-  const trapTab = (e: KeyboardEvent) => {
-    const items = [...(rootRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
-    if (items.length === 0) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    const active = document.activeElement;
-    if (e.shiftKey && (active === first || !rootRef.current?.contains(active))) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && (active === last || !rootRef.current?.contains(active))) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
   const apply = async () => {
     setBusy(true);
     setApplyError(null);
@@ -104,7 +86,7 @@ export function ImportDialog({ path, initialTargetId, onClose, onImported }: Pro
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Tab") trapTab(e);
+    if (e.key === "Tab") trapTab(rootRef.current, e);
     if (e.key === "Escape" && !busy) {
       e.stopPropagation();
       onClose();

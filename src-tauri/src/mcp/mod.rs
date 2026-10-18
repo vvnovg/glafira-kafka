@@ -100,11 +100,14 @@ mod tests {
         let c = client_configs(exe);
         assert_eq!(
             c.claude_code,
-            "claude mcp add glafira -- '/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka' mcp"
+            "claude mcp add glafira-kafka -- '/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka' mcp"
         );
         let v: serde_json::Value = serde_json::from_str(&c.claude_desktop).unwrap();
-        assert_eq!(v["mcpServers"]["glafira"]["command"], exe.to_str().unwrap());
-        assert_eq!(v["mcpServers"]["glafira"]["args"][0], "mcp");
+        assert_eq!(
+            v["mcpServers"]["glafira-kafka"]["command"],
+            exe.to_str().unwrap()
+        );
+        assert_eq!(v["mcpServers"]["glafira-kafka"]["args"][0], "mcp");
         assert_eq!(
             c.other_client,
             "'/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka' mcp"
@@ -112,7 +115,7 @@ mod tests {
         let plain = client_configs(Path::new("/usr/bin/glafira-kafka"));
         assert_eq!(
             plain.claude_code,
-            "claude mcp add glafira -- /usr/bin/glafira-kafka mcp"
+            "claude mcp add glafira-kafka -- /usr/bin/glafira-kafka mcp"
         );
         assert_eq!(plain.other_client, "/usr/bin/glafira-kafka mcp");
         assert_eq!(shell_quote("/a/it's"), r"'/a/it'\''s'");

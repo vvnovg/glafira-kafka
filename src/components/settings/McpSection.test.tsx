@@ -26,8 +26,8 @@ import { McpSection } from "./McpSection";
 const configs = {
   command: "/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka",
   args: ["mcp"],
-  claudeDesktop: '{"mcpServers":{"glafira":{}}}',
-  claudeCode: "claude mcp add glafira -- /x mcp",
+  claudeDesktop: '{"mcpServers":{"glafira-kafka":{}}}',
+  claudeCode: "claude mcp add glafira-kafka -- /x mcp",
   otherClient: "'/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka' mcp",
 };
 
@@ -49,7 +49,7 @@ describe("McpSection", () => {
     await user.click(toggle);
     expect(api.setMcpEnabled).toHaveBeenCalledWith(true);
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Сервер работает"));
-    expect(screen.getByText("claude mcp add glafira -- /x mcp")).toBeInTheDocument();
+    expect(screen.getByText("claude mcp add glafira-kafka -- /x mcp")).toBeInTheDocument();
     // Путь с пробелами — в кавычках, как у Claude Code.
     expect(screen.getByText(configs.otherClient)).toBeInTheDocument();
   });

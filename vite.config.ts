@@ -8,6 +8,10 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [react()],
 
+  // macOS 11 (minimumSystemVersion в tauri.conf.json) — WebKit уровня Safari 14: синтаксис понижаем до него.
+  // API (Object.hasOwn и т. п.) Vite не полифилит — см. src/polyfills.ts и scripts/check-dist-compat.mjs.
+  build: { target: "safari14" },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

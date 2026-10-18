@@ -9,8 +9,8 @@ use crate::error::{AppResult, ErrorCode};
 use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::RwLockExt;
 
-pub const LANGUAGES: [&str; 10] = [
-    "en", "ru", "de", "fr", "es", "it", "pl", "pt-BR", "zh-CN", "zh-TW",
+pub const LANGUAGES: [&str; 11] = [
+    "en", "ru", "de", "fr", "es", "it", "pl", "pt-BR", "zh-CN", "zh-TW", "ja",
 ];
 
 fn is_known(code: &str) -> bool {
@@ -239,6 +239,17 @@ mod tests {
         assert_eq!(
             resolve(Some("zh-Hant-TW"), None, None),
             ("zh-TW".into(), LanguageReason::System)
+        );
+    }
+
+    #[test]
+    fn japanese_with_real_list() {
+        for tag in ["ja", "ja-JP", "ja_JP", "JA-jp"] {
+            assert_eq!(match_language(tag), Some("ja"), "{tag}");
+        }
+        assert_eq!(
+            resolve(Some("ja-JP"), None, None),
+            ("ja".into(), LanguageReason::System)
         );
     }
 

@@ -63,7 +63,7 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | retention | хранение (retention) | Aufbewahrung | rétention | retención | conservazione | retencja | retenção | 保留 | 保留 | 保持 | 보존 |
 | replication factor | фактор репликации | Replikationsfaktor | facteur de réplication | factor de replicación | fattore di replica | współczynnik replikacji | fator de replicação | 副本因子 | 複寫係數 | レプリケーションファクター | 복제 계수 |
 | under-replicated | недореплицированные | unterrepliziert | sous-répliquées | subreplicadas | sotto-replicate | niedoreplikowane | sub-replicadas | 副本不足 | 複本不足 | レプリカ不足 | 복제 부족 |
-| trusted CA | доверенный CA | vertrauenswürdige CA | CA de confiance | CA de confianza | CA attendibile | zaufany CA | CA confiável | 受信任的 CA | 受信任的 CA | 信頼された CA | 신뢰할 수 있는 CA |
+| trusted CA | доверенный CA | vertrauenswürdige CA | CA de confiance | CA de confianza | CA attendibile | zaufany CA | CA confiável | 受信任的 CA | 受信任的 CA | 信頼されたCA | 신뢰할 수 있는 CA |
 | client certificate / key | сертификат / ключ клиента | Client-Zertifikat / -Schlüssel | certificat / clé client | certificado / clave de cliente | certificato / chiave client | certyfikat / klucz klienta | certificado / chave do cliente | 客户端证书 / 私钥 | 用戶端憑證 / 私密金鑰 | クライアント証明書 / 秘密鍵 | 클라이언트 인증서 / 개인 키 |
 | system secret store | системное хранилище секретов | Schlüsselbund des Systems | trousseau du système | almacén de secretos del sistema | archivio dei segreti di sistema | systemowy magazyn sekretów | cofre de segredos do sistema | 系统密钥存储 | 系統金鑰儲存區 | システムの資格情報ストア | 시스템 보안 저장소 |
 | idempotence | идемпотентность | Idempotenz | idempotence | idempotencia | idempotenza | idempotencja | idempotência | 幂等性 | 冪等性 | 冪等性 | 멱등성 |
@@ -77,7 +77,7 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | follower (реплика) | фолловер | Follower | follower | follower | follower | follower | follower | Follower | Follower | フォロワー | 팔로워 |
 | license | лицензия | Lizenz | licence | licencia | licenza | licencja | licença | 许可证 | 授權 | ライセンス | 라이선스 |
 | settings | настройки | Einstellungen | Paramètres | Ajustes | Impostazioni | Ustawienia | Configurações | 设置 | 設定 | 設定 | 설정 |
-| about | о программе | Über Glafira | À propos | Acerca de | Informazioni | O programie | Sobre | 关于 Glafira | 關於 Glafira | Glafira について | Glafira 정보 |
+| about | о программе | Über Glafira | À propos | Acerca de | Informazioni | O programie | Sobre | 关于 Glafira | 關於 Glafira | Glafiraについて | Glafira 정보 |
 | update | обновление | Update | mise à jour | actualización | aggiornamento | aktualizacja | atualização | 更新 | 更新 | アップデート | 업데이트 |
 | diagnostics archive | архив диагностики | Diagnosearchiv | archive de diagnostic | archivo de diagnóstico | archivio diagnostico | archiwum diagnostyczne | arquivo de diagnóstico | 诊断归档 | 診斷壓縮檔 | 診断アーカイブ | 진단 아카이브 |
 | set by your organization | задан вашей организацией | von Ihrer Organisation festgelegt | défini par votre organisation | establecido por tu organización | impostato dalla tua organizzazione | ustawione przez organizację | definido pela sua organização | 由你的组织设置 | 由你的組織設定 | 組織によって設定済み | 조직에서 설정함 |

@@ -98,7 +98,7 @@ Ci użytkownicy i certyfikaty służą wyłącznie do testów lokalnych.
 
 ## Język interfejsu {#language}
 
-Interfejs jest dostępny po angielsku, rosyjsku, niemiecku, francusku, hiszpańsku, włosku, polsku i portugalsku (Brazylia). Wszystkie języki są bezpłatne.
+Interfejs jest dostępny po angielsku, rosyjsku, niemiecku, francusku, hiszpańsku, włosku, polsku, portugalsku (Brazylia), chińsku (uproszczonym i tradycyjnym), japońsku i koreańsku. Wszystkie języki są bezpłatne.
 
 Aby zmienić język:
 

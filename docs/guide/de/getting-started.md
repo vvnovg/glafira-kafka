@@ -98,7 +98,7 @@ Diese Benutzer und Zertifikate sind nur für lokale Tests gedacht.
 
 ## Sprache der Oberfläche {#language}
 
-Die Oberfläche ist auf Englisch, Russisch, Deutsch, Französisch, Spanisch, Italienisch, Polnisch und Portugiesisch (Brasilien) verfügbar. Alle Sprachen sind kostenlos.
+Die Oberfläche ist auf Englisch, Russisch, Deutsch, Französisch, Spanisch, Italienisch, Polnisch, Portugiesisch (Brasilien), Chinesisch (vereinfacht und traditionell), Japanisch und Koreanisch verfügbar. Alle Sprachen sind kostenlos.
 
 So ändern Sie die Sprache:
 

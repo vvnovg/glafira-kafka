@@ -98,7 +98,7 @@ These users and certificates are for local tests only.
 
 ## Interface language {#language}
 
-The interface is available in English, Russian, German, French, Spanish, Italian, Polish and Portuguese (Brazil). All languages are free.
+The interface is available in English, Russian, German, French, Spanish, Italian, Polish, Portuguese (Brazil), Chinese (Simplified and Traditional), Japanese and Korean. All languages are free.
 
 To change the language:
 

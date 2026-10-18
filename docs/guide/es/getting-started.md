@@ -98,7 +98,7 @@ Estos usuarios y certificados son solo para pruebas locales.
 
 ## Idioma de la interfaz {#language}
 
-La interfaz está disponible en inglés, ruso, alemán, francés, español, italiano, polaco y portugués (Brasil). Todos los idiomas son gratuitos.
+La interfaz está disponible en inglés, ruso, alemán, francés, español, italiano, polaco, portugués (Brasil), chino (simplificado y tradicional), japonés y coreano. Todos los idiomas son gratuitos.
 
 Para cambiar el idioma:
 

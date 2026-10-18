@@ -40,6 +40,7 @@ pnpm test                                              # фронтенд
 cargo test --manifest-path src-tauri/Cargo.toml --lib  # Rust unit
 KE_IT_BOOTSTRAP=localhost:9092 KE_IT_SASL_BOOTSTRAP=localhost:9094 KE_IT_MTLS_BOOTSTRAP=localhost:9095 \
   cargo test --manifest-path src-tauri/Cargo.toml --tests   # Rust интеграционные (нужен docker compose)
+cargo test --manifest-path crates/glafira-mcp/Cargo.toml   # MCP-шлюз (без Kafka)
 ```
 Без переменной `KE_IT_*` соответствующий интеграционный тест пропускается.
 Windows: если падает `librdkafka_is_built_with_every_compression_codec` (snappy), librdkafka собрана до подключения `src-tauri/cmake/rdkafka-windows.cmake` — выполните `cargo clean -p rdkafka-sys --manifest-path src-tauri/Cargo.toml` и пересоберите.
@@ -62,6 +63,7 @@ Windows: если падает `librdkafka_is_built_with_every_compression_codec
   macOS может один раз спросить доступ к старым записям Keychain.
 - Шаблоны сообщений: `templates.json`; история отправки — `history/<id подключения>.json` (последние 100, значения до 64 КБ). История хранится открытым текстом и содержит уже отрисованные сообщения: значения, подставленные из `{{env NAME}}`, и значения заголовков (например, токены) записываются как есть. Файлы данных создаются с правами только для владельца (0600, каталог `history/` — 0700 на macOS/Linux). Если `templates.json` не читается (например, создан более новой версией), недоступны только шаблоны — ошибка показывается в панели шаблонов.
 - Лицензия: `license.json` (только если ключ введён вручную).
+- MCP: `mcp.json` (адрес и токен сервера, пока он работает) и журнал вызовов `mcp-audit.jsonl` (+ `mcp-audit.1.jsonl`, ротация при 5 МБ) — в каталоге данных; содержимое ответов LLM в журнал не пишется. Сокет — `mcp.sock` там же, а если путь длиннее 100 байт, — `glafira-kafka-mcp-….sock` в `$XDG_RUNTIME_DIR` или во временном каталоге; на Windows вместо сокета — именованный канал `\\.\pipe\glafira-kafka-mcp-…`. На macOS/Linux файлы и сокет доступны только владельцу (0600).
 - Логи: `RUST_LOG=debug pnpm tauri dev`.
 
 ## Защита от изменений
@@ -102,13 +104,19 @@ kubectl get secret kafka-client -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/ce
 
 Локальный стенд слушает mTLS на `localhost:9095` (сертификаты — `dev/certs/out`, см. `dev/certs/README.md`).
 
+## LLM-ассистенты (MCP)
+- Glafira — MCP-шлюз только для чтения: LLM-клиент (Claude Desktop, Claude Code, Cursor) запускает `glafira-kafka mcp`, тот соединяется с запущенной Glafira через локальный сокет (Windows — named pipe) и читает метаданные подключений с флажком «Доступ для LLM». Изменить кластер через шлюз нельзя; сообщения, пароли и настройки безопасности не передаются.
+- Включается в «Настройки» → «LLM-ассистенты (MCP)», там же — фрагменты конфига клиентов, подтверждённые клиенты, сессии и журнал. Новый клиент подтверждается диалогом. Политика `mcpEnabled = false` запрещает MCP (`docs/admin.md`).
+- Протокол, инструменты и лимиты — крейт `crates/glafira-mcp` (не зависит от rdkafka и приложения); связь с приложением — `src-tauri/src/mcp/`. Спецификация: `docs/superpowers/specs/2026-10-18-glafira-mcp-gateway-g1-design.md`.
+- Разработка: отладочный бинарь — `src-tauri/target/debug/kafka-explorer` (`… mcp` — режим шима); Glafira запускайте через `pnpm tauri dev` до подключения клиента — шим не поднимет dev-сервер Vite.
+
 ## Языки
 Интерфейс доступен на 12 языках, все — бесплатно (Free): English, Русский, Deutsch, Français, Español, Italiano, Polski, Português (Brasil), 简体中文, 繁體中文, 日本語, 한국어.
 Язык выбирается в «Настройки» («Как в системе» по умолчанию). Администратор может задать язык политикой `language`
 (см. `docs/admin.md`): тогда выбор пользователю недоступен. Как добавить строку или язык — `docs/i18n/README.md`.
 
 ## Free и Pro
-- **Free:** просмотр, топики и группы, Producer, все виды подключений (включая mTLS), «только чтение».
+- **Free:** просмотр, топики и группы, Producer, все виды подключений (включая mTLS), «только чтение», MCP-шлюз для LLM-ассистентов.
 - **Pro:** consumer-сессии и режим prod: создание и перевод подключений в prod (с подтверждением именем подключения на любое изменение). Free сохраняет подтверждения на уже существующих prod-подключениях и маркировку остальных окружений.
 - Лицензия вводится на экране «Лицензия» (ссылка внизу дерева подключений) или раздаётся администратором через политику (`licenseKey`). Проверка офлайн.
 - Выдача ключей — `docs/licensing.md`.

@@ -88,8 +88,9 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 4. Запись `mcp.json`.
 
 **Рукопожатие** (до трафика MCP, таймаут 5 с, строка не длиннее 256 байт): клиент присылает `GLAFIRA-MCP/1 <token>\n`;
-сервер сравнивает токен за постоянное время и отвечает `OK\n` или `ERR <code> <English message>\n` и закрывает
-соединение (`bad_token`, `disabled`). Дальше — JSON-RPC MCP построчно, как в stdio-транспорте.
+сервер сравнивает токен за постоянное время и отвечает `OK\n` или `ERR bad_token <English message>\n` и закрывает
+соединение. Дальше — JSON-RPC MCP построчно, как в stdio-транспорте. Проверять «MCP выключен» в рукопожатии не нужно:
+выключенный сервер не слушает сокет, а шим узнаёт о выключении из `settings.json`.
 
 **Шим** — режим того же бинаря: `main()` до `kafka_explorer_lib::run()` проверяет `args[1] == "mcp"` и вызывает
 `kafka_explorer_lib::mcp::shim::run()`, Tauri, WebView и librdkafka не инициализируются. В stdout — только протокол MCP,
@@ -109,9 +110,11 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
   вне бандла — `current_exe()`); если Glafira уже открыта, она выходит на передний план;
 - Windows: `current_exe()` без аргументов, `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP`;
 - Linux: `$APPIMAGE`, если задан (`current_exe()` AppImage — во временной точке монтирования), иначе `current_exe()`;
-  `setsid`.
+  отдельная группа процессов (`process_group(0)`), чтобы сигнал группе шима не закрыл Glafira.
 
 В режиме разработки (`pnpm tauri dev`) приложение запускается вручную: отладочный бинарь без dev-сервера Vite не работает.
+Отладочный бинарь называется `target/debug/kafka-explorer` (имя пакета Cargo); `glafira-kafka` (`mainBinaryName`) — имя,
+которое даёт tauri-cli при сборке, в том числе `pnpm tauri dev`.
 
 ## 4. Доступ и подтверждение клиентов
 
@@ -125,11 +128,14 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 Изменение флага, отзыв клиента или выключение действуют сразу.
 
 **Подтверждение:**
-- `initialize` с именем клиента (`clientInfo.name`), которого нет в `approvedClients`, → сессия `Pending`, событие
-  `mcp://approval-request { sessionId, clientName, clientVersion, allowedConnections }`, окно запрашивает внимание
-  (`request_user_attention`).
-- Диалог внутри страницы (как `ConfirmDialog`): «<Клиент> <версия> хочет подключиться к Glafira по MCP. Он увидит
-  метаданные подключений с доступом для LLM: N». Кнопки «Разрешить» и «Отклонить».
+- Клиент опознаётся по первому запросу сессии, где он известен: `clientInfo` из `initialize` (протоколы до 2025-11-25)
+  или `io.modelcontextprotocol/clientInfo` из `_meta` запроса (протокол 2026-07-28, в нём нет `initialize`); дальше
+  клиент сессии не меняется. Новый клиент (имени нет в `approvedClients`) → сессия `Pending`, статус с ожидающим запросом
+  уходит в интерфейс (`mcp://state`, поле `pending`), окно запрашивает внимание (`request_user_attention`).
+- Клиент, не сообщивший имя, показывается как «Неизвестный MCP-клиент»; разрешение для него действует только на текущую
+  сессию и не запоминается.
+- Диалог внутри страницы (`.modal`, как диалог импорта): «<Клиент> <версия> хочет подключиться к Glafira. Он увидит
+  метаданные подключений, открытых для LLM-ассистентов: N». Кнопки «Разрешить» и «Отклонить».
 - «Разрешить» → клиент добавляется в `approvedClients`, сессия `Approved`. «Отклонить» → сессия закрывается,
   в список ничего не пишется (при следующем подключении Glafira спросит снова).
 - Пока сессия `Pending`, инструменты отвечают ошибкой `client_not_approved`: «The user has not approved this MCP client
@@ -202,7 +208,8 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 **Пул клиентов** общий с интерфейсом: MCP не создаёт вторых соединений с кластером и отдельного `client.id` в G1 не имеет.
 
 **Ошибки:** результат инструмента с `isError: true` и текстом `<code>: <message>` — `not_allowed`, `client_not_approved`,
-`mcp_disabled`, `rate_limited`, `invalid_argument` (например, `limit` вне диапазона), коды Kafka из `ErrorCode`. Ошибка
+`client_rejected` (сессия закрывается), `mcp_disabled`, `rate_limited`, `invalid_argument` (например, `limit` вне
+диапазона), `not_found` (группы нет), `busy` (второе наблюдение в той же сессии), `internal`, коды Kafka из `ErrorCode`. Ошибка
 протокола JSON-RPC — только для неверно сформированного запроса (обрабатывает rmcp).
 
 ## 7. Журнал
@@ -240,10 +247,11 @@ Claude Desktop ──stdio──► glafira-kafka mcp (шим: перекачк�
 **`GroupDetails`:** координатор (id и `host:port`), тип группы (classic/consumer), колонка `group.instance.id` у участников
 (если она есть хотя бы у одного).
 
-**Связь с интерфейсом:** Tauri-события `mcp://state` (статус сервера и список сессий, отправляется при изменениях и при
-каждом вызове — для подсветки индикатора) и `mcp://approval-request`. Команды: `get_mcp_status`, `set_mcp_enabled`,
-`answer_mcp_approval(sessionId, approve)`, `revoke_mcp_client(name)`, `disconnect_mcp_sessions(sessionId?)`,
-`get_mcp_audit(limit)`, `get_mcp_client_configs`.
+**Связь с интерфейсом:** одно Tauri-событие `mcp://state` — статус целиком: состояние сервера, сессии (с отметкой «идёт
+вызов» для подсветки индикатора), ожидающие подтверждения, запомненные клиенты, число открытых для LLM подключений.
+Отправляется при каждом изменении. Команды: `get_mcp_status`, `set_mcp_enabled`, `answer_mcp_approval(sessionId, approve)`,
+`revoke_mcp_client(name)`, `disconnect_mcp_sessions(sessionId?)`, `get_mcp_audit(limit)`, `get_mcp_client_configs`,
+`reveal_mcp_audit` (показать файл журнала).
 
 **Справка:** F1 в разделе MCP открывает главу `llm-mcp`.
 

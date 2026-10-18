@@ -8,6 +8,10 @@ pub const POLICY_VENDOR: &str = "Glafira";
 pub const POLICY_PRODUCT: &str = "Kafka";
 /// Префикс имён, видимых в Kafka: client.id и consumer group (ACL, мониторинг).
 pub const KAFKA_CLIENT_PREFIX: &str = "glafira-kafka";
+/// Имя сервера в MCP (`serverInfo.name`) и в конфигах клиентов.
+pub const MCP_SERVER_NAME: &str = "glafira-kafka";
+/// Ключ сервера в `mcpServers` клиентов (Claude Desktop, Claude Code).
+pub const MCP_CLIENT_KEY: &str = "glafira";
 /// Прежние (идентификатор, сервис keychain), от новых к старым. Данные и секреты отсюда
 /// переносятся при первом запуске (см. `migrate`).
 pub const LEGACY: &[(&str, &str)] = &[("dev.kafkaexplorer.app", "kafka-explorer")];

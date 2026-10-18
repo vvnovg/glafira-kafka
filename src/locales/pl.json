@@ -340,6 +340,12 @@
       "invalidJson": "Plik jest uszkodzony lub nie jest w formacie JSON: {{error}}",
       "unsupportedConnection": "Nieobsługiwane przez tę wersję Glafira (zaktualizuj aplikację): {{error}}",
       "duplicateId": "Powtórzony ID połączenia w pliku"
+    },
+    "mcp": {
+      "startFailed": "Nie udało się uruchomić serwera MCP: {{error}}",
+      "disabledByPolicy": "MCP jest wyłączony przez organizację",
+      "noExe": "Nie znaleziono pliku wykonywalnego aplikacji Glafira: {{error}}",
+      "auditMissing": "Log MCP nie jest jeszcze dostępny: {{error}}"
     }
   },
   "messages": {

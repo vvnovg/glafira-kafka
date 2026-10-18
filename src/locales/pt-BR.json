@@ -340,6 +340,12 @@
       "invalidJson": "O arquivo está corrompido ou não é JSON: {{error}}",
       "unsupportedConnection": "Não compatível com esta versão do Glafira (atualize o aplicativo): {{error}}",
       "duplicateId": "ID de conexão duplicado no arquivo"
+    },
+    "mcp": {
+      "startFailed": "Não foi possível iniciar o servidor MCP: {{error}}",
+      "disabledByPolicy": "O MCP está desativado pela sua organização",
+      "noExe": "Não foi possível encontrar o executável do Glafira: {{error}}",
+      "auditMissing": "O log do MCP ainda não está disponível: {{error}}"
     }
   },
   "messages": {

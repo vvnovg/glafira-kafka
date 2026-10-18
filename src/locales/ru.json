@@ -340,6 +340,12 @@
       "invalidJson": "Файл повреждён или это не JSON: {{error}}",
       "unsupportedConnection": "Не поддерживается этой версией Glafira (обновите приложение): {{error}}",
       "duplicateId": "Повторяющийся id подключения в файле"
+    },
+    "mcp": {
+      "startFailed": "MCP-сервер не запустился: {{error}}",
+      "disabledByPolicy": "MCP отключён администратором",
+      "noExe": "Не удалось найти исполняемый файл Glafira: {{error}}",
+      "auditMissing": "Журнал MCP пока недоступен: {{error}}"
     }
   },
   "messages": {

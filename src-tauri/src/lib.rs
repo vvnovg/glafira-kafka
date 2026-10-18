@@ -78,7 +78,17 @@ pub fn run() {
             );
             let st = AppState::new(&dir, Arc::new(KeyringStore::default()))?.with_policy(policy);
             tracing::info!(tier = ?st.license.status().tier, "license");
+            if crate::mcp::files::data_dir().as_deref() != Some(dir.as_path()) {
+                tracing::warn!(
+                    shim = ?crate::mcp::files::data_dir(),
+                    "mcp: the shim looks for mcp.json in another data directory"
+                );
+            }
+            let mcp = crate::mcp::McpController::new(st.clone(), &dir);
+            mcp.set_ui(Box::new(crate::mcp::TauriUi(app.handle().clone())));
             app.manage(st);
+            app.manage(mcp.clone());
+            tauri::async_runtime::spawn(async move { mcp.apply().await });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -138,6 +148,14 @@ pub fn run() {
             commands::license::remove_license_key,
             commands::settings::get_language_settings,
             commands::settings::set_language,
+            commands::mcp::get_mcp_status,
+            commands::mcp::set_mcp_enabled,
+            commands::mcp::answer_mcp_approval,
+            commands::mcp::revoke_mcp_client,
+            commands::mcp::disconnect_mcp_sessions,
+            commands::mcp::get_mcp_audit,
+            commands::mcp::get_mcp_client_configs,
+            commands::mcp::reveal_mcp_audit,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
@@ -145,6 +163,12 @@ pub fn run() {
             if let tauri::RunEvent::Exit = event {
                 // Процесс завершится сразу после колбэка: даём сессиям завершиться.
                 shutdown_sessions(app);
+                // MCP: клиенты отключаются, mcp.json удаляется (шим поймёт, что Glafira закрыта).
+                let mcp = app
+                    .state::<Arc<crate::mcp::McpController>>()
+                    .inner()
+                    .clone();
+                tauri::async_runtime::block_on(mcp.shutdown());
             }
         });
 }

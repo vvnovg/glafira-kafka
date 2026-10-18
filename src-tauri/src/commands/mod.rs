@@ -6,6 +6,7 @@ pub mod consume;
 pub mod folders;
 pub mod groups;
 pub mod license;
+pub mod mcp;
 pub mod produce;
 pub mod settings;
 pub mod topic_ops;

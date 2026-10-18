@@ -340,6 +340,12 @@
       "invalidJson": "ファイルが破損しているか、JSONではありません：{{error}}",
       "unsupportedConnection": "このバージョンのGlafiraではサポートされていません（アプリをアップデートしてください）：{{error}}",
       "duplicateId": "ファイル内で接続のidが重複しています"
+    },
+    "mcp": {
+      "startFailed": "MCPサーバーを開始できませんでした：{{error}}",
+      "disabledByPolicy": "MCPは組織によって無効にされています",
+      "noExe": "Glafiraの実行ファイルが見つかりません：{{error}}",
+      "auditMissing": "MCPのログはまだ利用できません：{{error}}"
     }
   },
   "messages": {

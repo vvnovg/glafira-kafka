@@ -340,6 +340,12 @@
       "invalidJson": "文件已损坏或不是 JSON：{{error}}",
       "unsupportedConnection": "此版本的 Glafira 不支持（请更新应用）：{{error}}",
       "duplicateId": "文件中存在重复的连接 id"
+    },
+    "mcp": {
+      "startFailed": "无法启动 MCP 服务器：{{error}}",
+      "disabledByPolicy": "MCP 已被你的组织禁用",
+      "noExe": "找不到 Glafira 的可执行文件：{{error}}",
+      "auditMissing": "MCP 日志尚不可用：{{error}}"
     }
   },
   "messages": {

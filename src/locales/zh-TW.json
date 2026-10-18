@@ -340,6 +340,12 @@
       "invalidJson": "檔案已損毀或不是 JSON：{{error}}",
       "unsupportedConnection": "此版本的 Glafira 不支援（請更新應用程式）：{{error}}",
       "duplicateId": "檔案中有重複的連線 id"
+    },
+    "mcp": {
+      "startFailed": "無法啟動 MCP 伺服器：{{error}}",
+      "disabledByPolicy": "MCP 已被你的組織停用",
+      "noExe": "找不到 Glafira 的可執行檔：{{error}}",
+      "auditMissing": "MCP 日誌尚無法使用：{{error}}"
     }
   },
   "messages": {

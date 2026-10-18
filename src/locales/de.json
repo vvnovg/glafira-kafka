@@ -340,6 +340,12 @@
       "invalidJson": "Die Datei ist beschädigt oder kein JSON: {{error}}",
       "unsupportedConnection": "Von dieser Glafira-Version nicht unterstützt (App aktualisieren): {{error}}",
       "duplicateId": "Doppelte Verbindungs-ID in der Datei"
+    },
+    "mcp": {
+      "startFailed": "MCP-Server konnte nicht gestartet werden: {{error}}",
+      "disabledByPolicy": "MCP ist von Ihrer Organisation deaktiviert",
+      "noExe": "Die ausführbare Datei von Glafira wurde nicht gefunden: {{error}}",
+      "auditMissing": "Das MCP-Protokoll ist noch nicht verfügbar: {{error}}"
     }
   },
   "messages": {

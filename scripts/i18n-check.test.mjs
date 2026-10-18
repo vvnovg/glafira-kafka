@@ -332,14 +332,15 @@ test("руководство: структура, метки, ссылки", () 
   const en = flatten({ sidebar: { settings: "Settings", conn: "Connection {{name}}" } });
   const ok = "# Start\n\nOpen [[ui:sidebar.settings]].\n\n## Install {#install}\n\nSee [mTLS](connections.md#mtls).\n";
   const conn = "# Connections\n\n## mTLS {#mtls}\n\nText.\n";
-  const files = { "en/getting-started.md": ok, "en/connections.md": conn, "ru/getting-started.md": ok, "ru/connections.md": conn };
+  const ru = (t) => t.replace("# ", "# ru ");
+  const files = { "en/getting-started.md": ok, "en/connections.md": conn, "ru/getting-started.md": ru(ok), "ru/connections.md": ru(conn) };
   const p = (f) => checkGuide(f, ["en", "ru"], en, ["getting-started", "connections"]);
   assert.deepEqual(p(files), []);
   assert.ok(p({ ...files, "ru/connections.md": "# Подключения\n\n## mTLS {#m-tls}\n" }).some((x) => x.includes("ru/connections.md") && x.includes("mtls")));
   assert.ok(p({ ...files, "en/getting-started.md": ok.replace("sidebar.settings", "sidebar.nope") }).some((x) => x.includes("sidebar.nope")));
   assert.ok(p({ ...files, "en/getting-started.md": ok.replace("sidebar.settings", "sidebar.conn") }).some((x) => x.includes("sidebar.conn")));
   assert.ok(p({ ...files, "en/getting-started.md": ok.replace("#mtls", "#nope") }).some((x) => x.includes("#nope")));
-  assert.ok(p({ "en/getting-started.md": ok, "en/connections.md": conn, "ru/getting-started.md": ok }).some((x) => x.includes("ru/connections.md")));
+  assert.ok(p({ "en/getting-started.md": ok, "en/connections.md": conn, "ru/getting-started.md": ru(ok) }).some((x) => x.includes("ru/connections.md")));
   assert.ok(p({ ...files, "en/connections.md": "No title\n" }).some((x) => x.includes("# ")));
   assert.ok(p({ ...files, "en/connections.md": conn + "<b>x</b>\n" }).some((x) => x.includes("HTML")));
   assert.ok(p({ ...files, "en/connections.md": conn + "[x](http://a.b)\n" }).some((x) => x.includes("http://")));
@@ -458,11 +459,12 @@ test("CJK: в прозе главы метка подставляется зна
   assert.ok(p("打开 [[ui:sidebar.settings]]。").some((x) => x.includes("пробел между иероглифами")), "в zh метка без пробелов");
 });
 
-test("CJK: глава-заготовка, совпадающая с en, типографикой языка не проверяется", () => {
+test("глава, совпадающая с en байт в байт, — не переведена", () => {
   const en = flatten({ sidebar: { settings: "Settings" } });
   const enCh = "# Start\n\nOpen [[ui:sidebar.settings]].\n";
   const zhFlat = flatten({ sidebar: { settings: "设置" } });
   const p = (zh) => checkGuide({ "en/getting-started.md": enCh, "zh-CN/getting-started.md": zh }, ["en", "zh-CN"], en, ["getting-started"], { "zh-CN": zhFlat });
-  assert.deepEqual(p(enCh), []);
-  assert.ok(p(enCh.replace("Open", "Öffnen")).some((x) => x.includes("полуширинная")), "изменённая глава проверяется");
+  assert.ok(p(enCh).some((x) => x.includes("zh-CN/getting-started.md") && x.includes("глава не переведена (совпадает с en)")));
+  assert.ok(!p("# 开始\n\n打开[[ui:sidebar.settings]]。\n").some((x) => x.includes("не переведена")));
+  assert.ok(p(enCh.replace("Open", "Öffnen")).some((x) => x.includes("полуширинная")), "изменённая глава проверяется типографикой");
 });

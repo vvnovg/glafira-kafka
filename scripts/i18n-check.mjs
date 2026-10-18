@@ -669,13 +669,10 @@ export function checkGuide(files, codes, enFlat, chapters = GUIDE_CHAPTERS, lang
   for (const [path, ch] of Object.entries(parsed)) {
     const [code, name] = path.split("/");
     for (const pr of ch.problems) problems.push(`${path}: ${pr}`);
-    // Глава, совпадающая с en байт в байт, — заготовка до перевода: типографика языка к ней не применяется.
-    const placeholder = code !== "en" && files[path] === files[`en/${name}`];
-    if (!placeholder) {
-      const prose = langFlat[code] ? withLabelValues(ch.prose, langFlat[code]) : ch.prose;
-      for (const pr of cjkProblems(prose, code)) problems.push(`${path}: ${pr}`);
-      if (langFlat[code]) for (const pr of labelFlankingProblems(ch.prose, langFlat[code])) problems.push(`${path}: ${pr}`);
-    }
+    if (code !== "en" && files[path] === files[`en/${name}`]) problems.push(`${path}: глава не переведена (совпадает с en)`);
+    const prose = langFlat[code] ? withLabelValues(ch.prose, langFlat[code]) : ch.prose;
+    for (const pr of cjkProblems(prose, code)) problems.push(`${path}: ${pr}`);
+    if (langFlat[code]) for (const pr of labelFlankingProblems(ch.prose, langFlat[code])) problems.push(`${path}: ${pr}`);
     const enAnchors = parsed[`en/${name}`]?.anchors;
     if (code !== "en" && enAnchors && ch.anchors.join(" ") !== enAnchors.join(" ")) {
       problems.push(`${path}: якоря [${ch.anchors.join(", ")}] не совпадают с en [${enAnchors.join(", ")}]`);

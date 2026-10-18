@@ -5,3 +5,4 @@ Windows Registry Editor Version 5.00
 "updateUrl"="https://mirror.example.corp/glafira-kafka/latest.json"
 "licenseKey"="<ключ организации>"
 "language"="en"
+"mcpEnabled"=dword:00000000

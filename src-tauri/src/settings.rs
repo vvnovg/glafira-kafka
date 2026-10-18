@@ -1,4 +1,4 @@
-//! Пользовательские настройки (пока — язык интерфейса) и выбор действующего языка.
+//! Пользовательские настройки (язык интерфейса, MCP) и выбор действующего языка.
 
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
@@ -6,7 +6,7 @@ use std::sync::RwLock;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AppResult, ErrorCode};
-use crate::storage::fs::{read_json_or_quarantine, write_json};
+use crate::storage::fs::{read_json, read_json_or_quarantine, write_json};
 use crate::sync::RwLockExt;
 
 pub const LANGUAGES: [&str; 12] = [
@@ -73,37 +73,83 @@ pub fn resolve(
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+/// Клиент MCP, которому пользователь разрешил подключаться (спец. G1 §4).
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ApprovedClient {
+    pub name: String,
+    pub version: String,
+    pub first_seen_ms: u64,
+    pub last_seen_ms: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct McpSettings {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub approved_clients: Vec<ApprovedClient>,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 struct SettingsFile {
     schema_version: u32,
     #[serde(default)]
     language: Option<String>,
+    #[serde(default)]
+    mcp: McpSettings,
 }
 
 pub struct SettingsStore {
     path: PathBuf,
-    language: RwLock<Option<String>>,
+    data: RwLock<SettingsFile>,
+}
+
+/// Включён ли MCP в `settings.json` каталога `dir` — для шима: без карантина и без записи,
+/// нечитаемый файл означает «выключено».
+pub fn mcp_enabled_in(dir: &Path) -> bool {
+    read_json::<SettingsFile>(&dir.join("settings.json"))
+        .ok()
+        .flatten()
+        .is_some_and(|f| f.mcp.enabled)
 }
 
 impl SettingsStore {
     pub fn open(dir: &Path) -> Self {
         let path = dir.join("settings.json");
-        let language = match read_json_or_quarantine::<SettingsFile>(&path, 1) {
-            Ok(f) => f.and_then(|f| f.language).filter(|l| is_known(l)),
+        let mut data = match read_json_or_quarantine::<SettingsFile>(&path, 1) {
+            Ok(f) => f.unwrap_or_default(),
             Err(e) => {
                 tracing::warn!("settings not read: {}", e.message);
-                None
+                SettingsFile::default()
             }
         };
+        data.language = data.language.filter(|l| is_known(l));
         Self {
             path,
-            language: RwLock::new(language),
+            data: RwLock::new(data),
         }
     }
 
     pub fn language(&self) -> Option<String> {
-        self.language.read_safe().clone()
+        self.data.read_safe().language.clone()
+    }
+
+    pub fn mcp(&self) -> McpSettings {
+        self.data.read_safe().mcp.clone()
+    }
+
+    /// Блокирующий вызов: меняет копию, пишет файл и только потом обновляет кэш.
+    fn update(&self, f: impl FnOnce(&mut SettingsFile)) -> AppResult<()> {
+        let mut data = self.data.write_safe();
+        let mut next = data.clone();
+        f(&mut next);
+        next.schema_version = 1;
+        write_json(&self.path, &next)?;
+        *data = next;
+        Ok(())
     }
 
     /// Блокирующий вызов (запись файла).
@@ -118,15 +164,49 @@ impl SettingsStore {
                 code = l
             ));
         }
-        write_json(
-            &self.path,
-            &SettingsFile {
-                schema_version: 1,
-                language: lang.map(String::from),
-            },
-        )?;
-        *self.language.write_safe() = lang.map(String::from);
-        Ok(())
+        self.update(|d| d.language = lang.map(String::from))
+    }
+
+    /// Блокирующий вызов (запись файла).
+    pub fn set_mcp_enabled(&self, enabled: bool) -> AppResult<()> {
+        self.update(|d| d.mcp.enabled = enabled)
+    }
+
+    pub fn is_client_approved(&self, name: &str) -> bool {
+        self.data
+            .read_safe()
+            .mcp
+            .approved_clients
+            .iter()
+            .any(|c| c.name == name)
+    }
+
+    /// Запоминает клиента или обновляет его версию и время последнего сеанса. Блокирующий вызов.
+    pub fn remember_client(&self, name: &str, version: &str, now_ms: u64) -> AppResult<()> {
+        self.update(|d| {
+            let clients = &mut d.mcp.approved_clients;
+            match clients.iter_mut().find(|c| c.name == name) {
+                Some(c) => {
+                    c.version = version.to_string();
+                    c.last_seen_ms = now_ms;
+                }
+                None => clients.push(ApprovedClient {
+                    name: name.to_string(),
+                    version: version.to_string(),
+                    first_seen_ms: now_ms,
+                    last_seen_ms: now_ms,
+                }),
+            }
+        })
+    }
+
+    /// Блокирующий вызов. `false` — такого клиента не было.
+    pub fn revoke_client(&self, name: &str) -> AppResult<bool> {
+        if !self.is_client_approved(name) {
+            return Ok(false);
+        }
+        self.update(|d| d.mcp.approved_clients.retain(|c| c.name != name))?;
+        Ok(true)
     }
 }
 
@@ -279,6 +359,52 @@ mod tests {
         assert_eq!(resolve(Some("ru"), None, Some("de")), ("de".into(), Policy));
         assert_eq!(resolve(Some("uk"), None, None), ("en".into(), Default));
         assert_eq!(resolve(None, None, None), ("en".into(), Default));
+    }
+
+    #[test]
+    fn mcp_settings_persist_next_to_language() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(!mcp_enabled_in(dir.path()), "нет файла — выключено");
+        let s = SettingsStore::open(dir.path());
+        s.set_language(Some("ru")).unwrap();
+        s.set_mcp_enabled(true).unwrap();
+        s.remember_client("claude-ai", "1.0", 10).unwrap();
+        s.remember_client("claude-ai", "1.1", 20).unwrap();
+        s.remember_client("cursor", "2", 30).unwrap();
+        assert!(mcp_enabled_in(dir.path()));
+        let again = SettingsStore::open(dir.path());
+        assert_eq!(again.language().as_deref(), Some("ru"));
+        let mcp = again.mcp();
+        assert!(mcp.enabled);
+        assert_eq!(
+            mcp.approved_clients[0],
+            ApprovedClient {
+                name: "claude-ai".into(),
+                version: "1.1".into(),
+                first_seen_ms: 10,
+                last_seen_ms: 20
+            }
+        );
+        assert!(again.revoke_client("claude-ai").unwrap());
+        assert!(!again.revoke_client("claude-ai").unwrap());
+        assert!(!again.is_client_approved("claude-ai"));
+        assert!(again.is_client_approved("cursor"));
+        again.set_language(None).unwrap();
+        assert!(
+            SettingsStore::open(dir.path()).mcp().enabled,
+            "смена языка не сбрасывает MCP"
+        );
+    }
+
+    #[test]
+    fn unreadable_settings_mean_mcp_off_for_the_shim() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("settings.json"), b"{broken").unwrap();
+        assert!(!mcp_enabled_in(dir.path()));
+        assert!(
+            dir.path().join("settings.json").exists(),
+            "шим не трогает файл"
+        );
     }
 
     #[test]

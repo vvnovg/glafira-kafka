@@ -553,6 +553,8 @@ export interface PolicyStatus {
   updateUrl: string | null;
   hasLicenseKey: boolean;
   language: string | null;
+  /** false — MCP запрещён администратором; нет поля — разрешён. */
+  mcpEnabled?: boolean;
   errors: LocalizedText[];
 }
 

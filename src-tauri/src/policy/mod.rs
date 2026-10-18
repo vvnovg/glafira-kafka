@@ -12,6 +12,7 @@ pub const KEY_UPDATES_ENABLED: &str = "updatesEnabled";
 pub const KEY_UPDATE_URL: &str = "updateUrl";
 pub const KEY_LICENSE_KEY: &str = "licenseKey";
 pub const KEY_LANGUAGE: &str = "language";
+pub const KEY_MCP_ENABLED: &str = "mcpEnabled";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PolicyValue {
@@ -71,6 +72,8 @@ pub struct PolicyStatus {
     pub has_license_key: bool,
     /// Язык интерфейса, заданный администратором.
     pub language: Option<String>,
+    /// `false` — MCP-шлюз запрещён администратором (спец. G1 §9).
+    pub mcp_enabled: bool,
     pub errors: Vec<LocalizedText>,
 }
 
@@ -83,6 +86,7 @@ impl Default for PolicyStatus {
             update_url: None,
             has_license_key: false,
             language: None,
+            mcp_enabled: true,
             errors: Vec::new(),
         }
     }
@@ -106,6 +110,7 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                     managed: true,
                     source: Some(source.to_string()),
                     updates_enabled: false,
+                    mcp_enabled: false,
                     errors: vec![ltext!(
                         "errors.policy.unreadable",
                         "Policy cannot be read: {{reason}}",
@@ -157,6 +162,13 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                 value = s
             )),
             (KEY_LANGUAGE, other) => status.errors.push(other.invalid(&key)),
+            (KEY_MCP_ENABLED, PolicyValue::Bool(b)) => status.mcp_enabled = b,
+            (KEY_MCP_ENABLED, PolicyValue::Int(i @ (0 | 1))) => status.mcp_enabled = i == 1,
+            // Непонятое значение запрещает MCP, но обновления не выключает.
+            (KEY_MCP_ENABLED, other) => {
+                status.mcp_enabled = false;
+                status.errors.push(other.invalid(&key));
+            }
             (KEY_UPDATES_ENABLED | KEY_UPDATE_URL | KEY_LICENSE_KEY, other) => {
                 broken = true;
                 status.errors.push(other.invalid(&key));
@@ -217,6 +229,44 @@ mod tests {
         assert!(p.status.has_license_key);
         assert_eq!(p.license_key.as_deref(), Some("abc.def"));
         assert!(p.status.errors.is_empty());
+    }
+
+    #[test]
+    fn mcp_policy() {
+        assert!(resolve("src", RawPolicy::Absent).status.mcp_enabled);
+        assert!(
+            resolve(
+                "src",
+                values(&[("language", PolicyValue::Str("de".into()))])
+            )
+            .status
+            .mcp_enabled
+        );
+        for (v, enabled) in [
+            (PolicyValue::Bool(false), false),
+            (PolicyValue::Bool(true), true),
+            (PolicyValue::Int(0), false),
+            (PolicyValue::Int(1), true),
+        ] {
+            let p = resolve("src", values(&[("mcpEnabled", v)]));
+            assert_eq!(p.status.mcp_enabled, enabled);
+            assert!(p.status.errors.is_empty());
+        }
+        let p = resolve(
+            "src",
+            values(&[("mcpEnabled", PolicyValue::Str("no".into()))]),
+        );
+        assert!(!p.status.mcp_enabled);
+        assert!(
+            p.status.updates_enabled,
+            "ошибка mcpEnabled не выключает обновления"
+        );
+        assert_eq!(p.status.errors.len(), 1);
+        assert!(
+            !resolve("src", RawPolicy::Unreadable("x".into()))
+                .status
+                .mcp_enabled
+        );
     }
 
     #[test]

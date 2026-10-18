@@ -1,6 +1,6 @@
 # 疑難排解
 
-本章說明常見的連線錯誤，以及每種錯誤該檢查什麼，也會說明日誌的位置，以及支援要求中應包含哪些內容。在 macOS 上，可以從「輔助說明」選單中的[[ui:menu.troubleshooting]]打開本章。
+本章說明常見的連線錯誤，以及每種錯誤該檢查什麼，也會說明日誌的位置，以及支援要求中應包含哪些內容。在 macOS 上，可以從「輔助說明」選單中的[[ui:menu.troubleshooting]]開啟本章。
 
 錯誤訊息包含一段簡短的文字，在大多數畫面上還會在括號中附上錯誤代碼，例如 `TIMEOUT`。展開[[ui:common.details]]可查看 Kafka 用戶端（librdkafka）的原始訊息，其中通常會指出確切的 Broker 位址和原因。
 
@@ -56,10 +56,10 @@ TCP 步驟通過後出現「[[ui:errors.kafka.connectionFailed]]」，通常表�
 「[[ui:errors.kafka.authFailed]]」表示 Broker 不接受 SASL 登入。請檢查：
 
 - 使用者名稱和密碼。編輯已儲存的連線時，密碼欄位留空會保留已儲存的密碼。如果不確定密碼是否正確，請重新輸入；
-- [[ui:connections.form.saslMechanism]]。必須是建立你的使用者時所用的機制。SCRAM 憑據會分別為 `SCRAM-SHA-256` 和 `SCRAM-SHA-512` 建立，`PLAIN` 使用者則另外設定；
+- [[ui:connections.form.saslMechanism]]。必須是建立你的使用者時所用的機制。SCRAM 認證資訊會分別為 `SCRAM-SHA-256` 和 `SCRAM-SHA-512` 建立，`PLAIN` 使用者則另外設定；
 - 通訊協定：`SASL_SSL` 和 `SASL_PLAINTEXT` 通常使用不同的連接埠。
 
-[[ui:errors.connections.saslPasswordMissing]]：這個連線沒有儲存密碼，例如在匯入之後。請打開連線，輸入密碼並儲存。請參閱[密碼](connections.md#passwords)。
+[[ui:errors.connections.saslPasswordMissing]]：這個連線沒有儲存密碼，例如在匯入之後。請開啟連線，輸入密碼並儲存。請參閱[密碼](connections.md#passwords)。
 
 [[ui:errors.secrets.keychain]]：應用程式無法從系統金鑰儲存區讀取密碼。在 macOS 上，鑰匙圈詢問時請允許存取。在 Linux 上，請確認你的工作階段中有 GNOME Keyring、KWallet 或其他 Secret Service 提供者正在執行。
 
@@ -77,7 +77,7 @@ TLS 或 SASL 問題可能看起來像逾時。應用程式會嘗試找出真正�
 
 如果按鈕隱藏或停用，或動作遭到拒絕，請檢查以下原因：
 
-- 連線為唯讀。名稱旁的鎖頭圖示表示唯讀。會變更叢集的按鈕會隱藏或停用。如果這類要求仍送到應用程式核心，例如在畫面打開時開啟了唯讀模式，錯誤會說明連線為唯讀。若要進行變更，請打開連線，取消勾選[[ui:common.readOnly]]並儲存。在 Free 中，正式環境連線無法取消勾選此核取方塊。請參閱[唯讀](connections.md#read-only)。
+- 連線為唯讀。名稱旁的鎖頭圖示表示唯讀。會變更叢集的按鈕會隱藏或停用。如果這類要求仍送到應用程式核心，例如在畫面開啟時開啟了唯讀模式，錯誤會說明連線為唯讀。若要進行變更，請開啟連線，取消勾選[[ui:common.readOnly]]並儲存。在 Free 中，正式環境連線無法取消勾選此核取方塊。請參閱[唯讀](connections.md#read-only)。
 - 連線為正式環境。變更時會要求輸入連線名稱，名稱相符之前不會執行動作。請參閱[環境與正式環境](connections.md#environments)。
 - 功能需要 Pro。錯誤會顯示「[[ui:errors.license.proRequired]]」；如果授權已過期，則會顯示到期日。請參閱 [Free 與 Pro](license-updates.md#free-and-pro)。
 - 消費者群組有作用中的成員。只有群組沒有成員時，才能重設偏移量和刪除群組。請參閱[重設偏移量](groups.md#reset-offsets)。

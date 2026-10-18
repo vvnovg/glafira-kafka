@@ -4,7 +4,7 @@
 
 ## 開始讀取 {#start-reading}
 
-1. 從[[ui:sidebar.topics]]清單中打開一個主題。首先打開的是[[ui:topics.details.tabMessages]]分頁。
+1. 從[[ui:sidebar.topics]]清單中開啟一個主題。首先開啟的是[[ui:topics.details.tabMessages]]分頁。
 2. 在[[ui:browse.form.from]]中選擇從哪裡開始。請參閱[起始位置](browse.md#start-position)。
 3. 視需要設定格式和篩選條件。
 4. 按一下[[ui:browse.panel.read]]。
@@ -62,7 +62,7 @@
 
 ## 訊息詳細資訊 {#message-details}
 
-按一下某一列，即可在表格旁打開訊息詳細資訊。上方是分區、偏移量和時間。下方：
+按一下某一列，即可在表格旁開啟訊息詳細資訊。上方是分區、偏移量和時間。下方：
 
 - [[ui:browse.details.value]]和[[ui:browse.details.key]]：完整文字，以及格式和以位元組計算的大小。JSON 會以縮排顯示。[[ui:browse.details.copy]]會複製文字。
 - [[ui:browse.table.colHeaders]]：標頭名稱和值的表格。
@@ -78,9 +78,9 @@ Glafira 不會將瀏覽的訊息儲存成檔案。若要將訊息帶出應用程
 
 複製的文字使用讀取時選擇的格式。若要精確複製二進位資料，請以 `hex` 或 `base64` 讀取。非常大的鍵和值只會依顯示的內容複製一部分，即使是 `hex` 和 `base64` 也一樣。請參閱[格式](browse.md#formats)。
 
-## 在 Producer 中打開 {#open-in-producer}
+## 在 Producer 中開啟 {#open-in-producer}
 
-[[ui:browse.details.resend]]會在同一個連線的 [[ui:sidebar.producer]] 中打開這則訊息。表單會填入訊息的主題、鍵、值、標頭和格式。分區交由 Kafka 決定。訊息文字中的預留位置不會被替換：副本會依讀取時的原樣傳送。
+[[ui:browse.details.resend]]會在同一個連線的 [[ui:sidebar.producer]] 中開啟這則訊息。表單會填入訊息的主題、鍵、值、標頭和格式。分區交由 Kafka 決定。訊息文字中的預留位置不會被替換：副本會依讀取時的原樣傳送。
 
 不會立即傳送任何內容。請檢查表單，視需要修改，然後在 Producer 中傳送。請參閱 [Producer](producer.md)。
 
@@ -99,6 +99,6 @@ Glafira 不會將瀏覽的訊息儲存成檔案。若要將訊息帶出應用程
 2. 在清單中選擇群組。清單只會列出已存在的群組。
 3. 按一下[[ui:browse.details.goToReset]]。
 
-群組分頁會打開，並已填好重設表單。[[ui:groups.reset.strategy]]為[[ui:groups.reset.strategyOffset]]，並填入這則訊息的偏移量。[[ui:groups.reset.scope]]為[[ui:groups.reset.scopePartitions]]，並填入這則訊息的主題和分區。此時還不會有任何變更：按一下[[ui:groups.reset.preview]]查看新的偏移量，再在那裡套用重設。群組不能有作用中的成員。請參閱[消費者群組](groups.md)。
+群組分頁會開啟，並已填好重設表單。[[ui:groups.reset.strategy]]為[[ui:groups.reset.strategyOffset]]，並填入這則訊息的偏移量。[[ui:groups.reset.scope]]為[[ui:groups.reset.scopePartitions]]，並填入這則訊息的主題和分區。此時還不會有任何變更：按一下[[ui:groups.reset.preview]]查看新的偏移量，再在那裡套用重設。群組不能有作用中的成員。請參閱[消費者群組](groups.md)。
 
 在[[ui:common.readOnly]]連線上，這個按鈕會隱藏。

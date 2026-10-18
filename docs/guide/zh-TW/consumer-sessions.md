@@ -8,19 +8,19 @@
 
 工作階段會影響叢集。它加入或離開時，Kafka 會重新分配群組的分區，其他成員都會經歷一次重新平衡。提交會變更群組的偏移量，而群組的應用程式會使用這些偏移量。
 
-在 Free 中，[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]和[[ui:groups.details.join]]會停用，並標示鎖頭和 `Pro`。如果在沒有有效 Pro 授權的情況下打開工作階段分頁，分頁會顯示訊息「[[ui:consumer.proOnly]]」，並提供連結：[[ui:common.openLicense]]。請參閱[啟用金鑰](license-updates.md#activate)。
+在 Free 中，[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]和[[ui:groups.details.join]]會停用，並標示鎖頭和 `Pro`。如果在沒有有效 Pro 授權的情況下開啟工作階段分頁，分頁會顯示訊息「[[ui:consumer.proOnly]]」，並提供連結：[[ui:common.openLicense]]。請參閱[啟用金鑰](license-updates.md#activate)。
 
 [[ui:common.readOnly]]連線無法使用工作階段，分頁會顯示「[[ui:consumer.readOnlyBlocked]]」如果連線在工作階段執行期間變成唯讀，工作階段會離開群組。
 
 ## 啟動工作階段 {#start-session}
 
-有三種方式可以打開工作階段：
+有三種方式可以開啟工作階段：
 
 - [[ui:sidebar.connections]]面板中連線下方的[[ui:sidebar.consumer]]：空白表單；
 - 主題分頁上的[[ui:topics.details.consume]]：已填入主題；
 - 群組分頁上的[[ui:groups.details.join]]：已填入群組及其有提交的主題。
 
-每次都會打開新的分頁，因此可以同時執行多個工作階段。
+每次都會開啟新的分頁，因此可以同時執行多個工作階段。
 
 在[[ui:consumer.form.groupTopics]]中：
 
@@ -30,7 +30,7 @@
 - [[ui:consumer.form.autoCommit]]：自動提交已讀取的偏移量。預設為關閉。請參閱[提交](consumer-sessions.md#commits)。
 - `isolation.level`：`read_committed`（預設）只顯示已提交交易的訊息。`read_uncommitted` 也會顯示進行中和已中止交易的訊息。
 
-在[[ui:consumer.form.formatLegend]]中選擇[[ui:consumer.form.keyFormat]]和[[ui:consumer.form.valueFormat]]，方式與瀏覽時相同。請參閱[格式](browse.md#formats)。[[ui:consumer.form.buffer]]：設定表格最多保留多少則訊息，範圍為 1 到 100000，預設為 5000。
+在[[ui:consumer.form.formatLegend]]中選擇[[ui:consumer.form.keyFormat]]和[[ui:consumer.form.valueFormat]]，方式與瀏覽時相同。請參閱[格式](browse.md#formats)。表格最多保留多少則訊息由「[[ui:consumer.form.buffer]]」設定，範圍為 1 到 100000，預設為 5000。
 
 篩選條件的用法與瀏覽時相同。請參閱[篩選條件](browse.md#filters)。
 

@@ -4,18 +4,18 @@
 
 ## 建立連線 {#create}
 
-1. 按一下[[ui:sidebar.connections]]面板標題列中的 `+`（[[ui:sidebar.newConnection]]）。若要直接在資料夾中建立連線，請打開資料夾選單，選擇[[ui:sidebar.folder.newConnection]]。
+1. 按一下[[ui:sidebar.connections]]面板標題列中的 `+`（[[ui:sidebar.newConnection]]）。若要直接在資料夾中建立連線，請開啟資料夾選單，選擇[[ui:sidebar.folder.newConnection]]。
 2. 輸入[[ui:connections.form.name]]。名稱會顯示在面板和分頁標題中。
 3. 在 [[ui:connections.form.bootstrap]]中輸入一個或多個 `host:port` 格式的位址，以逗號分隔，例如 `kafka1:9092,kafka2:9092`。只要有一個可連線的 Broker 就夠了，用戶端會自行找到其他 Broker。
 4. 選擇[[ui:connections.form.protocol]]，並填寫它新增的欄位。請參閱[安全性通訊協定](connections.md#security)。
 5. 視需要選擇[[ui:connections.form.folder]]、[[ui:connections.form.environment]]，以及名稱旁圓點的[[ui:connections.form.color]]。
 6. 按一下[[ui:connections.form.test]]，然後按[[ui:common.save]]。
 
-儲存後，表單會關閉並打開叢集概觀。
+儲存後，表單會關閉並開啟叢集概觀。
 
 另外兩個欄位用於特殊情況。[[ui:connections.form.timeout]]，即等待 Broker 回應的時間，預設為 `30000` ms，最小值為 `1000`。網路較慢或使用 VPN 時請調高此值。[[ui:connections.form.props]]可接受任何 librdkafka 設定，格式為 `key=value`，每行一個。以 `#` 開頭的行會被忽略。這裡不能填寫密碼和金鑰：名稱含有 `password` 或 `secret` 的屬性，以及 `sasl.jaas.config`、`ssl.key.pem` 和 `ssl.keystore.key`，在儲存時會被拒絕。
 
-之後若要變更連線，請按一下名稱旁的 `✎`（[[ui:sidebar.editConnection]]）。若要刪除連線，請打開表單，按一下[[ui:common.delete]]，再按[[ui:connections.form.deleteYes]]確認。
+之後若要變更連線，請按一下名稱旁的 `✎`（[[ui:sidebar.editConnection]]）。若要刪除連線，請開啟表單，按一下[[ui:common.delete]]，再按[[ui:connections.form.deleteYes]]確認。
 
 ## 測試連線 {#test}
 
@@ -86,7 +86,7 @@ Glafira 可讀取三種格式。格式會依副檔名自動選擇；請在格式
 keytool -importkeystore -srcstoretype JCEKS -srckeystore client.jceks -deststoretype PKCS12 -destkeystore client.p12
 ```
 
-- 以舊式演算法（RC2、3DES）加密的 PKCS#12 儲存區可能無法打開。如果應用程式回報舊式演算法，請以 AES 重新建立檔案：
+- 以舊式演算法（RC2、3DES）加密的 PKCS#12 儲存區可能無法開啟。如果應用程式回報舊式演算法，請以 AES 重新建立檔案：
 
 ```bash
 openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -inkey tls.key -out client.p12
@@ -96,7 +96,7 @@ openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -ink
 
 SASL 密碼以及金鑰和儲存區的密碼會儲存在系統金鑰儲存區：macOS 上是鑰匙圈，Windows 上是認證管理員，Linux 上是 Secret Service。這些密碼絕不會寫入連線設定檔、匯出檔案或診斷壓縮檔。
 
-編輯已儲存的連線時，密碼欄位是空白的，並顯示[[ui:connections.form.passwordKeep]]。將欄位留空可保留已儲存的密碼，輸入新密碼則會取代它。若要刪除已儲存的憑證密碼，請勾選欄位旁的[[ui:connections.tls.clear]]。儲存時，連線不再使用的密碼會被刪除，例如將通訊協定切換為 `PLAINTEXT` 之後。
+編輯已儲存的連線時，密碼欄位是空白的，並顯示「[[ui:connections.form.passwordKeep]]」。將欄位留空可保留已儲存的密碼，輸入新密碼則會取代它。若要刪除已儲存的憑證密碼，請勾選欄位旁的[[ui:connections.tls.clear]]。儲存時，連線不再使用的密碼會被刪除，例如將通訊協定切換為 `PLAINTEXT` 之後。
 
 如果應用程式無法存取金鑰儲存區，儲存時會顯示錯誤。在 Linux 上，請確認你的工作階段中有 GNOME Keyring、KWallet 或其他 Secret Service 提供者正在執行。
 
@@ -122,8 +122,8 @@ SASL 密碼以及金鑰和儲存區的密碼會儲存在系統金鑰儲存區：
 
 資料夾可用來分類連線，例如依專案或依環境。資料夾可以巢狀放置。
 
-- 若要在最上層建立資料夾，請按一下面板標題列中的 `+📁`（[[ui:sidebar.newFolder]]）。若要建立子資料夾，請打開資料夾選單，選擇[[ui:sidebar.newFolder]]。輸入名稱後按 `Enter`，或按 `Esc` 取消。
-- 若要打開資料夾選單，請按一下資料夾列上的 `⋯`（[[ui:sidebar.menu]]），或在資料夾上按右鍵。選單中有[[ui:sidebar.folder.rename]]、[[ui:sidebar.folder.delete]]，以及匯出和匯入指令。
+- 若要在最上層建立資料夾，請按一下面板標題列中的 `+📁`（[[ui:sidebar.newFolder]]）。若要建立子資料夾，請開啟資料夾選單，選擇[[ui:sidebar.newFolder]]。輸入名稱後按 `Enter`，或按 `Esc` 取消。
+- 若要開啟資料夾選單，請按一下資料夾列上的 `⋯`（[[ui:sidebar.menu]]），或在資料夾上按右鍵。選單中有[[ui:sidebar.folder.rename]]、[[ui:sidebar.folder.delete]]，以及匯出和匯入指令。
 - 只能刪除空的資料夾。請先移動或刪除其中的連線和子資料夾。
 - 同一層中的資料夾名稱不得重複，長度最多 100 個字元。
 
@@ -135,7 +135,7 @@ SASL 密碼以及金鑰和儲存區的密碼會儲存在系統金鑰儲存區：
 
 匯出會將連線和資料夾儲存成檔案，例如分享給同事或移到另一台電腦。
 
-1. 若要全部匯出，請打開面板標題列選單 `⋯`，選擇[[ui:sidebar.exportAll]]。若要匯出一個資料夾及其子資料夾，請在該資料夾的選單中選擇[[ui:sidebar.folder.export]]。
+1. 若要全部匯出，請開啟面板標題列選單 `⋯`，選擇[[ui:sidebar.exportAll]]。若要匯出一個資料夾及其子資料夾，請在該資料夾的選單中選擇[[ui:sidebar.folder.export]]。
 2. 選擇檔案的儲存位置。建議的名稱為 `glafira-connections-<date>.glafira-connections.json` 或 `<folder>.glafira-connections.json`。
 
 檔案儲存後，面板會顯示其中包含多少連線和資料夾。
@@ -144,8 +144,8 @@ SASL 密碼以及金鑰和儲存區的密碼會儲存在系統金鑰儲存區：
 
 ## 匯入 {#import}
 
-1. 打開面板標題列選單 `⋯`，選擇[[ui:sidebar.import]]。若要直接匯入到資料夾，請在該資料夾的選單中選擇[[ui:sidebar.folder.importHere]]。
-2. 選擇 `.glafira-connections.json` 檔案。會打開[[ui:exchange.import.title]]對話框。
+1. 開啟面板標題列選單 `⋯`，選擇[[ui:sidebar.import]]。若要直接匯入到資料夾，請在該資料夾的選單中選擇[[ui:sidebar.folder.importHere]]。
+2. 選擇 `.glafira-connections.json` 檔案。會開啟[[ui:exchange.import.title]]對話框。
 3. 在[[ui:exchange.import.target]]中選擇新資料夾和連線要放到哪裡。「[[ui:connections.form.folderRoot]]」表示最上層。
 4. 保持開啟[[ui:exchange.import.updateExisting]]，即可用檔案中的內容更新已存在的連線。關閉此選項則會保留它們原樣。
 5. 檢查預覽後按一下[[ui:exchange.import.apply]]，或按[[ui:common.cancel]]關閉對話框而不做任何變更。
@@ -160,4 +160,4 @@ SASL 密碼以及金鑰和儲存區的密碼會儲存在系統金鑰儲存區：
 - 如果新連線與同一資料夾中的另一個連線同名，會加上編號，例如 `kafka-dev (2)`。
 - 這個版本的 Glafira 不支援的連線，或額外屬性中含有機密的連線，會被略過。
 
-如果在這台電腦上找不到憑證檔案，或因為 Pro 未啟用而使正式環境連線變成唯讀，預覽也會發出警告。檔案中沒有密碼，因此匯入後，面板會顯示有多少連線需要輸入密碼。請打開這些連線，逐一輸入密碼並儲存。
+如果在這台電腦上找不到憑證檔案，或因為 Pro 未啟用而使正式環境連線變成唯讀，預覽也會發出警告。檔案中沒有密碼，因此匯入後，面板會顯示有多少連線需要輸入密碼。請開啟這些連線，逐一輸入密碼並儲存。

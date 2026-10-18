@@ -2,7 +2,7 @@
 
 消費者群組是一組共同分擔主題讀取工作的消費者。Kafka 會將每個分區分配給群組中的一個成員，並為每個分區儲存群組已提交的偏移量。應用程式重新啟動後，會從該偏移量繼續讀取。
 
-請在[[ui:sidebar.connections]]面板中的連線下方打開[[ui:sidebar.groups]]。單一主題的群組也會顯示在該主題的[[ui:topics.details.tabGroups]]分頁上。請參閱[主題畫面](topics.md#topic-details)。
+請在[[ui:sidebar.connections]]面板中的連線下方開啟[[ui:sidebar.groups]]。單一主題的群組也會顯示在該主題的[[ui:topics.details.tabGroups]]分頁上。請參閱[主題畫面](topics.md#topic-details)。
 
 ## 群組清單 {#group-list}
 
@@ -27,15 +27,15 @@
 
 延遲只取決於已提交的偏移量。作用中的消費者讀取的位置可能比它提交的更遠，因此實際的延遲可能較小。群組再次提交後，延遲就會下降。
 
-沒有已提交偏移量的分區會顯示[[ui:groups.lag.noCommit]]，且不計入總數。群組完全沒有提交（[[ui:groups.lag.noCommits]]），或無法讀取某個分區的偏移量（[[ui:groups.lag.unknown]]）時，群組的總延遲會顯示 `—`。
+沒有已提交偏移量的分區會顯示[[ui:groups.lag.noCommit]]，且不計入總數。群組完全沒有提交（「[[ui:groups.lag.noCommits]]」），或無法讀取某個分區的偏移量（[[ui:groups.lag.unknown]]）時，群組的總延遲會顯示 `—`。
 
 延遲計算的是偏移量，而不是訊息。在使用 Compaction 或交易的主題中，有些偏移量沒有可見的訊息，因此群組剩下要讀取的訊息可能比延遲顯示的少。
 
-這些值是載入當下的快照。若要持續追蹤延遲，請打開群組並開啟自動重新整理。
+這些值是載入當下的快照。若要持續追蹤延遲，請開啟群組並開啟自動重新整理。
 
 ## 群組詳細資訊 {#group-details}
 
-在清單中按一下群組即可打開其分頁。上方的摘要會顯示狀態、成員數和 Assignor。
+在清單中按一下群組即可開啟其分頁。上方的摘要會顯示狀態、成員數和 Assignor。
 
 - [[ui:groups.details.autoRefresh]]：[[ui:groups.details.refreshOff]]、[[ui:groups.details.refresh5]]或[[ui:groups.details.refresh10]]。
 - [[ui:groups.details.refresh]]：立即重新載入。

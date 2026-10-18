@@ -1,6 +1,6 @@
 # 叢集與主題
 
-本章說明叢集概觀、主題清單、建立和刪除主題、主題畫面以及主題設定。[[ui:sidebar.connections]]面板中每個連線下方都有[[ui:sidebar.cluster]]和[[ui:sidebar.topics]]的連結，各自在獨立的分頁中打開。
+本章說明叢集概觀、主題清單、建立和刪除主題、主題畫面以及主題設定。[[ui:sidebar.connections]]面板中每個連線下方都有[[ui:sidebar.cluster]]和[[ui:sidebar.topics]]的連結，各自在獨立的分頁中開啟。
 
 ## 叢集概觀 {#cluster-overview}
 
@@ -20,7 +20,7 @@
 
 ## 主題清單 {#topic-list}
 
-[[ui:sidebar.topics]]會列出叢集中的主題。按一下某一列，即可在獨立的分頁中打開該主題。
+[[ui:sidebar.topics]]會列出叢集中的主題。按一下某一列，即可在獨立的分頁中開啟該主題。
 
 欄位包括[[ui:topics.list.colName]]、[[ui:topics.list.colPartitions]]、`RF`（複寫係數）、[[ui:topics.list.colMessages]]、`cleanup.policy` 和[[ui:topics.list.colUnderRepl]]（複本不足的分區數量）。訊息數是近似值，也就是各分區結尾和起始偏移量的差。Compaction 和交易標記會使實際數量較少。訊息數和 `cleanup.policy` 只會針對捲動到的列載入。
 
@@ -35,7 +35,7 @@
 
 ## 建立主題 {#create-topic}
 
-1. 在主題清單中按一下[[ui:topics.list.create]]。清單上方會打開[[ui:topics.create.title]]表單。
+1. 在主題清單中按一下[[ui:topics.list.create]]。清單上方會開啟[[ui:topics.create.title]]表單。
 2. 輸入[[ui:topics.create.name]]。名稱可包含拉丁字母、數字、`.`、`_` 和 `-`，最多 249 個字元。如果名稱同時含有 `.` 和 `_`，表單會發出警告：這類主題的 Kafka 指標名稱可能與其他主題衝突。
 3. 設定[[ui:topics.create.partitions]]。分區會平行讀取，而順序只在單一分區內有保證。分區數之後可以增加，但永遠無法減少。
 4. 設定[[ui:topics.create.rf]]，也就是 Broker 為每個分區保留幾份複本。它不能大於 Broker 數量，表單會在欄位下方顯示 Broker 數量。預設為 3；如果 Broker 少於 3 個，則為 Broker 數量。`-1` 表示使用 Broker 的預設值。
@@ -49,11 +49,11 @@
 
 表單內容有效時，會顯示對應的 `kafka-topics.sh` 指令。你可以複製它，例如在另一個叢集中建立相同的主題。
 
-在正式環境連線上，需要輸入連線名稱來確認建立。主題建立後會打開它的分頁。
+在正式環境連線上，需要輸入連線名稱來確認建立。主題建立後會開啟它的分頁。
 
 ## 刪除主題 {#delete-topics}
 
-若要刪除一個主題，請打開它並按一下[[ui:topics.actions.deleteTopic]]。輸入主題名稱確認，然後按[[ui:topics.delete.confirm]]。主題的分頁會關閉。
+若要刪除一個主題，請開啟它並按一下[[ui:topics.actions.deleteTopic]]。輸入主題名稱確認，然後按[[ui:topics.delete.confirm]]。主題的分頁會關閉。
 
 一次刪除多個主題：
 
@@ -73,7 +73,7 @@
 主題分頁會顯示分區數、複寫係數和近似的訊息數。上方的按鈕：
 
 - [[ui:topics.details.refresh]]：重新載入主題資料。
-- [[ui:topics.details.produce]]：以這個主題打開 [[ui:sidebar.producer]]。請參閱 [Producer](producer.md)。
+- [[ui:topics.details.produce]]：以這個主題開啟 [[ui:sidebar.producer]]。請參閱 [Producer](producer.md)。
 - [[ui:topics.details.consume]]：為這個主題啟動消費者工作階段。此功能需要 Pro。請參閱[消費者工作階段](consumer-sessions.md)。
 
 在[[ui:common.readOnly]]連線上，這兩個按鈕會停用。
@@ -89,9 +89,9 @@
 下方的分頁：
 
 - [[ui:topics.details.tabMessages]]：瀏覽訊息。請參閱[瀏覽訊息](browse.md)。
-- [[ui:topics.details.tabPartitions]]：列出每個分區的表格，包含 [[ui:topics.details.colLeader]]、[[ui:topics.details.colReplicas]]、`ISR`（同步中的複本）、起始（`Low`）和結尾（`High`）偏移量以及訊息數。沒有 Leader 的分區會顯示[[ui:topics.details.noLeader]]。
+- [[ui:topics.details.tabPartitions]]：列出每個分區的表格，包含 [[ui:topics.details.colLeader]]、[[ui:topics.details.colReplicas]]、`ISR`（同步中的複本）、起始（`Low`）和結尾（`High`）偏移量以及訊息數。沒有 Leader 的分區會顯示「[[ui:topics.details.noLeader]]」。
 - [[ui:topics.details.tabConfigs]]：主題參數。請參閱[主題設定](topics.md#topic-config)。
-- [[ui:topics.details.tabGroups]]：已為這個主題提交偏移量的消費者群組，包含[[ui:topics.groups.colState]]、[[ui:topics.groups.colPartitions]]和[[ui:topics.groups.colLag]]。按一下群組即可打開。請參閱[消費者群組](groups.md)。
+- [[ui:topics.details.tabGroups]]：已為這個主題提交偏移量的消費者群組，包含[[ui:topics.groups.colState]]、[[ui:topics.groups.colPartitions]]和[[ui:topics.groups.colLag]]。按一下群組即可開啟。請參閱[消費者群組](groups.md)。
 
 ## 主題設定 {#topic-config}
 
@@ -107,7 +107,7 @@
 
 1. 在[[ui:topics.details.tabConfigs]]分頁上按一下[[ui:topics.details.edit]]。在[[ui:common.readOnly]]連線上，這個按鈕會隱藏。
 2. 在[[ui:common.config.colValue]]欄中變更值。唯讀和敏感參數無法編輯。若要移除主題自己的值，請按一下[[ui:common.config.reset]]，之後就會套用 Broker 的值。不允許空值。
-3. 按一下[[ui:common.config.review]]。應用程式會以「舊值 → 新值」顯示每項變更；[[ui:common.config.defaultValue]]表示值會被還原。
+3. 按一下[[ui:common.config.review]]。應用程式會以「舊值 → 新值」顯示每項變更；「[[ui:common.config.defaultValue]]」表示值會被還原。
 4. 按一下[[ui:common.config.apply]]，或按[[ui:common.config.back]]繼續編輯。
 
 套用之前，叢集中不會有任何變更。[[ui:common.config.discard]]會取消所有編輯。有未儲存的編輯時，[[ui:topics.details.closeEditor]]會停用。在正式環境連線上，需要輸入連線名稱來確認變更。
@@ -126,6 +126,6 @@ Kafka 主題有數十個參數。設定表格中的 `?` 圖示會逐一說明。
 - `max.message.bytes`：Broker 為這個主題接受的最大批次。預設約為 1 MB。生產者也必須允許相同的大小（`max.request.size`）。
 - `compression.type`：Broker 儲存訊息的方式。`producer` 會保留生產者的壓縮方式。
 - `message.timestamp.type`：`CreateTime`（生產者設定的時間）或 `LogAppendTime`（Broker 寫入訊息的時間）。這是瀏覽訊息時顯示的時間。
-- `delete.retention.ms`：刪除標記（值為 null 的訊息）在已 Compaction 的主題中保留多久。預設為 1 天。
+- `delete.retention.ms`：刪除標記（值為 null 的訊息）在經過 Compaction 的主題中保留多久。預設為 1 天。
 
 有些參數只存在於較新的 Kafka 版本中，有些則已淘汰。必要時 `?` 圖示會加以說明。分層儲存的參數（例如 `remote.storage.enable`）只有在叢集支援時才有效。

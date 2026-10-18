@@ -1,8 +1,8 @@
 # Producer
 
-[[ui:sidebar.producer]] 用來將訊息傳送到 Kafka：可以從表單一次傳送一則，也可以一次傳送多則。可從[[ui:sidebar.connections]]面板中的連線打開，或在主題分頁上按[[ui:topics.details.produce]]打開，此時會自動填入主題。每個連線都有自己的 Producer 分頁。
+[[ui:sidebar.producer]] 用來將訊息傳送到 Kafka：可以從表單一次傳送一則，也可以一次傳送多則。可從[[ui:sidebar.connections]]面板中的連線開啟，或在主題分頁上按[[ui:topics.details.produce]]開啟，此時會自動填入主題。每個連線都有自己的 Producer 分頁。
 
-在[[ui:common.readOnly]]連線上，傳送按鈕會隱藏，但仍可檢視範本和歷程記錄。Producer 打開時會顯示以下警告：[[ui:producer.readOnly]]
+在[[ui:common.readOnly]]連線上，傳送按鈕會隱藏，但仍可檢視範本和歷程記錄。Producer 開啟時會顯示以下警告：[[ui:producer.readOnly]]
 
 ## 傳送訊息 {#send-message}
 
@@ -60,7 +60,7 @@
 
 `{{env NAME}}` 讀取的是 Glafira 程序的環境。如果你從 Dock 或「開始」功能表啟動 Glafira，只在終端機設定檔中設定的變數可能會不存在。
 
-當訊息來自[在 Producer 中打開](browse.md#open-in-producer)或歷程記錄時，其中的每個 `{{` 都會寫成 `\{{`。如此一來，訊息會完全依原樣傳送，不會替換任何內容。
+當訊息來自[在 Producer 中開啟](browse.md#open-in-producer)或歷程記錄時，其中的每個 `{{` 都會寫成 `\{{`。如此一來，訊息會完全依原樣傳送，不會替換任何內容。
 
 ## 範本 {#templates}
 
@@ -76,7 +76,7 @@
 
 ## 歷程記錄 {#history}
 
-[[ui:producer.history.title]]：列出這個連線最近 100 次單筆傳送，最新的在最前面。批次傳送的訊息不會加入。每一列會顯示時間、主題、分區和偏移量，以及鍵的開頭。
+「[[ui:producer.history.title]]」會列出這個連線最近 100 次單筆傳送，最新的在最前面。批次傳送的訊息不會加入。每一列會顯示時間、主題、分區和偏移量，以及鍵的開頭。
 
 歷程記錄會儲存傳送時的訊息，其中的預留位置已經替換。[[ui:producer.history.repeat]]會將訊息連同其 Producer 設定載入表單。在你按一下[[ui:producer.send]]之前，不會傳送任何內容。副本會完全依儲存的內容傳送：例如，會再次傳送相同的 UUID。
 
@@ -93,9 +93,9 @@
 3. 視需要設定[[ui:producer.batch.rate]]。請參閱[傳送速率](producer.md#batch-rate)。
 4. 按一下[[ui:producer.batch.start]]。
 
-每一份都會個別替換預留位置。`{{seq}}` 是份數編號，從 0 到 N−1，因此每則訊息都可以有自己的鍵，例如 `order-{{seq}}`。開始執行前，會先以第一份檢查預留位置錯誤。
+每一份都會個別替換預留位置。`{{seq}}` 是份序號，從 0 到 N−1，因此每則訊息都可以有自己的鍵，例如 `order-{{seq}}`。開始執行前，會先以第一份檢查預留位置錯誤。
 
-執行期間，面板會顯示已傳送多少訊息和失敗多少訊息。結束時會顯示[[ui:producer.batch.done]]。錯誤會連同份數編號（從 1 開始計算）一起列出。清單會顯示前 20 個錯誤；如果更多，下方的註記會顯示總數。
+執行期間，面板會顯示已傳送多少訊息和失敗多少訊息。結束時會顯示[[ui:producer.batch.done]]。錯誤會連同份序號（從 1 開始計算）一起列出。清單會顯示前 20 個錯誤；如果更多，下方的註記會顯示總數。
 
 [[ui:producer.batch.cancel]]會停止執行。尚未離開應用程式的訊息不會傳送，面板會顯示其數量。應用程式最多會等待 2 秒，讓 Broker 確認已傳送的訊息。仍未確認的訊息會計為錯誤，因為無法得知它們是否已寫入。關閉 Producer 分頁也會停止執行。
 

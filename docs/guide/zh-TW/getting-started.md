@@ -8,7 +8,7 @@ Glafira 可在 macOS 11 或更新版本上執行。請從發行頁面下載安�
 
 依你的 Mac 選擇檔案：Apple 晶片（M1 及更新機型）選 `aarch64`，Intel 選 `x64`。
 
-1. 打開 `.dmg` 檔案。
+1. 開啟 `.dmg` 檔案。
 2. 將 Glafira for Apache Kafka 拖曳到「應用程式」資料夾。
 3. 從「應用程式」或「啟動台」啟動應用程式。
 
@@ -16,8 +16,8 @@ Glafira 可在 macOS 11 或更新版本上執行。請從發行頁面下載安�
 
 Beta 版的 build 尚未經過 Apple 簽署，因此 macOS 會封鎖第一次啟動。若要允許啟動：
 
-1. 先嘗試打開應用程式一次，然後關閉警告。
-2. 打開「系統設定」→「隱私權與安全性」。
+1. 先嘗試開啟應用程式一次，然後關閉警告。
+2. 開啟「系統設定」→「隱私權與安全性」。
 3. 向下捲動到與 Glafira for Apache Kafka 有關的訊息，按一下「強制打開」。如果系統要求，請輸入密碼確認。
 
 在 macOS 14 及更早版本上，也可以在應用程式上按右鍵，選擇「打開」，然後再按一次「打開」。
@@ -64,7 +64,7 @@ Glafira 會將密碼儲存在 Secret Service 中（例如 GNOME Keyring 或 KWal
 
 ## 第一次啟動 {#first-run}
 
-視窗分成兩部分：左側是[[ui:sidebar.connections]]面板，右側是分頁。你打開的每個畫面（例如主題清單或 Producer）都有自己的分頁。
+視窗分成兩部分：左側是[[ui:sidebar.connections]]面板，右側是分頁。你開啟的每個畫面（例如主題清單或 Producer）都有自己的分頁。
 
 還沒有任何連線時，面板會顯示簡短提示，分頁區域會建議新增連線。開始使用：
 
@@ -72,9 +72,9 @@ Glafira 會將密碼儲存在 Secret Service 中（例如 GNOME Keyring 或 KWal
 2. 填寫[[ui:connections.form.name]]和 [[ui:connections.form.bootstrap]]，例如 `localhost:9092`。
 3. 按一下[[ui:connections.form.test]]檢查設定，然後按[[ui:common.save]]。
 
-儲存後會打開叢集概觀。面板中每個連線下方都有[[ui:sidebar.cluster]]、[[ui:sidebar.topics]]、[[ui:sidebar.groups]]、[[ui:sidebar.producer]] 和[[ui:sidebar.consumer]]的連結。所有連線設定的詳細說明請參閱[連線](connections.md#create)。
+儲存後會開啟叢集概觀。面板中每個連線下方都有[[ui:sidebar.cluster]]、[[ui:sidebar.topics]]、[[ui:sidebar.groups]]、[[ui:sidebar.producer]] 和[[ui:sidebar.consumer]]的連結。所有連線設定的詳細說明請參閱[連線](connections.md#create)。
 
-面板底部有[[ui:sidebar.settings]]、[[ui:tabs.license]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的連結。欄位旁的 `?` 符號會顯示該欄位的簡短提示。在視窗任何位置按 `F1`，即可打開目前畫面對應的指南章節。在 macOS 上，也可以從「輔助說明」選單打開指南。
+面板底部有[[ui:sidebar.settings]]、[[ui:tabs.license]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的連結。欄位旁的 `?` 符號會顯示該欄位的簡短提示。在視窗任何位置按 `F1`，即可開啟目前畫面對應的指南章節。在 macOS 上，也可以從「輔助說明」選單開啟指南。
 
 如果你用過 Kafka Explorer（本應用程式的舊名稱），Glafira 會在第一次啟動時複製它的連線、範本、傳送歷程記錄和授權，密碼也會從系統金鑰儲存區一併複製。已經存在的項目不會被覆寫，舊資料也不會被刪除。macOS 可能會詢問一次是否允許存取舊的鑰匙圈項目。
 
@@ -115,4 +115,4 @@ docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
 - 用組織授權金鑰啟用 Pro：此時[[ui:tabs.license]]畫面會顯示授權由你的組織管理；
 - 關閉更新檢查，或將它指向內部鏡像站。
 
-若要查看是否套用了原則，請打開[[ui:sidebar.about]]，查看[[ui:about.policy]]。如果原則有錯誤，會顯示在那裡以及[[ui:tabs.license]]畫面上。有關原則的問題，請洽詢你的管理員。授權和更新的說明請參閱[授權與更新](license-updates.md)。
+若要查看是否套用了原則，請開啟[[ui:sidebar.about]]，查看[[ui:about.policy]]。如果原則有錯誤，會顯示在那裡以及[[ui:tabs.license]]畫面上。有關原則的問題，請洽詢你的管理員。授權和更新的說明請參閱[授權與更新](license-updates.md)。

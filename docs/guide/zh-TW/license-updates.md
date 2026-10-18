@@ -11,9 +11,9 @@ Pro 增加：
 - 消費者工作階段：以群組成員身分讀取、提交偏移量、暫停分區。請參閱[消費者工作階段](consumer-sessions.md#what-is)；
 - 正式環境模式：建立正式環境連線、將連線切換為正式環境，以及在正式環境連線上取消勾選[[ui:common.readOnly]]。請參閱[環境與正式環境](connections.md#environments)。
 
-在 Free 中，這些功能看得到但無法使用。消費者工作階段指令會停用，並標示鎖頭和 `Pro`。正式環境選項顯示為 [[ui:connections.form.prodPro]]。如果某個動作需要 Pro，錯誤訊息會顯示[[ui:errors.license.proRequired]]，並提供按鈕：[[ui:common.openLicense]]。
+在 Free 中，這些功能看得到但無法使用。消費者工作階段指令會停用，並標示鎖頭和 `Pro`。正式環境選項顯示為 [[ui:connections.form.prodPro]]。如果某個動作需要 Pro，錯誤訊息會顯示「[[ui:errors.license.proRequired]]」，並提供按鈕：[[ui:common.openLicense]]。
 
-[[ui:tabs.license]]畫面會在 [[ui:license.whatProGives]]下列出消費者工作階段和正式環境模式。
+[[ui:tabs.license]]畫面會在「[[ui:license.whatProGives]]」下列出消費者工作階段和正式環境模式。
 
 ## 啟用金鑰 {#activate}
 
@@ -40,7 +40,7 @@ Pro 功能會立即可用。畫面會顯示[[ui:license.tier]]（Pro）、[[ui:l
 
 金鑰可以有到期日，顯示在[[ui:license.expires]]中。授權在當天結束前有效。
 
-剩不到 14 天時，分頁上方的通知會顯示剩餘天數，[[ui:tabs.license]]畫面會顯示到期日。按一下通知中的[[ui:license.notice.more]]會打開[[ui:tabs.license]]畫面。`×` 按鈕會隱藏通知，直到應用程式重新啟動。
+剩不到 14 天時，分頁上方的通知會顯示剩餘天數，[[ui:tabs.license]]畫面會顯示到期日。按一下通知中的[[ui:license.notice.more]]會開啟[[ui:tabs.license]]畫面。`×` 按鈕會隱藏通知，直到應用程式重新啟動。
 
 到期日之後，方案會切換為 Free。通知和[[ui:tabs.license]]畫面會顯示授權已過期、Pro 功能已停用。變更如下：
 
@@ -51,11 +51,11 @@ Pro 功能會立即可用。畫面會顯示[[ui:license.tier]]（Pro）、[[ui:l
 
 ## 更新 {#updates}
 
-應用程式啟動時，會檢查一次是否有新版本。如果有，分頁上方的通知會顯示其版本。[[ui:license.notice.more]]會打開[[ui:sidebar.about]]畫面。如果檢查失敗，例如沒有網際網路連線，則不會顯示任何訊息。
+應用程式啟動時，會檢查一次是否有新版本。如果有，分頁上方的通知會顯示其版本。[[ui:license.notice.more]]會開啟[[ui:sidebar.about]]畫面。如果檢查失敗，例如沒有網際網路連線，則不會顯示任何訊息。
 
 手動檢查：
 
-1. 打開左側面板底部的[[ui:sidebar.about]]。
+1. 開啟左側面板底部的[[ui:sidebar.about]]。
 2. 在[[ui:about.updates.title]]中按一下[[ui:about.updates.check]]。
 3. 如果有新版本，畫面會顯示版本號碼和版本資訊。按一下[[ui:about.updates.install]]。
 
@@ -71,7 +71,7 @@ Pro 功能會立即可用。畫面會顯示[[ui:license.tier]]（Pro）、[[ui:l
 
 ## 關於 {#about}
 
-打開左側面板底部的[[ui:sidebar.about]]。在 macOS 上，也可以在「輔助說明」選單中找到[[ui:menu.about]]。
+開啟左側面板底部的[[ui:sidebar.about]]。在 macOS 上，也可以在「輔助說明」選單中找到[[ui:menu.about]]。
 
 畫面會顯示應用程式的簡短說明，以及：
 
@@ -79,8 +79,8 @@ Pro 功能會立即可用。畫面會顯示[[ui:license.tier]]（Pro）、[[ui:l
 - [[ui:about.system]]：作業系統和處理器架構。
 - [[ui:about.tier]]：Free 或 Pro。
 - [[ui:about.policy]]：[[ui:about.policySet]]或[[ui:about.policyNone]]。原則中的錯誤會列在下方。
-- [[ui:about.dataDir]] 存放連線設定檔、範本、歷程記錄、設定和授權金鑰的資料夾。
-- [[ui:about.logDir]] 存放日誌檔案的資料夾。請參閱[日誌](troubleshooting.md#logs)。
+- 「[[ui:about.dataDir]]」後顯示的是存放連線設定檔、範本、歷程記錄、設定和授權金鑰的資料夾。
+- 「[[ui:about.logDir]]」後顯示的是存放日誌檔案的資料夾。請參閱[日誌](troubleshooting.md#logs)。
 
 這個畫面上還有[[ui:about.updates.title]]和[[ui:about.diagnostics.title]]區段。
 
@@ -88,7 +88,7 @@ Pro 功能會立即可用。畫面會顯示[[ui:license.tier]]（Pro）、[[ui:l
 
 診斷壓縮檔會收集支援人員了解問題所需的資訊。建立方式：
 
-1. 打開[[ui:sidebar.about]]。
+1. 開啟[[ui:sidebar.about]]。
 2. 在[[ui:about.diagnostics.title]]中按一下[[ui:about.diagnostics.collect]]。在 macOS 上，也可以在「輔助說明」選單中選擇[[ui:menu.diagnostics]]。
 3. 選擇檔案的儲存位置。建議的名稱為 `diagnostics-<date>.zip`。
 

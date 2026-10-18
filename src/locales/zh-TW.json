@@ -1091,7 +1091,21 @@
     "diagnostics": "收集診斷資訊…"
   },
   "mcp": {
-    "unknownClient": "未知的 MCP 用戶端"
+    "unknownClient": "未知的 MCP 用戶端",
+    "approval": {
+      "title": "{{client}} 想要連線到 Glafira",
+      "body": "它將能看到已向 LLM 助理開放的連線的中繼資料，共 {{n}} 個連線。",
+      "readOnly": "透過 Glafira，助理只能讀取 Broker、主題、設定和消費者群組。訊息和密碼不會分享。",
+      "unnamed": "用戶端未提供名稱，因此回答僅適用於本次工作階段。",
+      "more": "另有 {{n}} 個用戶端在等待回答",
+      "allow": "允許",
+      "reject": "拒絕"
+    },
+    "indicator": {
+      "one": "LLM：{{client}}",
+      "many": "LLM 用戶端：{{n}}",
+      "title": "MCP 工作階段：開啟設定"
+    }
   },
   "hints": {
     "label": "提示：{{name}}",

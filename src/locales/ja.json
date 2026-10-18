@@ -1091,7 +1091,21 @@
     "diagnostics": "診断情報を収集…"
   },
   "mcp": {
-    "unknownClient": "不明なMCPクライアント"
+    "unknownClient": "不明なMCPクライアント",
+    "approval": {
+      "title": "{{client}}がGlafiraへの接続を求めています",
+      "body": "LLMアシスタント用に開放されている接続（{{n}}件）のメタデータを参照できます。",
+      "readOnly": "Glafira経由でアシスタントが読み取れるのは、ブローカー、トピック、設定、コンシューマーグループのみです。メッセージとパスワードは共有されません。",
+      "unnamed": "クライアントが名前を送信しなかったため、この回答はこのセッションにのみ適用されます。",
+      "more": "ほかに{{n}}件が回答待ちです",
+      "allow": "許可",
+      "reject": "拒否"
+    },
+    "indicator": {
+      "one": "LLM：{{client}}",
+      "many": "LLMクライアント：{{n}}",
+      "title": "MCPセッション：設定を開く"
+    }
   },
   "hints": {
     "label": "ヒント：{{name}}",

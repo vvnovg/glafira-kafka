@@ -1099,7 +1099,21 @@
     "diagnostics": "Collect Diagnostics…"
   },
   "mcp": {
-    "unknownClient": "Unknown MCP client"
+    "unknownClient": "Unknown MCP client",
+    "approval": {
+      "title": "{{client}} wants to connect to Glafira",
+      "body": "It will see the metadata of connections open to LLM assistants: {{n}}.",
+      "readOnly": "Through Glafira the assistant can only read brokers, topics, configs and consumer groups. Messages and passwords are not shared.",
+      "unnamed": "The client did not send its name, so the answer applies to this session only.",
+      "more": "Waiting for an answer: {{n}} more",
+      "allow": "Allow",
+      "reject": "Reject"
+    },
+    "indicator": {
+      "one": "LLM: {{client}}",
+      "many": "LLM clients: {{n}}",
+      "title": "MCP sessions: open Settings"
+    }
   },
   "hints": {
     "label": "Hint: {{name}}",

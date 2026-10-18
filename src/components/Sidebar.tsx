@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useWorkspace } from "../state/workspace";
 import { useLicense } from "../lib/useLicense";
 import { ConnectionTree } from "./connections/tree/ConnectionTree";
+import { McpIndicator } from "./mcp/McpIndicator";
 
 export function Sidebar() {
   const { t } = useTranslation();
@@ -12,6 +13,7 @@ export function Sidebar() {
     <aside className="sidebar">
       <ConnectionTree />
       <div className="sidebar-footer">
+        <McpIndicator />
         <button type="button" className="link" onClick={() => open({ kind: "settings" })}>
           {t("sidebar.settings")}
         </button>

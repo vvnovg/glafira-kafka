@@ -1107,7 +1107,21 @@
     "diagnostics": "Raccogli diagnostica…"
   },
   "mcp": {
-    "unknownClient": "Client MCP sconosciuto"
+    "unknownClient": "Client MCP sconosciuto",
+    "approval": {
+      "title": "{{client}} vuole collegarsi a Glafira",
+      "body": "Vedrà i metadati delle connessioni aperte agli assistenti LLM: {{n}}.",
+      "readOnly": "Tramite Glafira l’assistente può solo leggere broker, topic, configurazioni e consumer group. I messaggi e le password non vengono condivisi.",
+      "unnamed": "Il client non ha comunicato il proprio nome, quindi la risposta vale solo per questa sessione.",
+      "more": "In attesa di risposta: altri {{n}}",
+      "allow": "Consenti",
+      "reject": "Rifiuta"
+    },
+    "indicator": {
+      "one": "LLM: {{client}}",
+      "many": "Client LLM: {{n}}",
+      "title": "Sessioni MCP: apri Impostazioni"
+    }
   },
   "hints": {
     "label": "Suggerimento: {{name}}",

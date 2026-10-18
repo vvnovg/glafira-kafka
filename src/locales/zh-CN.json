@@ -1091,7 +1091,21 @@
     "diagnostics": "收集诊断信息…"
   },
   "mcp": {
-    "unknownClient": "未知的 MCP 客户端"
+    "unknownClient": "未知的 MCP 客户端",
+    "approval": {
+      "title": "{{client}} 想要连接到 Glafira",
+      "body": "它将能看到已向 LLM 助手开放的连接的元数据，共 {{n}} 个连接。",
+      "readOnly": "通过 Glafira，助手只能读取 Broker、主题、配置和消费者组。消息和密码不会共享。",
+      "unnamed": "客户端未提供名称，因此该回答仅对本次会话有效。",
+      "more": "另有 {{n}} 个客户端在等待回答",
+      "allow": "允许",
+      "reject": "拒绝"
+    },
+    "indicator": {
+      "one": "LLM：{{client}}",
+      "many": "LLM 客户端：{{n}}",
+      "title": "MCP 会话：打开设置"
+    }
   },
   "hints": {
     "label": "提示：{{name}}",

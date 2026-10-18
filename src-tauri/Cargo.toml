@@ -40,6 +40,9 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "registry", "fmt"] }
 plist = "1"
 license-format = { path = "../crates/license-format" }
+glafira-mcp = { path = "../crates/glafira-mcp" }
+tokio = { version = "1", features = ["rt", "io-std", "io-util", "net", "time", "macros", "sync"] }
+dirs = "7"
 sys-locale = "0.3"
 tauri-plugin-updater = { version = "2.14", default-features = false, features = ["rustls-tls", "system-proxy"] }
 time = { version = "0.3", features = ["formatting"] }
@@ -49,6 +52,7 @@ winreg = "0.55"
 
 [dev-dependencies]
 license-format = { path = "../crates/license-format", features = ["dev-keys"] }
+rmcp = { version = "3.5.1", features = ["client", "transport-async-rw"] }
 tempfile = "3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 

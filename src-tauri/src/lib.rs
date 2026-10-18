@@ -9,6 +9,7 @@ pub mod guard;
 pub mod kafka;
 pub mod license;
 pub mod logging;
+pub mod mcp;
 pub mod migrate;
 pub mod policy;
 pub mod produce;

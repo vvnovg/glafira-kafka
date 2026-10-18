@@ -541,12 +541,16 @@ export function parseGuideChapter(text) {
       continue;
     }
     if (fence) continue;
-    const h = /^#{2,6} .*?\{#([^}]*)\}\s*$/.exec(line);
+    // Якорь {#id} — только у `##` и у каждого `##`: так разбирает главу приложение (src/guide/parse.ts).
+    const h = /^## .*?\{#([^}]*)\}\s*$/.exec(line);
+    const code = line.replace(/`[^`]*`/g, "");
     if (h) {
       if (!KEBAB.test(h[1])) problems.push(`якорь {#${h[1]}} не в kebab-case (латиница, цифры, дефисы)`);
+      else if (anchors.includes(h[1])) problems.push(`якорь {#${h[1]}} — повтор в главе, якоря должны быть уникальными`);
       anchors.push(h[1]);
-    }
-    prose.push(line.replace(/`[^`]*`/g, ""));
+    } else if (/^##\s/.test(line)) problems.push(`«${line.trim()}» — у раздела ## нужен якорь {#id}`);
+    else if (code.includes("{#")) problems.push(`«${line.trim()}» — якорь {#id} допустим только у ##`);
+    prose.push(code);
   }
   const body = prose.join("\n");
   if (/<[A-Za-z]/.test(body)) problems.push("сырой HTML в главе");

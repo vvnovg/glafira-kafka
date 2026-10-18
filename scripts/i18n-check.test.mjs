@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkGuide, checkDictionaries, checkFrontendKeys, checkHints, hintKeys, checkLanguageFiles, checkSameAsEn, checkTypography, languageCodes, lengthReport, tags, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
+import { checkGuide, parseGuideChapter, checkDictionaries, checkFrontendKeys, checkHints, hintKeys, checkLanguageFiles, checkSameAsEn, checkTypography, languageCodes, lengthReport, tags, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -343,4 +343,17 @@ test("руководство: структура, метки, ссылки", () 
   assert.ok(p({ ...files, "en/connections.md": "No title\n" }).some((x) => x.includes("# ")));
   assert.ok(p({ ...files, "en/connections.md": conn + "<b>x</b>\n" }).some((x) => x.includes("HTML")));
   assert.ok(p({ ...files, "en/connections.md": conn + "[x](http://a.b)\n" }).some((x) => x.includes("http://")));
+});
+
+test("руководство: якорь {#id} только у ##, у каждого ## и без повторов в главе", () => {
+  const pr = (text) => parseGuideChapter(text).problems;
+  assert.deepEqual(pr("# T\n\n## A {#a}\n\n### Sub\n\nText `{#code}`.\n\n```\n## not a section\n### x {#x}\n```\n"), []);
+  assert.ok(pr("# T\n\n## Без якоря\n").some((x) => x.includes("## Без якоря") && x.includes("{#id}")), pr("# T\n\n## Без якоря\n").join("\n"));
+  const h3 = pr("# T\n\n## A {#a}\n\n### B {#b}\n");
+  assert.ok(h3.some((x) => x.includes("### B {#b}") && x.includes("только у ##")), h3.join("\n"));
+  const prose = pr("# T\n\n## A {#a}\n\nText {#b} here.\n");
+  assert.ok(prose.some((x) => x.includes("{#") && x.includes("только у ##")), prose.join("\n"));
+  const dup = pr("# T\n\n## A {#a}\n\n## B {#a}\n");
+  assert.ok(dup.some((x) => x.includes("{#a}") && x.includes("повтор")), dup.join("\n"));
+  assert.deepEqual(parseGuideChapter("# T\n\n## A {#a}\n\n### B {#b}\n").anchors, ["a"]);
 });

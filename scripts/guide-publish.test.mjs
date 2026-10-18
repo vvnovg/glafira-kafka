@@ -27,6 +27,12 @@ test("точка после метки, значение которой уже �
   assert.ok(out.includes("## Read-only.\n"), out);
 });
 
+test("метка вплотную к иероглифам — **значение** без пробелов вокруг", () => {
+  const labels = new Map([["sidebar.settings", "设置"]]);
+  const out = publishChapter("# 标题\n\n文本[[ui:sidebar.settings]]文本\n", labels);
+  assert.ok(out.includes("\n文本**设置**文本\n"), out);
+});
+
 test("набор экранируемых символов совпадает с src/guide/parse.ts", () => {
   const literal = (text) => /const SPECIAL = (\/.*\/g);/.exec(text)?.[1];
   const parse = literal(readFileSync(new URL("../src/guide/parse.ts", import.meta.url), "utf8"));

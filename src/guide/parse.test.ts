@@ -1,8 +1,12 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import Markdown from "react-markdown";
 import { describe, expect, it } from "vitest";
 import { i18n } from "../i18n";
 import { parseChapter, searchGuide } from "./parse";
 import parseSource from "./parse.ts?raw";
 import publishSource from "../../scripts/guide-publish.mjs?raw";
+import { publishChapter } from "../../scripts/guide-publish.mjs";
 
 const label = (key: string) => i18n.t(key);
 
@@ -69,6 +73,19 @@ describe("parseChapter", () => {
     const mine = literal(parseSource);
     expect(mine).toBeTruthy();
     expect(literal(publishSource)).toBe(mine);
+  });
+
+  it("renders a bold label flush against CJK text, in the app and in the published chapter", () => {
+    // Так же, как HelpPanel: react-markdown (CommonMark) с skipHtml.
+    const render = (md: string) => renderToStaticMarkup(createElement(Markdown, { skipHtml: true }, md));
+    const values: Record<string, string> = { "sidebar.settings": "设置", "a.b": "削除" };
+    const src = "# 标题\n\n文本[[ui:sidebar.settings]]文本\n\nトピックを[[ui:a.b]]します。\n";
+    const ch = parseChapter("topics", src, (k) => values[k]);
+    expect(ch.sections[0].markdown).toBe("文本**设置**文本\n\nトピックを**削除**します。");
+    expect(render(ch.sections[0].markdown)).toBe("<p>文本<strong>设置</strong>文本</p>\n<p>トピックを<strong>削除</strong>します。</p>");
+    const published = publishChapter(src, new Map(Object.entries(values)));
+    expect(published).toContain("文本**设置**文本");
+    expect(render(published)).toContain("<p>文本<strong>设置</strong>文本</p>");
   });
 
   it("keeps a heading without an anchor as a titled section", () => {

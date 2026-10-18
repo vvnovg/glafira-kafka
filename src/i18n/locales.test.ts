@@ -25,6 +25,7 @@ describe("словари", () => {
     it(`${code}: переключение и плюральные формы`, async () => {
       await setLanguage(code);
       expect(i18n.language).toBe(code);
+      expect(document.documentElement.lang).toBe(code);
       expect(i18n.t("common.save")).toBe(get(DICTIONARIES[code], "common.save"));
       const rules = new Intl.PluralRules(code);
       for (const stem of pluralStems) {

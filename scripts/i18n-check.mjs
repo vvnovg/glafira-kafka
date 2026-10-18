@@ -165,6 +165,7 @@ export function checkTypography(dicts) {
   for (const [code, dict] of Object.entries(dicts)) {
     for (const [k, v] of flatten(dict)) {
       if (v.includes("...")) problems.push(`${code}: ${k} — «...» вместо «…»`);
+      for (const pr of cjkProblems(v, code)) problems.push(`${code}: ${k} — ${pr}`);
       if (code !== "fr") continue;
       for (const ch of new Set([...v.matchAll(/ ([:;!?])/g)].map((m) => m[1])))
         problems.push(`fr: ${k} — обычный пробел вместо U+00A0 перед «${ch}»`);
@@ -172,6 +173,37 @@ export function checkTypography(dicts) {
     }
   }
   return problems;
+}
+
+/** Языки с полноширинной пунктуацией (проверка «полуширинная после иероглифа») и языки без пробелов между иероглифами. */
+export const CJK_TYPO_LANGS = ["zh-CN", "zh-TW", "ja"];
+export const HAN_SPACE_LANGS = ["zh-CN", "zh-TW"];
+
+const CJK_CHAR = "\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}";
+const HALF_PUNCT_AFTER_CJK = new RegExp(`[${CJK_CHAR}][,.:;?!]`, "gu");
+const SPACE_BETWEEN_HAN = /\p{Script=Han}[ \t\u00A0\u3000]+\p{Script=Han}/gu;
+// Код, параметры, теги и метки заменяются нейтральным символом: он не иероглиф и не пробел, поэтому не склеивает соседей.
+const CJK_SKIP = /`[^`]*`|\{\{[^}]*\}\}|<\/?[A-Za-z0-9][^>]*>|\[\[ui:[^\]]*\]\]/g;
+
+/** Типографика zh/ja: полуширинная `, . : ; ? !` сразу после иероглифа или каны; zh — пробел между иероглифами. */
+export function cjkProblems(text, code) {
+  if (!CJK_TYPO_LANGS.includes(code)) return [];
+  const t = text.replace(CJK_SKIP, "\u0001");
+  const problems = [];
+  for (const m of new Set([...t.matchAll(HALF_PUNCT_AFTER_CJK)].map((x) => x[0])))
+    problems.push(`полуширинная пунктуация после иероглифа «${m}» — нужна полноширинная`);
+  if (HAN_SPACE_LANGS.includes(code))
+    for (const m of new Set([...t.matchAll(SPACE_BETWEEN_HAN)].map((x) => x[0]))) problems.push(`пробел между иероглифами «${m}»`);
+  return problems;
+}
+
+const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u{FF00}-\u{FFEF}\u3000-\u303F]/u;
+
+/** Видимая ширина строки: иероглиф, кана, хангыль и полноширинные формы — 2, остальное — 1. */
+export function visualWidth(s) {
+  let w = 0;
+  for (const ch of s) w += WIDE.test(ch) ? 2 : 1;
+  return w;
 }
 
 /** Коды языков из src/i18n/languages.ts (поля `code: "…"`). */
@@ -196,12 +228,15 @@ export function lengthReport(dicts, { ratio = 1.6, minLength = 6, top = 15 } = {
     const rows = [];
     for (const [k, v] of flatten(dict)) {
       const base = en.get(k) ?? en.get(`${k.replace(PLURAL, "")}_other`);
-      if (!base || base.length < minLength || v.length / base.length < ratio) continue;
-      rows.push({ k, v, r: v.length / base.length, len: base.length });
+      if (!base || base.length < minLength) continue;
+      const len = visualWidth(base);
+      const r = visualWidth(v) / len;
+      if (r < ratio) continue;
+      rows.push({ k, v, r, len });
     }
     rows.sort((a, b) => b.r - a.r);
     for (const { k, v, r, len } of rows.slice(0, top))
-      out.push(`${code}: ${k} — ${v.length} / ${len} (×${r.toFixed(1)}) «${v}»`);
+      out.push(`${code}: ${k} — ${visualWidth(v)} / ${len} (×${r.toFixed(1)}) «${v}»`);
   }
   return out;
 }
@@ -543,7 +578,8 @@ export function parseGuideChapter(text) {
     if (fence) continue;
     // Якорь {#id} — только у `##` и у каждого `##`: так разбирает главу приложение (src/guide/parse.ts).
     const h = /^## .*?\{#([^}]*)\}\s*$/.exec(line);
-    const code = line.replace(/`[^`]*`/g, "");
+    // Inline-код заменяется нейтральным символом, чтобы не склеивать соседние слова для типографских проверок.
+    const code = line.replace(/`[^`]*`/g, "\u0001");
     if (h) {
       if (!KEBAB.test(h[1])) problems.push(`якорь {#${h[1]}} не в kebab-case (латиница, цифры, дефисы)`);
       else if (anchors.includes(h[1])) problems.push(`якорь {#${h[1]}} — повтор в главе, якоря должны быть уникальными`);
@@ -562,11 +598,42 @@ export function parseGuideChapter(text) {
     if (md) links.push({ chapter: md[1], anchor: md[2] ?? null });
     else if (!target.startsWith("https://")) problems.push(`ссылка ${target} — допустимы только https:// и главы «глава.md#якорь»`);
   }
-  return { title, anchors, labels, links, problems };
+  // Проза для типографских проверок: без кода, якорей {#id} и адресов ссылок.
+  const plain = body.replace(/\{#[^}]*\}/g, "").replace(/\]\([^)]*\)/g, "]");
+  return { title, anchors, labels, links, problems, prose: plain };
 }
 
-/** files: { "<код>/<глава>.md": текст }. Глав у каждого языка ровно `chapters`; якоря как в en; метки — ключи en без параметров; ссылки — на существующие главы и якоря. */
-export function checkGuide(files, codes, enFlat, chapters = GUIDE_CHAPTERS) {
+const MD_PUNCT = /[\p{P}\p{S}\u0001]/u;
+const MD_SPACE = /\s/u;
+
+/**
+ * Метка → `**значение**`: по CommonMark `**` перед значением, которое начинается с пунктуации («…», «（», «「»),
+ * не открывает жирное, если слева буква или иероглиф; так же `**` после значения, которое кончается пунктуацией,
+ * не закрывает его, если справа буква. Вплотную к иероглифам (zh, ja) это частый случай.
+ */
+function labelFlankingProblems(text, flat) {
+  const problems = [];
+  // В заголовках метка подставляется без жирного.
+  const prose = text.split("\n").map((l) => (/^#{1,6}\s/.test(l) ? "" : l)).join("\n");
+  for (const m of prose.matchAll(/\[\[ui:([^\]]*)\]\]/g)) {
+    const value = flat.get(m[1]);
+    if (!value) continue;
+    const before = prose[m.index - 1];
+    const after = prose[m.index + m[0].length];
+    const tight = (ch) => ch !== undefined && !MD_SPACE.test(ch) && !MD_PUNCT.test(ch);
+    const startsP = MD_PUNCT.test([...value][0]);
+    const endsP = MD_PUNCT.test([...value].at(-1));
+    if ((startsP && tight(before)) || (endsP && tight(after)))
+      problems.push(`метка ${m[0]} («${value}») вплотную к тексту: **…** вокруг значения с пунктуацией на краю не станет жирным — добавьте пробел или пунктуацию рядом либо перестройте фразу`);
+  }
+  return problems;
+}
+
+/**
+ * files: { "<код>/<глава>.md": текст }. Глав у каждого языка ровно `chapters`; якоря как в en; метки — ключи en без параметров;
+ * ссылки — на существующие главы и якоря. langFlat: { код: flatten(словарь) } — для проверки жирного у меток.
+ */
+export function checkGuide(files, codes, enFlat, chapters = GUIDE_CHAPTERS, langFlat = {}) {
   const problems = [];
   const parsed = {};
   for (const code of codes) {
@@ -583,6 +650,8 @@ export function checkGuide(files, codes, enFlat, chapters = GUIDE_CHAPTERS) {
   for (const [path, ch] of Object.entries(parsed)) {
     const [code, name] = path.split("/");
     for (const pr of ch.problems) problems.push(`${path}: ${pr}`);
+    for (const pr of cjkProblems(ch.prose, code)) problems.push(`${path}: ${pr}`);
+    if (langFlat[code]) for (const pr of labelFlankingProblems(ch.prose, langFlat[code])) problems.push(`${path}: ${pr}`);
     const enAnchors = parsed[`en/${name}`]?.anchors;
     if (code !== "en" && enAnchors && ch.anchors.join(" ") !== enAnchors.join(" ")) {
       problems.push(`${path}: якоря [${ch.anchors.join(", ")}] не совпадают с en [${enAnchors.join(", ")}]`);
@@ -640,7 +709,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   problems.push(...checkHints(hintKeys(srcFiles), flatten(dicts.en)));
   const guideDir = join(root, "docs/guide");
   const guideFiles = Object.fromEntries(walk(guideDir, [".md"]).map((p) => [relative(guideDir, p).split(sep).join("/"), readFileSync(p, "utf8")]));
-  problems.push(...checkGuide(guideFiles, codes, flatten(dicts.en)));
+  const langFlat = Object.fromEntries(Object.entries(dicts).map(([c, d]) => [c, flatten(d)]));
+  problems.push(...checkGuide(guideFiles, codes, flatten(dicts.en), GUIDE_CHAPTERS, langFlat));
   if (!process.argv.includes("--no-cyrillic-scan")) {
     const files = srcFiles;
     for (const hit of findCyrillic(files)) problems.push(`кириллица в коде: ${hit}`);

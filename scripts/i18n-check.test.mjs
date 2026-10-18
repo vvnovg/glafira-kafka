@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkGuide, parseGuideChapter, checkDictionaries, checkFrontendKeys, checkHints, hintKeys, checkLanguageFiles, checkSameAsEn, checkTypography, languageCodes, lengthReport, tags, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
+import { CJK_TYPO_LANGS, HAN_SPACE_LANGS, cjkProblems, visualWidth, checkGuide, parseGuideChapter, checkDictionaries, checkFrontendKeys, checkHints, hintKeys, checkLanguageFiles, checkSameAsEn, checkTypography, languageCodes, lengthReport, tags, checkRustKeys, frontendKeys, expandRustPaths, findCyrillic, findRustCyrillic, flatten, placeholders, rustKeys } from "./i18n-check.mjs";
 
 test("flatten и placeholders", () => {
   assert.deepEqual([...flatten({ a: { b: "x", c: { d: "y" } } }).keys()], ["a.b", "a.c.d"]);
@@ -356,4 +356,73 @@ test("руководство: якорь {#id} только у ##, у каждо
   const dup = pr("# T\n\n## A {#a}\n\n## B {#a}\n");
   assert.ok(dup.some((x) => x.includes("{#a}") && x.includes("повтор")), dup.join("\n"));
   assert.deepEqual(parseGuideChapter("# T\n\n## A {#a}\n\n### B {#b}\n").anchors, ["a"]);
+});
+
+test("CJK: полуширинная пунктуация после иероглифа и пробел между иероглифами", () => {
+  assert.deepEqual(CJK_TYPO_LANGS, ["zh-CN", "zh-TW", "ja"]);
+  assert.deepEqual(HAN_SPACE_LANGS, ["zh-CN", "zh-TW"]);
+  assert.ok(cjkProblems("设置,保存", "zh-CN").some((x) => x.includes("полуширинная пунктуация после иероглифа")));
+  for (const ch of [",", ".", ":", ";", "?", "!"]) assert.equal(cjkProblems(`设置${ch}`, "zh-TW").length, 1, ch);
+  assert.deepEqual(cjkProblems("设置，保存", "zh-CN"), []);
+  assert.deepEqual(cjkProblems("连接 Kafka 集群", "zh-CN"), []);
+  assert.deepEqual(cjkProblems("已加载 3 条消息。", "zh-CN"), []);
+  assert.ok(cjkProblems("连接 集群", "zh-CN").some((x) => x.includes("пробел между иероглифами")));
+  assert.ok(cjkProblems("連線　叢集", "zh-TW").some((x) => x.includes("пробел между иероглифами")), "идеографический пробел U+3000");
+  assert.deepEqual(cjkProblems("接続 クラスター", "ja"), [], "в ja пробел между словами — не эта проверка");
+  assert.ok(cjkProblems("トピック.", "ja").some((x) => x.includes("полуширинная")));
+  assert.ok(cjkProblems("ひらがな!", "ja").length > 0);
+  assert.deepEqual(cjkProblems("토픽.", "ko"), [], "ko — ASCII-пунктуация");
+  assert.deepEqual(cjkProblems("连接 集群.", "de"), [], "для других языков проверки нет");
+  assert.deepEqual(cjkProblems("运行 `a,b` 命令", "zh-CN"), [], "внутри `code` — не проверяется");
+  assert.deepEqual(cjkProblems("运行`主题.名`命令", "zh-CN"), [], "внутри `code` — не проверяется");
+  assert.deepEqual(cjkProblems("主题 {{name}} 已删除", "zh-CN"), [], "{{…}} не склеивает соседние иероглифы");
+  assert.deepEqual(cjkProblems("主题{{名,x}}已删除", "zh-CN"), [], "внутри {{…}} — не проверяется");
+  assert.deepEqual(cjkProblems("主题 <b>集群</b> 已删除", "zh-CN"), [], "теги не склеивают соседние иероглифы");
+  assert.deepEqual(cjkProblems("<1>设置</1>。", "zh-CN"), []);
+});
+
+test("CJK: видимая ширина", () => {
+  assert.equal(visualWidth("设置"), 4);
+  assert.equal(visualWidth("ab"), 2);
+  assert.equal(visualWidth("トピックab"), 10);
+  assert.equal(visualWidth("ひら"), 4);
+  assert.equal(visualWidth("토픽"), 4);
+  assert.equal(visualWidth("（，）"), 6);
+  assert.equal(visualWidth("Ünïcode"), 7);
+});
+
+test("CJK: типографика словарей и длина по видимой ширине", () => {
+  const p = checkTypography({ en: { a: "Save, close" }, "zh-CN": { a: "保存,关闭", b: "连接 Kafka 集群" }, ko: { a: "저장, 닫기" } });
+  assert.equal(p.length, 1, p.join("\n"));
+  assert.ok(p[0].startsWith("zh-CN: a — ") && p[0].includes("полуширинная"), p[0]);
+  const r = lengthReport({ en: { a: "Delete topic", b: "Save all" }, ja: { a: "トピックを完全に削除します", b: "保存" } });
+  assert.deepEqual(r, ["ja: a — 26 / 12 (×2.2) «トピックを完全に削除します»"]);
+});
+
+test("CJK: проза глав руководства, вне кода и ссылок", () => {
+  const en = flatten({ sidebar: { settings: "Settings" } });
+  const enCh = "# Start\n\n## Install {#install}\n\nOpen [[ui:sidebar.settings]].\n";
+  const zh = (body) => ({ "en/getting-started.md": enCh, "zh-CN/getting-started.md": `# 开始\n\n## 安装 {#install}\n\n${body}\n` });
+  const p = (f) => checkGuide(f, ["en", "zh-CN"], en, ["getting-started"]);
+  assert.deepEqual(p(zh("打开[[ui:sidebar.settings]]。参见 [文档](https://kafka.apache.org/documentation/#主题.配置)。")), []);
+  assert.deepEqual(p(zh("运行：\n\n```\n主题.名 集群,x\n```\n\n命令 `主题.名` 完成。")), []);
+  const bad = p(zh("打开[[ui:sidebar.settings]]。然后.再 保存。"));
+  assert.ok(bad.some((x) => x.startsWith("zh-CN/getting-started.md: ") && x.includes("полуширинная")), bad.join("\n"));
+  assert.ok(bad.some((x) => x.includes("пробел между иероглифами")), bad.join("\n"));
+  assert.deepEqual(p({ "en/getting-started.md": enCh.replace("Open", "打开 集群.") , "zh-CN/getting-started.md": enCh }), [], "в en CJK-проверок нет");
+});
+
+test("CJK: метка, значение которой начинается или кончается пунктуацией, вплотную к иероглифу — жирное не сработает", () => {
+  const en = flatten({ a: { exp: "Export…", set: "Settings", q: "(Advanced)" } });
+  const zhFlat = flatten({ a: { exp: "导出…", set: "设置", q: "（高级）" } });
+  const enCh = "# Start\n\nText.\n";
+  const p = (body) =>
+    checkGuide({ "en/getting-started.md": enCh, "zh-CN/getting-started.md": `# 开始\n\n${body}\n` }, ["en", "zh-CN"], en, ["getting-started"], { "zh-CN": zhFlat });
+  assert.deepEqual(p("点击[[ui:a.set]]按钮。打开[[ui:a.exp]]。点击 [[ui:a.exp]] 按钮。[[ui:a.q]]"), []);
+  assert.deepEqual(p("打开[[ui:a.exp]].然后"), [], "точка после метки — пунктуация, не иероглиф");
+  assert.ok(!p("### 点击[[ui:a.exp]]按钮").some((x) => x.includes("**…**")), "в заголовке метка без жирного");
+  const bad = p("点击[[ui:a.exp]]按钮，选择[[ui:a.q]]。");
+  assert.equal(bad.length, 2, bad.join("\n"));
+  assert.ok(bad.every((x) => x.startsWith("zh-CN/getting-started.md: ") && x.includes("**…**")), bad.join("\n"));
+  assert.ok(bad[0].includes("[[ui:a.exp]]") && bad[1].includes("[[ui:a.q]]"), bad.join("\n"));
 });

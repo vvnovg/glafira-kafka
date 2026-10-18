@@ -16,18 +16,30 @@ fn is_known(code: &str) -> bool {
 }
 
 pub fn match_language(tag: &str) -> Option<&'static str> {
-    let primary = tag
-        .split(['-', '_'])
-        .next()
-        .unwrap_or("")
-        .to_ascii_lowercase();
-    if primary == "pt" {
-        return Some("pt-BR");
+    match_language_in(tag, &LANGUAGES)
+}
+
+/// Язык ОС → код из `langs`. Китайский: явный Hans → zh-CN; Hant/TW/HK/MO → zh-TW; иначе zh-CN.
+fn match_language_in(tag: &str, langs: &[&'static str]) -> Option<&'static str> {
+    let lower = tag.replace('_', "-").to_ascii_lowercase();
+    let mut parts = lower.split('-');
+    let primary = parts.next().unwrap_or("");
+    let rest: Vec<&str> = parts.collect();
+    let pick = |code: &'static str| langs.iter().copied().find(|c| *c == code);
+    match primary {
+        "pt" => pick("pt-BR"),
+        "zh" => {
+            let traditional = !rest.contains(&"hans")
+                && rest
+                    .iter()
+                    .any(|p| matches!(*p, "hant" | "tw" | "hk" | "mo"));
+            pick(if traditional { "zh-TW" } else { "zh-CN" })
+        }
+        _ => langs
+            .iter()
+            .copied()
+            .find(|c| c.eq_ignore_ascii_case(primary)),
     }
-    LANGUAGES
-        .iter()
-        .copied()
-        .find(|c| c.eq_ignore_ascii_case(&primary))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -161,6 +173,39 @@ mod tests {
         assert_eq!(match_language("pt"), Some("pt-BR"));
         assert_eq!(match_language("en-GB"), Some("en"));
         assert_eq!(match_language("uk-UA"), None);
+    }
+
+    const ALL: [&str; 12] = [
+        "en", "ru", "de", "fr", "es", "it", "pl", "pt-BR", "zh-CN", "zh-TW", "ja", "ko",
+    ];
+
+    #[test]
+    fn matching_asian_tags() {
+        for tag in [
+            "zh-Hans-CN",
+            "zh-CN",
+            "zh-SG",
+            "zh",
+            "zh-Hans-HK",
+            "zh-Hans",
+        ] {
+            assert_eq!(match_language_in(tag, &ALL), Some("zh-CN"), "{tag}");
+        }
+        for tag in ["zh-Hant-TW", "zh-TW", "zh-HK", "zh-MO", "zh_TW", "zh-Hant"] {
+            assert_eq!(match_language_in(tag, &ALL), Some("zh-TW"), "{tag}");
+        }
+        assert_eq!(match_language_in("ja-JP", &ALL), Some("ja"));
+        assert_eq!(match_language_in("ko-KR", &ALL), Some("ko"));
+        assert_eq!(match_language_in("pt-PT", &ALL), Some("pt-BR"));
+        assert_eq!(match_language_in("de-AT", &ALL), Some("de"));
+        assert_eq!(match_language_in("xx", &ALL), None);
+    }
+
+    #[test]
+    fn asian_tags_without_asian_languages() {
+        assert_eq!(match_language_in("zh-CN", &LANGUAGES), None);
+        assert_eq!(match_language_in("zh-Hant-TW", &LANGUAGES), None);
+        assert_eq!(match_language_in("ja-JP", &LANGUAGES), None);
     }
 
     #[test]

@@ -60,7 +60,7 @@ Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en
 
 パッケージをインストールしたら、アプリケーションメニューからアプリを起動するか、ターミナルで`glafira-kafka`を実行します。
 
-GlafiraはパスワードをSecret Service（GNOME KeyringやKWalletなど）に保存します。セッションでどちらかが動作していることを確認してください。動作していないと、アプリは接続のパスワードを保存できません。
+GlafiraはパスワードをSecret Service（GNOME KeyringやKWalletなど）に保存します。セッションでいずれかが動作していることを確認してください。動作していないと、アプリは接続のパスワードを保存できません。
 
 ## 初回起動 {#first-run}
 

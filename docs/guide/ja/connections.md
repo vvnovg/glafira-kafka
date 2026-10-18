@@ -13,7 +13,7 @@
 
 保存するとフォームが閉じ、クラスターの概要が開きます。
 
-ほかに、特殊な場合のためのフィールドが2つあります。[[ui:connections.form.timeout]]：ブローカーの応答を待つ時間です。デフォルトは`30000` ms、最小値は`1000`です。低速なネットワークやVPNでは値を大きくしてください。[[ui:connections.form.props]]には、任意のlibrdkafka設定を`key=value`形式で1行に1つずつ入力します。`#`で始まる行は無視されます。パスワードと鍵はここには入力できません。名前に`password`または`secret`を含むプロパティ、`sasl.jaas.config`、`ssl.key.pem`、`ssl.keystore.key`は保存時に拒否されます。
+ほかに、特殊な場合のためのフィールドが2つあります。「[[ui:connections.form.timeout]]」では、ブローカーの応答を待つ時間を指定します。デフォルトは`30000` ms、最小値は`1000`です。低速なネットワークやVPNでは値を大きくしてください。[[ui:connections.form.props]]には、任意のlibrdkafka設定を`key=value`形式で1行に1つずつ入力します。`#`で始まる行は無視されます。パスワードと鍵はここには入力できません。名前に`password`または`secret`を含むプロパティ、`sasl.jaas.config`、`ssl.key.pem`、`ssl.keystore.key`は保存時に拒否されます。
 
 あとで接続を変更するには、名前の横の`✎`（[[ui:sidebar.editConnection]]）をクリックします。削除するには、フォームを開いて[[ui:common.delete]]をクリックし、[[ui:connections.form.deleteYes]]で確定します。
 
@@ -29,7 +29,7 @@
 
 ## セキュリティプロトコル {#security}
 
-[[ui:connections.form.protocol]]は、接続先のブローカーのリスナーと一致している必要があります。どれを使うかはKafkaの管理者が知っています。
+[[ui:connections.form.protocol]]は、接続先のブローカーのリスナーと一致している必要があります。どれを使うかはKafkaの管理者に確認してください。
 
 - `PLAINTEXT`：暗号化もログインもありません。ローカルやテスト用のクラスターでよく使われます。
 - `SSL`：通信がTLSで暗号化されます。クライアント証明書を使う場合はmTLSになります。

@@ -9,7 +9,7 @@
 3. 必要に応じて、形式とフィルターを設定します。
 4. [[ui:browse.panel.read]]をクリックします。
 
-メッセージは届いた順にテーブルに表示されます。ボタンの横の行には、スキャンしたメッセージ数、フィルターに一致した数、テーブルにある数が表示されます。状態も表示されます：「[[ui:browse.panel.reading]]」、[[ui:browse.panel.finishLimit]]、[[ui:browse.panel.finishEnd]]、[[ui:browse.panel.finishCancelled]]。
+メッセージは届いた順にテーブルに表示されます。ボタンの横の行には、スキャンしたメッセージ数、フィルターに一致した数、テーブルにある数が表示されます。状態も表示されます：「[[ui:browse.panel.reading]]」、「[[ui:browse.panel.finishLimit]]」、「[[ui:browse.panel.finishEnd]]」、「[[ui:browse.panel.finishCancelled]]」。
 
 `Live tail`がオフの場合、読み取りは[[ui:browse.panel.read]]をクリックした時点のトピックの末尾で止まります。[[ui:browse.form.limit]]に達した場合はそれより前に止まります。上限はフィルターに一致したメッセージを数えます。1から100000まで指定でき、大きな値にすると読み取りが遅くなります。
 

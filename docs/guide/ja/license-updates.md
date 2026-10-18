@@ -11,7 +11,7 @@ Proで追加される機能：
 - コンシューマーセッション：グループのメンバーとしての読み取り、オフセットのコミット、パーティションの一時停止。[コンシューマーセッション](consumer-sessions.md#what-is)を参照してください。
 - 本番モード：本番接続の作成、接続の本番への切り替え、本番接続での[[ui:common.readOnly]]の解除。[環境と本番](connections.md#environments)を参照してください。
 
-Freeでは、これらの機能は表示されますが利用できません。コンシューマーセッションのコマンドは無効になっており、鍵と`Pro`のマークが付いています。本番の選択肢は「[[ui:connections.form.prodPro]]」と表示されます。Proが必要な操作を行うと、「[[ui:errors.license.proRequired]]」というエラーが表示され、次のボタンが示されます：[[ui:common.openLicense]]。
+Freeでは、これらの機能は表示されますが利用できません。コンシューマーセッションのコマンドは無効になっており、鍵と`Pro`のマークが付いています。本番の選択肢は「[[ui:connections.form.prodPro]]」と表示されます。Proが必要な操作を行うと、次のエラーが表示されます：[[ui:errors.license.proRequired]]。エラーには次のボタンもあります：[[ui:common.openLicense]]。
 
 [[ui:tabs.license]]画面では、[[ui:license.whatProGives]]の下にコンシューマーセッションと本番モードが記載されています。
 
@@ -75,7 +75,7 @@ Proの機能はすぐに利用できるようになります。画面には、[[
 
 画面にはアプリの短い説明と、次の項目が表示されます：
 
-- [[ui:about.version]]：バージョン番号。[[ui:about.build]]：ビルド元のソースコードの識別子。サポートに問い合わせるときは、両方を記載してください。
+- [[ui:about.version]]：バージョン番号。[[ui:about.build]]：ビルドの元になったソースコードの識別子。サポートに問い合わせるときは、両方を記載してください。
 - [[ui:about.system]]：オペレーティングシステムとプロセッサーのアーキテクチャ。
 - [[ui:about.tier]]：FreeまたはPro。
 - [[ui:about.policy]]：[[ui:about.policySet]]または[[ui:about.policyNone]]。ポリシーにエラーがある場合は、その下に一覧表示されます。

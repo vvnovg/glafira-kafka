@@ -17,7 +17,7 @@
 
 ## Не переводится
 Kafka, Glafira, Pro, Free, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
-DNS, TCP, ID, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»), Leader (лидер партиции; в ja и ko — リーダー и 리더); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
+DNS, TCP, ID, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»; в ja — ビルド, как в остальном словаре), Leader (лидер партиции; в ja и ko — リーダー и 리더); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
 команды, пути, адреса (`docker compose -f dev/docker-compose.yml up -d`, `keytool …`, `localhost:9092`);
 название экрана «Producer» (как в ru); значения CreateTime / LogAppendTime, producer / uncompressed в compression.type.
 
@@ -292,7 +292,7 @@ click — クリック; right-click — 右クリック; drag / drop — ドラ�
 panel (левая панель) — パネル; header bar панели — ヘッダー; button — ボタン; checkbox — チェックボックス; select / clear a box — 選択 / チェックを外す;
 field — フィールド; form — フォーム; section — セクション; menu — メニュー; Start menu — スタートメニュー; dialog — ダイアログ; row — 行; column — 列;
 app — アプリ; installer — インストーラー; package — パッケージ; release page — リリースページ; release notes — リリースノート;
-build — ビルド (как в `errors.updates.notConfigured`; подпись [[ui:about.build]] — «Build»); logs — ログ (ログファイル);
+build — ビルド (как в `errors.updates.notConfigured` и подписи [[ui:about.build]]); logs — ログ (ログファイル);
 batch send — 一括送信; batch (Kafka) — バッチ; copies при пакетной отправке — コピー / コピー数; support request — サポートへの問い合わせ;
 support — サポート / サポート担当者; timestamp — タイムスタンプ; tombstone — tombstone (латиницей); delete marker — 削除マーカー;
 listener — リスナー; handshake — ハンドシェイク; policy — ポリシー (как в UI); browse — 閲覧; purge — パージ (как в UI); to commit — コミット;

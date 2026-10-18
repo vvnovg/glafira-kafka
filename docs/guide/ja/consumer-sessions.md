@@ -4,13 +4,13 @@
 
 ## セッションとは {#what-is}
 
-[閲覧](browse.md)では、グループに参加せずにメッセージを読み取り、クラスターは何も変更されません。セッションは異なり、指定した`group.id`のグループに参加し、Kafkaからパーティションを割り当てられ、オフセットをコミットできます。グループが読み取る内容を確認する、コミットによってグループのオフセットを動かす、グループのリバランスを観察する、といった用途に使います。
+[閲覧](browse.md)では、グループに参加せずにメッセージを読み取り、クラスターは何も変更されません。一方、セッションは指定した`group.id`のグループに参加し、Kafkaからパーティションを割り当てられ、オフセットをコミットできます。グループが読み取る内容を確認する、コミットによってグループのオフセットを動かす、グループのリバランスを観察する、といった用途に使います。
 
 セッションはクラスターに影響します。セッションが参加または離脱すると、Kafkaはグループのパーティションを再配分し、ほかのメンバーではリバランスが発生します。コミットはグループのオフセットを変更し、そのオフセットはグループのアプリケーションが使います。
 
 Freeでは、[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]、[[ui:groups.details.join]]は無効になっており、鍵と`Pro`のマークが付いています。有効なProライセンスがない状態でセッションのタブを開くと、「[[ui:consumer.proOnly]]」と表示され、次のリンクも示されます：[[ui:common.openLicense]]。[キーを有効にする](license-updates.md#activate)を参照してください。
 
-セッションの実行中に接続が読み取り専用になると、セッションはグループから離脱します。[[ui:common.readOnly]]の接続ではセッションを利用できず、タブには次のように表示されます：[[ui:consumer.readOnlyBlocked]]
+[[ui:common.readOnly]]の接続ではセッションを利用できず、タブに「[[ui:consumer.readOnlyBlocked]]」と表示されます。セッションの実行中に接続が読み取り専用になると、セッションはグループから離脱します。
 
 ## セッションを開始する {#start-session}
 
@@ -30,7 +30,7 @@ Freeでは、[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]、[[ui:grou
 - [[ui:consumer.form.autoCommit]]：読み取ったオフセットを自動的にコミットします。デフォルトではオフです。[コミット](consumer-sessions.md#commits)を参照してください。
 - `isolation.level`：`read_committed`（デフォルト）では、コミットされたトランザクションのメッセージだけが表示されます。`read_uncommitted`では、未完了および中止されたトランザクションのメッセージも表示されます。
 
-[[ui:consumer.form.formatLegend]]で、閲覧と同様に[[ui:consumer.form.keyFormat]]と[[ui:consumer.form.valueFormat]]を選びます。[形式](browse.md#formats)を参照してください。[[ui:consumer.form.buffer]]：テーブルに保持するメッセージ数を1から100000の範囲で指定します。デフォルトは5000です。
+[[ui:consumer.form.formatLegend]]で、閲覧と同様に[[ui:consumer.form.keyFormat]]と[[ui:consumer.form.valueFormat]]を選びます。[形式](browse.md#formats)を参照してください。「[[ui:consumer.form.buffer]]」では、テーブルに保持するメッセージ数を1から100000の範囲で指定します。デフォルトは5000です。
 
 フィルターは閲覧と同じように機能します。[フィルター](browse.md#filters)を参照してください。
 
@@ -38,7 +38,7 @@ Freeでは、[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]、[[ui:grou
 
 ## 読み取り {#reading}
 
-ボタンの横の状態の行には、「[[ui:consumer.status.connecting]]」、続いて[[ui:consumer.status.inGroup]]と表示されます。読み取ったメッセージ数、フィルターに一致した数、テーブルにある数も表示されます。ブローカーへの接続が切れた場合、セッションは自動的に再接続し、そのことを状態の行に表示します。
+ボタンの横の状態の行には、「[[ui:consumer.status.connecting]]」、続いて「[[ui:consumer.status.inGroup]]」と表示されます。読み取ったメッセージ数、フィルターに一致した数、テーブルにある数も表示されます。ブローカーへの接続が切れた場合、セッションは自動的に再接続し、そのことを状態の行に表示します。
 
 メッセージは届いた順にテーブルに表示され、セッションは停止するまで新しいメッセージを読み取り続けます。テーブルがいっぱいになると、最も古いメッセージから削除されます。閲覧と同様に、行をクリックするとメッセージの詳細が表示されます。[メッセージの詳細](browse.md#message-details)を参照してください。時刻をUTCで表示するには、`UTC`を選択します。
 
@@ -67,7 +67,7 @@ Freeでは、[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]、[[ui:grou
 
 テーブルの右のパネルには、セッションに割り当てられたパーティションが`topic:partition`の形式で一覧表示されます。パーティションの横の[[ui:consumer.assignment.pause]]をクリックすると読み取りが止まり、[[ui:consumer.assignment.resume]]をクリックすると再開します。一時停止したパーティションには[[ui:consumer.assignment.paused]]と表示されます。
 
-一時停止してもグループからは離脱しないため、リバランスは発生しません。パーティションはセッションに割り当てられたままで、一時停止中はほかのメンバーも読み取りません。一時停止はクラスターを何も変更せず、確認も不要です。
+一時停止してもグループからは離脱しないため、リバランスは発生しません。パーティションはセッションに割り当てられたままで、一時停止中はほかのメンバーも読み取りません。一時停止はクラスターには何も変更を加えず、確認も不要です。
 
 リバランス後、新しく割り当てられたパーティションは一時停止されていない状態で始まります。セッションがグループから離脱すると、すべての一時停止が解除されます。
 

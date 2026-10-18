@@ -72,10 +72,20 @@ export function McpSection() {
   const audit = useQuery({ queryKey: ["mcp-audit"], queryFn: () => api.getMcpAudit(AUDIT_LIMIT) });
   const apply = (s: McpStatus) => qc.setQueryData(MCP_STATUS_KEY, s);
   const toggle = useMutation({ mutationFn: (enabled: boolean) => api.setMcpEnabled(enabled), onSuccess: apply });
-  const revoke = useMutation({ mutationFn: (name: string) => api.revokeMcpClient(name), onSuccess: apply });
+  const refreshAudit = () => void qc.invalidateQueries({ queryKey: ["mcp-audit"] });
+  const revoke = useMutation({
+    mutationFn: (name: string) => api.revokeMcpClient(name),
+    onSuccess: (s) => {
+      apply(s);
+      refreshAudit();
+    },
+  });
   const disconnect = useMutation({
     mutationFn: (sessionId: string | null) => api.disconnectMcpSessions(sessionId),
-    onSuccess: apply,
+    onSuccess: (s) => {
+      apply(s);
+      refreshAudit();
+    },
   });
   const reveal = useMutation({ mutationFn: () => api.revealMcpAudit() });
 
@@ -110,6 +120,7 @@ export function McpSection() {
       </p>
       {error && <ErrorBanner error={error} />}
 
+      {s.policyAllows && configs.error && <ErrorBanner error={configs.error} onRetry={() => configs.refetch()} />}
       {s.policyAllows && configs.data && (
         <>
           <h4>{t("settings.mcp.connectTitle")}</h4>

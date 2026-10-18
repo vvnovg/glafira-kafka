@@ -64,6 +64,20 @@ describe("McpSection", () => {
     expect(screen.queryByText("Подключение клиента")).not.toBeInTheDocument();
   });
 
+  it("ошибка получения фрагментов конфига показывается, а не скрывается молча", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.getMcpClientConfigs).mockRejectedValue({
+      code: "INTERNAL",
+      key: "errors.mcp.noExe",
+      params: { error: "x" },
+      message: "Cannot find the Glafira executable: x",
+      retryable: false,
+    });
+    renderWithClient(<McpSection />);
+    expect(await screen.findByText("Не удалось найти исполняемый файл Glafira: x")).toBeInTheDocument();
+    expect(screen.queryByText("Подключение клиента")).not.toBeInTheDocument();
+  });
+
   it("сессии, отзыв клиента и журнал", async () => {
     const status = mcpStatus({
       sessions: [{ id: "s1", clientName: "claude-ai", clientVersion: "1.2", startedMs: 0, calls: 7, active: false, approved: true }],
@@ -87,5 +101,7 @@ describe("McpSection", () => {
     expect(screen.getByText("Клиент подтверждён")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Отозвать" }));
     expect(api.revokeMcpClient).toHaveBeenCalledWith("claude-ai");
+    // отзыв и отключение обновляют журнал: первая загрузка + отключение + отзыв
+    await waitFor(() => expect(api.getMcpAudit).toHaveBeenCalledTimes(3));
   });
 });

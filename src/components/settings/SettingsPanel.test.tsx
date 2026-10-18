@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LanguageSettings } from "../../api/types";
@@ -32,7 +32,17 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(() => i18n.changeLanguage("ru")); // выбор «en» в тесте переключает глобальный язык
+// Выбор «en» в тесте переключает глобальный язык; сброс идёт в act, пока компоненты ещё
+// смонтированы (useTranslation обновляет их по languageChanged).
+afterEach(() => act(() => i18n.changeLanguage("ru")));
+
+// SettingsPanel монтирует асинхронный раздел MCP: дожидаемся, пока его запросы
+// (статус, фрагменты конфига, журнал) отработают, чтобы тест не кончился раньше.
+async function mcpSettled() {
+  await screen.findByLabelText("Разрешить MCP-сервер");
+  await screen.findByText("claude");
+  await screen.findByText("Журнал пуст.");
+}
 
 describe("SettingsPanel", () => {
   it("выбор языка; без лицензии доступны все языки", async () => {
@@ -47,6 +57,7 @@ describe("SettingsPanel", () => {
       expect(option.textContent).not.toMatch(/Pro/);
     }
     expect(screen.getByRole("option", { name: /Как в системе/ })).toBeInTheDocument();
+    await mcpSettled();
     await user.selectOptions(select, "en");
     expect(api.setLanguage).toHaveBeenCalledWith("en");
   });
@@ -56,6 +67,7 @@ describe("SettingsPanel", () => {
     renderWithClient(<SettingsPanel />);
     expect(await screen.findByLabelText("Язык интерфейса")).toBeDisabled();
     expect(screen.getByText(/задан вашей организацией/)).toBeInTheDocument();
+    await mcpSettled();
   });
 
   it("Free выбирает Deutsch — язык применяется, подсказки о Pro нет", async () => {
@@ -63,7 +75,9 @@ describe("SettingsPanel", () => {
     vi.mocked(api.setLanguage).mockResolvedValue({ ...base, chosen: "de", effective: "de", reason: "user" });
     const user = userEvent.setup();
     renderWithClient(<SettingsPanel />);
-    await user.selectOptions(await screen.findByLabelText("Язык интерфейса"), "de");
+    const select = await screen.findByLabelText("Язык интерфейса");
+    await mcpSettled();
+    await user.selectOptions(select, "de");
     expect(api.setLanguage).toHaveBeenCalledWith("de");
     await vi.waitFor(() => expect(i18n.language).toBe("de"));
     expect(screen.queryByText(/\bPro\b/)).not.toBeInTheDocument();

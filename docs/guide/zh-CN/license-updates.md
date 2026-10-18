@@ -9,11 +9,11 @@ Free 涵盖 Kafka 的日常工作：包括 mTLS 在内的所有安全协议、�
 Pro 增加：
 
 - 消费者会话：以组成员身份读取、提交偏移量、暂停分区。参见[消费者会话](consumer-sessions.md#what-is)；
-- 生产模式：创建 prod 连接、将连接切换为 prod，以及在 prod 连接上取消[[ui:common.readOnly]]。参见[环境与 prod](connections.md#environments)。
+- 生产模式：创建生产环境连接、将连接切换为 prod，以及在生产环境连接上取消[[ui:common.readOnly]]。参见[环境与 prod](connections.md#environments)。
 
-在 Free 中，这些功能可见但不可用。消费者会话命令被禁用，并带有锁形图标和 `Pro` 标记。prod 选项显示为[[ui:connections.form.prodPro]]。如果某项操作需要 Pro，错误信息会显示[[ui:errors.license.proRequired]]，并提供按钮：[[ui:common.openLicense]]。
+在 Free 中，这些功能可见但不可用。消费者会话命令被禁用，并带有锁形图标和 `Pro` 标记。prod 选项显示为 [[ui:connections.form.prodPro]]。如果某项操作需要 Pro，错误信息会显示[[ui:errors.license.proRequired]]，并提供按钮：[[ui:common.openLicense]]。
 
-[[ui:tabs.license]]页面在[[ui:license.whatProGives]]下列出消费者会话和生产模式。
+[[ui:tabs.license]]页面在 [[ui:license.whatProGives]]下列出消费者会话和生产模式。
 
 ## 激活密钥 {#activate}
 
@@ -45,7 +45,7 @@ Pro 功能立即可用。页面会显示[[ui:license.tier]]（Pro）、[[ui:lice
 到期日期过后，套餐切换为 Free。通知和[[ui:tabs.license]]页面会显示许可证已过期、Pro 功能已停用。变化如下：
 
 - 无法启动新的消费者会话。在已运行的会话中，提交和暂停分区会被拒绝，错误信息中会给出到期日期。
-- prod 连接继续可用，确认方式不变。无法创建新的 prod 连接，也无法在 prod 连接上取消[[ui:common.readOnly]]。
+- 生产环境连接继续可用，确认方式不变。无法创建新的生产环境连接，也无法在生产环境连接上取消[[ui:common.readOnly]]。
 
 连接、密码、模板和发送历史记录都会保留。要继续使用 Pro，请按[激活密钥](license-updates.md#activate)中的说明激活新密钥。
 
@@ -79,8 +79,8 @@ Pro 功能立即可用。页面会显示[[ui:license.tier]]（Pro）、[[ui:lice
 - [[ui:about.system]]：操作系统和处理器架构。
 - [[ui:about.tier]]：Free 或 Pro。
 - [[ui:about.policy]]：[[ui:about.policySet]]或[[ui:about.policyNone]]。策略中的错误会列在下方。
-- [[ui:about.dataDir]]（存放连接配置、模板、历史记录、设置和许可证密钥的文件夹）。
-- [[ui:about.logDir]]（存放日志文件的文件夹）。参见[日志](troubleshooting.md#logs)。
+- “[[ui:about.dataDir]]”一项显示存放连接配置、模板、历史记录、设置和许可证密钥的文件夹。
+- “[[ui:about.logDir]]”一项显示存放日志文件的文件夹。参见[日志](troubleshooting.md#logs)。
 
 [[ui:about.updates.title]]和[[ui:about.diagnostics.title]]部分也位于此页面。
 
@@ -88,7 +88,7 @@ Pro 功能立即可用。页面会显示[[ui:license.tier]]（Pro）、[[ui:lice
 
 诊断归档会收集技术支持了解问题所需的信息。创建方法：
 
-1. 打开[[ui:sidebar.about]]。
+1. 打开[[ui:sidebar.about]]页面。
 2. 在[[ui:about.diagnostics.title]]中，点击[[ui:about.diagnostics.collect]]。在 macOS 上，也可以在“帮助”菜单中选择[[ui:menu.diagnostics]]。
 3. 选择文件的保存位置。建议的文件名为 `diagnostics-<date>.zip`。
 

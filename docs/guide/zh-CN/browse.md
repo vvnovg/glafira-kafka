@@ -6,7 +6,7 @@
 
 1. 从[[ui:sidebar.topics]]列表中打开一个主题，首先打开的是[[ui:topics.details.tabMessages]]标签页。
 2. 在[[ui:browse.form.from]]中选择从哪里开始。参见[起始位置](browse.md#start-position)。
-3. 可以设置格式和筛选条件（可选）。
+3. 可以设置格式和筛选条件。
 4. 点击[[ui:browse.panel.read]]。
 
 消息到达后会陆续出现在表格中。按钮旁的状态行显示已扫描的消息数、与筛选条件匹配的消息数以及表格中的消息数，还会显示状态：[[ui:browse.panel.reading]]、[[ui:browse.panel.finishLimit]]、[[ui:browse.panel.finishEnd]]或[[ui:browse.panel.finishCancelled]]。
@@ -73,14 +73,14 @@
 
 Glafira 不会将浏览到的消息保存到文件。要将消息从应用中取出，请复制它：
 
-- [[ui:browse.details.copyJson]]会将整条消息复制为 JSON：主题、分区、偏移量、时间戳、键、值、标头和大小。键和值以解码后的形式包含在内，并附带其格式。
+- [[ui:browse.details.copyJson]] 会将整条消息复制为 JSON：主题、分区、偏移量、时间戳、键、值、标头和大小。键和值以解码后的形式包含在内，并附带其格式。
 - [[ui:browse.details.value]]或[[ui:browse.details.key]]旁的[[ui:browse.details.copy]]只复制该文本。
 
 复制的文本使用读取时选择的格式。要精确复制二进制数据，请以 `hex` 或 `base64` 读取。非常大的键和值只按显示的部分复制，即使是 `hex` 和 `base64` 也是如此。参见[格式](browse.md#formats)。
 
 ## 在 Producer 中打开 {#open-in-producer}
 
-[[ui:browse.details.resend]]会在同一连接的[[ui:sidebar.producer]]中打开该消息。表单会填入消息的主题、键、值、标头和格式，分区交由 Kafka 决定。消息文本中的占位符不会被替换：副本会按读取时的原样发送。
+[[ui:browse.details.resend]]会在同一连接的 [[ui:sidebar.producer]] 中打开该消息。表单会填入消息的主题、键、值、标头和格式，分区交由 Kafka 决定。消息文本中的占位符不会被替换：副本会按读取时的原样发送。
 
 不会立即发送任何内容。请检查表单，必要时进行修改，然后从 Producer 发送。参见 [Producer](producer.md)。
 

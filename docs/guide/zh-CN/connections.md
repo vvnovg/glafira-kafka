@@ -6,9 +6,9 @@
 
 1. 点击[[ui:sidebar.connections]]面板标题栏中的 `+`（[[ui:sidebar.newConnection]]）。如果要直接在某个文件夹中创建连接，请打开该文件夹的菜单，选择[[ui:sidebar.folder.newConnection]]。
 2. 输入[[ui:connections.form.name]]。名称会显示在面板和标签页标题中。
-3. 在[[ui:connections.form.bootstrap]]中输入一个或多个 `host:port` 格式的地址，用逗号分隔，例如 `kafka1:9092,kafka2:9092`。只要有一个 Broker 可达即可，客户端会自行发现其他 Broker。
+3. 在 [[ui:connections.form.bootstrap]]中输入一个或多个 `host:port` 格式的地址，用逗号分隔，例如 `kafka1:9092,kafka2:9092`。只要有一个 Broker 可达即可，客户端会自行发现其他 Broker。
 4. 选择[[ui:connections.form.protocol]]，并填写该协议增加的字段。参见[安全协议](connections.md#security)。
-5. 可以选择[[ui:connections.form.folder]]、[[ui:connections.form.environment]]，以及名称旁圆点的[[ui:connections.form.color]]（可选）。
+5. 可以选择[[ui:connections.form.folder]]、[[ui:connections.form.environment]]，以及名称旁圆点的[[ui:connections.form.color]]。
 6. 点击[[ui:connections.form.test]]，然后点击[[ui:common.save]]。
 
 保存后，表单关闭并打开集群概览。
@@ -52,7 +52,7 @@ SCRAM 从不发送密码本身。`PLAIN` 会原样发送密码，因此通过 `S
 
 对于 `SSL` 和 `SASL_SSL`，表单会增加 TLS 设置。
 
-[[ui:connections.tls.ca]]是为 Broker 证书签名的证书颁发机构（CA）的证书。如果操作系统已信任该 CA，请留空，此时将使用系统根证书。否则请输入文件的完整路径，或点击[[ui:connections.tls.pick]]，选择文件后会出现[[ui:connections.tls.caFormat]]字段。对于 PKCS#12 和 JKS，还有[[ui:connections.tls.truststorePassword]]字段。
+[[ui:connections.tls.ca]]是为 Broker 证书签名的证书颁发机构（CA）的证书。如果操作系统已信任该 CA，请留空，此时将使用系统根证书。否则请输入文件的完整路径，或点击[[ui:connections.tls.pick]]，选择文件后会出现 [[ui:connections.tls.caFormat]]字段。对于 PKCS#12 和 JKS，还有[[ui:connections.tls.truststorePassword]]字段。
 
 [[ui:connections.tls.verifyHostname]]默认开启，用于检查 Broker 证书是否为你所连接的主机名签发。仅在测试环境中关闭它，例如 Broker 使用其他名称的自签名证书时。
 
@@ -104,11 +104,11 @@ SASL 密码以及私钥和存储的密码保存在系统密钥存储中：macOS 
 
 [[ui:connections.form.environment]]用于标记连接：`local`、`dev`、`test`、`stage` 或 `prod`。环境以彩色标记显示在面板中的名称旁，让你随时知道正在操作哪个集群。
 
-`prod` 会增加保护。对 prod 连接的任何更改，例如创建主题、发送消息、重置偏移量或启动消费者会话，都会要求输入连接名称。在任何连接上，删除和清空都会要求输入对象名称（删除多个主题时要求输入数量），在 prod 上则两者都要输入。这些确认显示在应用窗口内。
+`prod` 会增加保护。对生产环境连接的任何更改，例如创建主题、发送消息、重置偏移量或启动消费者会话，都会要求输入连接名称。在任何连接上，删除和清空都会要求输入对象名称（删除多个主题时要求输入数量），在生产环境连接上则两者都要输入。这些确认显示在应用窗口内。
 
-创建 prod 连接以及将连接切换为 prod 需要 Pro。在 Free 中，此选项显示为[[ui:connections.form.prodPro]]，且无法选择。之前创建的 prod 连接在 Free 中仍可继续使用，确认方式相同。
+创建生产环境连接以及将连接切换为 prod 需要 Pro。在 Free 中，此选项显示为 [[ui:connections.form.prodPro]]，且无法选择。之前创建的生产环境连接在 Free 中仍可继续使用，确认方式相同。
 
-新建的 prod 连接默认开启[[ui:common.readOnly]]。如需进行更改，请取消选中该复选框。
+新建的生产环境连接默认开启[[ui:common.readOnly]]。如需进行更改，请取消选中该复选框。
 
 ## 只读 {#read-only}
 
@@ -116,7 +116,7 @@ SASL 密码以及私钥和存储的密码保存在系统密钥存储中：macOS 
 
 只需查看数据时，尤其是在共享集群上，请使用此模式。只读是应用内部的保护措施，不能替代 Kafka 中的访问权限（ACL）。
 
-在 Free 中，只读的 prod 连接无法取消选中该复选框：解除此保护需要 Pro。
+在 Free 中，只读的生产环境连接无法取消选中该复选框：解除此保护需要 Pro。
 
 ## 文件夹 {#folders}
 
@@ -160,4 +160,4 @@ SASL 密码以及私钥和存储的密码保存在系统密钥存储中：macOS 
 - 如果新连接与同一文件夹中的另一个连接同名，会在名称后添加编号，例如 `kafka-dev (2)`。
 - 当前版本的 Glafira 不支持的连接，或额外属性中包含机密信息的连接，会被跳过。
 
-如果在这台计算机上找不到证书文件，或者由于未激活 Pro 而导致 prod 连接将变为只读，预览也会发出警告。文件中不包含密码，因此导入后面板会显示有多少个连接需要输入密码。请逐一打开这些连接，输入密码并保存。
+如果在这台计算机上找不到证书文件，或者由于未激活 Pro 而导致生产环境连接将变为只读，预览也会发出警告。文件中不包含密码，因此导入后面板会显示有多少个连接需要输入密码。请逐一打开这些连接，输入密码并保存。

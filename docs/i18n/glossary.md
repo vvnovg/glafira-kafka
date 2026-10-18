@@ -169,6 +169,8 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 
 ### Руководство (docs/guide)
 - В zh-CN, zh-TW, ja метка ставится вплотную к тексту: «打开[[ui:sidebar.settings]]。», «[[ui:sidebar.settings]]を開きます。»;
+  исключение в zh-CN и zh-TW: если значение метки начинается или кончается латиницей или цифрой, с этой стороны ставится
+  обычный пробел между иероглифом и латиницей («在 [[ui:connections.form.bootstrap]]中», «打开 [[ui:sidebar.producer]] 标签页»);
   в ko — с пробелами по 띄어쓰기 («[[ui:sidebar.settings]] 화면»).
 - Если значение метки начинается или кончается пунктуацией («导出…», «（高级）», «「…」»), `**…**` вплотную к иероглифу
   по CommonMark не станет жирным (ни в приложении, ни на GitHub). `pnpm i18n:check` такое находит; перестройте фразу так,
@@ -257,9 +259,10 @@ support request — 支持请求; support — 技术支持; timestamp — 时间
 listener — 监听器; handshake — 握手; policy — 策略 (как в UI); browse — 浏览; purge — 清空 (как в UI);
 to commit — 提交; committed offset — 已提交的偏移量; lag в прозе — 延迟 / 消费延迟; lock icon — 锁形图标;
 point at (наведение) — 将指针悬停在…上; macOS menu Help — “帮助”菜单; Keychain — 钥匙串; Credential Manager — 凭据管理器;
-Secret Service — Secret Service; prod mode — 生产模式; копия при пакетной отправке — 份 / 份序号 (не 副本);
-метки — вплотную к тексту; если значение кончается или начинается пунктуацией («…», «（…）», «。», «：»),
-метка берётся в кавычки “[[ui:…]]” или рядом ставится полноширинная пунктуация («点击[[ui:connections.tls.pick]]，然后…»);
+Secret Service — Secret Service; prod connection — 生产环境连接 (`prod` — только как значение окружения); prod mode — 生产模式; Beta build — Beta build; копия при пакетной отправке — 份 / 份序号 (не 副本);
+метки — вплотную к иероглифам, но если значение начинается или кончается латиницей или цифрой («Bootstrap 服务器», «Producer»,
+«Build», «prod (Pro)»), с этой стороны — пробел («在 [[ui:connections.form.bootstrap]]中»); если значение кончается или начинается
+пунктуацией («…», «（…）», «。», «：»), метка берётся в кавычки “[[ui:…]]” или рядом ставится полноширинная пунктуация («点击[[ui:connections.tls.pick]]，然后…»);
 read-only connection — 只读连接 (с меткой: «在[[ui:common.readOnly]]连接上»).
 
 ## Слова руководства (zh-TW)

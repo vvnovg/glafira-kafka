@@ -59,9 +59,9 @@
 
 预览不会做任何更改。对于每个分区，预览会显示主题、分区、[[ui:groups.reset.colCurrent]]（已提交的偏移量）、[[ui:groups.reset.colNew]]（目标偏移量）以及 `Low / High`（分区的起始和结束偏移量）。无法计算目标的分区会标记为“[[ui:groups.reset.noTarget]]”并注明原因，此类分区会被跳过。
 
-只会应用预览中显示的计划。表单中的任何更改都会隐藏预览，需要再次点击[[ui:groups.reset.preview]]。在 prod 连接上，应用时会要求输入连接名称；在其他连接上则立即应用。
+只会应用预览中显示的计划。表单中的任何更改都会隐藏预览，需要再次点击[[ui:groups.reset.preview]]。在生产环境连接上，应用时会要求输入连接名称；在其他连接上则立即应用。
 
-应用之前，应用程序会再次检查该组是否没有成员。应用之后，[[ui:groups.reset.result]]会列出每个分区及其新的偏移量或错误。
+执行之前，应用会再次检查该组是否没有成员；执行之后，[[ui:groups.reset.result]]会列出每个分区及其新的偏移量或错误。
 
 也可以从某条消息准备重置：参见[将组重置到某条消息](browse.md#reset-group-here)。[[ui:common.close]]会关闭重置面板。
 
@@ -71,9 +71,9 @@
 
 - [[ui:groups.reset.strategyEarliest]]：仍在存储中的第一个偏移量。该组会重新读取主题中保留的全部内容。
 - [[ui:groups.reset.strategyLatest]]：分区的末尾。该组会跳过所有积压的消息，只读取新消息。
-- [[ui:groups.reset.strategyTimestamp]]：第一条写入时间等于或晚于所设时间（[[ui:groups.reset.timestamp]]）的消息。在没有更新消息的分区中，目标为末尾。
+- [[ui:groups.reset.strategyTimestamp]]：写入时间等于或晚于指定时间的第一条消息，时间在字段“[[ui:groups.reset.timestamp]]”中设置。在没有更新消息的分区中，目标为末尾。
 - [[ui:groups.reset.strategyOffset]]：在每个分区中使用指定的[[ui:groups.reset.offset]]，即大于或等于 0 的整数。如果某个分区没有该偏移量，则目标为其起始或结束偏移量。
-- [[ui:groups.reset.strategyShift]]：将已提交的偏移量移动指定的数量（[[ui:groups.reset.shift]]）。负数表示往回重新读取 N 条消息，正数表示跳过 N 条消息。结果会限制在起始和结束偏移量之间。没有已提交偏移量的分区无法平移，会被跳过。
+- [[ui:groups.reset.strategyShift]]：按字段“[[ui:groups.reset.shift]]”中的数量移动已提交的偏移量。负数表示往回重新读取 N 条消息，正数表示跳过 N 条消息。结果会限制在起始和结束偏移量之间。没有已提交偏移量的分区无法平移，会被跳过。
 
 时间为你的本地时间，精确到秒。Kafka 根据消息时间戳查找偏移量。
 
@@ -90,7 +90,7 @@
 删除组会移除其所有已提交的偏移量。只能删除没有成员、处于 `Empty` 状态的组。
 
 1. 在组标签页中，点击[[ui:groups.details.deleteGroup]]。组中有成员时，该按钮被禁用；将指针悬停在按钮上可查看原因。
-2. 输入组 ID 进行确认。在 prod 连接上，还需输入连接名称。
+2. 输入组 ID 进行确认。在生产环境连接上，还需输入连接名称。
 3. 点击[[ui:common.delete]]。
 
 删除后，组标签页会关闭。如果使用此 `group.id` 的应用再次启动，Kafka 会重新创建该组。由于没有已提交的偏移量，应用会按其 `auto.offset.reset` 设置的位置开始：从头或从末尾。

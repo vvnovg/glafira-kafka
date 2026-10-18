@@ -1,22 +1,22 @@
 # Producer
 
-[[ui:sidebar.producer]]用于向 Kafka 发送消息：通过表单逐条发送，或一次发送多条。可以从[[ui:sidebar.connections]]面板中的连接打开它，也可以在主题标签页中点击[[ui:topics.details.produce]]打开，此时会自动填入主题。每个连接都有各自的 Producer 标签页。
+[[ui:sidebar.producer]] 用于向 Kafka 发送消息：通过表单逐条发送，或一次发送多条。可以从[[ui:sidebar.connections]]面板中的连接打开它，也可以在主题标签页中点击[[ui:topics.details.produce]]打开，此时会自动填入主题。每个连接都有各自的 Producer 标签页。
 
 在[[ui:common.readOnly]]连接上，Producer 打开时会显示警告“[[ui:producer.readOnly]]”发送按钮会被隐藏，但仍可查看模板和历史记录。
 
 ## 发送消息 {#send-message}
 
 1. 输入[[ui:producer.topic]]。该字段会提示集群中的主题，不含内部主题。
-2. 可以输入[[ui:producer.partition]]编号（可选）。字段显示[[ui:producer.partitionAuto]]时，分区按键选择：与 Java 客户端一样，具有相同键的消息会进入同一分区。没有键的消息会进入随机分区。
+2. 可以输入[[ui:producer.partition]]编号。字段显示[[ui:producer.partitionAuto]]时，分区按键选择：与 Java 客户端一样，具有相同键的消息会进入同一分区。没有键的消息会进入随机分区。
 3. 填写[[ui:producer.key]]和[[ui:producer.value]]，并选择它们的格式。参见[键和值的格式](producer.md#key-value-formats)。
-4. 可以添加标头（可选）。
+4. 可以添加标头。
 5. 点击[[ui:producer.send]]。
 
 发送成功后，表单下方的一行会显示消息的分区、偏移量和时间。`acks` 设为 `0` 时，Broker 不返回偏移量，此时显示 `—`。
 
 如果分区编号过大，或者 Broker 未在连接超时时间内确认消息，应用会显示错误。主题不存在时也会报错，除非 Broker 会自动创建主题（`auto.create.topics.enable`）。关闭自动创建时，此错误可能要等约 30 秒（连接超时时间）才会出现。表单中的错误，例如无效的 JSON 或未知的占位符，会在发送前显示。
 
-在 prod 连接上，发送时会要求输入连接名称，并点击[[ui:producer.confirmLabel]]确认。参见[环境与 prod](connections.md#environments)。
+在生产环境连接上，发送时会要求输入连接名称，并点击[[ui:producer.confirmLabel]]确认。参见[环境与 prod](connections.md#environments)。
 
 [[ui:producer.clearForm]]会清空表单，并将 Producer 设置恢复为默认值。主题保持不变。
 
@@ -90,7 +90,7 @@
 
 1. 像单条发送一样填写表单。
 2. 选中[[ui:producer.batch.modeCopies]]，并输入[[ui:producer.batch.count]]，范围为 1 到 1000000。
-3. 可以设置[[ui:producer.batch.rate]]（可选）。参见[发送速率](producer.md#batch-rate)。
+3. 可以设置[[ui:producer.batch.rate]]。参见[发送速率](producer.md#batch-rate)。
 4. 点击[[ui:producer.batch.start]]。
 
 每一份的占位符都会单独替换。`{{seq}}` 是份序号，从 0 到 N−1，因此每条消息都可以有自己的键，例如 `order-{{seq}}`。运行开始前，会用第一份检查占位符错误。
@@ -99,7 +99,7 @@
 
 [[ui:producer.batch.cancel]]会停止运行。尚未离开应用的消息不会被发送，面板会显示其数量。应用最多等待 2 秒，让 Broker 确认已发送的消息。仍未确认的消息计为错误，因为无法确定它们是否已写入。关闭 Producer 标签页也会停止运行。
 
-在 prod 连接上，运行时会要求输入连接名称，并点击[[ui:producer.batch.confirmLabel]]确认。
+在生产环境连接上，运行时会要求输入连接名称，并点击[[ui:producer.batch.confirmLabel]]确认。
 
 ## 从文件发送 {#batch-file}
 

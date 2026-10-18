@@ -34,7 +34,7 @@
 
 筛选条件的用法与浏览时相同。参见[筛选条件](browse.md#filters)。
 
-点击[[ui:consumer.actions.connect]]。在 prod 连接上，应用会要求输入连接名称，并点击[[ui:consumer.dialog.confirm]]确认。会话运行期间，表单无法更改。
+点击[[ui:consumer.actions.connect]]。在生产环境连接上，应用会要求输入连接名称，并点击[[ui:consumer.dialog.confirm]]确认。会话运行期间，表单无法更改。
 
 ## 读取 {#reading}
 
@@ -59,7 +59,7 @@
 - [[ui:consumer.actions.commitSelected]]：提交所选消息之后的偏移量，仅限该消息所在的分区。该组将从下一条消息继续。如果所选消息早于当前提交，偏移量会往回移动。
 - [[ui:consumer.actions.commitAll]]：提交每个已分配分区中的当前位置，包括被筛选条件隐藏的消息以及已从表格中移除的消息。
 
-提交后，会有一行以 `topic:partition → offset` 的形式显示已提交的偏移量。在 prod 连接上，每次提交都会要求输入连接名称。
+提交后，会有一行以 `topic:partition → offset` 的形式显示已提交的偏移量。在生产环境连接上，每次提交都会要求输入连接名称。
 
 如果会话未及时响应，应用会警告无法确定提交是否生效。请在组标签页中检查偏移量。参见[组详情](groups.md#group-details)。
 

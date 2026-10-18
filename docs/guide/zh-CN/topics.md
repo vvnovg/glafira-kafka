@@ -44,12 +44,12 @@
    - `compact`：每个键只保留最新的值。
    - `compact + delete`：两者兼有。
    - [[ui:topics.create.presetTest]]：消息保留一小时。
-6. 可以添加[[ui:topics.create.extraConfigs]]（可选），每行一个，例如 `retention.ms=86400000`。它们会覆盖预设。以 `#` 开头的行会被忽略。
+6. 可以添加[[ui:topics.create.extraConfigs]]，每行一个，例如 `retention.ms=86400000`。它们会覆盖预设。以 `#` 开头的行会被忽略。
 7. 点击[[ui:topics.create.submit]]。
 
 表单有效时，会显示等效的 `kafka-topics.sh` 命令。你可以复制该命令，例如用于在另一个集群中创建相同的主题。
 
-在 prod 连接上，需要输入连接名称来确认创建。主题创建后，会打开其标签页。
+在生产环境连接上，需要输入连接名称来确认创建。主题创建后，会打开其标签页。
 
 ## 删除主题 {#delete-topics}
 
@@ -64,7 +64,7 @@
 
 [[ui:topics.list.cancelSelect]]会隐藏复选框。
 
-在 prod 连接上，这两种删除方式都还会要求输入连接名称。
+在生产环境连接上，这两种删除方式都还会要求输入连接名称。
 
 删除无法撤销，数据将会丢失。如果某些主题未被删除（例如由于权限不足），应用会列出这些主题及原因。其他主题会被删除。
 
@@ -73,7 +73,7 @@
 主题标签页显示分区数、副本因子和近似消息数。顶部按钮：
 
 - [[ui:topics.details.refresh]]：重新加载主题数据。
-- [[ui:topics.details.produce]]：以此主题打开[[ui:sidebar.producer]]。参见 [Producer](producer.md)。
+- [[ui:topics.details.produce]]：以此主题打开 [[ui:sidebar.producer]]。参见 [Producer](producer.md)。
 - [[ui:topics.details.consume]]：为此主题启动消费者会话。此功能需要 Pro。参见[消费者会话](consumer-sessions.md)。
 
 在[[ui:common.readOnly]]连接上，这两个按钮均被禁用。
@@ -84,12 +84,12 @@
 - [[ui:topics.actions.purge]]：删除所选分区中截至当前末尾的所有消息，主题本身保留。选择分区，输入主题名称，然后点击[[ui:topics.actions.purgeConfirm]]。只有当 `cleanup.policy` 包含 `delete` 时才能清空，否则该按钮被禁用并显示原因。对于 `compact,delete` 主题，清空也会删除各键的最新值。
 - [[ui:topics.actions.deleteTopic]]：参见[删除主题](topics.md#delete-topics)。
 
-在 prod 连接上，以上每项操作都还会要求输入连接名称。
+在生产环境连接上，以上每项操作都还会要求输入连接名称。
 
 下方的标签页：
 
 - [[ui:topics.details.tabMessages]]：浏览消息。参见[浏览消息](browse.md)。
-- [[ui:topics.details.tabPartitions]]：列出每个分区的表格，包括[[ui:topics.details.colLeader]]、[[ui:topics.details.colReplicas]]、`ISR`（同步副本）、起始（`Low`）和结束（`High`）偏移量以及消息数。没有 Leader 的分区显示“[[ui:topics.details.noLeader]]”。
+- [[ui:topics.details.tabPartitions]]：列出每个分区的表格，包括 [[ui:topics.details.colLeader]]、[[ui:topics.details.colReplicas]]、`ISR`（同步副本）、起始（`Low`）和结束（`High`）偏移量以及消息数。没有 Leader 的分区显示“[[ui:topics.details.noLeader]]”。
 - [[ui:topics.details.tabConfigs]]：主题参数。参见[主题配置](topics.md#topic-config)。
 - [[ui:topics.details.tabGroups]]：已为此主题提交偏移量的消费者组，包括[[ui:topics.groups.colState]]、[[ui:topics.groups.colPartitions]]和[[ui:topics.groups.colLag]]。点击某个组即可打开。参见[消费者组](groups.md)。
 
@@ -110,7 +110,7 @@
 3. 点击[[ui:common.config.review]]。应用会以“旧值 → 新值”的形式显示每项更改；[[ui:common.config.defaultValue]]表示该值被重置。
 4. 点击[[ui:common.config.apply]]，或点击[[ui:common.config.back]]继续编辑。
 
-应用之前，集群中不会发生任何更改。[[ui:common.config.discard]]会取消所有编辑。存在未保存的编辑时，[[ui:topics.details.closeEditor]]被禁用。在 prod 连接上，需要输入连接名称来确认更改。
+应用之前，集群中不会发生任何更改。[[ui:common.config.discard]]会取消所有编辑。存在未保存的编辑时，[[ui:topics.details.closeEditor]]被禁用。在生产环境连接上，需要输入连接名称来确认更改。
 
 只会发送你修改过的参数，主题的其他参数保持不变。Broker 会检查这些值，并以错误拒绝无效值。
 

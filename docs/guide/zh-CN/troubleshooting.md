@@ -18,7 +18,7 @@
 
 ## DNS 和 TCP {#dns-tcp}
 
-[[ui:errors.kafka.tcpUnreachable]]表示应用无法与[[ui:connections.form.bootstrap]]中的任何地址建立 TCP 连接。每个地址最多尝试 5 秒。详细信息中会显示最后尝试的地址和原因。详细信息中的 `DNS` 表示无法解析主机名。
+[[ui:errors.kafka.tcpUnreachable]]表示应用无法与 [[ui:connections.form.bootstrap]]中的任何地址建立 TCP 连接。每个地址最多尝试 5 秒。详细信息中会显示最后尝试的地址和原因。详细信息中的 `DNS` 表示无法解析主机名。
 
 请检查：
 
@@ -33,7 +33,7 @@ TCP 步骤通过后出现[[ui:errors.kafka.connectionFailed]]，通常表示某�
 
 ## TLS 错误 {#tls-errors}
 
-TLS 握手期间的错误（属于步骤[[ui:connections.form.step.kafka]]）：
+在 [[ui:connections.form.step.kafka]] 步骤中，TLS 握手期间的错误：
 
 - [[ui:errors.kafka.plaintextListener]]。
 - [[ui:errors.kafka.caUntrusted]]。请将[[ui:connections.tls.ca]]设为为 Broker 证书签名的 CA 的文件，该文件可向管理员索取。字段为空时，只信任系统根证书。
@@ -46,7 +46,7 @@ TLS 握手期间的错误（属于步骤[[ui:connections.form.step.kafka]]）：
 证书文件的问题会在应用连接之前，于[[ui:connections.form.step.config]]步骤中报告。消息以字段名称开头：受信任的 CA、客户端证书或客户端私钥。常见情况：
 
 - 路径不是绝对路径，或文件无法读取。请输入完整路径，或点击[[ui:connections.tls.pick]]，然后选择文件。
-- [[ui:errors.tls.keyEncrypted]]、[[ui:errors.tls.keyBadPassword]]、[[ui:errors.tls.clientPkcs12BadPassword]]或[[ui:errors.tls.jksBadStorePassword]]：请在表单中输入正确的密码。
+- [[ui:errors.tls.keyEncrypted]]、[[ui:errors.tls.keyBadPassword]]、[[ui:errors.tls.clientPkcs12BadPassword]]或 [[ui:errors.tls.jksBadStorePassword]]：请在表单中输入正确的密码。
 - [[ui:errors.tls.keyMismatch]]：私钥文件属于另一个证书。
 - 客户端证书已过期或尚未生效：消息中会给出日期。请申请新证书。
 - PKCS#12 存储使用了旧算法，或存储为 JCEKS 格式。请按[证书格式](connections.md#certificate-formats)中所示转换文件。
@@ -77,7 +77,7 @@ TLS 或 SASL 问题也可能表现为超时。应用会尝试找出真正的原�
 
 如果按钮被隐藏或禁用，或者操作被拒绝，请检查以下原因：
 
-- 连接为只读。只读连接的名称旁带有锁形图标。会更改集群的按钮会被隐藏或禁用。如果此类请求仍到达了应用内核，例如在页面打开期间开启了该模式，错误会提示连接为只读。如需进行更改，请打开该连接，取消选中[[ui:common.readOnly]]并保存。在 Free 中，prod 连接无法取消选中该复选框。参见[只读](connections.md#read-only)。
+- 连接为只读。只读连接的名称旁带有锁形图标。会更改集群的按钮会被隐藏或禁用。如果此类请求仍到达了应用内核，例如在页面打开期间开启了该模式，错误会提示连接为只读。如需进行更改，请打开该连接，取消选中[[ui:common.readOnly]]并保存。在 Free 中，生产环境连接无法取消选中该复选框。参见[只读](connections.md#read-only)。
 - 连接为 prod。更改时会要求输入连接名称，名称一致之前不会执行操作。参见[环境与 prod](connections.md#environments)。
 - 该功能需要 Pro。错误会显示[[ui:errors.license.proRequired]]；如果许可证已过期，则会给出到期日期。参见 [Free 和 Pro](license-updates.md#free-and-pro)。
 - 消费者组有活动成员。只有在组中没有成员时，才能重置偏移量或删除组。参见[重置偏移量](groups.md#reset-offsets)。
@@ -106,4 +106,4 @@ TLS 或 SASL 问题也可能表现为超时。应用会尝试找出真正的原�
 - 如果问题出在界面上，请附上截图；
 - 错误发生的时间，以便在日志中查找。
 
-如果无法创建归档，请提供[[ui:sidebar.about]]页面上的[[ui:about.version]]和[[ui:about.build]]的值，并附上日志文件夹中的日志文件。
+如果无法创建归档，请提供[[ui:sidebar.about]]页面上的[[ui:about.version]]和 [[ui:about.build]] 的值，并附上日志文件夹中的日志文件。

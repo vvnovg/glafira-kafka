@@ -14,7 +14,7 @@ Glafira 支持 macOS 11 及更高版本。请从发布页面下载安装程序�
 
 也可以使用 `.pkg` 安装程序，它会将应用安装到 `/Applications`，供所有用户使用。
 
-Beta 版尚未经过 Apple 签名，因此 macOS 会阻止首次启动。允许启动的方法：
+Beta build 尚未经过 Apple 签名，因此 macOS 会阻止首次启动。允许启动的方法：
 
 1. 先尝试打开一次应用，然后关闭警告。
 2. 打开“系统设置”→“隐私与安全性”。
@@ -44,7 +44,7 @@ xattr -d com.apple.quarantine ~/Downloads/Glafira_for_Apache_Kafka_*.dmg
 2. 在 Windows 提示中确认安装。应用会为这台计算机的所有用户安装，因此需要管理员权限。
 3. 从“开始”菜单启动 Glafira for Apache Kafka。
 
-Beta 版尚未签名。如果 SmartScreen 阻止了安装程序，请点击“更多信息”，然后点击“仍要运行”。也可以在运行前通过 PowerShell 解除对文件的阻止：
+Beta build 尚未签名。如果 SmartScreen 阻止了安装程序，请点击“更多信息”，然后点击“仍要运行”。也可以在运行前通过 PowerShell 解除对文件的阻止：
 
 ```powershell
 Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en-US.msi"
@@ -69,10 +69,10 @@ Glafira 将密码保存在 Secret Service 中（例如 GNOME Keyring 或 KWallet
 还没有连接时，面板中会显示简短提示，标签页区域会建议添加连接。开始使用：
 
 1. 点击[[ui:sidebar.connections]]面板标题栏中的 `+`（[[ui:sidebar.newConnection]]）。
-2. 填写[[ui:connections.form.name]]和[[ui:connections.form.bootstrap]]，例如 `localhost:9092`。
+2. 填写[[ui:connections.form.name]]和 [[ui:connections.form.bootstrap]]，例如 `localhost:9092`。
 3. 点击[[ui:connections.form.test]]检查设置，然后点击[[ui:common.save]]。
 
-保存后会打开集群概览。面板中每个连接下方都有指向[[ui:sidebar.cluster]]、[[ui:sidebar.topics]]、[[ui:sidebar.groups]]、[[ui:sidebar.producer]]和[[ui:sidebar.consumer]]的链接。所有连接设置的详细说明见[连接](connections.md#create)。
+保存后会打开集群概览。面板中每个连接下方都有指向[[ui:sidebar.cluster]]、[[ui:sidebar.topics]]、[[ui:sidebar.groups]]、[[ui:sidebar.producer]] 和[[ui:sidebar.consumer]]的链接。所有连接设置的详细说明见[连接](connections.md#create)。
 
 面板底部有[[ui:sidebar.settings]]、[[ui:tabs.license]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的链接。字段旁的 `?` 图标会显示该字段的简短提示。在窗口任意位置按 `F1`，可打开当前页面对应的指南章节。在 macOS 上，也可以通过“帮助”菜单打开指南。
 
@@ -115,4 +115,4 @@ docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
 - 使用组织许可证密钥激活 Pro：此时[[ui:tabs.license]]页面会显示许可证由你的组织管理；
 - 关闭更新检查，或将其指向内部镜像。
 
-要查看是否应用了策略，请打开[[ui:sidebar.about]]，查看[[ui:about.policy]]。如果策略有错误，会显示在该处以及[[ui:tabs.license]]页面上。有关策略的问题，请联系你的管理员。许可证和更新的说明见[许可证与更新](license-updates.md)。
+要查看是否应用了策略，请打开[[ui:sidebar.about]]页面，查看[[ui:about.policy]]。如果策略有错误，会显示在该处以及[[ui:tabs.license]]页面上。有关策略的问题，请联系你的管理员。许可证和更新的说明见[许可证与更新](license-updates.md)。

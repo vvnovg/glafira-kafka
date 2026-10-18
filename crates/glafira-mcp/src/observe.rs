@@ -18,6 +18,9 @@ pub const MAX_EVENTS: usize = 500;
 /// MAX_DURATION_S вызов укладывается в 60 с.
 pub const READ_GRACE_S: u32 = 3;
 pub const LAG_WAIT_S: u32 = 3;
+/// `initial` и `final` не обрезаются: если одно состояние группы больше этого, два не
+/// поместятся в 100 КБ вместе с хронологией — отказ сразу после первого образца.
+pub const MAX_STATE_BYTES: usize = 45 * 1024;
 
 pub fn is_rebalancing(state: &str) -> bool {
     matches!(state, "PreparingRebalance" | "CompletingRebalance")

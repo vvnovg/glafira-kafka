@@ -313,12 +313,28 @@ impl GatewayServer {
         let (started_at_ms, started) = (now_ms(), tokio::time::Instant::now());
         let unit = self.shared.options.observe_unit;
         let reads_until = started + unit * (duration + READ_GRACE_S);
-        let first = expect!(self.read(describe()).await?, Group)?;
+        let late = || {
+            BackendError::new(
+                "TIMEOUT",
+                "The group description did not arrive before the end of the observation",
+            )
+        };
+        // И первое описание, и стартовый лаг — не дольше окна: вызов укладывается в 60 с.
+        let first = tokio::time::timeout_at(reads_until, self.read(describe()))
+            .await
+            .map_err(|_| late())??;
+        let first = expect!(first, Group)?;
         if first.not_found {
             return Err(BackendError::not_found(format!(
                 "Group “{}” not found",
                 p.group_id
             )));
+        }
+        if serde_json::to_vec(&GroupState::from(&first)).map_or(0, |b| b.len()) > MAX_STATE_BYTES {
+            return Err(BackendError::new(
+                "response_too_large",
+                "The group is too large to observe: its members and assignments alone do not fit into 100 KB; use describe_consumer_group instead",
+            ));
         }
         let lag = || async {
             match self
@@ -332,7 +348,10 @@ impl GatewayServer {
                 _ => None,
             }
         };
-        let lag_start = lag().await;
+        let lag_start = tokio::time::timeout_at(reads_until, lag())
+            .await
+            .ok()
+            .flatten();
         let total = (duration / interval) as usize + 1;
         let progress = ctx.meta.get_progress_token();
         let mut rec = Recorder::default();
@@ -346,13 +365,7 @@ impl GatewayServer {
             let at = started.elapsed().as_millis() as u64;
             match tokio::time::timeout_at(reads_until, self.read(describe())).await {
                 Err(_) => {
-                    rec.failed(
-                        at,
-                        BackendError::new(
-                            "TIMEOUT",
-                            "The group description did not arrive before the end of the observation",
-                        ),
-                    );
+                    rec.failed(at, late());
                     break;
                 }
                 Ok(r) => match r.and_then(|o| expect!(o, Group)) {
@@ -801,7 +814,7 @@ impl GatewayServer {
     }
 
     #[tool(
-        description = "Watch a consumer group for 10..=50 seconds (default 30), sampling it every 2..=10 seconds (default 2). Returns a timeline: state changes, members joining and leaving (member id, client id, host, group.instance.id), assignment and coordinator changes, lag at start and end, and the time spent rebalancing. Use it when a group keeps rebalancing: who leaves, how often, from which host.",
+        description = "Watch a consumer group for 10..=50 seconds (default 30), sampling it every 2..=10 seconds (default 2). Returns a timeline: state changes, members joining and leaving (member id, client id, host, group.instance.id), assignment and coordinator changes, lag at start and end, and the time spent rebalancing. Use it when a group keeps rebalancing: who leaves, how often, from which host. For consumer (KIP-848) groups, the Assigning and Reconciling phases may show up as state Unknown and are not counted as rebalancing time, and target assignments are not compared.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,

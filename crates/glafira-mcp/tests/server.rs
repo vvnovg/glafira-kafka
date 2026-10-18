@@ -2,6 +2,7 @@
 //! фальшивый Backend.
 
 use std::collections::VecDeque;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -10,8 +11,8 @@ use glafira_mcp::{
     AuditLog, Backend, BackendError, BoxFuture, GatewayOptions, McpServerHandle, endpoint,
     handshake,
 };
-use rmcp::model::{CallToolRequestParams, CallToolResult};
-use rmcp::service::RunningService;
+use rmcp::model::{CallToolRequest, CallToolRequestParams, CallToolResult, ClientRequest};
+use rmcp::service::{PeerRequestOptions, RunningService};
 use rmcp::{RoleClient, ServiceExt};
 use serde_json::{Value, json};
 
@@ -24,6 +25,36 @@ struct Fake {
     groups: Mutex<VecDeque<GroupDescription>>,
     /// Задержка каждого описания группы (медленный кластер).
     describe_delay: Mutex<Duration>,
+    /// Задержка обзора кластера и лага групп.
+    overview_delay: Mutex<Duration>,
+    lag_delay: Mutex<Duration>,
+    /// Операций чтения сейчас и наибольшее число одновременных.
+    active: AtomicUsize,
+    peak: AtomicUsize,
+}
+
+/// Считает одновременные операции чтения на любом выходе из `read`.
+struct InFlight<'a>(&'a Fake);
+
+impl<'a> InFlight<'a> {
+    fn new(f: &'a Fake) -> Self {
+        let now = f.active.fetch_add(1, Ordering::SeqCst) + 1;
+        f.peak.fetch_max(now, Ordering::SeqCst);
+        Self(f)
+    }
+}
+
+impl Drop for InFlight<'_> {
+    fn drop(&mut self) {
+        self.0.active.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+async fn pause(d: &Mutex<Duration>) {
+    let d = *d.lock().unwrap();
+    if !d.is_zero() {
+        tokio::time::sleep(d).await;
+    }
 }
 
 impl Fake {
@@ -34,6 +65,10 @@ impl Fake {
             closed: Mutex::new(Vec::new()),
             groups: Mutex::new(VecDeque::new()),
             describe_delay: Mutex::new(Duration::ZERO),
+            overview_delay: Mutex::new(Duration::ZERO),
+            lag_delay: Mutex::new(Duration::ZERO),
+            active: AtomicUsize::new(0),
+            peak: AtomicUsize::new(0),
         })
     }
 }
@@ -110,6 +145,7 @@ impl Backend for Fake {
 
     fn read(&self, op: ReadOp) -> BoxFuture<'_, Result<ReadOutput, BackendError>> {
         Box::pin(async move {
+            let _in_flight = InFlight::new(self);
             if op.connection_id().is_some_and(|c| c != "c1") {
                 return Err(BackendError::not_allowed());
             }
@@ -121,19 +157,22 @@ impl Backend for Fake {
                     folder_path: vec!["Team".into()],
                     read_only: false,
                 }]),
-                ReadOp::ClusterOverview { .. } => ReadOutput::Cluster(ClusterOverview {
-                    cluster_id: Some("k1".into()),
-                    controller_id: Some(1),
-                    brokers: vec![Broker {
-                        id: 1,
-                        host: "kafka-1".into(),
-                        port: 9092,
-                    }],
-                    topic_count: 3,
-                    internal_topic_count: 1,
-                    partition_count: 12,
-                    under_replicated_partitions: 0,
-                    offline_partitions: 0,
+                ReadOp::ClusterOverview { .. } => ReadOutput::Cluster({
+                    pause(&self.overview_delay).await;
+                    ClusterOverview {
+                        cluster_id: Some("k1".into()),
+                        controller_id: Some(1),
+                        brokers: vec![Broker {
+                            id: 1,
+                            host: "kafka-1".into(),
+                            port: 9092,
+                        }],
+                        topic_count: 3,
+                        internal_topic_count: 1,
+                        partition_count: 12,
+                        under_replicated_partitions: 0,
+                        offline_partitions: 0,
+                    }
                 }),
                 ReadOp::ListTopics { .. } => ReadOutput::Topics(
                     ["payments", "__consumer_offsets", "orders", "orders.dlq"]
@@ -166,10 +205,7 @@ impl Backend for Fake {
                         .collect(),
                 }),
                 ReadOp::DescribeGroup { group_id, .. } => {
-                    let delay = *self.describe_delay.lock().unwrap();
-                    if !delay.is_zero() {
-                        tokio::time::sleep(delay).await;
-                    }
+                    pause(&self.describe_delay).await;
                     if group_id == "crowd" {
                         ReadOutput::Group(group("Stable", crowd()))
                     } else if group_id == "missing" {
@@ -197,7 +233,8 @@ impl Backend for Fake {
                     member_client_id: Some("orders-app".into()),
                     error: None,
                 }]),
-                ReadOp::GroupsLag { group_ids, .. } => ReadOutput::Lags(
+                ReadOp::GroupsLag { group_ids, .. } => ReadOutput::Lags({
+                    pause(&self.lag_delay).await;
                     group_ids
                         .into_iter()
                         .map(|g| GroupLag {
@@ -206,8 +243,8 @@ impl Backend for Fake {
                             topics: vec!["orders".into()],
                             error: None,
                         })
-                        .collect(),
-                ),
+                        .collect()
+                }),
                 ReadOp::TopicGroups { topic, .. } => ReadOutput::TopicGroups(TopicGroups {
                     groups: (0..if topic == "busy" { 5000 } else { 1 })
                         .map(|i| TopicGroup {
@@ -692,6 +729,143 @@ async fn observation_keeps_its_window_when_reads_are_slow() {
     let elapsed = started.elapsed();
     assert!(elapsed < Duration::from_millis(400), "{elapsed:?}");
     assert!(v["samples"].as_u64().unwrap() < 6, "{v}");
+}
+
+#[tokio::test]
+async fn slow_first_description_and_start_lag_stay_within_the_window() {
+    let fake = Fake::new(SessionAccess::Approved);
+    // Стартовый лаг — 6 с, то есть 600 «секунд» при единице 10 мс: дольше окна его не ждут.
+    *fake.lag_delay.lock().unwrap() = Duration::from_secs(6);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    let started = std::time::Instant::now();
+    let v = ok(call(
+        &c,
+        "observe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "orders-svc", "durationSeconds": 10}),
+    )
+    .await);
+    assert!(
+        started.elapsed() < Duration::from_secs(2),
+        "{:?}",
+        started.elapsed()
+    );
+    assert_eq!(v["lagStart"], Value::Null);
+    assert!(v["samples"].as_u64().unwrap() >= 1, "{v}");
+
+    // Первое описание группы не приходит: ошибка в пределах окна, а не через таймаут бэкенда.
+    *fake.lag_delay.lock().unwrap() = Duration::ZERO;
+    *fake.describe_delay.lock().unwrap() = Duration::from_secs(6);
+    let started = std::time::Instant::now();
+    let msg = err(&call(
+        &c,
+        "observe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "orders-svc", "durationSeconds": 10}),
+    )
+    .await);
+    assert!(
+        started.elapsed() < Duration::from_secs(2),
+        "{:?}",
+        started.elapsed()
+    );
+    assert!(msg.starts_with("TIMEOUT:"), "{msg}");
+}
+
+#[tokio::test]
+async fn too_large_group_is_refused_without_waiting_for_the_window() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let started = std::time::Instant::now();
+    // Окно 50 «секунд» = 500 мс: отказ приходит после первого образца.
+    let msg = err(&call(
+        &c,
+        "observe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "crowd", "durationSeconds": 50}),
+    )
+    .await);
+    assert!(msg.starts_with("response_too_large:"), "{msg}");
+    assert!(
+        started.elapsed() < Duration::from_millis(300),
+        "{:?}",
+        started.elapsed()
+    );
+}
+
+#[tokio::test]
+async fn kafka_operations_are_limited_per_session_and_globally() {
+    let fake = Fake::new(SessionAccess::Approved);
+    *fake.overview_delay.lock().unwrap() = Duration::from_millis(150);
+    let e = env(fake.clone()).await;
+    let overview = |c: Arc<RunningService<RoleClient, ()>>| {
+        tokio::spawn(async move {
+            ok(call(&c, "get_cluster_overview", json!({"connectionId": "c1"})).await)
+        })
+    };
+    let one = Arc::new(client(&e.ep).await);
+    let calls: Vec<_> = (0..5).map(|_| overview(one.clone())).collect();
+    for h in calls {
+        h.await.unwrap();
+    }
+    assert_eq!(fake.peak.load(Ordering::SeqCst), 2, "не больше 2 на сессию");
+
+    fake.peak.store(0, Ordering::SeqCst);
+    let mut clients = vec![one];
+    for _ in 0..2 {
+        clients.push(Arc::new(client(&e.ep).await));
+    }
+    let calls: Vec<_> = clients
+        .iter()
+        .flat_map(|c| (0..3).map(|_| overview(c.clone())).collect::<Vec<_>>())
+        .collect();
+    for h in calls {
+        h.await.unwrap();
+    }
+    assert_eq!(
+        fake.peak.load(Ordering::SeqCst),
+        4,
+        "не больше 4 на все сессии"
+    );
+}
+
+#[tokio::test]
+async fn cancelled_observation_ends_early_and_frees_the_session() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let args = json!({"connectionId": "c1", "groupId": "orders-svc", "durationSeconds": 50});
+    let Value::Object(args) = args else {
+        unreachable!()
+    };
+    let request = ClientRequest::CallToolRequest(CallToolRequest::new(
+        CallToolRequestParams::new("observe_consumer_group").with_arguments(args),
+    ));
+    let handle = c
+        .send_cancellable_request(request, PeerRequestOptions::no_options())
+        .await
+        .unwrap();
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    handle.cancel(Some("test".into())).await.unwrap();
+    // Окно — 500 мс: отменённое наблюдение попадает в журнал раньше.
+    let mut logged = None;
+    for _ in 0..40 {
+        logged = e
+            .audit
+            .recent(5)
+            .into_iter()
+            .find(|r| r["tool"] == "observe_consumer_group");
+        if logged.is_some() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let logged = logged.expect("наблюдение завершилось после отмены");
+    assert!(logged["ms"].as_u64().unwrap() < 300, "{logged}");
+    // Сессия снова может наблюдать: отметка «идёт наблюдение» снята.
+    ok(call(
+        &c,
+        "observe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "orders-svc", "durationSeconds": 10}),
+    )
+    .await);
 }
 
 #[tokio::test]

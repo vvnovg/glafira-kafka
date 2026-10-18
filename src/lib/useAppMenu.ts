@@ -12,6 +12,12 @@ export function isMacOS(): boolean {
   return typeof navigator !== "undefined" && navigator.userAgent.includes("Mac");
 }
 
+/**
+ * Номер сборки меню — суффикс id пунктов. Tauri хранит обработчики кликов по id пункта и снимает их,
+ * когда пункт уничтожается: с одинаковыми id закрытие прежнего меню отключило бы клики нового.
+ */
+let generation = 0;
+
 /** Собранное меню и хэндлы его пунктов: их закрываем, когда меню заменено или хук размонтирован. */
 interface BuiltMenu {
   menu: Menu;
@@ -22,6 +28,8 @@ interface BuiltMenu {
 async function buildAppMenu(): Promise<BuiltMenu> {
   const t = i18n.t.bind(i18n);
   const { open } = useWorkspace.getState();
+  const g = ++generation;
+  const id = (base: string) => `${base}-${g}`;
   const menu = await Menu.default();
   const stock = await menu.get(TAURI_HELP_ID);
   if (stock) {
@@ -30,16 +38,16 @@ async function buildAppMenu(): Promise<BuiltMenu> {
   }
   const items = [
     // ⌘? — на раскладке US это ⇧⌘/; символ «?» как клавишу Tauri не принимает.
-    await MenuItem.new({ id: "guide", text: t("menu.guide"), accelerator: "CmdOrCtrl+Shift+/", action: () => open({ kind: "help" }) }),
+    await MenuItem.new({ id: id("guide"), text: t("menu.guide"), accelerator: "CmdOrCtrl+Shift+/", action: () => open({ kind: "help" }) }),
     await MenuItem.new({
-      id: "troubleshooting",
+      id: id("troubleshooting"),
       text: t("menu.troubleshooting"),
       action: () => open({ kind: "help", chapter: "troubleshooting" }),
     }),
     await PredefinedMenuItem.new({ item: "Separator" }),
-    await MenuItem.new({ id: "about", text: t("menu.about"), action: () => open({ kind: "about" }) }),
+    await MenuItem.new({ id: id("about"), text: t("menu.about"), action: () => open({ kind: "about" }) }),
     await MenuItem.new({
-      id: "diagnostics",
+      id: id("diagnostics"),
       text: t("menu.diagnostics"),
       action: () => {
         useDiagnosticsRequest.getState().request();
@@ -47,7 +55,7 @@ async function buildAppMenu(): Promise<BuiltMenu> {
       },
     }),
   ];
-  const help = await Submenu.new({ id: "glafira-help", text: t("menu.help"), items });
+  const help = await Submenu.new({ id: id("glafira-help"), text: t("menu.help"), items });
   await menu.append(help);
   // setAsAppMenu возвращает новый хэндл прежнего меню — его закрываем сразу.
   const previous = await menu.setAsAppMenu();

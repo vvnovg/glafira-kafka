@@ -11,6 +11,8 @@ const h = vi.hoisted(() => ({
   helpForNSApp: [] as string[],
   /** Хэндлы прежнего меню, которые вернул setAsAppMenu. */
   previous: [] as { closed: boolean }[],
+  /** Как в Tauri: обработчики кликов по id пункта; Drop (close) пункта удаляет обработчик его id. */
+  channels: new Map<string, (id: string) => void>(),
 }));
 
 vi.mock("@tauri-apps/api/menu", () => {
@@ -18,10 +20,12 @@ vi.mock("@tauri-apps/api/menu", () => {
     closed = false;
     async close() {
       this.closed = true;
+      if (this.opts.id) h.channels.delete(this.opts.id);
     }
     kind = "item";
     constructor(public opts: Opts) {}
     static async new(opts: Opts) {
+      if (opts.id && opts.action) h.channels.set(opts.id, opts.action);
       return new MenuItem(opts);
     }
   }
@@ -95,11 +99,13 @@ import { useDiagnosticsRequest } from "../state/diagnosticsRequest";
 import { useWorkspace } from "../state/workspace";
 import { useAppMenu } from "./useAppMenu";
 
-const helpSubmenu = () => h.appMenu?.items.find((i) => i.kind === "submenu" && i.opts.id === "glafira-help");
+const helpSubmenu = () => h.appMenu?.items.find((i) => i.kind === "submenu" && (i.opts.id ?? "").startsWith("glafira-help"));
 const labels = () => helpSubmenu()?.opts.items?.map((i) => (i.kind === "predefined" ? "—" : i.opts.text));
+/** Клик доставляется, как в Tauri: по id пункта через общую таблицу обработчиков. */
 const click = (id: string) => {
-  const item = helpSubmenu()?.opts.items?.find((i) => i.opts.id === id);
-  act(() => item?.opts.action?.(id));
+  const item = helpSubmenu()?.opts.items?.find((i) => (i.opts.id ?? "").startsWith(`${id}-`));
+  const itemId = item?.opts.id ?? "";
+  act(() => h.channels.get(itemId)?.(itemId));
 };
 
 const realUA = navigator.userAgent;
@@ -110,6 +116,7 @@ beforeEach(() => {
   h.appMenu = null;
   h.helpForNSApp = [];
   h.previous = [];
+  h.channels.clear();
   useWorkspace.setState({ tabs: [], activeId: null });
   useDiagnosticsRequest.setState({ pending: false });
 });
@@ -120,6 +127,17 @@ afterEach(async () => {
 });
 
 describe("useAppMenu", () => {
+  it("после смены языка пункты нового меню по-прежнему срабатывают", async () => {
+    setUA("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
+    renderHook(() => useAppMenu());
+    await waitFor(() => expect(helpSubmenu()?.opts.text).toBe("Справка"));
+    await act(() => i18n.changeLanguage("en"));
+    await waitFor(() => expect(helpSubmenu()?.opts.text).toBe("Help"));
+    await waitFor(() => expect(h.menus[0].closed).toBe(true));
+    click("guide");
+    expect(useWorkspace.getState().tabs.map((t) => t.kind)).toEqual(["help"]);
+  });
+
   it("на macOS — меню приложения с подменю «Справка» на русском", async () => {
     setUA("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
     renderHook(() => useAppMenu());

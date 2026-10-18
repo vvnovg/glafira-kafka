@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithClient } from "../../test/render";
@@ -57,6 +57,21 @@ describe("AboutPanel", () => {
     expect(save).toHaveBeenCalledTimes(1);
     expect(api.exportDiagnostics).toHaveBeenCalledWith("/tmp/diag.zip");
     expect(useDiagnosticsRequest.getState().pending).toBe(false);
+  });
+
+  it("запрос из меню во время сбора не запускает второй сбор", async () => {
+    vi.mocked(save).mockClear();
+    let resolveSave: (p: string) => void = () => {};
+    vi.mocked(save).mockImplementationOnce(() => new Promise((r) => (resolveSave = r)));
+    const user = userEvent.setup();
+    renderWithClient(<AboutPanel />);
+    await user.click(await screen.findByRole("button", { name: "Собрать диагностику" }));
+    expect(save).toHaveBeenCalledTimes(1);
+    act(() => useDiagnosticsRequest.getState().request());
+    expect(useDiagnosticsRequest.getState().pending).toBe(false);
+    resolveSave("/tmp/diag.zip");
+    expect(await screen.findByText(/Архив сохранён/)).toBeInTheDocument();
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
   it("обновление доступно; при активных сессиях — подтверждение", async () => {

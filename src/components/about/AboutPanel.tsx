@@ -27,11 +27,12 @@ export function AboutPanel() {
     },
   });
   // «Собрать диагностику…» из меню Help: тот же сбор, что и по кнопке; запрос забирается один раз.
+  // Пока сбор идёт, запрос снимается без второго сбора и второго диалога сохранения.
   const diagRequested = useDiagnosticsRequest((s) => s.pending);
-  const { mutate: collect } = diag;
+  const { mutate: collect, isPending: collecting } = diag;
   useEffect(() => {
-    if (diagRequested && useDiagnosticsRequest.getState().consume()) collect();
-  }, [diagRequested, collect]);
+    if (diagRequested && useDiagnosticsRequest.getState().consume() && !collecting) collect();
+  }, [diagRequested, collect, collecting]);
 
   if (info.error) return <ErrorBanner error={info.error} onRetry={() => info.refetch()} />;
   const i = info.data;

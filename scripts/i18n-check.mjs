@@ -179,7 +179,8 @@ export function checkTypography(dicts) {
 export const CJK_TYPO_LANGS = ["zh-CN", "zh-TW", "ja"];
 export const HAN_SPACE_LANGS = ["zh-CN", "zh-TW"];
 
-const CJK_CHAR = "\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}";
+// ー (U+30FC) и ・ (U+30FB) — Script=Common, но пишутся внутри слов катаканой.
+const CJK_CHAR = "\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\u30FB\\u30FC";
 const HALF_PUNCT_AFTER_CJK = new RegExp(`[${CJK_CHAR}][,.:;?!]`, "gu");
 const SPACE_BETWEEN_HAN = /\p{Script=Han}[ \t\u00A0\u3000]+\p{Script=Han}/gu;
 // Код, параметры, теги и метки заменяются нейтральным символом: он не иероглиф и не пробел, поэтому не склеивает соседей.
@@ -197,12 +198,15 @@ export function cjkProblems(text, code) {
   return problems;
 }
 
-const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u{FF00}-\u{FFEF}\u3000-\u303F]/u;
+// Полноширинные: иероглифы, кана (без полуширинной ｱ-ﾝ), хангыль (без полуширинного ﾡ-ￜ), символы CJK U+3000–U+303F,
+// ー и ・, полноширинные формы ！-｠ и ￠-￦.
+const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u3000-\u303F\u30FB\u30FC\uFF01-\uFF60\uFFE0-\uFFE6]/u;
+const HALFWIDTH = /[\uFF61-\uFFDC\uFFE8-\uFFEE]/u;
 
-/** Видимая ширина строки: иероглиф, кана, хангыль и полноширинные формы — 2, остальное — 1. */
+/** Видимая ширина строки: иероглиф, кана, хангыль и полноширинные формы — 2, остальное (и полуширинные формы) — 1. */
 export function visualWidth(s) {
   let w = 0;
-  for (const ch of s) w += WIDE.test(ch) ? 2 : 1;
+  for (const ch of s) w += WIDE.test(ch) && !HALFWIDTH.test(ch) ? 2 : 1;
   return w;
 }
 
@@ -599,7 +603,10 @@ export function parseGuideChapter(text) {
     else if (!target.startsWith("https://")) problems.push(`ссылка ${target} — допустимы только https:// и главы «глава.md#якорь»`);
   }
   // Проза для типографских проверок: без кода, якорей {#id} и адресов ссылок.
-  const plain = body.replace(/\{#[^}]*\}/g, "").replace(/\]\([^)]*\)/g, "]");
+  const plain = body
+    .replace(/\{#[^}]*\}/g, "")
+    .replace(/\]\([^)]*\)/g, "]")
+    .replace(/https?:\/\/\S+/g, "\u0001");
   return { title, anchors, labels, links, problems, prose: plain };
 }
 
@@ -619,14 +626,26 @@ function labelFlankingProblems(text, flat) {
     const value = flat.get(m[1]);
     if (!value) continue;
     const before = prose[m.index - 1];
-    const after = prose[m.index + m[0].length];
+    let end = m.index + m[0].length;
+    // Точку сразу после метки рендер убирает, если значение кончается на «.» или «:» (src/guide/parse.ts).
+    if (prose[end] === "." && /[.:]$/.test(value)) end += 1;
+    const after = prose[end];
     const tight = (ch) => ch !== undefined && !MD_SPACE.test(ch) && !MD_PUNCT.test(ch);
     const startsP = MD_PUNCT.test([...value][0]);
     const endsP = MD_PUNCT.test([...value].at(-1));
     if ((startsP && tight(before)) || (endsP && tight(after)))
-      problems.push(`метка ${m[0]} («${value}») вплотную к тексту: **…** вокруг значения с пунктуацией на краю не станет жирным — добавьте пробел или пунктуацию рядом либо перестройте фразу`);
+      problems.push(`метка ${m[0]} («${value}») вплотную к тексту: **…** вокруг значения с пунктуацией на краю не станет жирным — поставьте рядом пробел или пунктуацию (в zh и ja — пунктуацию) либо перестройте фразу`);
   }
   return problems;
+}
+
+/** Метки → значения языка (с той же точкой, что убирает рендер) — для типографских проверок прозы. */
+function withLabelValues(prose, flat) {
+  return prose.replace(/\[\[ui:([^\]]*)\]\](\.)?/g, (m, key, dot) => {
+    const value = flat.get(key);
+    if (value === undefined) return m;
+    return value + (dot && !/[.:]$/.test(value) ? dot : "");
+  });
 }
 
 /**
@@ -650,7 +669,8 @@ export function checkGuide(files, codes, enFlat, chapters = GUIDE_CHAPTERS, lang
   for (const [path, ch] of Object.entries(parsed)) {
     const [code, name] = path.split("/");
     for (const pr of ch.problems) problems.push(`${path}: ${pr}`);
-    for (const pr of cjkProblems(ch.prose, code)) problems.push(`${path}: ${pr}`);
+    const prose = langFlat[code] ? withLabelValues(ch.prose, langFlat[code]) : ch.prose;
+    for (const pr of cjkProblems(prose, code)) problems.push(`${path}: ${pr}`);
     if (langFlat[code]) for (const pr of labelFlankingProblems(ch.prose, langFlat[code])) problems.push(`${path}: ${pr}`);
     const enAnchors = parsed[`en/${name}`]?.anchors;
     if (code !== "en" && enAnchors && ch.anchors.join(" ") !== enAnchors.join(" ")) {

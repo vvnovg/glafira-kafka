@@ -371,6 +371,8 @@ test("CJK: полуширинная пунктуация после иерогл
   assert.deepEqual(cjkProblems("接続 クラスター", "ja"), [], "в ja пробел между словами — не эта проверка");
   assert.ok(cjkProblems("トピック.", "ja").some((x) => x.includes("полуширинная")));
   assert.ok(cjkProblems("ひらがな!", "ja").length > 0);
+  assert.ok(cjkProblems("サーバー.", "ja").some((x) => x.includes("полуширинная")), "ー (U+30FC, Script=Common) — часть катаканы");
+  assert.ok(cjkProblems("フォルダー,", "ja").some((x) => x.includes("полуширинная")));
   assert.deepEqual(cjkProblems("토픽.", "ko"), [], "ko — ASCII-пунктуация");
   assert.deepEqual(cjkProblems("连接 集群.", "de"), [], "для других языков проверки нет");
   assert.deepEqual(cjkProblems("运行 `a,b` 命令", "zh-CN"), [], "внутри `code` — не проверяется");
@@ -389,6 +391,11 @@ test("CJK: видимая ширина", () => {
   assert.equal(visualWidth("토픽"), 4);
   assert.equal(visualWidth("（，）"), 6);
   assert.equal(visualWidth("Ünïcode"), 7);
+  assert.equal(visualWidth("サーバー"), 8, "ー — полная ширина");
+  assert.equal(visualWidth("！｠￠￦"), 8, "полноширинные формы");
+  assert.equal(visualWidth("ｱｲ"), 2, "полуширинная катакана — 1");
+  assert.equal(visualWidth("ﾡﾢ"), 2, "полуширинный хангыль — 1");
+  assert.equal(visualWidth("｡"), 1, "полуширинная точка — 1");
 });
 
 test("CJK: типографика словарей и длина по видимой ширине", () => {
@@ -406,6 +413,7 @@ test("CJK: проза глав руководства, вне кода и ссы
   const p = (f) => checkGuide(f, ["en", "zh-CN"], en, ["getting-started"]);
   assert.deepEqual(p(zh("打开[[ui:sidebar.settings]]。参见 [文档](https://kafka.apache.org/documentation/#主题.配置)。")), []);
   assert.deepEqual(p(zh("运行：\n\n```\n主题.名 集群,x\n```\n\n命令 `主题.名` 完成。")), []);
+  assert.deepEqual(p(zh("文档：https://kafka.apache.org/文档.配置 和 http://例子.cn/a,b 。")), [], "голые URL не проверяются");
   const bad = p(zh("打开[[ui:sidebar.settings]]。然后.再 保存。"));
   assert.ok(bad.some((x) => x.startsWith("zh-CN/getting-started.md: ") && x.includes("полуширинная")), bad.join("\n"));
   assert.ok(bad.some((x) => x.includes("пробел между иероглифами")), bad.join("\n"));
@@ -418,11 +426,34 @@ test("CJK: метка, значение которой начинается ил
   const enCh = "# Start\n\nText.\n";
   const p = (body) =>
     checkGuide({ "en/getting-started.md": enCh, "zh-CN/getting-started.md": `# 开始\n\n${body}\n` }, ["en", "zh-CN"], en, ["getting-started"], { "zh-CN": zhFlat });
-  assert.deepEqual(p("点击[[ui:a.set]]按钮。打开[[ui:a.exp]]。点击 [[ui:a.exp]] 按钮。[[ui:a.q]]"), []);
+  assert.deepEqual(p("点击[[ui:a.set]]按钮。打开[[ui:a.exp]]。点击“[[ui:a.exp]]”按钮。[[ui:a.q]]"), []);
   assert.deepEqual(p("打开[[ui:a.exp]].然后"), [], "точка после метки — пунктуация, не иероглиф");
   assert.ok(!p("### 点击[[ui:a.exp]]按钮").some((x) => x.includes("**…**")), "в заголовке метка без жирного");
   const bad = p("点击[[ui:a.exp]]按钮，选择[[ui:a.q]]。");
   assert.equal(bad.length, 2, bad.join("\n"));
   assert.ok(bad.every((x) => x.startsWith("zh-CN/getting-started.md: ") && x.includes("**…**")), bad.join("\n"));
   assert.ok(bad[0].includes("[[ui:a.exp]]") && bad[1].includes("[[ui:a.q]]"), bad.join("\n"));
+});
+
+test("CJK: точка после метки со значением на «.»/«:» убирается рендером — смотрим на следующий символ", () => {
+  const en = flatten({ a: { ro: "Read-only.", logs: "Logs:" } });
+  const zhFlat = flatten({ a: { ro: "只读.", logs: "日志：" } });
+  const flat = new Map([["a.ro", "(Read-only)."], ["a.logs", "Logs:"]]);
+  const enCh = "# Start\n\nText.\n";
+  const p = (code, body, lf) =>
+    checkGuide({ "en/getting-started.md": enCh, [`${code}/getting-started.md`]: `# T\n\n${body}\n` }, ["en", code], en, ["getting-started"], { [code]: lf });
+  assert.deepEqual(p("de", "Siehe [[ui:a.ro]]. Weiter", flat), [], "после убранной точки — пробел");
+  assert.ok(p("de", "Siehe [[ui:a.ro]].Weiter", flat).some((x) => x.includes("**…**")), "после убранной точки — буква");
+  assert.ok(p("zh-CN", "见[[ui:a.ro]].然后", zhFlat).some((x) => x.includes("**…**")));
+});
+
+test("CJK: в прозе главы метка подставляется значением языка — полуширинная точка после неё находится", () => {
+  const en = flatten({ sidebar: { settings: "Settings" } });
+  const enCh = "# Start\n\nOpen [[ui:sidebar.settings]].\n";
+  const zhFlat = flatten({ sidebar: { settings: "设置" } });
+  const p = (body) =>
+    checkGuide({ "en/getting-started.md": enCh, "zh-CN/getting-started.md": `# 开始\n\n${body}\n` }, ["en", "zh-CN"], en, ["getting-started"], { "zh-CN": zhFlat });
+  assert.ok(p("打开[[ui:sidebar.settings]].").some((x) => x.includes("полуширинная") && x.includes("置.")), p("打开[[ui:sidebar.settings]].").join("\n"));
+  assert.deepEqual(p("打开[[ui:sidebar.settings]]。"), []);
+  assert.ok(p("打开 [[ui:sidebar.settings]]。").some((x) => x.includes("пробел между иероглифами")), "в zh метка без пробелов");
 });

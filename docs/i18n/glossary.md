@@ -17,7 +17,7 @@
 
 ## Не переводится
 Kafka, Glafira, Pro, Free, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
-DNS, TCP, ID, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»), Leader (лидер партиции); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
+DNS, TCP, ID, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»), Leader (лидер партиции; в ja и ko — リーダー и 리더); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
 команды, пути, адреса (`docker compose -f dev/docker-compose.yml up -d`, `keytool …`, `localhost:9092`);
 название экрана «Producer» (как в ru); значения CreateTime / LogAppendTime, producer / uncompressed в compression.type.
 
@@ -41,12 +41,12 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | en | ru | de | fr | es | it | pl | pt-BR | zh-CN | zh-TW | ja | ko |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | topic | топик | Topic (das, Pl. Topics) | topic (m.) | topic (m.) | topic (m., pl. invar.) | topik (m.: topiku, topiki, topików) | tópico (m.) | 主题 | 主題 | トピック | 토픽 |
-| partition | партиция | Partition (die) | partition (f.) | partición (f.) | partizione (f.) | partycja | partição (f.) | 分区 | 分割區 | パーティション | 파티션 |
+| partition | партиция | Partition (die) | partition (f.) | partición (f.) | partizione (f.) | partycja | partição (f.) | 分区 | 分區 | パーティション | 파티션 |
 | offset | оффсет | Offset (der, Pl. Offsets) | offset (m.) | offset (m.) | offset (m., pl. invar.) | offset (m.: offsetu, offsety) | offset (m.) | 偏移量 | 偏移量 | オフセット | 오프셋 |
 | consumer group | consumer group | Consumer Group (die) | consumer group (m.) | consumer group (m.) | consumer group (m.) | grupa konsumentów | consumer group (m.) | 消费者组 | 消費者群組 | コンシューマーグループ | 컨슈머 그룹 |
 | broker | брокер | Broker (der) | broker (m.) | broker (m.) | broker (m.) | broker (m.: brokera) | broker (m.) | Broker | Broker | ブローカー | 브로커 |
 | producer / consumer (роль) | producer / consumer | Producer / Consumer | producteur / consommateur | productor / consumidor | producer / consumer | producent / konsument | produtor / consumidor | 生产者 / 消费者 | 生產者 / 消費者 | プロデューサー / コンシューマー | 프로듀서 / 컨슈머 |
-| lag | лаг | Lag (der) | lag (m.) | lag (m.) | lag (m.) | lag (m.: lagu) | lag (m.) | 滞后 | 滯後 | ラグ | 랙 |
+| lag | лаг | Lag (der) | lag (m.) | lag (m.) | lag (m.) | lag (m.: lagu) | lag (m.) | 延迟 (в тексте можно 消费延迟) | 延遲 (в тексте можно 消費延遲) | ラグ | 랙 |
 | message | сообщение | Nachricht | message (m.) | mensaje | messaggio | wiadomość | mensagem | 消息 | 訊息 | メッセージ | 메시지 |
 | key / value | ключ / значение | Schlüssel / Wert | clé / valeur | clave / valor | chiave / valore | klucz / wartość | chave / valor | 键 / 值 | 鍵 / 值 | キー / 値 | 키 / 값 |
 | headers | заголовки | Header (Pl.) | en-têtes | encabezados | intestazioni | nagłówki | cabeçalhos | 标头 | 標頭 | ヘッダー | 헤더 |
@@ -61,25 +61,25 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
 | committed offset | закоммиченный оффсет | committeter Offset | offset commité | offset con commit | offset sottoposto a commit | zatwierdzony offset | offset com commit | 已提交的偏移量 | 已提交的偏移量 | コミット済みオフセット | 커밋된 오프셋 |
 | reset offsets | сбросить оффсеты | Offsets zurücksetzen | Réinitialiser les offsets | Restablecer offsets | Reimposta gli offset | Zresetuj offsety | Redefinir offsets | 重置偏移量 | 重設偏移量 | オフセットをリセット | 오프셋 재설정 |
 | retention | хранение (retention) | Aufbewahrung | rétention | retención | conservazione | retencja | retenção | 保留 | 保留 | 保持 | 보존 |
-| replication factor | фактор репликации | Replikationsfaktor | facteur de réplication | factor de replicación | fattore di replica | współczynnik replikacji | fator de replicação | 副本因子 | 複寫係數 | レプリケーション係数 | 복제 계수 |
+| replication factor | фактор репликации | Replikationsfaktor | facteur de réplication | factor de replicación | fattore di replica | współczynnik replikacji | fator de replicação | 副本因子 | 複寫係數 | レプリケーションファクター | 복제 계수 |
 | under-replicated | недореплицированные | unterrepliziert | sous-répliquées | subreplicadas | sotto-replicate | niedoreplikowane | sub-replicadas | 副本不足 | 複本不足 | レプリカ不足 | 복제 부족 |
 | trusted CA | доверенный CA | vertrauenswürdige CA | CA de confiance | CA de confianza | CA attendibile | zaufany CA | CA confiável | 受信任的 CA | 受信任的 CA | 信頼された CA | 신뢰할 수 있는 CA |
 | client certificate / key | сертификат / ключ клиента | Client-Zertifikat / -Schlüssel | certificat / clé client | certificado / clave de cliente | certificato / chiave client | certyfikat / klucz klienta | certificado / chave do cliente | 客户端证书 / 私钥 | 用戶端憑證 / 私密金鑰 | クライアント証明書 / 秘密鍵 | 클라이언트 인증서 / 개인 키 |
 | system secret store | системное хранилище секретов | Schlüsselbund des Systems | trousseau du système | almacén de secretos del sistema | archivio dei segreti di sistema | systemowy magazyn sekretów | cofre de segredos do sistema | 系统密钥存储 | 系統金鑰儲存區 | システムの資格情報ストア | 시스템 보안 저장소 |
 | idempotence | идемпотентность | Idempotenz | idempotence | idempotencia | idempotenza | idempotencja | idempotência | 幂等性 | 冪等性 | 冪等性 | 멱등성 |
 | compression | сжатие | Komprimierung | compression | compresión | compressione | kompresja | compressão | 压缩 | 壓縮 | 圧縮 | 압축 |
-| rebalance | ребалансировка | Rebalance (das) | rééquilibrage | rebalanceo | ribilanciamento | rebalans | rebalanceamento | 重平衡 | 重新平衡 | リバランス | 리밸런스 |
+| rebalance | ребалансировка | Rebalance (das) | rééquilibrage | rebalanceo | ribilanciamento | rebalans | rebalanceamento | 重平衡 | 重新平衡 | リバランス | 리밸런싱 |
 | placeholder (Producer) | плейсхолдер | Platzhalter | variable | marcador | segnaposto | symbol zastępczy | marcador | 占位符 | 預留位置 | プレースホルダー | 플레이스홀더 |
 | hint (значок «?») | подсказка | Hinweis | aide | ayuda | suggerimento | podpowiedź | dica | 提示 | 提示 | ヒント | 도움말 |
 | segment (лога) | сегмент | Segment | segment | segmento | segmento | segment | segmento | 日志段 | 日誌區段 | セグメント | 세그먼트 |
 | compaction | compaction | Compaction (die) | compaction (f.) | compactación | compattazione | kompaktowanie | compactação | Compaction (не «压缩» — это compression) | Compaction (не «壓縮» — это compression) | コンパクション | 컴팩션 |
 | tiered storage | tiered storage | Tiered Storage | tiered storage | tiered storage | tiered storage | tiered storage | tiered storage | 分层存储 | 分層儲存 | 階層型ストレージ | 계층형 스토리지 |
-| follower (реплика) | фолловер | Follower | follower | follower | follower | follower | follower | Follower | Follower | Follower | Follower |
+| follower (реплика) | фолловер | Follower | follower | follower | follower | follower | follower | Follower | Follower | フォロワー | 팔로워 |
 | license | лицензия | Lizenz | licence | licencia | licenza | licencja | licença | 许可证 | 授權 | ライセンス | 라이선스 |
 | settings | настройки | Einstellungen | Paramètres | Ajustes | Impostazioni | Ustawienia | Configurações | 设置 | 設定 | 設定 | 설정 |
 | about | о программе | Über Glafira | À propos | Acerca de | Informazioni | O programie | Sobre | 关于 Glafira | 關於 Glafira | Glafira について | Glafira 정보 |
 | update | обновление | Update | mise à jour | actualización | aggiornamento | aktualizacja | atualização | 更新 | 更新 | アップデート | 업데이트 |
-| diagnostics archive | архив диагностики | Diagnosearchiv | archive de diagnostic | archivo de diagnóstico | archivio diagnostico | archiwum diagnostyczne | arquivo de diagnóstico | 诊断归档 | 診斷封存檔 | 診断アーカイブ | 진단 아카이브 |
+| diagnostics archive | архив диагностики | Diagnosearchiv | archive de diagnostic | archivo de diagnóstico | archivio diagnostico | archiwum diagnostyczne | arquivo de diagnóstico | 诊断归档 | 診斷壓縮檔 | 診断アーカイブ | 진단 아카이브 |
 | set by your organization | задан вашей организацией | von Ihrer Organisation festgelegt | défini par votre organisation | establecido por tu organización | impostato dalla tua organizzazione | ustawione przez organizację | definido pela sua organização | 由你的组织设置 | 由你的組織設定 | 組織によって設定済み | 조직에서 설정함 |
 | System default (…) | Как в системе (…) | Systemsprache ({{name}}) | Langue du système ({{name}}) | Idioma del sistema ({{name}}) | Lingua di sistema ({{name}}) | Język systemu ({{name}}) | Idioma do sistema ({{name}}) | 系统语言（{{name}}） | 系統語言（{{name}}） | システムの言語（{{name}}） | 시스템 언어({{name}}) |
 
@@ -116,7 +116,8 @@ DNS, TCP, ID, Build (сборка: подпись в «О программе» �
   zh-CN «{{count}} 条消息», «{{count}} 个主题»; zh-TW «{{count}} 則訊息», «{{count}} 個主題»; ja «{{count}} 件のメッセージ»;
   ko «메시지 {{count}}개».
 - Названия Kafka, протоколов, форматов и параметров — латиницей, как в «Не переводится»; экран «Producer» — латиницей.
-  Broker в zh — латиницей (Broker), в ja и ko — устоявшиеся ブローカー и 브로커; Leader и Follower — латиницей во всех четырёх.
+  Broker в zh — латиницей (Broker), в ja и ko — устоявшиеся ブローカー и 브로커; Leader и Follower — латиницей в zh, リーダー/フォロワー в ja, 리더/팔로워 в ko.
+  Lag — в интерфейсе и подсказках коротко 延迟 / 延遲 (в прозе руководства можно 消费延迟 / 消費延遲), ラグ, 랙.
 - Многоточие — один символ `…`, как во всех языках (не «……» и не `...`).
 - Числа, единицы (`ms`, `MB`) и латиница — полуширинные; полноширинные цифры и латиницу (`１２`, `ＭＢ`) не использовать.
 - Имя (параметр `{{name}}`) не склоняется и не меняет соседние слова: в кавычках языка и рядом с существительным

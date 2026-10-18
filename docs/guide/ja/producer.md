@@ -1,146 +1,146 @@
 # Producer
 
-The [[ui:sidebar.producer]] sends messages to Kafka: one at a time from a form, or many at once. Open it from the connection in the [[ui:sidebar.connections]] panel, or with [[ui:topics.details.produce]] on a topic tab, which fills in the topic. Each connection has its own Producer tab.
+[[ui:sidebar.producer]]は、Kafkaにメッセージを送信します。フォームから1件ずつ送信することも、まとめて送信することもできます。[[ui:sidebar.connections]]パネルの接続から開くか、トピックのタブの[[ui:topics.details.produce]]から開きます。後者の場合はトピックが入力されます。Producerのタブは接続ごとに1つです。
 
-On [[ui:common.readOnly]] connections, the Producer opens with the warning [[ui:producer.readOnly]]. The send buttons are hidden, but templates and history can still be viewed.
+[[ui:common.readOnly]]の接続では、Producerを開くと「[[ui:producer.readOnly]]」という警告が表示されます。送信ボタンは非表示になりますが、テンプレートと履歴は引き続き閲覧できます。
 
-## Send a message {#send-message}
+## メッセージを送信する {#send-message}
 
-1. Enter the [[ui:producer.topic]]. The field suggests the topics of the cluster, without internal topics.
-2. Optionally, enter a [[ui:producer.partition]] number. When the field shows [[ui:producer.partitionAuto]], the partition is chosen by the key: messages with the same key go to the same partition, as with the Java client. Messages without a key go to a random partition.
-3. Fill in the [[ui:producer.key]] and the [[ui:producer.value]], and choose their formats. See [Key and value formats](producer.md#key-value-formats).
-4. Optionally, add headers.
-5. Click [[ui:producer.send]].
+1. [[ui:producer.topic]]を入力します。フィールドには、内部トピックを除くクラスターのトピックが候補として表示されます。
+2. 必要に応じて、[[ui:producer.partition]]の番号を入力します。フィールドに[[ui:producer.partitionAuto]]と表示されている場合、パーティションはキーによって選ばれます。Javaクライアントと同様に、同じキーのメッセージは同じパーティションに送られます。キーのないメッセージはランダムなパーティションに送られます。
+3. [[ui:producer.key]]と[[ui:producer.value]]を入力し、それぞれの形式を選びます。[キーと値の形式](producer.md#key-value-formats)を参照してください。
+4. 必要に応じて、ヘッダーを追加します。
+5. [[ui:producer.send]]をクリックします。
 
-After a successful send, a line below the form shows the partition, the offset and the time of the message. With `acks` set to `0`, the broker does not return an offset, and `—` is shown instead.
+送信に成功すると、フォームの下の行にメッセージのパーティション、オフセット、時刻が表示されます。`acks`が`0`の場合、ブローカーはオフセットを返さないため、代わりに`—`が表示されます。
 
-If the partition number is too large, or the broker does not confirm the message within the connection timeout, the app shows an error. A topic that does not exist also gives an error, unless the broker creates topics automatically (`auto.create.topics.enable`). With auto-creation off, this error can take up to about 30 s to appear (the connection timeout). Errors in the form, such as invalid JSON or an unknown placeholder, are shown before anything is sent.
+パーティション番号が大きすぎる場合や、接続のタイムアウト内にブローカーがメッセージを確認しない場合は、エラーが表示されます。存在しないトピックもエラーになります。ただし、ブローカーがトピックを自動作成する設定（`auto.create.topics.enable`）の場合は除きます。自動作成がオフの場合、このエラーが表示されるまで最大で約30秒（接続のタイムアウト）かかることがあります。無効なJSONや不明なプレースホルダーなど、フォームのエラーは送信前に表示されます。
 
-On a prod connection, sending asks you to type the connection name and confirm with [[ui:producer.confirmLabel]]. See [Environments and prod](connections.md#environments).
+本番接続では、送信時に接続名を入力して[[ui:producer.confirmLabel]]で確定するよう求められます。[環境と本番](connections.md#environments)を参照してください。
 
-[[ui:producer.clearForm]] empties the form and returns the producer settings to their defaults. The topic stays.
+[[ui:producer.clearForm]]はフォームを空にし、プロデューサーの設定をデフォルトに戻します。トピックはそのまま残ります。
 
-## Key and value formats {#key-value-formats}
+## キーと値の形式 {#key-value-formats}
 
-[[ui:producer.keyFormat]] and [[ui:producer.valueFormat]] set how the text in the field is turned into bytes:
+[[ui:producer.keyFormat]]と[[ui:producer.valueFormat]]は、フィールドのテキストをバイトに変換する方法を指定します：
 
-- `string` — the text as is, in UTF-8.
-- `json` — the text is checked to be valid JSON and sent as typed, without reformatting.
-- `hex` — two hex digits per byte, for example `48656c6c6f`. Spaces and line breaks are ignored.
-- `base64` — bytes in standard Base64.
-- `null` — no key or no value at all. The field is empty, and typing text switches the format to `string`.
+- `string`：テキストをそのままUTF-8で送信します。
+- `json`：テキストが有効なJSONであることを確認し、整形せずに入力どおり送信します。
+- `hex`：1バイトにつき2桁の16進数。例：`48656c6c6f`。スペースと改行は無視されます。
+- `base64`：標準のBase64で表したバイト。
+- `null`：キーまたは値そのものがありません。フィールドは空で、テキストを入力すると形式が`string`に切り替わります。
 
-The default is `null` for the key and `json` for the value. To send a message with a key, just type it: the format changes to `string`. An empty string is still a key, not a missing one: if you choose `string` and leave the field empty, all such messages get the same hash and go to one partition.
+デフォルトは、キーが`null`、値が`json`です。キー付きのメッセージを送信するには、キーを入力するだけで形式が`string`に変わります。空の文字列もキーであり、キーがないこととは異なります。`string`を選んでフィールドを空のままにすると、そのようなメッセージはすべて同じハッシュになり、1つのパーティションに送られます。
 
-A message with a `null` value is a tombstone. In a topic with `cleanup.policy=compact`, it tells Kafka to remove older messages with the same key.
+値が`null`のメッセージはtombstoneです。`cleanup.policy=compact`のトピックでは、同じキーを持つ古いメッセージを削除するようKafkaに伝えます。
 
-## Headers {#headers}
+## ヘッダー {#headers}
 
-Headers are name and value pairs sent with the message. Click [[ui:producer.headers.add]] to add a row, then fill in [[ui:producer.headers.colName]], [[ui:producer.headers.colValue]] and [[ui:producer.headers.colFormat]]. The `×` button removes the row.
+ヘッダーは、メッセージとともに送信される名前と値のペアです。[[ui:producer.headers.add]]をクリックして行を追加し、[[ui:producer.headers.colName]]、[[ui:producer.headers.colValue]]、[[ui:producer.headers.colFormat]]を入力します。`×`ボタンで行を削除します。
 
-The format of a header value is `string` (text in UTF-8) or `hex` (bytes as hex digits). Rows with an empty name are not sent. Kafka allows several headers with the same name, and they are all sent.
+ヘッダーの値の形式は、`string`（UTF-8のテキスト）または`hex`（バイトを16進数で表記）です。名前が空の行は送信されません。Kafkaでは同じ名前のヘッダーを複数持つことができ、それらはすべて送信されます。
 
-Placeholders work in header values, but not in header names.
+プレースホルダーはヘッダーの値では使えますが、ヘッダーの名前では使えません。
 
-## Placeholders {#placeholders}
+## プレースホルダー {#placeholders}
 
-Placeholders are replaced with values at every send. They work in the key, the value and the header values. The list is shown below the headers:
+プレースホルダーは、送信のたびに値に置き換えられます。キー、値、ヘッダーの値で使えます。一覧はヘッダーの下に表示されます：
 
-- `{{uuid}}` — a new random UUID, for example `0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`.
-- `{{now}}` — the current time in UTC in ISO 8601 format with milliseconds, for example `2026-10-15T12:30:00.000Z`.
-- `{{nowMillis}}` — the current time in milliseconds since 1970-01-01 UTC.
-- `{{seq}}` — the number of the copy in a batch, starting at 0. For a single send, it is `0`.
-- `{{randomInt 1 100}}` — a random integer between the two numbers, both included.
-- `{{randomString 8}}` — a random string of Latin letters and digits of the given length, up to 100000.
-- `{{env NAME}}` — the value of the environment variable `NAME`. If it is not set, nothing is sent and an error is shown.
+- `{{uuid}}`：新しいランダムなUUID。例：`0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`。
+- `{{now}}`：現在時刻（UTC）。ミリ秒付きのISO 8601形式。例：`2026-10-15T12:30:00.000Z`。
+- `{{nowMillis}}`：1970-01-01 UTCからの現在時刻（ミリ秒）。
+- `{{seq}}`：一括送信でのコピーの番号。0から始まります。1件だけ送信する場合は`0`です。
+- `{{randomInt 1 100}}`：2つの数値の間のランダムな整数。両端を含みます。
+- `{{randomString 8}}`：指定した長さ（最大100000）の、半角英字と数字からなるランダムな文字列。
+- `{{env NAME}}`：環境変数`NAME`の値。設定されていない場合は何も送信されず、エラーが表示されます。
 
-Spaces inside the braces are allowed. An unknown placeholder or a missing `}}` stops the send with an error. To send `{{` as text, write `\{{`.
+波かっこの内側にはスペースを入れられます。不明なプレースホルダーや`}}`の欠落があると、エラーになり送信が止まります。`{{`をテキストとして送信するには、`\{{`と書きます。
 
-With the `json` format, the JSON is checked after the placeholders are replaced. Placeholders that produce text need quotes: `{"id": "{{uuid}}"}`. Numbers do not: `{"n": {{seq}}}`.
+`json`形式では、プレースホルダーが置き換えられたあとにJSONが確認されます。テキストを生成するプレースホルダーには引用符が必要です：`{"id": "{{uuid}}"}`。数値には不要です：`{"n": {{seq}}}`。
 
-`{{env NAME}}` reads the environment of the Glafira process. If you start Glafira from the Dock or the Start menu, variables set only in your terminal profile may be missing.
+`{{env NAME}}`は、Glafiraのプロセスの環境変数を読み取ります。DockやスタートメニューからGlafiraを起動した場合、ターミナルのプロファイルだけで設定した変数は存在しないことがあります。
 
-When a message comes from [Open in Producer](browse.md#open-in-producer) or from the history, every `{{` in it is written as `\{{`. The message is then sent exactly as it was, without replacing anything.
+[Producerで開く](browse.md#open-in-producer)や履歴から取り込んだメッセージでは、すべての`{{`が`\{{`として書かれます。そのため、メッセージは何も置き換えられずに元のとおり送信されます。
 
-## Templates {#templates}
+## テンプレート {#templates}
 
-A template saves the whole form: topic, partition, key, value, headers, formats and producer settings. Placeholders are saved as written and are replaced at each send.
+テンプレートには、トピック、パーティション、キー、値、ヘッダー、形式、プロデューサーの設定など、フォーム全体が保存されます。プレースホルダーは書かれたとおりに保存され、送信のたびに置き換えられます。
 
-To save a template, click [[ui:producer.templates.saveAs]], enter the [[ui:producer.templates.nameLabel]] and click [[ui:common.save]]. The topic may be empty. By default, the template belongs to this connection. Select [[ui:producer.templates.global]] to show it on every connection; such templates are marked [[ui:producer.templates.allSuffix]] in the list.
+テンプレートを保存するには、[[ui:producer.templates.saveAs]]をクリックし、[[ui:producer.templates.nameLabel]]を入力して[[ui:common.save]]をクリックします。トピックは空でもかまいません。デフォルトでは、テンプレートはこの接続に属します。すべての接続で表示するには[[ui:producer.templates.global]]を選択します。そのようなテンプレートには、一覧で「[[ui:producer.templates.allSuffix]]」と表示されます。
 
-To use a template, choose it in the [[ui:producer.templates.label]] list. The form is replaced with the template. You can edit the form before sending; the template does not change.
+テンプレートを使うには、[[ui:producer.templates.label]]の一覧から選びます。フォームはテンプレートの内容に置き換えられます。送信前にフォームを編集しても、テンプレートは変わりません。
 
-Saving always creates a new template. To change one, load it, edit the form, save it under a new name and delete the old one. To delete the selected template, click [[ui:producer.templates.delete]] and confirm with [[ui:common.delete]].
+保存すると常に新しいテンプレートが作成されます。テンプレートを変更するには、読み込んでフォームを編集し、新しい名前で保存してから古いものを削除します。選択したテンプレートを削除するには、[[ui:producer.templates.delete]]をクリックし、[[ui:common.delete]]で確定します。
 
-Templates of a connection are deleted together with the connection.
+接続のテンプレートは、接続と一緒に削除されます。
 
-## History {#history}
+## 履歴 {#history}
 
-[[ui:producer.history.title]] lists the last 100 single sends of this connection, newest first. Messages from batch sends are not added. Each row shows the time, the topic, the partition and offset, and the start of the key.
+「[[ui:producer.history.title]]」には、この接続で1件ずつ送信した最新100件のメッセージが新しい順に一覧表示されます。一括送信のメッセージは追加されません。各行には、時刻、トピック、パーティションとオフセット、キーの先頭部分が表示されます。
 
-History stores the message as it was sent, with the placeholders already replaced. [[ui:producer.history.repeat]] loads it into the form together with its producer settings. Nothing is sent until you click [[ui:producer.send]]. The copy is sent exactly as stored: for example, the same UUID is sent again.
+履歴には、プレースホルダーが置き換えられた状態で、送信したとおりのメッセージが保存されます。[[ui:producer.history.repeat]]をクリックすると、メッセージがプロデューサーの設定とともにフォームに読み込まれます。[[ui:producer.send]]をクリックするまで何も送信されません。コピーは保存されたとおりに送信されます。たとえば、同じUUIDがもう一度送信されます。
 
-A key, value or header value longer than 64 KB is stored only partly. For such rows, [[ui:producer.history.repeat]] is disabled.
+64 KBを超えるキー、値、ヘッダーの値は一部だけが保存されます。そのような行では[[ui:producer.history.repeat]]が無効になります。
 
-History is stored on this computer in plain text, including the values of `{{env NAME}}`. Do not send secrets through the Producer if this matters. The history of a connection is deleted together with the connection.
+履歴は、`{{env NAME}}`の値も含めて、このコンピューターに平文で保存されます。これが問題になる場合は、Producerでシークレットを送信しないでください。接続の履歴は、接続と一緒に削除されます。
 
-## N copies of the form {#batch-copies}
+## フォームのコピーをN件送信 {#batch-copies}
 
-[[ui:producer.batch.legend]] below the form sends many messages in one run. In the [[ui:producer.batch.modeCopies]] mode, it sends the form the given number of times.
+フォームの下の[[ui:producer.batch.legend]]では、1回の実行で多数のメッセージを送信します。[[ui:producer.batch.modeCopies]]モードでは、フォームを指定した回数だけ送信します。
 
-1. Fill in the form as for a single send.
-2. Select [[ui:producer.batch.modeCopies]] and enter the number of [[ui:producer.batch.count]], from 1 to 1000000.
-3. Optionally, set the [[ui:producer.batch.rate]]. See [Send rate](producer.md#batch-rate).
-4. Click [[ui:producer.batch.start]].
+1. 1件だけ送信する場合と同じようにフォームに入力します。
+2. [[ui:producer.batch.modeCopies]]を選択し、[[ui:producer.batch.count]]を1から1000000の範囲で入力します。
+3. 必要に応じて、[[ui:producer.batch.rate]]を設定します。[送信レート](producer.md#batch-rate)を参照してください。
+4. [[ui:producer.batch.start]]をクリックします。
 
-Placeholders are replaced separately for each copy. `{{seq}}` is the copy number, from 0 to N−1, so each message can get its own key, for example `order-{{seq}}`. Placeholder errors are checked on the first copy before the run starts.
+プレースホルダーはコピーごとに置き換えられます。`{{seq}}`は0からN−1までのコピー番号なので、メッセージごとに異なるキーを付けられます。例：`order-{{seq}}`。プレースホルダーのエラーは、実行開始前に最初のコピーで確認されます。
 
-During the run, the panel shows how many messages were sent and how many failed. At the end, it shows [[ui:producer.batch.done]]. Errors are listed with the copy number, counted from 1. The list shows the first 20 errors; if there are more, a note below gives the total.
+実行中、パネルには送信済みと失敗したメッセージの数が表示されます。終了すると[[ui:producer.batch.done]]と表示されます。エラーは1から数えたコピー番号とともに一覧表示されます。一覧には最初の20件のエラーが表示され、それより多い場合は下の注記に合計数が示されます。
 
-[[ui:producer.batch.cancel]] stops the run. Messages that have not left the app yet are not sent, and the panel shows their count. The app waits up to 2 seconds for the broker to confirm messages already sent. Messages that are still not confirmed count as errors, because it is unknown whether they were written. Closing the Producer tab also stops the run.
+[[ui:producer.batch.cancel]]で実行を止めます。まだアプリから送り出されていないメッセージは送信されず、その数がパネルに表示されます。アプリは、すでに送信したメッセージについて、ブローカーの確認を最大2秒待ちます。それでも確認されないメッセージは、書き込まれたかどうか不明なため、エラーとして数えられます。Producerのタブを閉じた場合も実行は止まります。
 
-On a prod connection, the run asks for the connection name and is confirmed with [[ui:producer.batch.confirmLabel]].
+本番接続では、実行時に接続名の入力を求められ、[[ui:producer.batch.confirmLabel]]で確定します。
 
-## Send from a file {#batch-file}
+## ファイルから送信する {#batch-file}
 
-In the [[ui:producer.batch.modeFile]] mode, each line or row of a file becomes a message. Supported files are JSON Lines (`.jsonl`, `.ndjson`) and CSV (`.csv`).
+[[ui:producer.batch.modeFile]]モードでは、ファイルの各行またはレコードが1件のメッセージになります。サポートされるファイルは、JSON Lines（`.jsonl`、`.ndjson`）とCSV（`.csv`）です。
 
-1. Enter the [[ui:producer.topic]] in the form above. All messages go to this topic.
-2. Select [[ui:producer.batch.modeFile]] and click [[ui:producer.batch.chooseFile]].
-3. Click [[ui:producer.batch.start]].
+1. 上のフォームで[[ui:producer.topic]]を入力します。すべてのメッセージがこのトピックに送られます。
+2. [[ui:producer.batch.modeFile]]を選択し、「[[ui:producer.batch.chooseFile]]」をクリックします。
+3. [[ui:producer.batch.start]]をクリックします。
 
-The key, value, headers and partition from the form are not used, and placeholders are not replaced. The producer settings of the form apply.
+フォームのキー、値、ヘッダー、パーティションは使われず、プレースホルダーも置き換えられません。フォームのプロデューサーの設定は適用されます。
 
-In JSON Lines, each line is one JSON object, for example `{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`. All fields are optional:
+JSON Linesでは、各行が1つのJSONオブジェクトです。例：`{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`。どのフィールドも省略できます：
 
-- `key` and `value` — a JSON string is sent as its text, without quotes. Any other JSON value, such as an object or a number, is sent as JSON text. `null` or a missing field means no key or no value.
-- `headers` — an object of string values.
-- `partition` — a partition number. Without it, the partition is chosen by the key.
+- `key`と`value`：JSON文字列は、引用符なしのテキストとして送信されます。オブジェクトや数値など、その他のJSON値はJSONテキストとして送信されます。`null`またはフィールドがない場合は、キーまたは値がないことを意味します。
+- `headers`：文字列の値を持つオブジェクト。
+- `partition`：パーティション番号。指定しない場合、パーティションはキーによって選ばれます。
 
-Empty lines are skipped. The file must be in UTF-8.
+空の行はスキップされます。ファイルはUTF-8である必要があります。
 
-In CSV, the first row holds the column names. The `value` column is required; `key`, `partition` and `header.NAME` columns are optional, for example `header.source`. An empty `key` cell means no key, and an empty header cell means no such header. An empty `value` cell sends an empty value, not `null`, so a tombstone cannot be sent from CSV.
+CSVでは、最初の行に列名を書きます。`value`列は必須です。`key`、`partition`、`header.NAME`の列は省略できます。例：`header.source`。`key`のセルが空の場合はキーなし、ヘッダーのセルが空の場合はそのヘッダーなしを意味します。`value`のセルが空の場合は、`null`ではなく空の値が送信されるため、CSVからtombstoneを送信することはできません。
 
-The file is read as a stream, so the total number is not known in advance and is shown as `—`. A line or record larger than 16 MB, invalid JSON or a negative partition counts as an error for that line, and the run goes on with the next line. Errors are shown with the line number.
+ファイルはストリームとして読み込まれるため、合計数は事前にわからず、`—`と表示されます。16 MBを超える行やレコード、無効なJSON、負のパーティション番号は、その行のエラーとして数えられ、実行は次の行に進みます。エラーは行番号とともに表示されます。
 
-## Send rate {#batch-rate}
+## 送信レート {#batch-rate}
 
-[[ui:producer.batch.rate]] limits a batch to the given number of messages per second. Enter an integer of 1 or more. An empty field means [[ui:producer.batch.rateUnlimited]].
+[[ui:producer.batch.rate]]は、一括送信を1秒あたりの指定したメッセージ数に制限します。1以上の整数を入力します。フィールドが空の場合は[[ui:producer.batch.rateUnlimited]]です。
 
-The messages are spread evenly over time: at 10 messages per second, one message leaves about every 100 ms. Use the limit to avoid overloading a shared cluster, or to imitate a steady load.
+メッセージは時間的に均等に分散されます。毎秒10件の場合、約100 msごとに1件が送り出されます。共有クラスターに過大な負荷をかけないため、または一定の負荷を再現するために制限を使います。
 
-Without a limit, the app sends as fast as the broker accepts. The rate applies to both batch modes.
+制限がない場合、アプリはブローカーが受け付ける限りの速さで送信します。レートは両方の一括送信モードに適用されます。
 
-## Producer settings {#producer-settings}
+## プロデューサーの設定 {#producer-settings}
 
-[[ui:producer.settings.legend]] apply to single sends and batches. They are saved in templates and history.
+[[ui:producer.settings.legend]]は、1件ずつの送信と一括送信の両方に適用されます。設定はテンプレートと履歴に保存されます。
 
-`acks` sets how many replicas must confirm a write:
+`acks`は、書き込みを確認する必要があるレプリカの数を指定します：
 
-- `all` — the default. The leader waits for all in-sync replicas. This is the safest choice. If fewer replicas are in sync than the topic setting `min.insync.replicas` requires, the write fails.
-- `1` — only the leader confirms. Faster, but a message can be lost if the leader fails before the followers copy it.
-- `0` — the producer does not wait for a confirmation. Messages can be lost, and no offset is returned.
+- `all`：デフォルト。リーダーは、すべての同期レプリカを待ちます。最も安全な選択です。同期しているレプリカがトピックの設定`min.insync.replicas`の要求より少ない場合、書き込みは失敗します。
+- `1`：リーダーだけが確認します。より高速ですが、フォロワーがコピーする前にリーダーに障害が起きると、メッセージが失われることがあります。
+- `0`：プロデューサーは確認を待ちません。メッセージが失われることがあり、オフセットは返されません。
 
-[[ui:producer.settings.compression]] compresses message batches: `none` (the default), `gzip`, `snappy`, `lz4` or `zstd`. Compression saves network traffic and disk space at the cost of some CPU. `zstd` and `lz4` are common choices. For a single small message, the gain is small.
+[[ui:producer.settings.compression]]は、メッセージのバッチを圧縮します：`none`（デフォルト）、`gzip`、`snappy`、`lz4`、`zstd`。圧縮すると、多少のCPUと引き換えにネットワークの通信量とディスク容量を節約できます。`zstd`と`lz4`がよく使われます。小さなメッセージを1件送信する場合、効果はわずかです。
 
-[[ui:producer.settings.idempotence]] sets `enable.idempotence`. It prevents duplicates when the client retries a send after a network error. It requires `acks` set to `all`; with other values, the app shows an error and sends nothing.
+[[ui:producer.settings.idempotence]]は`enable.idempotence`を設定します。ネットワークエラーのあとにクライアントが送信を再試行したときの重複を防ぎます。`acks`を`all`にする必要があり、それ以外の値ではエラーが表示され、何も送信されません。

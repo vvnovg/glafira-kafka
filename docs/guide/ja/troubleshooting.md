@@ -1,109 +1,109 @@
-# Troubleshooting
+# トラブルシューティング
 
-This chapter explains common connection errors and what to check for each of them. It also shows where the logs are and what to include in a support request. On macOS, the Help menu opens this chapter with [[ui:menu.troubleshooting]].
+この章では、よくある接続エラーと、それぞれで確認すべき点を説明します。ログの場所と、サポートへの問い合わせに含める内容も紹介します。macOSでは、「ヘルプ」メニューの[[ui:menu.troubleshooting]]でこの章を開けます。
 
-An error message has a short text and, on most screens, the error code in brackets, for example `TIMEOUT`. Expand [[ui:common.details]] to see the original message from the Kafka client (librdkafka). It often names the exact broker address and cause.
+エラーメッセージには短いテキストがあり、ほとんどの画面ではかっこ内にエラーコードも表示されます。例：`TIMEOUT`。[[ui:common.details]]を展開すると、Kafkaクライアント（librdkafka）の元のメッセージが表示されます。多くの場合、ブローカーの正確なアドレスと原因が示されています。
 
-## Cannot connect {#cannot-connect}
+## 接続できない {#cannot-connect}
 
-Start with [[ui:connections.form.test]] in the connection form, see [Test the connection](connections.md#test). The test stops at the first failed step, and the step shows where to look:
+まず、接続のフォームで[[ui:connections.form.test]]を実行します。[接続をテストする](connections.md#test)を参照してください。テストは最初に失敗した段階で止まり、その段階から確認すべき箇所がわかります：
 
-- [[ui:connections.form.step.config]] — the problem is in the form itself: an address without a port, a missing or unreadable certificate file, a wrong certificate password. The error names the field. For certificate files, see [TLS errors](troubleshooting.md#tls-errors).
-- [[ui:connections.form.step.tcp]] — the computer cannot reach the bootstrap servers. See [DNS and TCP](troubleshooting.md#dns-tcp).
-- [[ui:connections.form.step.kafka]] — the network works, but the TLS handshake, the SASL login or the metadata request failed. See [TLS errors](troubleshooting.md#tls-errors), [SASL errors](troubleshooting.md#sasl-errors) and [Timeouts](troubleshooting.md#timeouts).
+- [[ui:connections.form.step.config]]：フォーム自体に問題があります。ポートのないアドレス、証明書ファイルがない、または読み込めない、証明書のパスワードが間違っている、などです。エラーにはフィールド名が示されます。証明書ファイルについては、[TLSのエラー](troubleshooting.md#tls-errors)を参照してください。
+- [[ui:connections.form.step.tcp]]：コンピューターからブートストラップサーバーに到達できません。[DNSとTCP](troubleshooting.md#dns-tcp)を参照してください。
+- [[ui:connections.form.step.kafka]]：ネットワークは機能していますが、TLSハンドシェイク、SASLログイン、またはメタデータのリクエストが失敗しました。[TLSのエラー](troubleshooting.md#tls-errors)、[SASLのエラー](troubleshooting.md#sasl-errors)、[タイムアウト](troubleshooting.md#timeouts)を参照してください。
 
-The most common cause is a protocol that does not match the port. Each broker listener has its own port and protocol. Ask your Kafka administrators which port belongs to which protocol, see [Security protocols](connections.md#security).
+最もよくある原因は、プロトコルがポートと一致していないことです。ブローカーのリスナーごとに、独自のポートとプロトコルがあります。どのポートがどのプロトコルに対応するかは、Kafkaの管理者に確認してください。[セキュリティプロトコル](connections.md#security)を参照してください。
 
-If the test passes but reading or sending fails, the cause is often the broker addresses. The client gets the list of brokers from the bootstrap server and then connects to each broker at the address the broker advertises (`advertised.listeners`). If these addresses are internal, for example Docker or Kubernetes host names, they cannot be reached from your computer. The addresses are listed in the broker table of the cluster overview, see [Cluster overview](topics.md#cluster-overview). Ask your administrators for a listener that is reachable from outside.
+テストは成功するのに読み取りや送信が失敗する場合、原因はブローカーのアドレスであることがよくあります。クライアントはブートストラップサーバーからブローカーの一覧を取得し、各ブローカーが公開するアドレス（`advertised.listeners`）で各ブローカーに接続します。これらのアドレスがDockerやKubernetesのホスト名などの内部アドレスの場合、お使いのコンピューターからは到達できません。アドレスはクラスターの概要のブローカーのテーブルに一覧表示されます。[クラスターの概要](topics.md#cluster-overview)を参照してください。外部から到達できるリスナーについて、管理者に問い合わせてください。
 
-## DNS and TCP {#dns-tcp}
+## DNSとTCP {#dns-tcp}
 
-[[ui:errors.kafka.tcpUnreachable]] means that the app could not open a TCP connection to any address in [[ui:connections.form.bootstrap]]. Each address gets up to 5 seconds. The details show the last address tried and the reason. `DNS` in the details means the host name could not be resolved.
+「[[ui:errors.kafka.tcpUnreachable]]」は、[[ui:connections.form.bootstrap]]のどのアドレスにもTCP接続を開けなかったことを意味します。各アドレスの待ち時間は最大5秒です。詳細には、最後に試したアドレスとその理由が表示されます。詳細に`DNS`とある場合は、ホスト名を解決できなかったことを意味します。
 
-Check:
+確認すること：
 
-- the host name and port, without a protocol prefix such as `https://`;
-- that a VPN is on, if the cluster is in a private network;
-- that a firewall does not block the port;
-- for a broker in Docker, that the port is published to the host, for example `-p 9092:9092`.
+- ホスト名とポート。`https://`などのプロトコルのプレフィックスは付けません。
+- クラスターがプライベートネットワーク内にある場合は、VPNがオンになっていること。
+- ファイアウォールがポートをブロックしていないこと。
+- Docker内のブローカーの場合は、ポートがホストに公開されていること。例：`-p 9092:9092`。
 
-To check the port outside the app, run `nc -vz <host> <port>` on macOS or Linux, or `Test-NetConnection <host> -Port <port>` in PowerShell on Windows.
+アプリの外でポートを確認するには、macOSまたはLinuxでは`nc -vz <host> <port>`を、WindowsではPowerShellで`Test-NetConnection <host> -Port <port>`を実行します。
 
-[[ui:errors.kafka.connectionFailed]] after the TCP step has passed usually means that a broker closed the connection or could not be reached later. Also check the broker addresses, see [Cannot connect](troubleshooting.md#cannot-connect).
+TCPの段階が成功したあとの「[[ui:errors.kafka.connectionFailed]]」は、通常、ブローカーが接続を閉じたか、その後ブローカーに到達できなくなったことを意味します。ブローカーのアドレスも確認してください。[接続できない](troubleshooting.md#cannot-connect)を参照してください。
 
-## TLS errors {#tls-errors}
+## TLSのエラー {#tls-errors}
 
-Errors on the [[ui:connections.form.step.kafka]] step during the TLS handshake:
+TLSハンドシェイク中に「[[ui:connections.form.step.kafka]]」の段階で発生するエラー：
 
-- [[ui:errors.kafka.plaintextListener]].
-- [[ui:errors.kafka.caUntrusted]]. Set [[ui:connections.tls.ca]] to the file of the CA that signed the broker certificates. Your administrators can give you this file. With an empty field, only the system root certificates are trusted.
-- [[ui:errors.kafka.hostnameMismatch]]. Connect by the name that the certificate was issued for, not by an IP address or an alias. In test environments only, you can turn off [[ui:connections.tls.verifyHostname]].
-- [[ui:errors.kafka.clientCertRejected]]. The broker requires a client certificate, or it does not trust the one you use. Check that [[ui:connections.tls.mtls]] is on and that the certificate was issued for this cluster. See [Client certificate (mTLS)](connections.md#mtls).
-- [[ui:errors.kafka.tlsError]] — another TLS problem. Expand [[ui:common.details]] for the cause.
+- [[ui:errors.kafka.plaintextListener]]。
+- [[ui:errors.kafka.caUntrusted]]。[[ui:connections.tls.ca]]に、ブローカーの証明書に署名したCAのファイルを指定します。このファイルは管理者から入手できます。フィールドが空の場合は、システムのルート証明書だけが信頼されます。
+- [[ui:errors.kafka.hostnameMismatch]]。IPアドレスや別名ではなく、証明書の発行対象の名前で接続してください。テスト環境に限り、[[ui:connections.tls.verifyHostname]]をオフにできます。
+- [[ui:errors.kafka.clientCertRejected]]。ブローカーがクライアント証明書を要求しているか、使用中の証明書を信頼していません。「[[ui:connections.tls.mtls]]」がオンになっていること、証明書がこのクラスター用に発行されたものであることを確認してください。[クライアント証明書（mTLS）](connections.md#mtls)を参照してください。
+- [[ui:errors.kafka.tlsError]]：その他のTLSの問題。原因を確認するには[[ui:common.details]]を展開します。
 
-If you chose a protocol without SSL and still see a TLS error, the port is probably a TLS listener. The details then say `connecting to a SSL listener?`. Choose `SSL` or `SASL_SSL`, or use the port of a listener without TLS.
+SSLを使わないプロトコルを選んだのにTLSのエラーが表示される場合、そのポートはおそらくTLSのリスナーです。その場合、詳細に`connecting to a SSL listener?`と表示されます。`SSL`または`SASL_SSL`を選ぶか、TLSを使わないリスナーのポートを使ってください。
 
-Problems with certificate files are reported on the [[ui:connections.form.step.config]] step, before the app connects. The message starts with the field name: trusted CA, client certificate or client key. Common cases:
+証明書ファイルの問題は、アプリが接続する前に「[[ui:connections.form.step.config]]」の段階で報告されます。メッセージはフィールド名（信頼されたCA、クライアント証明書、クライアント秘密鍵）で始まります。よくあるケース：
 
-- The path is not absolute or the file cannot be read. Enter the full path or choose the file with [[ui:connections.tls.pick]].
-- [[ui:errors.tls.keyEncrypted]], [[ui:errors.tls.keyBadPassword]], [[ui:errors.tls.clientPkcs12BadPassword]] or [[ui:errors.tls.jksBadStorePassword]] — enter the right password in the form.
-- [[ui:errors.tls.keyMismatch]] — the key file belongs to another certificate.
-- The client certificate has expired or is not valid yet — the message gives the date. Ask for a new certificate.
-- The PKCS#12 store uses a legacy algorithm, or the store is in JCEKS format. Convert the file as shown in [Certificate formats](connections.md#certificate-formats).
+- パスが絶対パスではないか、ファイルを読み込めない。フルパスを入力するか、「[[ui:connections.tls.pick]]」でファイルを選んでください。
+- [[ui:errors.tls.keyEncrypted]]、[[ui:errors.tls.keyBadPassword]]、[[ui:errors.tls.clientPkcs12BadPassword]]、[[ui:errors.tls.jksBadStorePassword]]：フォームに正しいパスワードを入力してください。
+- [[ui:errors.tls.keyMismatch]]：鍵ファイルが別の証明書のものです。
+- クライアント証明書の有効期限が切れている、またはまだ有効になっていない：メッセージに日付が表示されます。新しい証明書を依頼してください。
+- PKCS#12ストアが古いアルゴリズムを使っている、またはストアがJCEKS形式である。[証明書の形式](connections.md#certificate-formats)の説明に従ってファイルを変換してください。
 
-## SASL errors {#sasl-errors}
+## SASLのエラー {#sasl-errors}
 
-[[ui:errors.kafka.authFailed]] means that the broker did not accept the SASL login. Check:
+「[[ui:errors.kafka.authFailed]]」は、ブローカーがSASLログインを受け付けなかったことを意味します。確認すること：
 
-- the username and password. When you edit a saved connection, an empty password field keeps the saved password. Type the password again if you are not sure it is right;
-- [[ui:connections.form.saslMechanism]]. It must be the mechanism your user was created for. SCRAM credentials are created separately for `SCRAM-SHA-256` and `SCRAM-SHA-512`, and `PLAIN` users are configured separately again;
-- the protocol: `SASL_SSL` and `SASL_PLAINTEXT` usually use different ports.
+- ユーザー名とパスワード。保存済みの接続を編集するとき、パスワードのフィールドが空なら保存済みのパスワードが使われます。正しいかどうか自信がない場合は、パスワードを入力し直してください。
+- [[ui:connections.form.saslMechanism]]。ユーザーが作成されたメカニズムと一致している必要があります。SCRAMの資格情報は`SCRAM-SHA-256`と`SCRAM-SHA-512`で別々に作成され、`PLAIN`のユーザーはさらに別に設定されます。
+- プロトコル。通常、`SASL_SSL`と`SASL_PLAINTEXT`は異なるポートを使います。
 
-[[ui:errors.connections.saslPasswordMissing]] — no password is saved for this connection, for example after an import. Open the connection, enter the password and save it. See [Passwords](connections.md#passwords).
+[[ui:errors.connections.saslPasswordMissing]]：インポート後などで、この接続にパスワードが保存されていません。接続を開いてパスワードを入力し、保存してください。[パスワード](connections.md#passwords)を参照してください。
 
-[[ui:errors.secrets.keychain]] — the app cannot read the password from the system secret store. On macOS, allow access when Keychain asks. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+[[ui:errors.secrets.keychain]]：アプリがシステムの資格情報ストアからパスワードを読み取れません。macOSでは、キーチェーンから求められたらアクセスを許可してください。Linuxでは、GNOME Keyring、KWallet、またはほかのSecret Serviceプロバイダーがセッションで動作していることを確認してください。
 
-[[ui:errors.kafka.notAuthorized]] is different: the login succeeded, but the Kafka user has no rights (ACLs) for this operation, for example reading a topic or a group. Ask your administrators for the rights. Note that Kafka does not report an error for topics that you are not allowed to describe: they are simply missing from the topic list.
+「[[ui:errors.kafka.notAuthorized]]」は別の問題です。ログインには成功していますが、Kafkaのユーザーにこの操作（トピックやグループの読み取りなど）の権限（ACL）がありません。管理者に権限を依頼してください。なお、Kafkaは詳細の取得が許可されていないトピックについてエラーを報告しません。そのようなトピックは単にトピック一覧に表示されません。
 
-## Timeouts {#timeouts}
+## タイムアウト {#timeouts}
 
-[[ui:errors.kafka.timeout]] means that the broker did not answer in time. Typical causes are a slow network or VPN, an overloaded cluster, or broker addresses that cannot be reached, see [Cannot connect](troubleshooting.md#cannot-connect).
+「[[ui:errors.kafka.timeout]]」は、ブローカーが時間内に応答しなかったことを意味します。主な原因は、低速なネットワークやVPN、過負荷のクラスター、到達できないブローカーのアドレスです。[接続できない](troubleshooting.md#cannot-connect)を参照してください。
 
-A TLS or SASL problem can look like a timeout. The app tries to find the real cause and shows it instead, but this is not always possible. Expand [[ui:common.details]]: messages such as `SSL handshake failed` or `SASL authentication error` point to the cause.
+TLSやSASLの問題がタイムアウトのように見えることがあります。アプリは本当の原因を探して代わりに表示しようとしますが、常にできるとは限りません。[[ui:common.details]]を展開してください。`SSL handshake failed`や`SASL authentication error`などのメッセージが原因を示しています。
 
-If the network is just slow, increase [[ui:connections.form.timeout]] in the connection form. The default is `30000` ms. This value applies to requests to the brokers, to sending messages and to reading. The connection test uses its own limits (5 seconds for each TCP address and 10 seconds for the Kafka step), so a larger value does not change the test.
+ネットワークが単に遅い場合は、接続のフォームで「[[ui:connections.form.timeout]]」の値を大きくします。デフォルトは`30000` msです。この値は、ブローカーへのリクエスト、メッセージの送信、読み取りに適用されます。接続のテストには独自の制限（TCPの各アドレスに5秒、Kafkaの段階に10秒）があるため、値を大きくしてもテストは変わりません。
 
-## An action is unavailable or refused {#read-only-blocked}
+## 操作が利用できない、または拒否される {#read-only-blocked}
 
-If a button is hidden or disabled, or an action is refused, check these causes:
+ボタンが非表示または無効になっている場合や、操作が拒否される場合は、次の原因を確認してください：
 
-- The connection is read-only. A lock icon next to its name marks it. Buttons that change the cluster are hidden or disabled. If such a request still reaches the app core, for example after the mode was turned on while a screen was open, the error says that the connection is read-only. To make changes, open the connection, clear [[ui:common.readOnly]] and save. In Free, this box cannot be cleared on a prod connection. See [Read-only](connections.md#read-only).
-- The connection is prod. Changes ask you to type the connection name. Until the name matches, the action is not performed. See [Environments and prod](connections.md#environments).
-- The feature needs Pro. The error says [[ui:errors.license.proRequired]], or gives the end date if the license has expired. See [Free and Pro](license-updates.md#free-and-pro).
-- The consumer group has active members. Offsets can be reset and a group can be deleted only when it has no members. See [Reset offsets](groups.md#reset-offsets).
-- The setting is managed by your organization. A policy can set the interface language, the license key and update checks, and these cannot be changed in the app. See [Settings set by your organization](getting-started.md#managed-settings).
-- Kafka refused the operation with [[ui:errors.kafka.notAuthorized]]. This is a matter of rights in the cluster, not of Glafira settings. See [SASL errors](troubleshooting.md#sasl-errors).
+- 接続が読み取り専用である。名前の横に鍵のアイコンが表示されます。クラスターを変更するボタンは非表示または無効になります。画面を開いている間にモードがオンになった場合など、そのようなリクエストがアプリのコアに届いた場合は、接続が読み取り専用であることを示すエラーが表示されます。変更するには、接続を開いて[[ui:common.readOnly]]のチェックを外し、保存します。Freeでは、本番接続のこのチェックは外せません。[読み取り専用](connections.md#read-only)を参照してください。
+- 本番接続である。変更時に接続名の入力を求められます。名前が一致するまで操作は実行されません。[環境と本番](connections.md#environments)を参照してください。
+- 機能にProが必要である。「[[ui:errors.license.proRequired]]」というエラーが表示されるか、ライセンスの期限が切れている場合は有効期限の日付が表示されます。[FreeとPro](license-updates.md#free-and-pro)を参照してください。
+- コンシューマーグループにアクティブなメンバーがいる。オフセットのリセットとグループの削除は、メンバーがいない場合にだけ行えます。[オフセットのリセット](groups.md#reset-offsets)を参照してください。
+- 設定が組織によって管理されている。ポリシーでは表示言語、ライセンスキー、アップデートの確認を設定でき、これらはアプリ内では変更できません。[組織が設定した項目](getting-started.md#managed-settings)を参照してください。
+- Kafkaが「[[ui:errors.kafka.notAuthorized]]」というエラーで操作を拒否した。これはGlafiraの設定ではなく、クラスターの権限の問題です。[SASLのエラー](troubleshooting.md#sasl-errors)を参照してください。
 
-## Logs {#logs}
+## ログ {#logs}
 
-The app writes a log of its work and of Kafka client errors. The exact folder is shown on the [[ui:sidebar.about]] screen in [[ui:about.logDir]]. By default:
+アプリは、動作とKafkaクライアントのエラーをログに書き込みます。正確なフォルダーは、[[ui:sidebar.about]]画面の「[[ui:about.logDir]]」に表示されます。デフォルトの場所：
 
-- macOS: `~/Library/Logs/io.github.vvnovg.glafira.kafka`
-- Windows: `%LOCALAPPDATA%\io.github.vvnovg.glafira.kafka\logs`
-- Linux: `~/.local/share/io.github.vvnovg.glafira.kafka/logs`
+- macOS：`~/Library/Logs/io.github.vvnovg.glafira.kafka`
+- Windows：`%LOCALAPPDATA%\io.github.vvnovg.glafira.kafka\logs`
+- Linux：`~/.local/share/io.github.vvnovg.glafira.kafka/logs`
 
-The current file is `app.log`. When it reaches 5 MB, it is renamed to `app.1.log`, and older files move on to `app.2.log` and so on. The app keeps up to five files and deletes the oldest one.
+現在のファイルは`app.log`です。5 MBに達すると`app.1.log`に名前が変わり、それより古いファイルは`app.2.log`のように順に移ります。アプリは最大5つのファイルを保持し、最も古いものを削除します。
 
-Passwords are not written to the logs. Broker addresses and the texts of Kafka errors are written. You do not need to collect the files by hand: the diagnostics archive includes them, see [Diagnostics archive](license-updates.md#diagnostics).
+パスワードはログに書き込まれません。ブローカーのアドレスとKafkaのエラーのテキストは書き込まれます。ファイルを手作業で集める必要はありません。診断アーカイブに含まれます。[診断アーカイブ](license-updates.md#diagnostics)を参照してください。
 
-## Contact support {#support}
+## サポートへの問い合わせ {#support}
 
-Before you contact support, run [[ui:connections.form.test]] and note which step fails. Then send the request to whoever supports Glafira for you, for example your administrators. Include:
+サポートに問い合わせる前に、[[ui:connections.form.test]]を実行し、どの段階で失敗するかを控えておいてください。次に、管理者など、Glafiraのサポートを担当している人に問い合わせを送ります。次の内容を含めてください：
 
-- the diagnostics archive, see [Diagnostics archive](license-updates.md#diagnostics). It contains the version, the build, the logs and the connection profiles without passwords;
-- what you did, what you expected and what happened, step by step;
-- the full error text, together with the [[ui:common.details]] content. You can select and copy this text;
-- a screenshot, if the problem is in the interface;
-- the time when the error happened, to find it in the logs.
+- 診断アーカイブ。[診断アーカイブ](license-updates.md#diagnostics)を参照してください。バージョン、ビルド、ログ、パスワードを含まない接続プロファイルが含まれます。
+- 行った操作、期待した結果、実際に起きたことを順を追って。
+- [[ui:common.details]]の内容を含む、エラーの全文。このテキストは選択してコピーできます。
+- インターフェイスの問題の場合は、スクリーンショット。
+- ログで探せるように、エラーが発生した時刻。
 
-If you cannot create the archive, give the [[ui:about.version]] and [[ui:about.build]] values from the [[ui:sidebar.about]] screen and attach the log files from the logs folder.
+アーカイブを作成できない場合は、[[ui:sidebar.about]]画面の[[ui:about.version]]と[[ui:about.build]]の値を伝え、ログフォルダーのログファイルを添付してください。

@@ -1,104 +1,104 @@
-# Browsing messages
+# メッセージの閲覧
 
-You browse messages on the [[ui:topics.details.tabMessages]] tab of a topic. Browsing does not join a consumer group and commits nothing, so the cluster does not change. It also works on [[ui:common.readOnly]] connections. To read as a member of a group, use a [consumer session](consumer-sessions.md).
+メッセージは、トピックの[[ui:topics.details.tabMessages]]タブで閲覧します。閲覧ではコンシューマーグループに参加せず、何もコミットしないため、クラスターは変更されません。[[ui:common.readOnly]]の接続でも使えます。グループのメンバーとして読み取るには、[コンシューマーセッション](consumer-sessions.md)を使います。
 
-## Start reading {#start-reading}
+## 読み取りを開始する {#start-reading}
 
-1. Open a topic from the [[ui:sidebar.topics]] list. The [[ui:topics.details.tabMessages]] tab opens first.
-2. Choose where to start in [[ui:browse.form.from]]. See [Start position](browse.md#start-position).
-3. Optionally, set the formats and the filters.
-4. Click [[ui:browse.panel.read]].
+1. [[ui:sidebar.topics]]の一覧からトピックを開きます。最初に[[ui:topics.details.tabMessages]]タブが開きます。
+2. [[ui:browse.form.from]]で読み取りの開始位置を選びます。[開始位置](browse.md#start-position)を参照してください。
+3. 必要に応じて、形式とフィルターを設定します。
+4. [[ui:browse.panel.read]]をクリックします。
 
-Messages appear in the table as they arrive. The line next to the buttons shows how many messages were scanned, how many matched the filters and how many are in the table. It also shows the state: [[ui:browse.panel.reading]], [[ui:browse.panel.finishLimit]], [[ui:browse.panel.finishEnd]] or [[ui:browse.panel.finishCancelled]].
+メッセージは届いた順にテーブルに表示されます。ボタンの横の行には、スキャンしたメッセージ数、フィルターに一致した数、テーブルにある数が表示されます。状態も表示されます：「[[ui:browse.panel.reading]]」、[[ui:browse.panel.finishLimit]]、[[ui:browse.panel.finishEnd]]、[[ui:browse.panel.finishCancelled]]。
 
-Without `Live tail`, reading stops at the end of the topic as it was when you clicked [[ui:browse.panel.read]], or earlier when the [[ui:browse.form.limit]] is reached. The limit counts messages that match the filters. It can be from 1 to 100000; large values make reading slower.
+`Live tail`がオフの場合、読み取りは[[ui:browse.panel.read]]をクリックした時点のトピックの末尾で止まります。[[ui:browse.form.limit]]に達した場合はそれより前に止まります。上限はフィルターに一致したメッセージを数えます。1から100000まで指定でき、大きな値にすると読み取りが遅くなります。
 
-With `Live tail` on, reading does not stop at the end: new messages are added as they are written. When all old messages are read, the state shows [[ui:browse.panel.waiting]]. The table keeps the last messages up to the limit and drops the oldest ones.
+`Live tail`をオンにすると、読み取りは末尾で止まらず、新しいメッセージが書き込まれるたびに追加されます。古いメッセージをすべて読み終えると、状態は「[[ui:browse.panel.waiting]]」になります。テーブルには上限までの最新のメッセージが残り、最も古いものから削除されます。
 
-[[ui:browse.panel.stop]] stops reading and keeps the table. While reading runs, the [[ui:browse.panel.read]] button becomes [[ui:browse.panel.restart]]: it starts again with the current settings and clears the table. If the connection to the broker is lost, the app reconnects by itself and shows that in the state line.
+[[ui:browse.panel.stop]]は読み取りを止め、テーブルはそのまま残します。読み取り中は、[[ui:browse.panel.read]]ボタンが[[ui:browse.panel.restart]]に変わります。このボタンは現在の設定で読み取りをやり直し、テーブルをクリアします。ブローカーへの接続が切れた場合、アプリは自動的に再接続し、そのことを状態の行に表示します。
 
-Messages from different partitions are mixed in the table. Kafka keeps the order only within one partition. The `P` column shows the partition, and `Offset` shows the position in it. Select `UTC` to show times in UTC instead of local time.
+テーブルでは、異なるパーティションのメッセージが混在します。Kafkaが順序を保証するのは1つのパーティション内だけです。`P`列はパーティションを、`Offset`列はパーティション内の位置を示します。時刻をローカル時刻ではなくUTCで表示するには、`UTC`を選択します。
 
-## Start position {#start-position}
+## 開始位置 {#start-position}
 
-[[ui:browse.form.startPosition]] sets where reading begins in each partition:
+[[ui:browse.form.startPosition]]は、各パーティションのどこから読み取りを始めるかを指定します：
 
-- [[ui:browse.form.startLatest]] — the last N messages. N is split evenly between the partitions, so with 100 messages and 4 partitions the app takes up to 25 from each.
-- [[ui:browse.form.startEarliest]] — from the oldest message that is still stored.
-- [[ui:browse.form.startOffset]] — from the same offset in each partition. If a partition has no such offset, reading starts at its beginning or end. This mode is most useful with one partition.
-- [[ui:browse.form.startTimestamp]] — from the first message with a timestamp at or after the given local time. In partitions without newer messages, reading starts at the end.
-- [[ui:browse.form.startLastMinutes]] — the same, counted back from now.
+- [[ui:browse.form.startLatest]]：最新のN件のメッセージ。Nはパーティション間で均等に分けられます。たとえば100件で4つのパーティションの場合、各パーティションから最大25件を取得します。
+- [[ui:browse.form.startEarliest]]：まだ保存されている最も古いメッセージから。
+- [[ui:browse.form.startOffset]]：各パーティションの同じオフセットから。パーティションにそのオフセットがない場合は、パーティションの先頭または末尾から読み取ります。このモードはパーティションが1つの場合に最も役立ちます。
+- [[ui:browse.form.startTimestamp]]：指定したローカル時刻以降のタイムスタンプを持つ最初のメッセージから。それより新しいメッセージがないパーティションでは、末尾から読み取ります。
+- [[ui:browse.form.startLastMinutes]]：同様に、現在から遡って数えます。
 
-The field with [[ui:browse.form.partitionsPlaceholder]] limits reading to some partitions. Enter partition numbers separated by commas, for example `0,2`. Leave it empty to read all partitions.
+[[ui:browse.form.partitionsPlaceholder]]と表示されたフィールドでは、読み取るパーティションを限定できます。パーティション番号をコンマ区切りで入力します。例：`0,2`。すべてのパーティションを読み取るには空のままにします。
 
-## Filters {#filters}
+## フィルター {#filters}
 
-Filters show only matching messages. The app still reads all messages from the start position and checks each one, so filters do not make reading faster. All filled fields must match.
+フィルターを使うと、一致したメッセージだけが表示されます。アプリは開始位置からすべてのメッセージを読み取り、1件ずつ確認するため、フィルターで読み取りが速くなることはありません。入力したフィールドすべてに一致する必要があります。
 
-- [[ui:browse.filters.keyContains]] and [[ui:browse.filters.valueContains]] — text in the key or the value.
-- `regex` — treat these fields, and the header value, as regular expressions.
-- `Aa` — match case. By default, case does not matter.
-- [[ui:browse.filters.header]] — the message has a header with this exact name. [[ui:browse.filters.headerValue]] also checks its value.
-- `JSONPath` — a condition on a JSON value, for example `$.order.status == "FAILED"`. Without `==` or `!=`, the path must simply exist, for example `$.error`. Messages whose value is not valid JSON do not match.
-- [[ui:browse.filters.timeFrom]] and [[ui:browse.filters.timeTo]] — the message timestamp is within this range, in local time. Both ends are included.
+- [[ui:browse.filters.keyContains]]と[[ui:browse.filters.valueContains]]：キーまたは値に含まれるテキスト。
+- `regex`：これらのフィールドとヘッダーの値を正規表現として扱います。
+- `Aa`：大文字と小文字を区別します。デフォルトでは区別しません。
+- [[ui:browse.filters.header]]：メッセージにこの名前と完全に一致するヘッダーがあること。[[ui:browse.filters.headerValue]]を入力すると、その値も確認します。
+- `JSONPath`：JSONの値に対する条件。例：`$.order.status == "FAILED"`。`==`や`!=`がない場合は、パスが存在するだけで一致します。例：`$.error`。値が有効なJSONでないメッセージは一致しません。
+- [[ui:browse.filters.timeFrom]]と[[ui:browse.filters.timeTo]]：メッセージのタイムスタンプがこの範囲（ローカル時刻）にあること。両端を含みます。
 
-Filters check the text shown in the table, after decoding. If the value format is `hex`, the value filter searches the hex text. Filters apply when you click [[ui:browse.panel.read]]; after changing them, read again.
+フィルターは、デコード後にテーブルに表示されるテキストを確認します。値の形式が`hex`の場合、値のフィルターは16進数のテキストを検索します。フィルターは[[ui:browse.panel.read]]をクリックしたときに適用されます。変更したら、もう一度読み取ってください。
 
-A filter does not move the start position. For example, [[ui:browse.form.startLatest]] with a filter finds matches only among the last N messages. To search the whole topic, start from [[ui:browse.form.startEarliest]].
+フィルターは開始位置を変えません。たとえば、[[ui:browse.form.startLatest]]とフィルターを組み合わせると、最新のN件の中からだけ一致するものを探します。トピック全体を検索するには、[[ui:browse.form.startEarliest]]を選んで開始します。
 
-## Formats {#formats}
+## 形式 {#formats}
 
-[[ui:browse.form.format]] sets how keys and values are decoded, separately for the [[ui:browse.form.key]] and the [[ui:browse.form.value]]. Only the display changes, not the data.
+[[ui:browse.form.format]]は、キーと値のデコード方法を指定します。[[ui:browse.form.key]]と[[ui:browse.form.value]]で別々に設定できます。変わるのは表示だけで、データは変わりません。
 
-- `auto` — the default. Valid JSON objects and arrays are shown as JSON, other UTF-8 text as a string, binary data as hex.
-- `string` — text in UTF-8. Bytes that are not valid UTF-8 are replaced with `�`.
-- `json` — JSON with indents in the message details. If the value is not valid JSON, the details show the error.
-- `hex` — every byte as two hex digits.
-- `base64` — the bytes in Base64.
+- `auto`：デフォルト。有効なJSONオブジェクトと配列はJSONとして、その他のUTF-8テキストは文字列として、バイナリデータは16進数として表示されます。
+- `string`：UTF-8のテキスト。有効なUTF-8でないバイトは`�`に置き換えられます。
+- `json`：メッセージの詳細で、インデント付きのJSONとして表示されます。値が有効なJSONでない場合は、詳細にエラーが表示されます。
+- `hex`：各バイトを2桁の16進数で表示します。
+- `base64`：バイトをBase64で表示します。
 
-The details show which format was actually used, for example `json` when `auto` detected JSON. Header values are shown as text; binary header values are shown as `0x` followed by hex. A missing key or value is shown as `null`.
+詳細には、実際に使われた形式が表示されます。たとえば、`auto`がJSONを検出した場合は`json`です。ヘッダーの値はテキストとして表示され、バイナリのヘッダー値は`0x`に続く16進数で表示されます。キーや値がない場合は`null`と表示されます。
 
-Very large keys and values are shown only partly, about the first 1 MB of text. This also applies to `hex` and `base64`. The message details then show a warning.
+非常に大きなキーと値は、テキストの先頭約1 MBだけが表示されます。これは`hex`と`base64`にも当てはまります。その場合、メッセージの詳細に警告が表示されます。
 
-## Message details {#message-details}
+## メッセージの詳細 {#message-details}
 
-Click a row to open the message details next to the table. At the top are the partition, the offset and the time. Below:
+行をクリックすると、テーブルの横にメッセージの詳細が開きます。上部にはパーティション、オフセット、時刻が表示されます。その下には：
 
-- [[ui:browse.details.value]] and [[ui:browse.details.key]] — the full text, with the format and size in bytes. JSON is shown with indents. [[ui:browse.details.copy]] copies the text.
-- [[ui:browse.table.colHeaders]] — a table of header names and values.
+- [[ui:browse.details.value]]と[[ui:browse.details.key]]：全文と、形式およびバイト単位のサイズ。JSONはインデント付きで表示されます。[[ui:browse.details.copy]]でテキストをコピーできます。
+- [[ui:browse.table.colHeaders]]：ヘッダー名と値のテーブル。
 
-The table columns are `P`, `Offset`, [[ui:browse.table.colTime]], [[ui:browse.table.colKey]], [[ui:browse.table.colValue]], [[ui:browse.table.colHeaders]] (their number) and [[ui:browse.table.colSize]] (the key and value size in bytes). The time is the message timestamp. Depending on the topic setting `message.timestamp.type`, it is set by the producer or by the broker.
+テーブルの列は、`P`、`Offset`、[[ui:browse.table.colTime]]、[[ui:browse.table.colKey]]、[[ui:browse.table.colValue]]、[[ui:browse.table.colHeaders]]（ヘッダーの数）、[[ui:browse.table.colSize]]（キーと値のバイト単位のサイズ）です。時刻はメッセージのタイムスタンプです。トピックの設定`message.timestamp.type`に応じて、プロデューサーまたはブローカーが設定します。
 
-## Copy messages {#export-messages}
+## メッセージをコピーする {#export-messages}
 
-Glafira does not save browsed messages to a file. To take a message out of the app, copy it:
+Glafiraは閲覧したメッセージをファイルに保存しません。メッセージをアプリの外に取り出すには、コピーします：
 
-- [[ui:browse.details.copyJson]] copies the whole message as JSON: topic, partition, offset, timestamp, key, value, headers and size. Key and value are included as decoded, with their format.
-- [[ui:browse.details.copy]] next to [[ui:browse.details.value]] or [[ui:browse.details.key]] copies only that text.
+- [[ui:browse.details.copyJson]]は、メッセージ全体をJSONとしてコピーします。トピック、パーティション、オフセット、タイムスタンプ、キー、値、ヘッダー、サイズが含まれます。キーと値はデコードされた状態で、その形式とともに含まれます。
+- [[ui:browse.details.value]]または[[ui:browse.details.key]]の横の[[ui:browse.details.copy]]は、そのテキストだけをコピーします。
 
-The copied text uses the format chosen for reading. To copy binary data exactly, read it as `hex` or `base64`. Very large keys and values are copied only partly, as shown, even in `hex` and `base64`. See [Formats](browse.md#formats).
+コピーされるテキストには、読み取り時に選んだ形式が使われます。バイナリデータを正確にコピーするには、`hex`または`base64`で読み取ってください。非常に大きなキーと値は、`hex`と`base64`でも、表示されている部分だけがコピーされます。[形式](browse.md#formats)を参照してください。
 
-## Open in Producer {#open-in-producer}
+## Producerで開く {#open-in-producer}
 
-[[ui:browse.details.resend]] opens the message in the [[ui:sidebar.producer]] of the same connection. The form gets the topic, key, value, headers and formats of the message. The partition is left to Kafka. Placeholders in the message text are not replaced: the copy is sent as it was read.
+[[ui:browse.details.resend]]は、同じ接続の[[ui:sidebar.producer]]でメッセージを開きます。フォームには、メッセージのトピック、キー、値、ヘッダー、形式が入力されます。パーティションはKafkaに任されます。メッセージのテキスト内のプレースホルダーは置き換えられず、読み取ったとおりのコピーが送信されます。
 
-Nothing is sent right away. Check the form, change it if needed, and send it from the Producer. See [Producer](producer.md).
+すぐには何も送信されません。フォームを確認し、必要なら変更して、Producerから送信してください。[Producer](producer.md)を参照してください。
 
-The button is disabled in two cases, and the reason is shown:
+ボタンは次の2つの場合に無効になり、理由が表示されます：
 
-- the key or value was shown only partly because it is too large;
-- the text was decoded with losses because it is not valid UTF-8. Read it as `hex` or `base64` to send an exact copy.
+- キーまたは値が大きすぎて、一部しか表示されていない場合。
+- テキストが有効なUTF-8でないため、デコード時に情報が失われた場合。正確なコピーを送信するには、`hex`または`base64`で読み取ってください。
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+[[ui:common.readOnly]]の接続では、このボタンは表示されません。
 
-## Reset a group to a message {#reset-group-here}
+## グループをメッセージの位置にリセットする {#reset-group-here}
 
-[[ui:browse.details.resetHere]] prepares an offset reset so that a consumer group starts reading from this message.
+「[[ui:browse.details.resetHere]]」は、コンシューマーグループがこのメッセージから読み取りを始めるように、オフセットのリセットを準備します。
 
-1. In the message details, click [[ui:browse.details.resetHere]].
-2. Choose a group in the list. Only existing groups are listed.
-3. Click [[ui:browse.details.goToReset]].
+1. メッセージの詳細で「[[ui:browse.details.resetHere]]」をクリックします。
+2. 一覧からグループを選びます。一覧には既存のグループだけが表示されます。
+3. [[ui:browse.details.goToReset]]をクリックします。
 
-The group tab opens with the reset form filled in. [[ui:groups.reset.strategy]] is [[ui:groups.reset.strategyOffset]] with the offset of the message. [[ui:groups.reset.scope]] is [[ui:groups.reset.scopePartitions]] with the topic and partition of the message. Nothing changes yet: click [[ui:groups.reset.preview]] to see the new offsets, then apply the reset there. The group must have no active members. See [Consumer groups](groups.md).
+グループのタブが開き、リセットのフォームに値が入力されています。[[ui:groups.reset.strategy]]は[[ui:groups.reset.strategyOffset]]で、メッセージのオフセットが指定されます。[[ui:groups.reset.scope]]は[[ui:groups.reset.scopePartitions]]で、メッセージのトピックとパーティションが指定されます。この時点ではまだ何も変更されません。[[ui:groups.reset.preview]]をクリックして新しいオフセットを確認し、そこでリセットを適用します。グループにアクティブなメンバーがいない必要があります。[コンシューマーグループ](groups.md)を参照してください。
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+[[ui:common.readOnly]]の接続では、このボタンは表示されません。

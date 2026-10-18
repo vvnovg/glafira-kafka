@@ -1,89 +1,89 @@
-# Consumer sessions
+# コンシューマーセッション
 
-A consumer session reads topics as a real member of a consumer group. Consumer sessions are a Pro feature.
+コンシューマーセッションは、コンシューマーグループの実際のメンバーとしてトピックを読み取ります。コンシューマーセッションはProの機能です。
 
-## What a session is {#what-is}
+## セッションとは {#what-is}
 
-[Browsing](browse.md) reads messages without joining a group and changes nothing in the cluster. A session is different: it joins a group with the given `group.id`, gets partitions from Kafka and can commit offsets. Use it to read what a group would read, to move the offsets of a group by committing, or to watch how a group rebalances.
+[閲覧](browse.md)では、グループに参加せずにメッセージを読み取り、クラスターは何も変更されません。セッションは異なり、指定した`group.id`のグループに参加し、Kafkaからパーティションを割り当てられ、オフセットをコミットできます。グループが読み取る内容を確認する、コミットによってグループのオフセットを動かす、グループのリバランスを観察する、といった用途に使います。
 
-A session affects the cluster. When it joins or leaves, Kafka redistributes the partitions of the group, and the other members go through a rebalance. Commits change the offsets of the group, which its applications will use.
+セッションはクラスターに影響します。セッションが参加または離脱すると、Kafkaはグループのパーティションを再配分し、ほかのメンバーではリバランスが発生します。コミットはグループのオフセットを変更し、そのオフセットはグループのアプリケーションが使います。
 
-In Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] and [[ui:groups.details.join]] are disabled and marked with a lock and `Pro`. If a session tab opens without an active Pro license, it shows [[ui:consumer.proOnly]] and the link [[ui:common.openLicense]]. See [Activate a key](license-updates.md#activate).
+Freeでは、[[ui:sidebar.consumer]]、[[ui:topics.details.consume]]、[[ui:groups.details.join]]は無効になっており、鍵と`Pro`のマークが付いています。有効なProライセンスがない状態でセッションのタブを開くと、「[[ui:consumer.proOnly]]」と表示され、次のリンクも示されます：[[ui:common.openLicense]]。[キーを有効にする](license-updates.md#activate)を参照してください。
 
-Sessions are not available on [[ui:common.readOnly]] connections: the tab shows [[ui:consumer.readOnlyBlocked]]. If a connection becomes read-only while a session runs, the session leaves the group.
+セッションの実行中に接続が読み取り専用になると、セッションはグループから離脱します。[[ui:common.readOnly]]の接続ではセッションを利用できず、タブには次のように表示されます：[[ui:consumer.readOnlyBlocked]]
 
-## Start a session {#start-session}
+## セッションを開始する {#start-session}
 
-Open a session in one of three ways:
+セッションは次の3つの方法で開きます：
 
-- [[ui:sidebar.consumer]] under the connection in the [[ui:sidebar.connections]] panel — an empty form;
-- [[ui:topics.details.consume]] on a topic tab — the topic is filled in;
-- [[ui:groups.details.join]] on a group tab — the group and the topics it has commits for are filled in.
+- [[ui:sidebar.connections]]パネルの接続の下にある[[ui:sidebar.consumer]]：空のフォームが開きます。
+- トピックのタブの[[ui:topics.details.consume]]：トピックが入力されます。
+- グループのタブの[[ui:groups.details.join]]：グループと、そのグループがコミットを持つトピックが入力されます。
 
-Each time, a new tab opens, so several sessions can run at once.
+そのたびに新しいタブが開くため、複数のセッションを同時に実行できます。
 
-In [[ui:consumer.form.groupTopics]]:
+[[ui:consumer.form.groupTopics]]では：
 
-- `group.id` — the group to join. If you do not enter one, the app suggests a new name such as `glafira-kafka-anna-1a2b3c`. A new group has no commits.
-- [[ui:consumer.form.topicsLabel]] — topic names separated by commas or spaces. Or select [[ui:consumer.form.useRegex]] and enter a [[ui:consumer.form.patternLabel]], for example `orders\..*`. The expression is matched from the start of the name: `^` is added if it is missing. Topics that match and are created later are added within a few minutes (on the metadata refresh); this causes a rebalance.
-- `auto.offset.reset` — where to start in partitions for which the group has no committed offset: [[ui:consumer.form.resetLatest]] (the default) or [[ui:consumer.form.resetEarliest]]. Where the group has a committed offset, reading continues from it.
-- [[ui:consumer.form.autoCommit]] — commit read offsets automatically. Off by default. See [Commits](consumer-sessions.md#commits).
-- `isolation.level` — `read_committed` (the default) shows only messages of committed transactions. `read_uncommitted` also shows messages of open and aborted transactions.
+- `group.id`：参加するグループ。入力しない場合は、`glafira-kafka-anna-1a2b3c`のような新しい名前が提案されます。新しいグループにはコミットがありません。
+- [[ui:consumer.form.topicsLabel]]：コンマまたはスペースで区切ったトピック名。または、[[ui:consumer.form.useRegex]]を選択して[[ui:consumer.form.patternLabel]]を入力します。例：`orders\..*`。正規表現は名前の先頭から照合され、`^`がない場合は追加されます。あとから作成された一致するトピックは、数分以内（メタデータの更新時）に追加され、その際にリバランスが発生します。
+- `auto.offset.reset`：グループにコミット済みオフセットがないパーティションでの開始位置。デフォルトは「[[ui:consumer.form.resetLatest]]」で、「[[ui:consumer.form.resetEarliest]]」も選べます。コミット済みオフセットがあるパーティションでは、そこから読み取りを続けます。
+- [[ui:consumer.form.autoCommit]]：読み取ったオフセットを自動的にコミットします。デフォルトではオフです。[コミット](consumer-sessions.md#commits)を参照してください。
+- `isolation.level`：`read_committed`（デフォルト）では、コミットされたトランザクションのメッセージだけが表示されます。`read_uncommitted`では、未完了および中止されたトランザクションのメッセージも表示されます。
 
-In [[ui:consumer.form.formatLegend]], choose the [[ui:consumer.form.keyFormat]] and the [[ui:consumer.form.valueFormat]], as in browsing. See [Formats](browse.md#formats). [[ui:consumer.form.buffer]] sets how many messages the table keeps, from 1 to 100000; the default is 5000.
+[[ui:consumer.form.formatLegend]]で、閲覧と同様に[[ui:consumer.form.keyFormat]]と[[ui:consumer.form.valueFormat]]を選びます。[形式](browse.md#formats)を参照してください。[[ui:consumer.form.buffer]]：テーブルに保持するメッセージ数を1から100000の範囲で指定します。デフォルトは5000です。
 
-The filters work as in browsing. See [Filters](browse.md#filters).
+フィルターは閲覧と同じように機能します。[フィルター](browse.md#filters)を参照してください。
 
-Click [[ui:consumer.actions.connect]]. On a prod connection, the app asks you to type the connection name and confirm with [[ui:consumer.dialog.confirm]]. While the session runs, the form cannot be changed.
+[[ui:consumer.actions.connect]]をクリックします。本番接続では、接続名を入力して[[ui:consumer.dialog.confirm]]で確定するよう求められます。セッションの実行中はフォームを変更できません。
 
-## Reading {#reading}
+## 読み取り {#reading}
 
-The state line next to the buttons shows [[ui:consumer.status.connecting]], then [[ui:consumer.status.inGroup]]. It also shows how many messages were read, how many matched the filters and how many are in the table. If the connection to the broker is lost, the session reconnects by itself and shows this in the state line.
+ボタンの横の状態の行には、「[[ui:consumer.status.connecting]]」、続いて[[ui:consumer.status.inGroup]]と表示されます。読み取ったメッセージ数、フィルターに一致した数、テーブルにある数も表示されます。ブローカーへの接続が切れた場合、セッションは自動的に再接続し、そのことを状態の行に表示します。
 
-Messages appear in the table as they arrive, and the session keeps reading new messages until you stop it. When the table is full, the oldest messages are removed. Click a row to see the message details, as in browsing. See [Message details](browse.md#message-details). Select `UTC` to show times in UTC.
+メッセージは届いた順にテーブルに表示され、セッションは停止するまで新しいメッセージを読み取り続けます。テーブルがいっぱいになると、最も古いメッセージから削除されます。閲覧と同様に、行をクリックするとメッセージの詳細が表示されます。[メッセージの詳細](browse.md#message-details)を参照してください。時刻をUTCで表示するには、`UTC`を選択します。
 
-The session reads only the partitions Kafka has assigned to it. If the group has other members, they read the other partitions. If the group has more members than partitions, the session may get no partitions at all.
+セッションが読み取るのは、Kafkaがセッションに割り当てたパーティションだけです。グループにほかのメンバーがいる場合、残りのパーティションはそのメンバーが読み取ります。グループのメンバー数がパーティション数より多い場合、セッションにパーティションがまったく割り当てられないこともあります。
 
-[[ui:consumer.disconnect]] leaves the group, and the other members get its partitions. Closing the session tab also leaves the group. When the session has ended, the state line shows [[ui:consumer.status.disconnected]].
+[[ui:consumer.disconnect]]をクリックするとグループから離脱し、そのパーティションはほかのメンバーに割り当てられます。セッションのタブを閉じた場合もグループから離脱します。セッションが終了すると、状態の行に[[ui:consumer.status.disconnected]]と表示されます。
 
-If a topic does not exist, the session stops with an error and shows the names to check.
+トピックが存在しない場合、セッションはエラーで停止し、確認すべき名前を表示します。
 
-## Commits {#commits}
+## コミット {#commits}
 
-A commit saves an offset for the group. The next member that reads the partition, or the same application after a restart, starts from that offset.
+コミットは、グループのオフセットを保存します。次にそのパーティションを読み取るメンバー、または再起動後の同じアプリケーションは、そのオフセットから読み取りを始めます。
 
-With [[ui:consumer.form.autoCommit]] on, the session commits read offsets in the background every few seconds, and once more when it leaves the group. Messages hidden by filters count as read.
+[[ui:consumer.form.autoCommit]]がオンの場合、セッションは数秒ごとにバックグラウンドで読み取ったオフセットをコミットし、グループから離脱するときにもう一度コミットします。フィルターで非表示になったメッセージも読み取り済みとみなされます。
 
-Without auto-commit, the session commits nothing by itself. Use the buttons:
+自動コミットがオフの場合、セッションは自動では何もコミットしません。次のボタンを使います：
 
-- [[ui:consumer.actions.commitSelected]] — commits the offset after the selected message, in its partition only. The group will continue from the next message. If the selected message is older than the current commit, the offset moves back.
-- [[ui:consumer.actions.commitAll]] — commits the current position in every assigned partition. This includes messages hidden by filters and messages already removed from the table.
+- [[ui:consumer.actions.commitSelected]]：選択したメッセージの次のオフセットを、そのメッセージのパーティションについてだけコミットします。グループは次のメッセージから読み取りを続けます。選択したメッセージが現在のコミットより古い場合、オフセットは戻ります。
+- [[ui:consumer.actions.commitAll]]：割り当てられたすべてのパーティションについて、現在の位置をコミットします。フィルターで非表示になったメッセージや、すでにテーブルから削除されたメッセージも含まれます。
 
-After a commit, a line shows the committed offsets as `topic:partition → offset`. On a prod connection, each commit asks for the connection name.
+コミット後、コミットされたオフセットが`topic:partition → offset`の形式で1行に表示されます。本番接続では、コミットのたびに接続名の入力を求められます。
 
-If the session does not answer in time, the app warns that it is unknown whether the commit was applied. Check the offsets on the group tab. See [Group details](groups.md#group-details).
+セッションが時間内に応答しない場合、コミットが適用されたかどうか不明であることが警告されます。グループのタブでオフセットを確認してください。[グループの詳細](groups.md#group-details)を参照してください。
 
-## Pause partitions {#pause-partitions}
+## パーティションを一時停止する {#pause-partitions}
 
-The panel to the right of the table lists the partitions assigned to the session as `topic:partition`. Click [[ui:consumer.assignment.pause]] next to a partition to stop reading it, and [[ui:consumer.assignment.resume]] to continue. A paused partition is marked [[ui:consumer.assignment.paused]].
+テーブルの右のパネルには、セッションに割り当てられたパーティションが`topic:partition`の形式で一覧表示されます。パーティションの横の[[ui:consumer.assignment.pause]]をクリックすると読み取りが止まり、[[ui:consumer.assignment.resume]]をクリックすると再開します。一時停止したパーティションには[[ui:consumer.assignment.paused]]と表示されます。
 
-Pausing does not leave the group, so there is no rebalance. The partition stays assigned to the session, and other members do not read it while it is paused. Pausing changes nothing in the cluster and needs no confirmation.
+一時停止してもグループからは離脱しないため、リバランスは発生しません。パーティションはセッションに割り当てられたままで、一時停止中はほかのメンバーも読み取りません。一時停止はクラスターを何も変更せず、確認も不要です。
 
-After a rebalance, newly assigned partitions start unpaused. When the session leaves the group, all pauses end.
+リバランス後、新しく割り当てられたパーティションは一時停止されていない状態で始まります。セッションがグループから離脱すると、すべての一時停止が解除されます。
 
-## Rebalance log {#rebalance-log}
+## リバランスのログ {#rebalance-log}
 
-[[ui:consumer.assignment.logTitle]] under the partition list records every change of the assignment, newest first. Each entry has a time and one of three kinds: partitions assigned to the session, partitions revoked from it, or a rebalance error with its text.
+パーティション一覧の下の[[ui:consumer.assignment.logTitle]]には、割り当てのすべての変更が新しい順に記録されます。各エントリには時刻と、次の3種類のいずれかが記録されます：セッションへのパーティションの割り当て、セッションからのパーティションの取り消し、リバランスのエラーとそのテキスト。
 
-A rebalance happens when a member joins or leaves the group, when the subscribed topics change, or when a member stops responding in time. To watch it, start a second session with the same `group.id` in another tab: the partitions are split between the two sessions, and both logs show it.
+リバランスは、メンバーがグループに参加または離脱したとき、購読するトピックが変わったとき、メンバーが時間内に応答しなくなったときに発生します。観察するには、別のタブで同じ`group.id`の2つ目のセッションを開始します。パーティションが2つのセッションに分けられ、両方のログにそれが記録されます。
 
-The log keeps the last 200 entries. Before the first rebalance, it shows [[ui:consumer.assignment.logEmpty]].
+ログには最新の200件のエントリが保持されます。最初のリバランスまでは、次のように表示されます：[[ui:consumer.assignment.logEmpty]]
 
-## Limits {#limits}
+## 制限事項 {#limits}
 
-- Sessions need Pro. If Pro stops being active while a session runs, the session keeps reading, but commits, pauses and resumes are refused, and a new session cannot be started.
-- Sessions are not available on [[ui:common.readOnly]] connections.
-- A session cannot start from a chosen offset. To set the start, reset the offsets of the group first: see [Reset offsets](groups.md#reset-offsets). The reset needs a group without members, so disconnect sessions of this group before resetting.
-- The table keeps at most 100000 messages. Older messages are removed, but they still count as read.
-- Very large keys and values are shown only partly, as in browsing.
-- Do not join the group of a running application unless you mean to. The session takes partitions from the application, and the application does not process them while the session holds them. Commits from the session, including auto-commits, move the offsets of the application.
+- セッションにはProが必要です。セッションの実行中にProが有効でなくなった場合、セッションは読み取りを続けますが、コミット、一時停止、再開は拒否され、新しいセッションは開始できません。
+- [[ui:common.readOnly]]の接続ではセッションを利用できません。
+- セッションは指定したオフセットから開始できません。開始位置を決めるには、先にグループのオフセットをリセットしてください。[オフセットのリセット](groups.md#reset-offsets)を参照してください。リセットにはメンバーのいないグループが必要なため、リセットの前にこのグループのセッションを切断してください。
+- テーブルに保持されるメッセージは最大100000件です。古いメッセージは削除されますが、読み取り済みとして数えられます。
+- 非常に大きなキーと値は、閲覧と同様に一部だけが表示されます。
+- 意図しない限り、実行中のアプリケーションのグループには参加しないでください。セッションはアプリケーションからパーティションを奪い、セッションが保持している間、アプリケーションはそのパーティションを処理しません。自動コミットを含むセッションからのコミットは、アプリケーションのオフセットを動かします。

@@ -1,98 +1,98 @@
-# Consumer groups
+# コンシューマーグループ
 
-A consumer group is a set of consumers that share the reading of topics. Kafka gives each partition to one member of the group and stores, for each partition, the offset the group has committed. Applications continue reading from that offset after a restart.
+コンシューマーグループは、トピックの読み取りを分担するコンシューマーの集まりです。Kafkaは各パーティションをグループの1つのメンバーに割り当て、パーティションごとにグループがコミットしたオフセットを保存します。アプリケーションは再起動後、そのオフセットから読み取りを続けます。
 
-Open [[ui:sidebar.groups]] under the connection in the [[ui:sidebar.connections]] panel. The groups of one topic are also on the [[ui:topics.details.tabGroups]] tab of the topic. See [Topic screen](topics.md#topic-details).
+[[ui:sidebar.connections]]パネルの接続の下にある[[ui:sidebar.groups]]を開きます。1つのトピックのグループは、トピックの[[ui:topics.details.tabGroups]]タブにも表示されます。[トピック画面](topics.md#topic-details)を参照してください。
 
-## Group list {#group-list}
+## グループ一覧 {#group-list}
 
-The list shows all consumer groups of the cluster. The columns:
+一覧には、クラスターのすべてのコンシューマーグループが表示されます。列は次のとおりです：
 
-- [[ui:groups.list.colGroup]] — the group ID (`group.id`).
-- [[ui:groups.list.colState]] — the state reported by Kafka, for example `Stable` (members are reading), `Empty` (no members), `PreparingRebalance` or `CompletingRebalance` (partitions are being redistributed) and `Dead` (the group no longer exists).
-- [[ui:groups.list.colMembers]] — the number of active members.
-- `Assignor` — the strategy used to distribute partitions, for example `range`.
-- [[ui:groups.list.colLag]] — the total lag of the group. See [Lag](groups.md#lag).
-- [[ui:groups.list.colTopics]] — the topics the group has committed offsets for.
+- [[ui:groups.list.colGroup]]：グループID（`group.id`）。
+- [[ui:groups.list.colState]]：Kafkaが報告する状態。たとえば、`Stable`（メンバーが読み取り中）、`Empty`（メンバーなし）、`PreparingRebalance`または`CompletingRebalance`（パーティションを再配分中）、`Dead`（グループがもう存在しない）。
+- [[ui:groups.list.colMembers]]：アクティブなメンバーの数。
+- `Assignor`：パーティションの分配に使われる戦略。例：`range`。
+- [[ui:groups.list.colLag]]：グループのラグの合計。[ラグ](groups.md#lag)を参照してください。
+- [[ui:groups.list.colTopics]]：グループがオフセットをコミットしたトピック。
 
-Type in [[ui:groups.list.search]] to show the groups whose ID contains the text; case does not matter. The state list next to it shows only groups in one state; [[ui:groups.list.allStates]] removes this filter. The counter shows how many groups are shown and how many there are in total.
+[[ui:groups.list.search]]に入力すると、IDにそのテキストを含むグループが表示されます。大文字と小文字は区別されません。その横の状態の一覧では、1つの状態のグループだけを表示できます。[[ui:groups.list.allStates]]を選ぶと、この絞り込みが解除されます。カウンターには、表示中のグループ数と全体のグループ数が表示されます。
 
-Members, assignor and lag are loaded only for the rows you see, while you scroll. Until they arrive, the cell shows `…`. If they cannot be loaded, the cell shows `—`; point at it to see the reason.
+メンバー、アサイナー、ラグは、スクロールに合わせて表示中の行についてだけ読み込まれます。読み込まれるまで、セルには`…`が表示されます。読み込めなかった場合はセルに`—`が表示され、ポインターを合わせると理由がわかります。
 
-[[ui:groups.list.refresh]] reloads the list and the data in it. If some brokers did not respond, a warning says the list may be incomplete.
+[[ui:groups.list.refresh]]は、一覧とその中のデータを再読み込みします。応答しなかったブローカーがある場合は、一覧が不完全な可能性があるという警告が表示されます。
 
-## Lag {#lag}
+## ラグ {#lag}
 
-Lag is how many messages the group has not read yet. For each partition, it is the end of the log minus the committed offset. Lag is never shown below zero.
+ラグとは、グループがまだ読み取っていないメッセージの数です。パーティションごとに、ログの末尾からコミット済みオフセットを引いた値です。ラグが0未満で表示されることはありません。
 
-Lag depends only on committed offsets. An active consumer may have read further than it has committed, so its real lag can be smaller. When the group commits again, the lag drops.
+ラグはコミット済みオフセットだけで決まります。アクティブなコンシューマーはコミットした位置より先まで読み取っていることがあるため、実際のラグはもっと小さい場合があります。グループが再びコミットすると、ラグは減ります。
 
-A partition without a committed offset shows [[ui:groups.lag.noCommit]] and does not count in the total. The total lag of a group shows `—` when the group has no commits at all ([[ui:groups.lag.noCommits]]), or when the offsets of some partition could not be read ([[ui:groups.lag.unknown]]).
+コミット済みオフセットがないパーティションには[[ui:groups.lag.noCommit]]と表示され、合計には含まれません。グループのラグの合計は、グループにコミットがまったくない場合（[[ui:groups.lag.noCommits]]）や、いずれかのパーティションのオフセットを読み取れなかった場合（[[ui:groups.lag.unknown]]）に`—`と表示されます。
 
-Lag counts offsets, not messages. In topics with compaction or transactions, some offsets hold no visible messages, so the group may have fewer messages left to read than the lag shows.
+ラグはメッセージではなくオフセットを数えます。コンパクションやトランザクションを使うトピックでは、表示されるメッセージを持たないオフセットがあるため、グループが読み取るべき残りのメッセージはラグの値より少ないことがあります。
 
-The values are a snapshot at the moment of loading. To follow the lag, open the group and turn on auto-refresh.
+値は読み込んだ時点のスナップショットです。ラグを追跡するには、グループを開いて自動更新をオンにします。
 
-## Group details {#group-details}
+## グループの詳細 {#group-details}
 
-Click a group in the list to open its tab. At the top, a summary shows the state, the number of members and the assignor.
+一覧でグループをクリックすると、そのタブが開きます。上部の概要には、状態、メンバー数、アサイナーが表示されます。
 
-- [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] or [[ui:groups.details.refresh10]].
-- [[ui:groups.details.refresh]] — reload now.
-- [[ui:groups.details.join]] — start a [consumer session](consumer-sessions.md) in this group. The session form gets the group ID and the topics the group has commits for. This needs Pro, and the button is disabled on [[ui:common.readOnly]] connections; point at the button to see the reason.
+- [[ui:groups.details.autoRefresh]]：[[ui:groups.details.refreshOff]]、[[ui:groups.details.refresh5]]、[[ui:groups.details.refresh10]]のいずれか。
+- [[ui:groups.details.refresh]]：すぐに再読み込みします。
+- [[ui:groups.details.join]]：このグループで[コンシューマーセッション](consumer-sessions.md)を開始します。セッションのフォームには、グループIDと、グループがコミットを持つトピックが入力されます。Proが必要で、[[ui:common.readOnly]]の接続ではボタンが無効になります。ボタンにポインターを合わせると理由が表示されます。
 
-[[ui:groups.details.partitions]] lists the partitions the group has commits for, and the partitions assigned to its members. The total lag of the group is shown above the table. The columns are [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (the committed offset), `Log end` (the end offset of the partition), [[ui:groups.details.colLag]] and [[ui:groups.details.colMember]] (the client ID of the member that reads the partition).
+[[ui:groups.details.partitions]]には、グループがコミットを持つパーティションと、メンバーに割り当てられたパーティションが一覧表示されます。グループのラグの合計はテーブルの上に表示されます。列は、[[ui:groups.details.colTopic]]、[[ui:groups.details.colPartition]]、`Committed`（コミット済みオフセット）、`Log end`（パーティションの末尾のオフセット）、[[ui:groups.details.colLag]]、[[ui:groups.details.colMember]]（パーティションを読み取るメンバーのクライアントID）です。
 
-[[ui:groups.details.members]] lists the active members: `Client ID`, [[ui:groups.details.colHost]], `Member ID` and [[ui:groups.details.colAssignment]] (the partitions of the member as `topic:partition`). A group without members shows [[ui:groups.details.noMembers]].
+[[ui:groups.details.members]]には、アクティブなメンバーが一覧表示されます：`Client ID`、[[ui:groups.details.colHost]]、`Member ID`、[[ui:groups.details.colAssignment]]（メンバーのパーティションを`topic:partition`の形式で表示）。メンバーのいないグループには[[ui:groups.details.noMembers]]と表示されます。
 
-The second row has [[ui:groups.details.resetOffsets]] and [[ui:groups.details.deleteGroup]]. It is hidden on read-only connections.
+2行目には[[ui:groups.details.resetOffsets]]と[[ui:groups.details.deleteGroup]]があります。読み取り専用の接続では、この行は表示されません。
 
-## Reset offsets {#reset-offsets}
+## オフセットのリセット {#reset-offsets}
 
-Resetting offsets moves the committed offsets of a group. The group then rereads messages or skips them. Offsets can be reset only for a group without active members (state `Empty` or `Dead`). Otherwise the members would overwrite the new offsets with their own commits. Stop the applications of the group first.
+オフセットをリセットすると、グループのコミット済みオフセットが移動します。その結果、グループはメッセージを読み直すか、スキップします。オフセットをリセットできるのは、アクティブなメンバーのいないグループ（状態が`Empty`または`Dead`）だけです。そうでないと、メンバーが自身のコミットで新しいオフセットを上書きしてしまいます。先にグループのアプリケーションを停止してください。
 
-1. On the group tab, click [[ui:groups.details.resetOffsets]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Choose the [[ui:groups.reset.strategy]]. See [Reset strategies](groups.md#reset-strategies).
-3. Choose the [[ui:groups.reset.scope]]. See [Reset scope](groups.md#reset-scope).
-4. Click [[ui:groups.reset.preview]].
-5. Check the table and click the apply button. It shows the number of partitions that will change.
+1. グループのタブで[[ui:groups.details.resetOffsets]]をクリックします。グループにメンバーがいる間はボタンが無効です。ボタンにポインターを合わせると理由が表示されます。
+2. [[ui:groups.reset.strategy]]を選びます。[リセットの方法](groups.md#reset-strategies)を参照してください。
+3. [[ui:groups.reset.scope]]を選びます。[リセットの対象](groups.md#reset-scope)を参照してください。
+4. [[ui:groups.reset.preview]]をクリックします。
+5. テーブルを確認し、適用ボタンをクリックします。ボタンには変更されるパーティションの数が表示されます。
 
-The preview changes nothing. For each partition it shows the topic, the partition, [[ui:groups.reset.colCurrent]] (the committed offset), [[ui:groups.reset.colNew]] (the target offset), and `Low / High` (the first and end offsets of the partition). A partition for which no target can be computed is marked [[ui:groups.reset.noTarget]], with the reason. Such partitions are skipped.
+プレビューでは何も変更されません。パーティションごとに、トピック、パーティション、[[ui:groups.reset.colCurrent]]（コミット済みオフセット）、[[ui:groups.reset.colNew]]（目標オフセット）、`Low / High`（パーティションの最初と末尾のオフセット）が表示されます。目標を計算できないパーティションには[[ui:groups.reset.noTarget]]と理由が表示されます。そのようなパーティションはスキップされます。
 
-Only the plan shown in the preview is applied. Any change in the form hides the preview, and you need to click [[ui:groups.reset.preview]] again. On a prod connection, applying asks for the connection name; on other connections, it applies at once.
+適用されるのは、プレビューに表示された計画だけです。フォームを変更するとプレビューは非表示になり、もう一度[[ui:groups.reset.preview]]をクリックする必要があります。本番接続では適用時に接続名の入力を求められ、それ以外の接続ではすぐに適用されます。
 
-Before applying, the app checks again that the group has no members. After applying, [[ui:groups.reset.result]] lists each partition with its new offset or an error.
+適用の前に、アプリはグループにメンバーがいないことを改めて確認します。適用後、[[ui:groups.reset.result]]に、各パーティションの新しいオフセットまたはエラーが一覧表示されます。
 
-You can also prepare a reset from a message: see [Reset a group to a message](browse.md#reset-group-here). [[ui:common.close]] closes the reset panel.
+メッセージからリセットを準備することもできます。[グループをメッセージの位置にリセットする](browse.md#reset-group-here)を参照してください。[[ui:common.close]]をクリックすると、リセットのパネルが閉じます。
 
-## Reset strategies {#reset-strategies}
+## リセットの方法 {#reset-strategies}
 
-[[ui:groups.reset.strategy]] sets the target offset for each partition in the scope:
+[[ui:groups.reset.strategy]]は、対象の各パーティションの目標オフセットを決めます：
 
-- [[ui:groups.reset.strategyEarliest]] — the first offset that is still stored. The group rereads everything the topic keeps.
-- [[ui:groups.reset.strategyLatest]] — the end of the partition. The group skips everything accumulated and reads only new messages.
-- [[ui:groups.reset.strategyTimestamp]] — the first message written at or after [[ui:groups.reset.timestamp]]. In partitions without newer messages, the target is the end.
-- [[ui:groups.reset.strategyOffset]] — the given [[ui:groups.reset.offset]], an integer of 0 or more, in every partition. If a partition does not have this offset, the target is its first or end offset.
-- [[ui:groups.reset.strategyShift]] — moves the committed offset by [[ui:groups.reset.shift]]. A negative number rereads N messages back, a positive one skips N messages. The result stays within the first and end offsets. Partitions without a committed offset cannot be shifted and are skipped.
+- [[ui:groups.reset.strategyEarliest]]：まだ保存されている最初のオフセット。グループは、トピックに保持されているすべてのメッセージを読み直します。
+- [[ui:groups.reset.strategyLatest]]：パーティションの末尾。グループは溜まったメッセージをすべてスキップし、新しいメッセージだけを読み取ります。
+- [[ui:groups.reset.strategyTimestamp]]：「[[ui:groups.reset.timestamp]]」で指定した日時以降に書き込まれた最初のメッセージ。それより新しいメッセージがないパーティションでは、目標は末尾になります。
+- [[ui:groups.reset.strategyOffset]]：すべてのパーティションで、指定した[[ui:groups.reset.offset]]（0以上の整数）。パーティションにそのオフセットがない場合、目標はそのパーティションの最初または末尾のオフセットになります。
+- [[ui:groups.reset.strategyShift]]：コミット済みオフセットを「[[ui:groups.reset.shift]]」の値だけ動かします。負の数ではN件前から読み直し、正の数ではN件スキップします。結果は最初と末尾のオフセットの範囲内に収まります。コミット済みオフセットがないパーティションはシフトできず、スキップされます。
 
-The time is your local time, with seconds. Kafka finds the offset by message timestamps.
+時刻はローカル時刻で、秒まで指定します。Kafkaはメッセージのタイムスタンプからオフセットを探します。
 
-## Reset scope {#reset-scope}
+## リセットの対象 {#reset-scope}
 
-[[ui:groups.reset.scope]] sets which partitions are reset. Other partitions keep their offsets.
+[[ui:groups.reset.scope]]は、どのパーティションをリセットするかを決めます。それ以外のパーティションのオフセットはそのまま残ります。
 
-- [[ui:groups.reset.scopeAll]] — all partitions the group has committed offsets for. If the group has no commits yet, choose topics instead.
-- [[ui:groups.reset.scopeTopics]] — all partitions of the listed topics, including partitions without commits. Separate the names with commas, spaces or line breaks. Use this to make a group start reading a new topic from a chosen place.
-- [[ui:groups.reset.scopePartitions]] — only the listed partitions. Enter them in [[ui:groups.reset.partitionsLabel]] as `topic:partition`, separated by commas or spaces, for example `orders:0, orders:3`.
+- [[ui:groups.reset.scopeAll]]：グループがオフセットをコミットしたすべてのパーティション。グループにまだコミットがない場合は、代わりにトピックを選んでください。
+- [[ui:groups.reset.scopeTopics]]：指定したトピックのすべてのパーティション。コミットのないパーティションも含みます。名前はコンマ、スペース、改行で区切ります。グループに新しいトピックを指定した位置から読み取らせたい場合に使います。
+- [[ui:groups.reset.scopePartitions]]：指定したパーティションだけ。「[[ui:groups.reset.partitionsLabel]]」に`topic:partition`の形式で、コンマまたはスペースで区切って入力します。例：`orders:0, orders:3`。
 
-## Delete a group {#delete-group}
+## グループを削除する {#delete-group}
 
-Deleting a group removes all its committed offsets. Only a group without members, in the `Empty` state, can be deleted.
+グループを削除すると、そのコミット済みオフセットがすべて削除されます。削除できるのは、メンバーのいない`Empty`状態のグループだけです。
 
-1. On the group tab, click [[ui:groups.details.deleteGroup]]. While the group has members, the button is disabled; point at the button to see the reason.
-2. Type the group ID to confirm. On a prod connection, also type the connection name.
-3. Click [[ui:common.delete]].
+1. グループのタブで[[ui:groups.details.deleteGroup]]をクリックします。グループにメンバーがいる間はボタンが無効です。ボタンにポインターを合わせると理由が表示されます。
+2. 確認のためにグループIDを入力します。本番接続では、接続名も入力します。
+3. [[ui:common.delete]]をクリックします。
 
-After deleting, the group tab closes. If an application with this `group.id` starts again, Kafka creates the group anew. Without committed offsets, the application starts where its `auto.offset.reset` setting says: from the beginning or from the end.
+削除すると、グループのタブが閉じます。この`group.id`を持つアプリケーションが再び起動すると、Kafkaはグループを新たに作成します。コミット済みオフセットがないため、アプリケーションは`auto.offset.reset`の設定に従って、先頭または末尾から読み取りを始めます。
 
-On [[ui:common.readOnly]] connections, the button is hidden.
+[[ui:common.readOnly]]の接続では、このボタンは表示されません。

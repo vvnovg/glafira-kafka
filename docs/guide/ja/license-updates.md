@@ -1,103 +1,103 @@
-# License and updates
+# ライセンスとアップデート
 
-This chapter covers what Pro adds, how to activate a license key, what happens when the license expires, how to update the app, the [[ui:sidebar.about]] screen and the diagnostics archive.
+この章では、Proで追加される機能、ライセンスキーの有効化、ライセンスの期限が切れたときの動作、アプリのアップデート方法、[[ui:sidebar.about]]画面、診断アーカイブについて説明します。
 
-## Free and Pro {#free-and-pro}
+## FreeとPro {#free-and-pro}
 
-Free covers everyday work with Kafka: all security protocols including mTLS, the cluster overview and topics, browsing messages, the Producer with batch sending, consumer groups and offset reset. All interface languages are included as well. See [Interface language](getting-started.md#language).
+Freeは、Kafkaを使う日常の作業をカバーします。mTLSを含むすべてのセキュリティプロトコル、クラスターの概要とトピック、メッセージの閲覧、一括送信付きのProducer、コンシューマーグループ、オフセットのリセットです。すべての表示言語も含まれます。[表示言語](getting-started.md#language)を参照してください。
 
-Pro adds:
+Proで追加される機能：
 
-- consumer sessions: reading as a group member, committing offsets, pausing partitions. See [Consumer sessions](consumer-sessions.md#what-is);
-- prod mode: creating prod connections, switching connections to prod and clearing [[ui:common.readOnly]] on a prod connection. See [Environments and prod](connections.md#environments).
+- コンシューマーセッション：グループのメンバーとしての読み取り、オフセットのコミット、パーティションの一時停止。[コンシューマーセッション](consumer-sessions.md#what-is)を参照してください。
+- 本番モード：本番接続の作成、接続の本番への切り替え、本番接続での[[ui:common.readOnly]]の解除。[環境と本番](connections.md#environments)を参照してください。
 
-In Free, these features are visible but unavailable. The consumer session commands are disabled and marked with a lock and `Pro`. The prod option is shown as [[ui:connections.form.prodPro]]. If an action needs Pro, the error says [[ui:errors.license.proRequired]] and offers the [[ui:common.openLicense]] button.
+Freeでは、これらの機能は表示されますが利用できません。コンシューマーセッションのコマンドは無効になっており、鍵と`Pro`のマークが付いています。本番の選択肢は「[[ui:connections.form.prodPro]]」と表示されます。Proが必要な操作を行うと、「[[ui:errors.license.proRequired]]」というエラーが表示され、次のボタンが示されます：[[ui:common.openLicense]]。
 
-The [[ui:tabs.license]] screen lists consumer sessions and prod mode under [[ui:license.whatProGives]].
+[[ui:tabs.license]]画面では、[[ui:license.whatProGives]]の下にコンシューマーセッションと本番モードが記載されています。
 
-## Activate a key {#activate}
+## キーを有効にする {#activate}
 
-A license key is a line of text issued to a person or to an organization. The app checks the key on your computer and does not contact any server.
+ライセンスキーは、個人または組織に発行される1行のテキストです。アプリはお使いのコンピューター上でキーを確認し、どのサーバーにも接続しません。
 
-1. Click [[ui:tabs.license]] at the bottom of the left panel.
-2. Paste the whole key into [[ui:license.keyLabel]].
-3. Click [[ui:license.activate]].
+1. 左側のパネルの下部にある[[ui:tabs.license]]をクリックします。
+2. キー全体を[[ui:license.keyLabel]]に貼り付けます。
+3. [[ui:license.activate]]をクリックします。
 
-Pro features become available at once. The screen shows [[ui:license.tier]] (Pro), [[ui:license.licensee]], [[ui:license.kind]] ( [[ui:license.kindPersonal]] or [[ui:license.kindOrganization]] ) and [[ui:license.expires]]: a date, or [[ui:license.perpetual]]. The key is saved in the app data folder, so it stays after a restart or an update. A new key replaces the previous one.
+Proの機能はすぐに利用できるようになります。画面には、[[ui:license.tier]]（Pro）、[[ui:license.licensee]]、[[ui:license.kind]]（[[ui:license.kindPersonal]]または[[ui:license.kindOrganization]]）、[[ui:license.expires]]（日付または[[ui:license.perpetual]]）が表示されます。キーはアプリのデータフォルダーに保存されるため、再起動やアップデートのあとも残ります。新しいキーを入力すると、以前のキーは置き換えられます。
 
-If the key is not accepted, the reason is shown under the field:
+キーが受け付けられない場合は、フィールドの下に理由が表示されます：
 
-- [[ui:errors.license.malformed]] — part of the key is missing or changed. Copy the key again as one line, without extra characters.
-- [[ui:errors.license.badSignature]] — the key was not issued for Glafira, or it was edited.
-- The key has expired — the message gives its end date. Ask for a new key.
-- The key needs a newer version of the app — the message gives the key version. Update the app first, see [Updates](license-updates.md#updates).
+- [[ui:errors.license.malformed]]：キーの一部が欠けているか、変更されています。余分な文字を含めずに、キーを1行としてもう一度コピーしてください。
+- [[ui:errors.license.badSignature]]：キーがGlafira用に発行されたものではないか、編集されています。
+- キーの有効期限が切れている：メッセージに有効期限の日付が表示されます。新しいキーを依頼してください。
+- キーに新しいバージョンのアプリが必要：メッセージにキーのバージョンが表示されます。先にアプリをアップデートしてください。[アップデート](license-updates.md#updates)を参照してください。
 
-To remove the key, click [[ui:license.removeKey]]. The app asks [[ui:license.removeQuestion]] Click [[ui:license.removeYes]] to confirm. Your data stays.
+キーを削除するには、[[ui:license.removeKey]]をクリックします。「[[ui:license.removeQuestion]]」と確認されるので、[[ui:license.removeYes]]をクリックして確定します。データはそのまま残ります。
 
-An organization can activate Pro for all users through a policy. The key field and buttons are then hidden, and the screen says [[ui:license.managed]] A key that you entered yourself is not used while the policy key is set. The [[ui:license.policyTitle]] section shows where the policy comes from and lists its errors. If the organization key is invalid, the reason is shown on the [[ui:tabs.license]] screen. Contact your administrators in this case. Administrators find the policy settings in `docs/admin.md` in the Glafira source code.
+組織はポリシーを使って、すべてのユーザーに対してProを有効にできます。この場合、キーのフィールドとボタンは非表示になり、画面には「[[ui:license.managed]]」と表示されます。ポリシーのキーが設定されている間は、自分で入力したキーは使われません。[[ui:license.policyTitle]]セクションには、ポリシーの提供元とポリシーのエラーが表示されます。組織のキーが無効な場合は、[[ui:tabs.license]]画面に理由が表示されます。その場合は管理者にお問い合わせください。管理者向けのポリシー設定は、Glafiraのソースコードの`docs/admin.md`にあります。
 
-## Expiry {#expiry}
+## 有効期限 {#expiry}
 
-A key can have an end date, shown in [[ui:license.expires]]. The license is valid until the end of that day.
+キーには有効期限を設定でき、[[ui:license.expires]]に表示されます。ライセンスはその日の終わりまで有効です。
 
-When fewer than 14 days are left, a notice above the tabs says how many days remain, and the [[ui:tabs.license]] screen shows the end date. [[ui:license.notice.more]] in the notice opens the [[ui:tabs.license]] screen. The `×` button hides the notice until the app restarts.
+残りが14日未満になると、タブの上の通知に残り日数が表示され、[[ui:tabs.license]]画面に有効期限の日付が表示されます。通知の[[ui:license.notice.more]]をクリックすると、[[ui:tabs.license]]画面が開きます。`×`ボタンをクリックすると、アプリを再起動するまで通知が非表示になります。
 
-After the end date, the plan switches to Free. The notice and the [[ui:tabs.license]] screen say that the license has expired and that Pro features are disabled. What changes:
+有効期限を過ぎると、プランはFreeに切り替わります。通知と[[ui:tabs.license]]画面には、ライセンスの期限が切れ、Proの機能が無効になったことが表示されます。変わる点：
 
-- New consumer sessions cannot be started. In a session that is already running, commits and pausing partitions are refused with an error that gives the end date.
-- Prod connections keep working with the same confirmations. New prod connections cannot be created, and [[ui:common.readOnly]] cannot be cleared on a prod connection.
+- 新しいコンシューマーセッションを開始できなくなります。すでに実行中のセッションでは、コミットとパーティションの一時停止が拒否され、有効期限の日付を示すエラーが表示されます。
+- 本番接続は同じ確認付きで引き続き使えます。新しい本番接続は作成できず、本番接続の[[ui:common.readOnly]]は解除できません。
 
-Connections, passwords, templates and send history are kept. To continue with Pro, activate a new key as described in [Activate a key](license-updates.md#activate).
+接続、パスワード、テンプレート、送信履歴は保持されます。Proを引き続き使うには、[キーを有効にする](license-updates.md#activate)の説明に従って新しいキーを有効にしてください。
 
-## Updates {#updates}
+## アップデート {#updates}
 
-When it starts, the app checks once whether a new version is available. If there is one, a notice above the tabs gives its version. [[ui:license.notice.more]] opens the [[ui:sidebar.about]] screen. If the check fails, for example without internet access, no message is shown.
+アプリは起動時に一度、新しいバージョンがあるかどうかを確認します。新しいバージョンがある場合は、タブの上の通知にそのバージョンが表示されます。[[ui:license.notice.more]]をクリックすると、[[ui:sidebar.about]]画面が開きます。インターネットに接続できないなどの理由で確認に失敗した場合、メッセージは表示されません。
 
-To check manually:
+手動で確認するには：
 
-1. Open [[ui:sidebar.about]] at the bottom of the left panel.
-2. In [[ui:about.updates.title]], click [[ui:about.updates.check]].
-3. If a new version is available, the screen shows its number and release notes. Click [[ui:about.updates.install]].
+1. 左側のパネルの下部にある[[ui:sidebar.about]]を開きます。
+2. [[ui:about.updates.title]]で[[ui:about.updates.check]]をクリックします。
+3. 新しいバージョンがある場合は、そのバージョン番号とリリースノートが表示されます。[[ui:about.updates.install]]をクリックします。
 
-The app downloads the update, checks its signature, installs it and restarts. A download interrupted by a network problem is retried automatically, up to three attempts in total. If all three attempts fail, the app reports [[ui:errors.updates.downloadInterrupted]]. If the signature check fails, the app reports [[ui:errors.updates.badSignature]].
+アプリはアップデートをダウンロードし、署名を確認してインストールし、再起動します。ネットワークの問題でダウンロードが中断された場合は自動的に再試行され、合計で最大3回試みます。3回とも失敗すると、「[[ui:errors.updates.downloadInterrupted]]」と表示されます。署名の確認に失敗すると、「[[ui:errors.updates.badSignature]]」と表示されます。
 
-Installing may ask for an administrator password, because the app is installed for all users of the computer: by the `.pkg` installer on macOS, the `.msi` installer on Windows, or a `.deb` or `.rpm` package on Linux. Users without administrator rights cannot update such an installation.
+アプリはコンピューターのすべてのユーザー向けにインストールされているため、インストール時に管理者のパスワードを求められることがあります。macOSでは`.pkg`インストーラー、Windowsでは`.msi`インストーラー、Linuxでは`.deb`または`.rpm`パッケージによるインストールが該当します。管理者権限のないユーザーは、このようなインストールをアップデートできません。
 
-If messages are being read, a consumer session is running or a batch is being sent, the app asks first and says how many sessions are active. Click [[ui:about.updates.stopAndUpdate]] to stop them and continue, or [[ui:common.cancel]]. Connections, settings, the license key and other data are kept after an update.
+メッセージの読み取り中、コンシューマーセッションの実行中、または一括送信中の場合は、アプリが先に確認を求め、アクティブなセッションの数を表示します。それらを停止して続行するには[[ui:about.updates.stopAndUpdate]]を、中止するには[[ui:common.cancel]]をクリックします。接続、設定、ライセンスキー、その他のデータはアップデート後も保持されます。
 
-Updates are downloaded from the releases page on GitHub. If the check fails with [[ui:errors.updates.checkFailed]], check your network or proxy. [[ui:errors.updates.notConfigured]] means that this build was made without the updater key, for example a development or test build. In that case, download new versions from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+アップデートはGitHubのリリースページからダウンロードされます。「[[ui:errors.updates.checkFailed]]」と表示されて確認に失敗した場合は、ネットワークまたはプロキシを確認してください。「[[ui:errors.updates.notConfigured]]」は、このビルドがアップデーターのキーなしで作られたことを意味します。たとえば、開発用またはテスト用のビルドです。その場合は、新しいバージョンをリリースページからダウンロードしてください：https://github.com/vvnovg/glafira-kafka-releases/releases
 
-An organization can turn off update checks through a policy, or point them to an internal mirror. When checks are turned off, the [[ui:about.updates.title]] section says [[ui:errors.updates.managed]] after you click [[ui:about.updates.check]]. Like [[ui:errors.updates.notConfigured]], this message appears only after the click; the check at startup shows nothing in these cases.
+組織はポリシーを使って、アップデートの確認をオフにしたり、社内ミラーに向けたりできます。確認がオフの場合、[[ui:about.updates.check]]をクリックすると、[[ui:about.updates.title]]セクションに「[[ui:errors.updates.managed]]」と表示されます。「[[ui:errors.updates.notConfigured]]」と同様に、このメッセージはクリックしたあとにだけ表示されます。これらの場合、起動時の確認では何も表示されません。
 
-## About {#about}
+## Glafiraについて {#about}
 
-Open [[ui:sidebar.about]] at the bottom of the left panel. On macOS, it is also in the Help menu as [[ui:menu.about]].
+左側のパネルの下部にある[[ui:sidebar.about]]を開きます。macOSでは、「ヘルプ」メニューの[[ui:menu.about]]からも開けます。
 
-The screen shows a short description of the app and:
+画面にはアプリの短い説明と、次の項目が表示されます：
 
-- [[ui:about.version]] — the version number, and [[ui:about.build]] — the identifier of the source code it was built from. Include both in a support request.
-- [[ui:about.system]] — the operating system and processor architecture.
-- [[ui:about.tier]] — Free or Pro.
-- [[ui:about.policy]] — [[ui:about.policySet]] or [[ui:about.policyNone]]. Errors in the policy are listed below.
-- [[ui:about.dataDir]] — the folder with connection profiles, templates, history, settings and the license key.
-- [[ui:about.logDir]] — the folder with log files. See [Logs](troubleshooting.md#logs).
+- [[ui:about.version]]：バージョン番号。[[ui:about.build]]：ビルド元のソースコードの識別子。サポートに問い合わせるときは、両方を記載してください。
+- [[ui:about.system]]：オペレーティングシステムとプロセッサーのアーキテクチャ。
+- [[ui:about.tier]]：FreeまたはPro。
+- [[ui:about.policy]]：[[ui:about.policySet]]または[[ui:about.policyNone]]。ポリシーにエラーがある場合は、その下に一覧表示されます。
+- [[ui:about.dataDir]] 接続プロファイル、テンプレート、履歴、設定、ライセンスキーを保存するフォルダー。
+- [[ui:about.logDir]] ログファイルを保存するフォルダー。[ログ](troubleshooting.md#logs)を参照してください。
 
-The [[ui:about.updates.title]] and [[ui:about.diagnostics.title]] sections are also on this screen.
+この画面には、[[ui:about.updates.title]]と[[ui:about.diagnostics.title]]のセクションもあります。
 
-## Diagnostics archive {#diagnostics}
+## 診断アーカイブ {#diagnostics}
 
-The diagnostics archive collects what support needs to understand a problem. To create it:
+診断アーカイブには、サポート担当者が問題を把握するために必要な情報が集められます。作成するには：
 
-1. Open [[ui:sidebar.about]].
-2. In [[ui:about.diagnostics.title]], click [[ui:about.diagnostics.collect]]. On macOS, you can also choose [[ui:menu.diagnostics]] in the Help menu.
-3. Choose where to save the file. The suggested name is `diagnostics-<date>.zip`.
+1. [[ui:sidebar.about]]を開きます。
+2. [[ui:about.diagnostics.title]]で[[ui:about.diagnostics.collect]]をクリックします。macOSでは、「ヘルプ」メニューで「[[ui:menu.diagnostics]]」を選ぶこともできます。
+3. ファイルの保存先を選びます。提案されるファイル名は`diagnostics-<date>.zip`です。
 
-When the archive is saved, the screen shows its path. The ZIP file contains:
+アーカイブが保存されると、そのパスが画面に表示されます。ZIPファイルには次のものが含まれます：
 
-- `info.json` — the app version and build, the operating system, the data and log folder paths, the policy status and the license status (plan, licensee, type, end date);
-- `connections.json` — connection profiles: names, environments, bootstrap servers, protocols, SASL usernames, certificate file paths, extra properties and timeouts;
-- `logs/` — the app log files.
+- `info.json`：アプリのバージョンとビルド、オペレーティングシステム、データフォルダーとログフォルダーのパス、ポリシーの状態、ライセンスの状態（プラン、ライセンス先、種類、有効期限）。
+- `connections.json`：接続プロファイル。名前、環境、ブートストラップサーバー、プロトコル、SASLのユーザー名、証明書ファイルのパス、追加プロパティ、タイムアウト。
+- `logs/`：アプリのログファイル。
 
-The archive contains no passwords: they are kept in the system secret store, and extra properties with passwords and secrets are refused when a connection is saved. The license key and certificate files are not included either. Host names, usernames and file paths are stored as plain text, and the logs contain broker addresses from Kafka error messages. Look through the archive before you send it outside your company.
+アーカイブにパスワードは含まれません。パスワードはシステムの資格情報ストアに保存されており、パスワードやシークレットを含む追加プロパティは接続の保存時に拒否されるためです。ライセンスキーと証明書ファイルも含まれません。ホスト名、ユーザー名、ファイルのパスは平文で保存され、ログにはKafkaのエラーメッセージに含まれるブローカーのアドレスが記録されています。社外に送る前に、アーカイブの内容を確認してください。
 
-The app sends nothing by itself. Attach the archive to your support request yourself, see [Contact support](troubleshooting.md#support).
+アプリが自動で何かを送信することはありません。アーカイブはご自身でサポートへの問い合わせに添付してください。[サポートへの問い合わせ](troubleshooting.md#support)を参照してください。

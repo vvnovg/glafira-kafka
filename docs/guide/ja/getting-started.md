@@ -1,118 +1,118 @@
-# Getting started
+# はじめに
 
-Glafira for Apache Kafka is a desktop client for Kafka clusters. It lets you browse topics and consumer groups, read and send messages, and reset offsets. This chapter covers installation, the first launch, a local Kafka for practice, and the interface language.
+Glafira for Apache Kafkaは、Kafkaクラスター用のデスクトップクライアントです。トピックやコンシューマーグループの閲覧、メッセージの読み取りと送信、オフセットのリセットができます。この章では、インストール、初回起動、練習用のローカルKafka、表示言語について説明します。
 
-## Install on macOS {#install-macos}
+## macOSへのインストール {#install-macos}
 
-Glafira runs on macOS 11 or later. Download the installer from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+GlafiraはmacOS 11以降で動作します。リリースページからインストーラーをダウンロードしてください：https://github.com/vvnovg/glafira-kafka-releases/releases
 
-Pick the file for your Mac: `aarch64` for Apple silicon (M1 and later), `x64` for Intel.
+お使いのMacに合ったファイルを選びます。Appleシリコン（M1以降）は`aarch64`、Intelは`x64`です。
 
-1. Open the `.dmg` file.
-2. Drag Glafira for Apache Kafka to the Applications folder.
-3. Start the app from Applications or Launchpad.
+1. `.dmg`ファイルを開きます。
+2. Glafira for Apache Kafkaを「アプリケーション」フォルダーにドラッグします。
+3. 「アプリケーション」またはLaunchpadからアプリを起動します。
 
-You can also use the `.pkg` installer. It puts the app in `/Applications` for all users.
+`.pkg`インストーラーも使えます。この場合、アプリはすべてのユーザー向けに`/Applications`にインストールされます。
 
-Beta builds are not signed by Apple yet, so macOS blocks the first launch. To allow it:
+BetaビルドはまだAppleの署名を受けていないため、macOSは初回起動をブロックします。起動を許可するには：
 
-1. Try to open the app once and close the warning.
-2. Open System Settings → Privacy & Security.
-3. Scroll down to the message about Glafira for Apache Kafka and click "Open Anyway". Confirm with your password if asked.
+1. 一度アプリを開こうとして、警告を閉じます。
+2. 「システム設定」→「プライバシーとセキュリティ」を開きます。
+3. 下にスクロールしてGlafira for Apache Kafkaに関するメッセージを探し、「このまま開く」をクリックします。パスワードを求められたら入力して確定します。
 
-On macOS 14 and earlier you can instead right-click the app, choose "Open", then "Open" again.
+macOS 14以前では、代わりにアプリを右クリックして「開く」を選び、もう一度「開く」をクリックする方法もあります。
 
-If this does not help, remove the quarantine flag once in Terminal:
+それでも開けない場合は、「ターミナル」で一度だけ隔離フラグを削除します：
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Glafira for Apache Kafka.app"
 ```
 
-If the downloaded `.dmg` itself does not open, remove the flag from it first:
+ダウンロードした`.dmg`自体が開かない場合は、先にそのファイルからフラグを削除します：
 
 ```bash
 xattr -d com.apple.quarantine ~/Downloads/Glafira_for_Apache_Kafka_*.dmg
 ```
 
-Updates installed from inside the app do not need these steps.
+アプリ内からインストールしたアップデートでは、これらの手順は不要です。
 
-## Install on Windows {#install-windows}
+## Windowsへのインストール {#install-windows}
 
-Download the `.msi` installer (`x64`) from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+リリースページから`.msi`インストーラー（`x64`）をダウンロードします：https://github.com/vvnovg/glafira-kafka-releases/releases
 
-1. Run the `.msi` file.
-2. Confirm the installation in the Windows prompt. The app is installed for all users of the computer, so administrator rights are needed.
-3. Start Glafira for Apache Kafka from the Start menu.
+1. `.msi`ファイルを実行します。
+2. Windowsの確認画面でインストールを許可します。アプリはコンピューターのすべてのユーザー向けにインストールされるため、管理者権限が必要です。
+3. スタートメニューからGlafira for Apache Kafkaを起動します。
 
-Beta builds are not signed yet. If SmartScreen blocks the installer, click "More info", then "Run anyway". You can also unblock the file in PowerShell before running it:
+Betaビルドはまだ署名されていません。SmartScreenがインストーラーをブロックした場合は、「詳細情報」をクリックし、「実行」をクリックします。実行前にPowerShellでファイルのブロックを解除することもできます：
 
 ```powershell
 Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en-US.msi"
 ```
 
-## Install on Linux {#install-linux}
+## Linuxへのインストール {#install-linux}
 
-Builds are available for `x86_64` in three formats. Download the one that suits your distribution from the releases page: https://github.com/vvnovg/glafira-kafka-releases/releases
+`x86_64`向けのビルドが3つの形式で提供されています。お使いのディストリビューションに合うものをリリースページからダウンロードしてください：https://github.com/vvnovg/glafira-kafka-releases/releases
 
-- Debian, Ubuntu and derivatives: `sudo apt install ./<file>.deb`
-- Fedora, RHEL and derivatives: `sudo dnf install ./<file>.rpm`
-- Any distribution: make the AppImage executable with `chmod +x <file>.AppImage` and run it.
+- Debian、Ubuntuとその派生：`sudo apt install ./<file>.deb`
+- Fedora、RHELとその派生：`sudo dnf install ./<file>.rpm`
+- すべてのディストリビューション：`chmod +x <file>.AppImage`でAppImageに実行権限を付けて実行します。
 
-After installing a package, start the app from the applications menu or run `glafira-kafka` in a terminal.
+パッケージをインストールしたら、アプリケーションメニューからアプリを起動するか、ターミナルで`glafira-kafka`を実行します。
 
-Glafira stores passwords in the Secret Service (for example, GNOME Keyring or KWallet). Make sure one of them runs in your session. Otherwise the app cannot save passwords for connections.
+GlafiraはパスワードをSecret Service（GNOME KeyringやKWalletなど）に保存します。セッションでどちらかが動作していることを確認してください。動作していないと、アプリは接続のパスワードを保存できません。
 
-## First run {#first-run}
+## 初回起動 {#first-run}
 
-The window has two parts. On the left is the [[ui:sidebar.connections]] panel. On the right are tabs: each screen you open, such as a topic list or the Producer, gets its own tab.
+ウィンドウは2つの部分に分かれています。左側は[[ui:sidebar.connections]]パネルです。右側にはタブが並び、トピック一覧やProducerなど、開いた画面ごとにタブが作られます。
 
-When there are no connections yet, the panel shows a short hint, and the tab area suggests adding a connection. To start:
+まだ接続がない場合、パネルには短いヒントが表示され、タブ領域には接続の追加が案内されます。始めるには：
 
-1. Click `+` ( [[ui:sidebar.newConnection]] ) in the header of the [[ui:sidebar.connections]] panel.
-2. Fill in [[ui:connections.form.name]] and [[ui:connections.form.bootstrap]], for example `localhost:9092`.
-3. Click [[ui:connections.form.test]] to check the settings, then [[ui:common.save]].
+1. [[ui:sidebar.connections]]パネルのヘッダーにある`+`（[[ui:sidebar.newConnection]]）をクリックします。
+2. [[ui:connections.form.name]]と[[ui:connections.form.bootstrap]]を入力します。例：`localhost:9092`。
+3. [[ui:connections.form.test]]をクリックして設定を確認し、[[ui:common.save]]をクリックします。
 
-After saving, the cluster overview opens. Under each connection in the panel there are links to [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] and [[ui:sidebar.consumer]]. Details on all connection settings are in [Connections](connections.md#create).
+保存すると、クラスターの概要が開きます。パネルの各接続の下には、[[ui:sidebar.cluster]]、[[ui:sidebar.topics]]、[[ui:sidebar.groups]]、[[ui:sidebar.producer]]、[[ui:sidebar.consumer]]へのリンクがあります。接続の設定の詳細は[接続](connections.md#create)を参照してください。
 
-At the bottom of the panel there are links to [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] and [[ui:sidebar.about]]. The `?` sign next to a field shows a short hint about it. Press `F1` anywhere in the window to open the guide chapter for the current screen. On macOS the guide is also in the Help menu.
+パネルの下部には、[[ui:sidebar.settings]]、[[ui:tabs.license]]、[[ui:sidebar.help]]、[[ui:sidebar.about]]へのリンクがあります。フィールドの横の`?`にはそのフィールドの短いヒントが表示されます。ウィンドウ内のどこでも`F1`を押すと、現在の画面に対応するガイドの章が開きます。macOSでは「ヘルプ」メニューからもガイドを開けます。
 
-If you used Kafka Explorer (the earlier name of the app), Glafira copies its connections, templates, send history and license on the first launch. Passwords are copied from the system secret store too. Nothing that already exists is overwritten, and the old data is not deleted. macOS may ask once for access to the old Keychain items.
+Kafka Explorer（このアプリの以前の名前）を使っていた場合、Glafiraは初回起動時にその接続、テンプレート、送信履歴、ライセンスをコピーします。パスワードもシステムの資格情報ストアからコピーされます。既存のデータは上書きされず、古いデータも削除されません。macOSでは、古いキーチェーン項目へのアクセスを一度だけ求められることがあります。
 
-## Local Kafka for practice {#local-cluster}
+## 練習用のローカルKafka {#local-cluster}
 
-To try the app without a shared cluster, start Kafka on your computer in Docker. One broker is enough:
+共有クラスターを使わずにアプリを試すには、お使いのコンピューターのDockerでKafkaを起動します。ブローカーは1つで十分です：
 
 ```bash
 docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
 ```
 
-Then create a connection with bootstrap server `localhost:9092`, protocol `PLAINTEXT` and environment `local`. When you no longer need the broker, remove it with `docker rm -f kafka`.
+次に、ブートストラップサーバー`localhost:9092`、プロトコル`PLAINTEXT`、環境`local`で接続を作成します。ブローカーが不要になったら、`docker rm -f kafka`で削除します。
 
-The hint in the empty [[ui:sidebar.connections]] panel mentions `docker compose -f dev/docker-compose.yml up -d`. This file is part of the Glafira source code. If you have the source code, this command starts a broker with three listeners:
+空の[[ui:sidebar.connections]]パネルのヒントには`docker compose -f dev/docker-compose.yml up -d`が記載されています。このファイルはGlafiraのソースコードに含まれています。ソースコードがあれば、このコマンドで3つのリスナーを持つブローカーが起動します：
 
-- `localhost:9092` — `PLAINTEXT`.
-- `localhost:9094` — `SASL_PLAINTEXT` with `PLAIN` (users `tester` / `tester-secret` and `admin` / `admin-secret`) and SCRAM (`scram-user` / `scram-secret` for `SCRAM-SHA-256` and `SCRAM-SHA-512`).
-- `localhost:9095` — `SSL` with client certificates (mTLS). The test certificates are in `dev/certs/out`.
+- `localhost:9092`：`PLAINTEXT`。
+- `localhost:9094`：`PLAIN`（ユーザー`tester` / `tester-secret`と`admin` / `admin-secret`）およびSCRAM（`SCRAM-SHA-256`と`SCRAM-SHA-512`用の`scram-user` / `scram-secret`）による`SASL_PLAINTEXT`。
+- `localhost:9095`：クライアント証明書（mTLS）による`SSL`。テスト用の証明書は`dev/certs/out`にあります。
 
-These users and certificates are for local tests only.
+これらのユーザーと証明書はローカルでのテスト専用です。
 
-## Interface language {#language}
+## 表示言語 {#language}
 
-The interface is available in English, Russian, German, French, Spanish, Italian, Polish, Portuguese (Brazil), Chinese (Simplified and Traditional), Japanese and Korean. All languages are free.
+インターフェイスは英語、ロシア語、ドイツ語、フランス語、スペイン語、イタリア語、ポーランド語、ポルトガル語（ブラジル）、中国語（簡体字・繁体字）、日本語、韓国語で利用できます。すべての言語を無料で使えます。
 
-To change the language:
+言語を変更するには：
 
-1. Click [[ui:sidebar.settings]] at the bottom of the left panel.
-2. Choose a language in [[ui:settings.language.label]].
+1. 左側のパネルの下部にある[[ui:sidebar.settings]]をクリックします。
+2. [[ui:settings.language.label]]で言語を選びます。
 
-The change applies at once, including this guide and the macOS menu. [[ui:settings.language.systemUnknown]] (the default) follows the language of your operating system. If that language is not in the list, the interface is in English.
+変更はすぐに反映され、このガイドとmacOSのメニューにも適用されます。[[ui:settings.language.systemUnknown]]（デフォルト）を選ぶと、オペレーティングシステムの言語に従います。その言語が一覧にない場合、インターフェイスは英語で表示されます。
 
-## Settings set by your organization {#managed-settings}
+## 組織が設定した項目 {#managed-settings}
 
-In a company, administrators can set some options for all users through a policy. You cannot change these options in the app. A policy can:
+企業では、管理者がポリシーを使って一部の設定をすべてのユーザーに対して指定できます。これらの設定はアプリ内では変更できません。ポリシーでできること：
 
-- set the interface language — the language list in [[ui:sidebar.settings]] is then unavailable, with a note that the language is set by your organization;
-- activate Pro with an organization license key — the [[ui:tabs.license]] screen then says that the license is managed by your organization;
-- turn off update checks, or point them to an internal mirror.
+- 表示言語を指定する。この場合、[[ui:sidebar.settings]]の言語一覧は使用できなくなり、言語が組織によって設定されていることが表示されます。
+- 組織のライセンスキーでProを有効にする。この場合、[[ui:tabs.license]]画面には、ライセンスが組織によって管理されていることが表示されます。
+- アップデートの確認をオフにする、または社内ミラーに向ける。
 
-To see whether a policy applies, open [[ui:sidebar.about]] and look at [[ui:about.policy]]. If the policy has an error, it is shown there and on the [[ui:tabs.license]] screen. For questions about the policy, contact your administrators. Licenses and updates are described in [License and updates](license-updates.md).
+ポリシーが適用されているかどうかは、[[ui:sidebar.about]]を開いて[[ui:about.policy]]を確認します。ポリシーにエラーがある場合は、そこと[[ui:tabs.license]]画面に表示されます。ポリシーについての質問は管理者にお問い合わせください。ライセンスとアップデートについては[ライセンスとアップデート](license-updates.md)を参照してください。

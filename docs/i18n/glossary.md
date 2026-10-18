@@ -283,3 +283,24 @@ Help menu — 「輔助說明」選單; Keychain — 鑰匙圈; Credential Manag
 в 「[[ui:…]]」 или рядом ставится полноширинная пунктуация («按一下[[ui:connections.tls.pick]]，選擇檔案»); значение, которое
 кончается на «：» ([[ui:about.dataDir]], [[ui:about.logDir]]) в начале пункта списка, отделяется от текста пробелом;
 read-only connection — 唯讀連線 (с меткой: «在[[ui:common.readOnly]]連線上»).
+
+## Слова руководства (ja)
+
+Термины, которые часто встречаются в `docs/guide/ja` и отсутствуют в словаре интерфейса (です/ます, без пробелов, кавычки 「」):
+click — クリック; right-click — 右クリック; drag / drop — ドラッグ / ドロップ; tab — タブ; screen — 画面 (как «「ライセンス」画面» в UI);
+panel (левая панель) — パネル; header bar панели — ヘッダー; button — ボタン; checkbox — チェックボックス; select / clear a box — 選択 / チェックを外す;
+field — フィールド; form — フォーム; section — セクション; menu — メニュー; Start menu — スタートメニュー; dialog — ダイアログ; row — 行; column — 列;
+app — アプリ; installer — インストーラー; package — パッケージ; release page — リリースページ; release notes — リリースノート;
+build — ビルド (как в `errors.updates.notConfigured`; подпись [[ui:about.build]] — «Build»); logs — ログ (ログファイル);
+batch send — 一括送信; batch (Kafka) — バッチ; copies при пакетной отправке — コピー / コピー数; support request — サポートへの問い合わせ;
+support — サポート / サポート担当者; timestamp — タイムスタンプ; tombstone — tombstone (латиницей); delete marker — 削除マーカー;
+listener — リスナー; handshake — ハンドシェイク; policy — ポリシー (как в UI); browse — 閲覧; purge — パージ (как в UI); to commit — コミット;
+transaction — トランザクション; port — ポート; timeout — タイムアウト; proxy — プロキシ; hex — 16進数; point at (наведение) — ポインターを合わせる;
+interface — インターフェイス; prod — 本番 (prod connection — 本番接続, prod mode — 本番モード; `prod` — только как значение окружения); lock icon — 鍵のアイコン;
+macOS: Applications — 「アプリケーション」, Terminal — 「ターミナル」, System Settings → Privacy & Security — 「システム設定」→「プライバシーとセキュリティ」,
+Open Anyway — 「このまま開く」, Help menu — 「ヘルプ」メニュー; Keychain — キーチェーン; Credential Manager — 資格情報マネージャー;
+SmartScreen «More info / Run anyway» — 「詳細情報」/「実行」; Secret Service — Secret Service;
+метки — вплотную к тексту (и к латинице, без пробела); если значение кончается или начинается пунктуацией («…», «（…）», «。», «：», «」»,
+«prod (Pro)»), метка берётся в 「[[ui:…]]」 или рядом ставится полноширинная пунктуация («[[ui:connections.form.timeout]]：…»);
+сообщения об ошибках в прозе — в 「」 («「[[ui:errors.kafka.timeout]]」は…»), фразы-значения с «。» в конце — в 「」 или в конце абзаца после «：»;
+значение, которое кончается на «：» ([[ui:about.dataDir]], [[ui:about.logDir]]) в начале пункта списка, отделяется от текста пробелом.

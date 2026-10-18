@@ -1,131 +1,131 @@
-# Cluster and topics
+# クラスターとトピック
 
-This chapter covers the cluster overview, the topic list, creating and deleting topics, the topic screen and topic configuration. Under each connection in the [[ui:sidebar.connections]] panel there are links to [[ui:sidebar.cluster]] and [[ui:sidebar.topics]]. Each opens in its own tab.
+この章では、クラスターの概要、トピック一覧、トピックの作成と削除、トピック画面、トピックの設定について説明します。[[ui:sidebar.connections]]パネルの各接続の下には、[[ui:sidebar.cluster]]と[[ui:sidebar.topics]]へのリンクがあります。それぞれ別のタブで開きます。
 
-## Cluster overview {#cluster-overview}
+## クラスターの概要 {#cluster-overview}
 
-[[ui:cluster.overview.title]] shows the state of the cluster at the moment it was loaded. Click [[ui:cluster.overview.refresh]] to load it again.
+[[ui:cluster.overview.title]]には、読み込んだ時点のクラスターの状態が表示されます。もう一度読み込むには、[[ui:cluster.overview.refresh]]をクリックします。
 
-- `Cluster ID` — the cluster identifier.
-- [[ui:cluster.overview.controller]] — the ID of the broker that the cluster reports as the controller. In KRaft clusters, clients do not talk to the controllers directly: the cluster reports a random broker here, not the active controller, and it may change between refreshes.
-- [[ui:cluster.overview.brokers]] — the number of brokers.
-- [[ui:cluster.overview.topicsInternal]] — all topics, with the number of internal topics in brackets.
-- [[ui:cluster.overview.partitions]] — the number of partitions in all topics.
-- `Under-replicated` — partitions where not all replicas are in sync (in the ISR). Usually a broker is down or cannot keep up.
-- `Offline` — partitions without a leader. Nobody can write to them or read from them.
+- `Cluster ID`：クラスターの識別子。
+- [[ui:cluster.overview.controller]]：クラスターがコントローラーとして報告するブローカーのID。KRaftクラスターでは、クライアントはコントローラーと直接通信しません。クラスターはここにアクティブなコントローラーではなくランダムなブローカーを報告し、それは更新のたびに変わることがあります。
+- [[ui:cluster.overview.brokers]]：ブローカーの数。
+- [[ui:cluster.overview.topicsInternal]]：すべてのトピックの数。かっこ内は内部トピックの数です。
+- [[ui:cluster.overview.partitions]]：すべてのトピックのパーティションの数。
+- `Under-replicated`：すべてのレプリカが同期している（ISRに含まれている）わけではないパーティション。通常は、ブローカーが停止しているか、処理が追いついていません。
+- `Offline`：リーダーのいないパーティション。書き込みも読み取りもできません。
 
-A non-zero value in `Under-replicated` or `Offline` is highlighted.
+`Under-replicated`や`Offline`が0以外の場合は強調表示されます。
 
-Below is the broker table with `ID` and [[ui:cluster.overview.address]]. The broker from the [[ui:cluster.overview.controller]] field is marked [[ui:cluster.overview.controllerBadge]]. In KRaft clusters, this is the same random broker, not the active controller. Click a broker to see its configuration under the table. Broker configuration can only be viewed. Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to hide parameters with default values. A lock icon marks read-only parameters.
+その下には、`ID`と[[ui:cluster.overview.address]]を含むブローカーのテーブルがあります。[[ui:cluster.overview.controller]]フィールドのブローカーには[[ui:cluster.overview.controllerBadge]]のマークが付きます。KRaftクラスターでは、これは同じランダムなブローカーであり、アクティブなコントローラーではありません。ブローカーをクリックすると、テーブルの下にその設定が表示されます。ブローカーの設定は閲覧のみ可能です。[[ui:common.config.searchParam]]で名前からパラメーターを探し、[[ui:common.config.onlyChanged]]でデフォルト値のパラメーターを非表示にできます。読み取り専用のパラメーターには鍵のアイコンが表示されます。
 
-## Topic list {#topic-list}
+## トピック一覧 {#topic-list}
 
-[[ui:sidebar.topics]] lists the topics of the cluster. Click a row to open the topic in its own tab.
+[[ui:sidebar.topics]]には、クラスターのトピックが一覧表示されます。行をクリックすると、トピックが別のタブで開きます。
 
-The columns are [[ui:topics.list.colName]], [[ui:topics.list.colPartitions]], `RF` (replication factor), [[ui:topics.list.colMessages]], `cleanup.policy` and [[ui:topics.list.colUnderRepl]] (the number of under-replicated partitions). The message count is approximate: it is the difference between the end and start offsets of the partitions. Compaction and transaction markers make the real number smaller. Message counts and `cleanup.policy` are loaded only for the rows you scroll to.
+列は、[[ui:topics.list.colName]]、[[ui:topics.list.colPartitions]]、`RF`（レプリケーションファクター）、[[ui:topics.list.colMessages]]、`cleanup.policy`、[[ui:topics.list.colUnderRepl]]（レプリカ不足のパーティションの数）です。メッセージ数は概算で、パーティションの末尾と先頭のオフセットの差です。コンパクションとトランザクションのマーカーにより、実際の数はこれより少なくなります。メッセージ数と`cleanup.policy`は、スクロールして表示した行についてだけ読み込まれます。
 
-Toolbar controls:
+ツールバーの操作：
 
-- [[ui:topics.list.search]] — type part of a name to find topics; case does not matter. To search with a regular expression, put it between slashes, for example `/^orders\..*/`.
-- [[ui:topics.list.internal]] — show internal topics, such as `__consumer_offsets`. They are marked [[ui:topics.list.internalBadge]].
-- The auto-refresh list — [[ui:topics.list.autoRefreshOff]], [[ui:topics.list.every10]] or [[ui:topics.list.every30]].
-- [[ui:topics.list.refresh]] — reload the list and the message counts now.
+- [[ui:topics.list.search]]：名前の一部を入力してトピックを探します。大文字と小文字は区別されません。正規表現で検索するには、スラッシュで囲みます。例：`/^orders\..*/`。
+- [[ui:topics.list.internal]]：`__consumer_offsets`などの内部トピックを表示します。内部トピックには「[[ui:topics.list.internalBadge]]」と表示されます。
+- 自動更新の一覧：[[ui:topics.list.autoRefreshOff]]、[[ui:topics.list.every10]]、[[ui:topics.list.every30]]のいずれか。
+- [[ui:topics.list.refresh]]：一覧とメッセージ数をすぐに再読み込みします。
 
-Next to the toolbar, the app shows how many topics match the search out of the total. On [[ui:common.readOnly]] connections, the [[ui:topics.list.create]] and [[ui:topics.list.select]] buttons are hidden.
+ツールバーの横には、全体のうち検索に一致したトピックの数が表示されます。[[ui:common.readOnly]]の接続では、[[ui:topics.list.create]]と[[ui:topics.list.select]]のボタンは表示されません。
 
-## Create a topic {#create-topic}
+## トピックを作成する {#create-topic}
 
-1. In the topic list, click [[ui:topics.list.create]]. The [[ui:topics.create.title]] form opens above the list.
-2. Enter a [[ui:topics.create.name]]. It can contain Latin letters, digits, `.`, `_` and `-`, up to 249 characters. The form warns if the name has both `.` and `_`: Kafka metric names of such topics may collide with other topics.
-3. Set the number of [[ui:topics.create.partitions]]. Partitions are read in parallel, and order is guaranteed only within one partition. The number can be increased later, but never decreased.
-4. Set the [[ui:topics.create.rf]] — how many copies of each partition the brokers keep. It cannot be more than the number of brokers, which the form shows under the field. The default is 3, or the number of brokers if there are fewer. `-1` uses the broker default.
-5. Choose a [[ui:topics.create.preset]]:
-   - [[ui:topics.create.presetDelete]] — old messages are deleted by time.
-   - `compact` — only the latest value per key is kept.
-   - `compact + delete` — both.
-   - [[ui:topics.create.presetTest]] — messages are kept for one hour.
-6. Optionally, add [[ui:topics.create.extraConfigs]], one per line, for example `retention.ms=86400000`. They override the preset. Lines that start with `#` are ignored.
-7. Click [[ui:topics.create.submit]].
+1. トピック一覧で[[ui:topics.list.create]]をクリックします。一覧の上に[[ui:topics.create.title]]のフォームが開きます。
+2. [[ui:topics.create.name]]を入力します。使える文字は半角英字、数字、`.`、`_`、`-`で、最大249文字です。名前に`.`と`_`の両方が含まれている場合は警告が表示されます。そのようなトピックのKafkaメトリクス名が、ほかのトピックと衝突する可能性があるためです。
+3. [[ui:topics.create.partitions]]の数を指定します。パーティションは並行して読み取られ、順序が保証されるのは1つのパーティション内だけです。数はあとから増やせますが、減らすことはできません。
+4. [[ui:topics.create.rf]]を指定します。これは、ブローカーが各パーティションのコピーをいくつ保持するかです。ブローカー数を超えることはできず、ブローカー数はフィールドの下に表示されます。デフォルトは3で、ブローカーがそれより少ない場合はブローカー数です。`-1`を指定するとブローカーのデフォルトが使われます。
+5. [[ui:topics.create.preset]]を選びます：
+   - [[ui:topics.create.presetDelete]]：古いメッセージを時間で削除します。
+   - `compact`：キーごとに最新の値だけを保持します。
+   - `compact + delete`：両方。
+   - [[ui:topics.create.presetTest]]：メッセージを1時間保持します。
+6. 必要に応じて、「[[ui:topics.create.extraConfigs]]」に1行に1つずつ入力します。例：`retention.ms=86400000`。これらはプリセットより優先されます。`#`で始まる行は無視されます。
+7. [[ui:topics.create.submit]]をクリックします。
 
-When the form is valid, it shows the equivalent `kafka-topics.sh` command. You can copy it, for example, to create the same topic in another cluster.
+フォームの内容が有効な場合、同等の`kafka-topics.sh`コマンドが表示されます。コピーして、たとえば別のクラスターに同じトピックを作成するときに使えます。
 
-On a prod connection, you confirm the creation by typing the connection name. After the topic is created, its tab opens.
+本番接続では、接続名を入力して作成を確定します。トピックが作成されると、そのタブが開きます。
 
-## Delete topics {#delete-topics}
+## トピックを削除する {#delete-topics}
 
-To delete one topic, open it and click [[ui:topics.actions.deleteTopic]]. Type the topic name to confirm and click [[ui:topics.delete.confirm]]. The topic tab closes.
+1つのトピックを削除するには、トピックを開いて[[ui:topics.actions.deleteTopic]]をクリックします。確認のためにトピック名を入力し、[[ui:topics.delete.confirm]]をクリックします。トピックのタブが閉じます。
 
-To delete several topics at once:
+複数のトピックをまとめて削除するには：
 
-1. In the topic list, click [[ui:topics.list.select]]. Checkboxes appear next to the names.
-2. Select the topics. Internal topics cannot be selected.
-3. Click the delete button. It shows the number of selected topics.
-4. Check the list of names, type their number to confirm and click [[ui:topics.delete.confirm]].
+1. トピック一覧で[[ui:topics.list.select]]をクリックします。名前の横にチェックボックスが表示されます。
+2. トピックを選択します。内部トピックは選択できません。
+3. 削除ボタンをクリックします。ボタンには選択したトピックの数が表示されます。
+4. 名前の一覧を確認し、確認のためにその数を入力して、[[ui:topics.delete.confirm]]をクリックします。
 
-[[ui:topics.list.cancelSelect]] hides the checkboxes.
+[[ui:topics.list.cancelSelect]]をクリックすると、チェックボックスが非表示になります。
 
-On a prod connection, both ways of deleting also ask you to type the connection name.
+本番接続では、どちらの削除方法でも接続名の入力も求められます。
 
-Deletion cannot be undone: the data is lost. If some topics are not deleted, for example because of missing rights, the app lists them with the reason. The other topics are deleted.
+削除は元に戻せず、データは失われます。権限がないなどの理由で削除されなかったトピックがある場合は、理由とともに一覧表示されます。ほかのトピックは削除されます。
 
-## Topic screen {#topic-details}
+## トピック画面 {#topic-details}
 
-The topic tab shows the number of partitions, the replication factor and the approximate message count. The buttons at the top:
+トピックのタブには、パーティション数、レプリケーションファクター、メッセージ数の概算が表示されます。上部のボタン：
 
-- [[ui:topics.details.refresh]] — reload the topic data.
-- [[ui:topics.details.produce]] — open the [[ui:sidebar.producer]] with this topic. See [Producer](producer.md).
-- [[ui:topics.details.consume]] — start a consumer session for this topic. This needs Pro. See [Consumer sessions](consumer-sessions.md).
+- [[ui:topics.details.refresh]]：トピックのデータを再読み込みします。
+- [[ui:topics.details.produce]]：このトピックで[[ui:sidebar.producer]]を開きます。[Producer](producer.md)を参照してください。
+- [[ui:topics.details.consume]]：このトピックでコンシューマーセッションを開始します。Proが必要です。[コンシューマーセッション](consumer-sessions.md)を参照してください。
 
-On [[ui:common.readOnly]] connections, both buttons are disabled.
+[[ui:common.readOnly]]の接続では、どちらのボタンも無効になります。
 
-The second row has actions that change the topic. It is hidden on read-only connections and for internal topics.
+2行目には、トピックを変更する操作があります。読み取り専用の接続と内部トピックでは、この行は表示されません。
 
-- [[ui:topics.actions.addPartitions]] — enter the new total and click [[ui:topics.actions.addSubmit]]. The number of partitions cannot be decreased. After an increase, messages with the same key may go to a different partition, so the order by key breaks.
-- [[ui:topics.actions.purge]] — delete all messages up to the current end of the selected partitions. The topic itself stays. Select the partitions, type the topic name and click [[ui:topics.actions.purgeConfirm]]. Purge works only when `cleanup.policy` includes `delete`; otherwise the button is disabled and the reason is shown. For a `compact,delete` topic, purge also deletes the latest values of the keys.
-- [[ui:topics.actions.deleteTopic]] — see [Delete topics](topics.md#delete-topics).
+- [[ui:topics.actions.addPartitions]]：新しい合計数を入力し、[[ui:topics.actions.addSubmit]]をクリックします。パーティション数は減らせません。増やしたあとは、同じキーのメッセージが別のパーティションに送られることがあるため、キーごとの順序が崩れます。
+- [[ui:topics.actions.purge]]：選択したパーティションの現在の末尾までのメッセージをすべて削除します。トピック自体は残ります。パーティションを選択し、トピック名を入力して、[[ui:topics.actions.purgeConfirm]]をクリックします。パージは`cleanup.policy`に`delete`が含まれる場合にだけ機能します。それ以外の場合はボタンが無効になり、理由が表示されます。`compact,delete`のトピックでは、パージによってキーの最新の値も削除されます。
+- [[ui:topics.actions.deleteTopic]]：[トピックを削除する](topics.md#delete-topics)を参照してください。
 
-On a prod connection, each of these actions also asks for the connection name.
+本番接続では、これらの操作のたびに接続名の入力も求められます。
 
-The tabs below:
+下部のタブ：
 
-- [[ui:topics.details.tabMessages]] — browse messages. See [Browsing messages](browse.md).
-- [[ui:topics.details.tabPartitions]] — a table with each partition: [[ui:topics.details.colLeader]], [[ui:topics.details.colReplicas]], `ISR` (in-sync replicas), the start (`Low`) and end (`High`) offsets and the number of messages. A partition without a leader shows [[ui:topics.details.noLeader]].
-- [[ui:topics.details.tabConfigs]] — topic parameters. See [Topic configuration](topics.md#topic-config).
-- [[ui:topics.details.tabGroups]] — consumer groups that have committed offsets for this topic, with [[ui:topics.groups.colState]], [[ui:topics.groups.colPartitions]] and [[ui:topics.groups.colLag]]. Click a group to open it. See [Consumer groups](groups.md).
+- [[ui:topics.details.tabMessages]]：メッセージを閲覧します。[メッセージの閲覧](browse.md)を参照してください。
+- [[ui:topics.details.tabPartitions]]：各パーティションのテーブル。[[ui:topics.details.colLeader]]、[[ui:topics.details.colReplicas]]、`ISR`（同期レプリカ）、先頭（`Low`）と末尾（`High`）のオフセット、メッセージ数が表示されます。リーダーのいないパーティションには[[ui:topics.details.noLeader]]と表示されます。
+- [[ui:topics.details.tabConfigs]]：トピックのパラメーター。[トピックの設定](topics.md#topic-config)を参照してください。
+- [[ui:topics.details.tabGroups]]：このトピックのオフセットをコミットしたコンシューマーグループ。[[ui:topics.groups.colState]]、[[ui:topics.groups.colPartitions]]、[[ui:topics.groups.colLag]]が表示されます。グループをクリックすると開きます。[コンシューマーグループ](groups.md)を参照してください。
 
-## Topic configuration {#topic-config}
+## トピックの設定 {#topic-config}
 
-The [[ui:topics.details.tabConfigs]] tab lists all topic parameters with three columns:
+[[ui:topics.details.tabConfigs]]タブには、トピックのすべてのパラメーターが3つの列で一覧表示されます：
 
-- [[ui:common.config.colParam]] — the parameter name. Names in bold are set explicitly: on the topic or in the broker configuration.
-- [[ui:common.config.colValue]] — the current value. Sensitive values are hidden as `••••••`.
-- [[ui:common.config.colSource]] — where the value comes from. For example, `DynamicTopic` is set on this topic, `StaticBroker` and `DynamicBroker` come from the broker configuration, and `Default` is the Kafka default.
+- [[ui:common.config.colParam]]：パラメーター名。太字の名前は、トピックまたはブローカーの設定で明示的に設定されています。
+- [[ui:common.config.colValue]]：現在の値。機密性の高い値は`••••••`として隠されます。
+- [[ui:common.config.colSource]]：値の出どころ。たとえば、`DynamicTopic`はこのトピックで設定された値、`StaticBroker`と`DynamicBroker`はブローカーの設定による値、`Default`はKafkaのデフォルトです。
 
-Use [[ui:common.config.searchParam]] to find a parameter by name, and [[ui:common.config.onlyChanged]] to show only the parameters in bold. A lock icon marks read-only parameters. The `?` icon next to a name explains the parameter.
+[[ui:common.config.searchParam]]で名前からパラメーターを探し、[[ui:common.config.onlyChanged]]で太字のパラメーターだけを表示できます。読み取り専用のパラメーターには鍵のアイコンが表示されます。名前の横の`?`アイコンには、パラメーターの説明が表示されます。
 
-## Change the configuration {#edit-config}
+## 設定を変更する {#edit-config}
 
-1. On the [[ui:topics.details.tabConfigs]] tab, click [[ui:topics.details.edit]]. On [[ui:common.readOnly]] connections, this button is hidden.
-2. Change values in the [[ui:common.config.colValue]] column. Read-only and sensitive parameters cannot be edited. To remove the topic's own value, click [[ui:common.config.reset]]: the broker value then applies. An empty value is not allowed.
-3. Click [[ui:common.config.review]]. The app shows each change as old value → new value; [[ui:common.config.defaultValue]] means the value is reset.
-4. Click [[ui:common.config.apply]], or [[ui:common.config.back]] to continue editing.
+1. [[ui:topics.details.tabConfigs]]タブで[[ui:topics.details.edit]]をクリックします。[[ui:common.readOnly]]の接続では、このボタンは表示されません。
+2. [[ui:common.config.colValue]]列の値を変更します。読み取り専用のパラメーターと機密性の高いパラメーターは編集できません。トピック独自の値を削除するには、[[ui:common.config.reset]]をクリックします。その場合はブローカーの値が適用されます。空の値は使えません。
+3. [[ui:common.config.review]]をクリックします。各変更が「古い値 → 新しい値」の形式で表示されます。[[ui:common.config.defaultValue]]は、値がリセットされることを意味します。
+4. [[ui:common.config.apply]]をクリックします。編集を続けるには[[ui:common.config.back]]をクリックします。
 
-Nothing changes in the cluster until you apply. [[ui:common.config.discard]] cancels all edits. While there are unsaved edits, [[ui:topics.details.closeEditor]] is disabled. On a prod connection, you confirm the changes by typing the connection name.
+適用するまで、クラスターは何も変更されません。[[ui:common.config.discard]]をクリックすると、すべての編集が取り消されます。未保存の編集がある間は、[[ui:topics.details.closeEditor]]は無効です。本番接続では、接続名を入力して変更を確定します。
 
-Only the parameters you changed are sent. Other topic parameters stay as they are. The broker checks the values and rejects invalid ones with an error.
+送信されるのは変更したパラメーターだけです。トピックのほかのパラメーターはそのまま残ります。ブローカーが値を確認し、無効な値はエラーで拒否されます。
 
-## Topic parameters {#config-parameters}
+## トピックのパラメーター {#config-parameters}
 
-Kafka topics have dozens of parameters. The `?` icons in the configuration table explain each of them. Most often you need these:
+Kafkaのトピックには数十のパラメーターがあります。設定テーブルの`?`アイコンで、それぞれの説明を確認できます。よく必要になるのは次のパラメーターです：
 
-- `cleanup.policy` — what happens to old data. `delete` removes old segments by time or size. `compact` keeps only the latest value per key. `compact,delete` does both.
-- `retention.ms` — how long messages are kept, in milliseconds. The default is `604800000` (7 days); `-1` keeps them forever. Works when `cleanup.policy` includes `delete`.
-- `retention.bytes` — the maximum size of each partition before old segments are deleted. The default `-1` means no size limit.
-- `segment.ms` and `segment.bytes` — when the broker starts a new log segment. Retention and compaction work on whole segments, so a message may stay longer than `retention.ms` until its segment is closed.
-- `min.insync.replicas` — how many replicas must confirm a write with `acks=all`. Usually 2 with replication factor 3.
-- `max.message.bytes` — the largest batch the broker accepts for this topic. The default is about 1 MB. Producers must allow the same size (`max.request.size`).
-- `compression.type` — how the broker stores messages. `producer` keeps the producer's compression.
-- `message.timestamp.type` — `CreateTime` (the time set by the producer) or `LogAppendTime` (the time the broker wrote the message). This is the time shown when you browse messages.
-- `delete.retention.ms` — how long delete markers (messages with a null value) stay in a compacted topic. The default is 1 day.
+- `cleanup.policy`：古いデータの扱い。`delete`は時間またはサイズで古いセグメントを削除します。`compact`はキーごとに最新の値だけを保持します。`compact,delete`は両方を行います。
+- `retention.ms`：メッセージを保持する期間（ミリ秒）。デフォルトは`604800000`（7日）で、`-1`を指定すると無期限に保持します。`cleanup.policy`に`delete`が含まれる場合に機能します。
+- `retention.bytes`：古いセグメントが削除されるまでの、各パーティションの最大サイズ。デフォルトの`-1`はサイズの上限なしを意味します。
+- `segment.ms`と`segment.bytes`：ブローカーが新しいログセグメントを始めるタイミング。保持とコンパクションはセグメント単位で行われるため、メッセージはそのセグメントが閉じられるまで`retention.ms`より長く残ることがあります。
+- `min.insync.replicas`：`acks=all`の書き込みを確認する必要があるレプリカの数。レプリケーションファクターが3の場合、通常は2です。
+- `max.message.bytes`：ブローカーがこのトピックで受け付ける最大のバッチ。デフォルトは約1 MBです。プロデューサーも同じサイズを許可する必要があります（`max.request.size`）。
+- `compression.type`：ブローカーがメッセージを保存する方法。`producer`は、プロデューサーの圧縮をそのまま保持します。
+- `message.timestamp.type`：`CreateTime`（プロデューサーが設定した時刻）または`LogAppendTime`（ブローカーがメッセージを書き込んだ時刻）。メッセージの閲覧時に表示されるのはこの時刻です。
+- `delete.retention.ms`：削除マーカー（値がnullのメッセージ）がコンパクションされたトピックに残る期間。デフォルトは1日です。
 
-Some parameters exist only in newer Kafka versions, and some are deprecated. The `?` icon says so where it matters. Parameters for tiered storage, such as `remote.storage.enable`, work only if the cluster supports it.
+一部のパラメーターは新しいバージョンのKafkaにしかなく、一部は非推奨です。重要な場合は、`?`アイコンにその旨が表示されます。`remote.storage.enable`など階層型ストレージのパラメーターは、クラスターが階層型ストレージをサポートしている場合にだけ機能します。

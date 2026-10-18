@@ -1,163 +1,163 @@
-# Connections
+# 接続
 
-A connection is a saved profile of one Kafka cluster: addresses, security settings and passwords. Connections are listed in the [[ui:sidebar.connections]] panel on the left. You can sort them into folders and move them to another computer with export and import.
+接続とは、1つのKafkaクラスターについて保存したプロファイルで、アドレス、セキュリティ設定、パスワードを含みます。接続は左側の[[ui:sidebar.connections]]パネルに一覧表示されます。フォルダーで整理したり、エクスポートとインポートで別のコンピューターに移したりできます。
 
-## Create a connection {#create}
+## 接続を作成する {#create}
 
-1. Click `+` ( [[ui:sidebar.newConnection]] ) in the header of the [[ui:sidebar.connections]] panel. To create the connection right in a folder, open the folder menu and choose [[ui:sidebar.folder.newConnection]].
-2. Enter a [[ui:connections.form.name]]. It is shown in the panel and in tab titles.
-3. In [[ui:connections.form.bootstrap]], enter one or more addresses in `host:port` format, separated by commas, for example `kafka1:9092,kafka2:9092`. One reachable broker is enough: the client discovers the others by itself.
-4. Choose a [[ui:connections.form.protocol]] and fill in the fields it adds. See [Security protocols](connections.md#security).
-5. Optionally, choose a [[ui:connections.form.folder]], an [[ui:connections.form.environment]] and a [[ui:connections.form.color]] for the dot next to the name.
-6. Click [[ui:connections.form.test]], then [[ui:common.save]].
+1. [[ui:sidebar.connections]]パネルのヘッダーにある`+`（[[ui:sidebar.newConnection]]）をクリックします。フォルダーの中に直接作成するには、フォルダーのメニューを開いて[[ui:sidebar.folder.newConnection]]を選びます。
+2. [[ui:connections.form.name]]を入力します。名前はパネルとタブのタイトルに表示されます。
+3. [[ui:connections.form.bootstrap]]に、`host:port`形式のアドレスを1つ以上、コンマ区切りで入力します。例：`kafka1:9092,kafka2:9092`。到達できるブローカーが1つあれば十分で、ほかのブローカーはクライアントが自動的に見つけます。
+4. [[ui:connections.form.protocol]]を選び、追加されたフィールドに入力します。[セキュリティプロトコル](connections.md#security)を参照してください。
+5. 必要に応じて、[[ui:connections.form.folder]]、[[ui:connections.form.environment]]、名前の横に表示される点の[[ui:connections.form.color]]を選びます。
+6. [[ui:connections.form.test]]をクリックし、[[ui:common.save]]をクリックします。
 
-After saving, the form closes and the cluster overview opens.
+保存するとフォームが閉じ、クラスターの概要が開きます。
 
-Two more fields are for special cases. [[ui:connections.form.timeout]] is how long to wait for a broker response. The default is `30000` ms, the minimum is `1000`. Increase it for slow networks and VPNs. [[ui:connections.form.props]] takes any librdkafka setting as `key=value`, one per line. Lines that start with `#` are ignored. Passwords and keys are not allowed there: properties whose names contain `password` or `secret`, `sasl.jaas.config`, `ssl.key.pem` and `ssl.keystore.key` are rejected on save.
+ほかに、特殊な場合のためのフィールドが2つあります。[[ui:connections.form.timeout]]：ブローカーの応答を待つ時間です。デフォルトは`30000` ms、最小値は`1000`です。低速なネットワークやVPNでは値を大きくしてください。[[ui:connections.form.props]]には、任意のlibrdkafka設定を`key=value`形式で1行に1つずつ入力します。`#`で始まる行は無視されます。パスワードと鍵はここには入力できません。名前に`password`または`secret`を含むプロパティ、`sasl.jaas.config`、`ssl.key.pem`、`ssl.keystore.key`は保存時に拒否されます。
 
-To change a connection later, click `✎` ( [[ui:sidebar.editConnection]] ) next to its name. To delete it, open the form, click [[ui:common.delete]] and confirm with [[ui:connections.form.deleteYes]].
+あとで接続を変更するには、名前の横の`✎`（[[ui:sidebar.editConnection]]）をクリックします。削除するには、フォームを開いて[[ui:common.delete]]をクリックし、[[ui:connections.form.deleteYes]]で確定します。
 
-## Test the connection {#test}
+## 接続をテストする {#test}
 
-[[ui:connections.form.test]] checks the settings in the form step by step and stops at the first failed step:
+[[ui:connections.form.test]]は、フォームの設定を段階的に確認し、最初に失敗した段階で止まります：
 
-1. [[ui:connections.form.step.config]] — the addresses, certificate files, passwords and the SASL username.
-2. [[ui:connections.form.step.tcp]] — the host names resolve, and a TCP connection to at least one bootstrap server opens.
-3. [[ui:connections.form.step.kafka]] — the TLS handshake and SASL login succeed, and the broker returns metadata. On success, the step shows the number of brokers and topics.
+1. [[ui:connections.form.step.config]]：アドレス、証明書ファイル、パスワード、SASLのユーザー名。
+2. [[ui:connections.form.step.tcp]]：ホスト名が解決でき、少なくとも1つのブートストラップサーバーへのTCP接続が開くこと。
+3. [[ui:connections.form.step.kafka]]：TLSハンドシェイクとSASLログインが成功し、ブローカーがメタデータを返すこと。成功すると、ブローカー数とトピック数が表示されます。
 
-The test uses the values currently in the form, including passwords you typed but have not saved. Nothing is saved or changed in the cluster. If a step fails, its error text and details are shown under it. Common errors are explained in [Cannot connect](troubleshooting.md#cannot-connect).
+テストには、入力済みで未保存のパスワードも含め、現在フォームにある値が使われます。何も保存されず、クラスターも変更されません。段階が失敗すると、その下にエラーメッセージと詳細が表示されます。よくあるエラーは[接続できない](troubleshooting.md#cannot-connect)で説明しています。
 
-## Security protocols {#security}
+## セキュリティプロトコル {#security}
 
-The [[ui:connections.form.protocol]] must match the broker listener you connect to. Your Kafka administrators know which one to use.
+[[ui:connections.form.protocol]]は、接続先のブローカーのリスナーと一致している必要があります。どれを使うかはKafkaの管理者が知っています。
 
-- `PLAINTEXT` — no encryption and no login. Typical for local and test clusters.
-- `SSL` — traffic is encrypted with TLS. With a client certificate, this is mTLS.
-- `SASL_PLAINTEXT` — login with a username and password, without encryption.
-- `SASL_SSL` — login with a username and password over TLS.
+- `PLAINTEXT`：暗号化もログインもありません。ローカルやテスト用のクラスターでよく使われます。
+- `SSL`：通信がTLSで暗号化されます。クライアント証明書を使う場合はmTLSになります。
+- `SASL_PLAINTEXT`：ユーザー名とパスワードでログインします。暗号化はありません。
+- `SASL_SSL`：TLS上でユーザー名とパスワードでログインします。
 
-When you change the protocol, the form shows only the fields that the protocol needs. All protocols, including mTLS, are available in Free.
+プロトコルを変更すると、フォームにはそのプロトコルに必要なフィールドだけが表示されます。mTLSを含むすべてのプロトコルをFreeで利用できます。
 
 ## SASL {#sasl}
 
-For `SASL_PLAINTEXT` and `SASL_SSL`, fill in three fields:
+`SASL_PLAINTEXT`と`SASL_SSL`では、3つのフィールドに入力します：
 
-- [[ui:connections.form.saslMechanism]] — `PLAIN`, `SCRAM-SHA-256` or `SCRAM-SHA-512`. The cluster defines which one works.
-- [[ui:connections.form.username]].
-- [[ui:connections.form.password]]. It is saved in the system secret store, not in the profile. See [Passwords](connections.md#passwords).
+- [[ui:connections.form.saslMechanism]]：`PLAIN`、`SCRAM-SHA-256`、`SCRAM-SHA-512`のいずれか。どれが使えるかはクラスターによって決まります。
+- [[ui:connections.form.username]]。
+- [[ui:connections.form.password]]。プロファイルではなく、システムの資格情報ストアに保存されます。[パスワード](connections.md#passwords)を参照してください。
 
-SCRAM never sends the password itself. `PLAIN` sends it as is, so over `SASL_PLAINTEXT` the password travels in clear text. Use `SASL_SSL` for clusters outside your computer when possible.
+SCRAMはパスワードそのものを送信しません。`PLAIN`はパスワードをそのまま送信するため、`SASL_PLAINTEXT`ではパスワードが平文で流れます。お使いのコンピューターの外にあるクラスターには、できるだけ`SASL_SSL`を使ってください。
 
-## SSL and the trusted CA {#tls}
+## SSLと信頼されたCA {#tls}
 
-For `SSL` and `SASL_SSL`, the form adds TLS settings.
+`SSL`と`SASL_SSL`では、フォームにTLSの設定が追加されます。
 
-[[ui:connections.tls.ca]] is the certificate of the authority (CA) that signed the broker certificates. Leave it empty if the operating system already trusts this CA: the system root certificates are then used. Otherwise enter the full path to the file or click [[ui:connections.tls.pick]]. After you choose a file, the [[ui:connections.tls.caFormat]] field appears. For PKCS#12 and JKS, there is also a [[ui:connections.tls.truststorePassword]] field.
+[[ui:connections.tls.ca]]は、ブローカーの証明書に署名した認証局（CA）の証明書です。オペレーティングシステムがすでにこのCAを信頼している場合は空のままにします。その場合はシステムのルート証明書が使われます。それ以外の場合は、ファイルのフルパスを入力するか、「[[ui:connections.tls.pick]]」をクリックします。ファイルを選ぶと、[[ui:connections.tls.caFormat]]フィールドが表示されます。PKCS#12とJKSでは、[[ui:connections.tls.truststorePassword]]フィールドも表示されます。
 
-[[ui:connections.tls.verifyHostname]] is on by default. It checks that the broker certificate was issued for the host name you connect to. Turn it off only in test environments, for example when brokers use self-signed certificates with other names.
+[[ui:connections.tls.verifyHostname]]はデフォルトでオンです。ブローカーの証明書が接続先のホスト名に対して発行されたものかどうかを確認します。オフにするのはテスト環境だけにしてください。たとえば、ブローカーが別の名前の自己署名証明書を使っている場合です。
 
-## Client certificate (mTLS) {#mtls}
+## クライアント証明書（mTLS） {#mtls}
 
-If brokers authenticate clients by certificate, turn on [[ui:connections.tls.mtls]]. Your Kafka administrators issue the certificate and key. Then fill in:
+ブローカーが証明書でクライアントを認証する場合は、「[[ui:connections.tls.mtls]]」をオンにします。証明書と鍵はKafkaの管理者が発行します。次に以下を入力します：
 
-- [[ui:connections.tls.cert]] — the path to the certificate file.
-- [[ui:connections.tls.certFormat]] — PEM, PKCS#12 or JKS.
-- For PEM: [[ui:connections.tls.key]] — the path to the private key file, and [[ui:connections.tls.keyPasswordPem]] if the key is encrypted.
-- For PKCS#12: [[ui:connections.tls.keystorePassword]].
-- For JKS: [[ui:connections.tls.keystorePassword]], [[ui:connections.tls.keyPasswordJks]] if the key has its own password, and [[ui:connections.tls.alias]] if the store has several keys.
+- [[ui:connections.tls.cert]]：証明書ファイルのパス。
+- [[ui:connections.tls.certFormat]]：PEM、PKCS#12、JKSのいずれか。
+- PEMの場合：秘密鍵ファイルのパスを[[ui:connections.tls.key]]に。鍵が暗号化されている場合は「[[ui:connections.tls.keyPasswordPem]]」も入力します。
+- PKCS#12の場合：[[ui:connections.tls.keystorePassword]]。
+- JKSの場合：[[ui:connections.tls.keystorePassword]]。鍵に独自のパスワードがある場合は「[[ui:connections.tls.keyPasswordJks]]」、ストアに複数の鍵がある場合は[[ui:connections.tls.alias]]も入力します。
 
-Paths must be absolute. The files are read every time the app connects, so after the certificate is renewed you only need to reconnect. The app checks that the key matches the certificate and that the certificate has not expired.
+パスは絶対パスで指定します。ファイルは接続のたびに読み込まれるため、証明書を更新したあとは再接続するだけで済みます。アプリは、鍵が証明書と一致していること、証明書の有効期限が切れていないことを確認します。
 
-A common case is a cluster in Kubernetes, where the client secret holds `tls.crt`, `tls.key` and `ca.crt`. Save them to files, choose protocol `SSL`, set [[ui:connections.tls.ca]] to `ca.crt`, and use `tls.crt` and `tls.key` as a PEM client certificate and key with empty passwords.
+よくあるのは、Kubernetes上のクラスターで、クライアントのシークレットに`tls.crt`、`tls.key`、`ca.crt`が入っている場合です。これらをファイルに保存し、プロトコル`SSL`を選び、[[ui:connections.tls.ca]]に`ca.crt`を指定し、`tls.crt`と`tls.key`をPEM形式のクライアント証明書と鍵として、パスワードは空のまま使います。
 
-## Certificate formats {#certificate-formats}
+## 証明書の形式 {#certificate-formats}
 
-Glafira reads three formats. The format is chosen automatically by the file extension; check it in the format field and change it if needed.
+Glafiraは3つの形式を読み込めます。形式はファイルの拡張子から自動的に選ばれます。形式のフィールドで確認し、必要なら変更してください。
 
-- PEM — a text file that starts with `-----BEGIN`. Extensions `.pem`, `.crt`, `.cer`, `.key`. For a client certificate, the key is a separate file. The trusted CA can also be a binary DER certificate.
-- PKCS#12 — a binary store with a certificate and key. Extensions `.p12`, `.pfx`.
-- JKS — a Java keystore. Extensions `.jks`, `.keystore`, `.truststore`.
+- PEM：`-----BEGIN`で始まるテキストファイル。拡張子は`.pem`、`.crt`、`.cer`、`.key`。クライアント証明書の場合、鍵は別ファイルです。信頼されたCAにはバイナリのDER証明書も使えます。
+- PKCS#12：証明書と鍵を含むバイナリのストア。拡張子は`.p12`、`.pfx`。
+- JKS：Javaのキーストア。拡張子は`.jks`、`.keystore`、`.truststore`。
 
-Two kinds of files need converting first:
+次の2種類のファイルは、先に変換が必要です：
 
-- JCEKS stores are not supported. Convert them to PKCS#12:
+- JCEKSストアはサポートされていません。PKCS#12に変換してください：
 
 ```bash
 keytool -importkeystore -srcstoretype JCEKS -srckeystore client.jceks -deststoretype PKCS12 -destkeystore client.p12
 ```
 
-- PKCS#12 stores encrypted with legacy algorithms (RC2, 3DES) may fail to open. If the app reports a legacy algorithm, recreate the file with AES:
+- 古いアルゴリズム（RC2、3DES）で暗号化されたPKCS#12ストアは開けないことがあります。アプリが古いアルゴリズムを報告した場合は、AESでファイルを作り直してください：
 
 ```bash
 openssl pkcs12 -export -keypbe AES-256-CBC -certpbe AES-256-CBC -in tls.crt -inkey tls.key -out client.p12
 ```
 
-## Passwords {#passwords}
+## パスワード {#passwords}
 
-The SASL password and the passwords of keys and stores are saved in the system secret store: Keychain on macOS, Credential Manager on Windows, Secret Service on Linux. They are never written to the connection profile, export files or the diagnostics archive.
+SASLのパスワード、鍵とストアのパスワードは、システムの資格情報ストアに保存されます。macOSではキーチェーン、Windowsでは資格情報マネージャー、LinuxではSecret Serviceです。接続のプロファイル、エクスポートファイル、診断アーカイブには書き込まれません。
 
-When you edit a saved connection, password fields are empty and show [[ui:connections.form.passwordKeep]]. Leave a field empty to keep the saved password, or type a new one to replace it. To delete a saved certificate password, select [[ui:connections.tls.clear]] next to the field. When you save, passwords that the connection no longer uses are deleted, for example after switching the protocol to `PLAINTEXT`.
+保存済みの接続を編集すると、パスワードのフィールドは空で、[[ui:connections.form.passwordKeep]]と表示されます。保存済みのパスワードを使い続けるにはフィールドを空のままにし、置き換えるには新しいパスワードを入力します。保存済みの証明書のパスワードを削除するには、フィールドの横の[[ui:connections.tls.clear]]を選びます。保存時には、接続で使われなくなったパスワードが削除されます。たとえば、プロトコルを`PLAINTEXT`に切り替えた場合です。
 
-If the app cannot access the secret store, an error is shown when you save. On Linux, check that GNOME Keyring, KWallet or another Secret Service provider runs in your session.
+アプリが資格情報ストアにアクセスできない場合は、保存時にエラーが表示されます。Linuxでは、GNOME Keyring、KWallet、またはほかのSecret Serviceプロバイダーがセッションで動作していることを確認してください。
 
-## Environments and prod {#environments}
+## 環境と本番 {#environments}
 
-[[ui:connections.form.environment]] marks the connection: `local`, `dev`, `test`, `stage` or `prod`. The environment is shown as a colored badge next to the name in the panel, so you always see which cluster you work with.
+[[ui:connections.form.environment]]は接続に付けるラベルで、`local`、`dev`、`test`、`stage`、`prod`のいずれかです。環境はパネルの名前の横に色付きのバッジで表示されるため、どのクラスターで作業しているかが常にわかります。
 
-`prod` adds protection. Any change on a prod connection, such as creating a topic, sending a message, resetting offsets or starting a consumer session, asks you to type the connection name. Deleting and purging ask for the name of the object on any connection (deleting several topics asks for their count), and on prod you type both. These confirmations appear inside the app window.
+`prod`を選ぶと保護が加わります。本番接続でトピックの作成、メッセージの送信、オフセットのリセット、コンシューマーセッションの開始などの変更を行うときは、接続名の入力を求められます。削除とパージでは、どの接続でも対象の名前の入力を求められ（複数のトピックを削除する場合はその数）、本番接続では両方を入力します。これらの確認はアプリのウィンドウ内に表示されます。
 
-Creating prod connections and switching connections to prod need Pro. In Free, this option is shown as [[ui:connections.form.prodPro]] and cannot be selected. Prod connections created earlier keep working in Free, with the same confirmations.
+本番接続の作成と、接続の本番への切り替えにはProが必要です。Freeでは、この選択肢は「[[ui:connections.form.prodPro]]」と表示され、選択できません。以前に作成した本番接続は、Freeでも同じ確認付きで引き続き使えます。
 
-A new prod connection starts as [[ui:common.readOnly]]. Clear the box if you need to make changes.
+新しい本番接続は[[ui:common.readOnly]]の状態で作成されます。変更が必要な場合はチェックを外してください。
 
-## Read-only {#read-only}
+## 読み取り専用 {#read-only}
 
-[[ui:common.readOnly]] blocks everything that changes the cluster: creating, changing, purging and deleting topics, sending messages, resetting offsets, deleting groups and starting consumer sessions. The buttons for these actions are hidden or disabled, and the app core rejects such operations as well. Browsing and reading stay available. A lock icon next to the name in the panel marks read-only connections.
+[[ui:common.readOnly]]は、クラスターを変更する操作をすべてブロックします。トピックの作成、変更、パージ、削除、メッセージの送信、オフセットのリセット、グループの削除、コンシューマーセッションの開始です。これらの操作のボタンは非表示または無効になり、アプリのコアもこうした操作を拒否します。閲覧と読み取りは引き続き利用できます。読み取り専用の接続には、パネルの名前の横に鍵のアイコンが表示されます。
 
-Use this mode when you only need to look at the data, especially on shared clusters. Read-only is a protection inside the app: it does not replace access rights (ACLs) in Kafka.
+データを見るだけでよい場合、特に共有クラスターでは、このモードを使ってください。読み取り専用はアプリ内の保護であり、Kafkaのアクセス権（ACL）の代わりにはなりません。
 
-In Free, the box cannot be cleared on a read-only prod connection: lifting this protection needs Pro.
+Freeでは、読み取り専用の本番接続のチェックは外せません。この保護を解除するにはProが必要です。
 
-## Folders {#folders}
+## フォルダー {#folders}
 
-Folders help to sort connections, for example by project or by environment. Folders can be nested.
+フォルダーを使うと、プロジェクトや環境ごとなどに接続を整理できます。フォルダーは入れ子にできます。
 
-- To create a folder at the top level, click `+📁` ( [[ui:sidebar.newFolder]] ) in the panel header. To create a subfolder, open the folder menu and choose [[ui:sidebar.newFolder]]. Type the name and press `Enter`, or press `Esc` to cancel.
-- To open the folder menu, click `⋯` ( [[ui:sidebar.menu]] ) on the folder row or right-click the folder. The menu has [[ui:sidebar.folder.rename]], [[ui:sidebar.folder.delete]] and the export and import commands.
-- Only an empty folder can be deleted. Move or delete its connections and subfolders first.
-- Folder names must be unique within one level and at most 100 characters long.
+- 最上位にフォルダーを作成するには、パネルのヘッダーにある`+📁`（[[ui:sidebar.newFolder]]）をクリックします。サブフォルダーを作成するには、フォルダーのメニューを開いて[[ui:sidebar.newFolder]]を選びます。名前を入力して`Enter`を押すか、`Esc`を押して取り消します。
+- フォルダーのメニューを開くには、フォルダーの行の`⋯`（[[ui:sidebar.menu]]）をクリックするか、フォルダーを右クリックします。メニューには[[ui:sidebar.folder.rename]]、[[ui:sidebar.folder.delete]]、エクスポートとインポートのコマンドがあります。
+- 削除できるのは空のフォルダーだけです。先に中の接続とサブフォルダーを移動または削除してください。
+- フォルダー名は同じ階層内で一意にし、100文字以内にする必要があります。
 
-To move a connection, drag it onto a folder, or onto another connection to place it before that one. To move it to the top level, drop it onto the panel header or the empty space below the list. You can also choose a [[ui:connections.form.folder]] in the connection form; [[ui:connections.form.folderRoot]] means the top level. Folders are dragged the same way. Drop a folder onto the upper edge of another folder to place it before that folder. A folder cannot be moved into its own subfolder.
+接続を移動するには、フォルダーにドラッグするか、別の接続にドラッグしてその前に置きます。最上位に移動するには、パネルのヘッダーか一覧の下の空いた場所にドロップします。接続のフォームで[[ui:connections.form.folder]]を選ぶこともできます。「[[ui:connections.form.folderRoot]]」は最上位を意味します。フォルダーも同じ方法でドラッグします。別のフォルダーの上端にドロップすると、そのフォルダーの前に置かれます。フォルダーを自身のサブフォルダーに移動することはできません。
 
-Click a folder name to collapse or expand it. The app remembers which folders are collapsed. Use [[ui:sidebar.filter]] above the tree to find connections and folders by name. Matching folders are shown with all their contents.
+フォルダー名をクリックすると、折りたたんだり展開したりできます。どのフォルダーを折りたたんだかはアプリが記憶します。ツリーの上の[[ui:sidebar.filter]]を使うと、名前で接続とフォルダーを検索できます。一致したフォルダーは中身ごと表示されます。
 
-## Export {#export}
+## エクスポート {#export}
 
-Export saves connections and folders to a file, for example to share them with colleagues or move them to another computer.
+エクスポートでは、接続とフォルダーをファイルに保存します。同僚と共有したり、別のコンピューターに移したりするときに使います。
 
-1. To export everything, open the panel header menu `⋯` and choose [[ui:sidebar.exportAll]]. To export one folder with its subfolders, choose [[ui:sidebar.folder.export]] in its menu.
-2. Choose where to save the file. The suggested name is `glafira-connections-<date>.glafira-connections.json` or `<folder>.glafira-connections.json`.
+1. すべてをエクスポートするには、パネルのヘッダーのメニュー`⋯`を開き、「[[ui:sidebar.exportAll]]」を選びます。1つのフォルダーをサブフォルダーごとエクスポートするには、そのフォルダーのメニューで「[[ui:sidebar.folder.export]]」を選びます。
+2. ファイルの保存先を選びます。提案されるファイル名は`glafira-connections-<date>.glafira-connections.json`または`<folder>.glafira-connections.json`です。
 
-When the file is saved, the panel shows how many connections and folders it contains.
+ファイルが保存されると、含まれる接続とフォルダーの数がパネルに表示されます。
 
-The file has the connection settings and the folder structure. It does not contain passwords or secret properties. Certificate files are not included either: the file only keeps their paths. Hosts, usernames and paths are stored as plain text, so share the file only with people who may see them.
+ファイルには接続の設定とフォルダーの構造が含まれます。パスワードやシークレットのプロパティは含まれません。証明書ファイルも含まれず、パスだけが記録されます。ホスト、ユーザー名、パスは平文で保存されるため、それらを見てもよい人とだけファイルを共有してください。
 
-## Import {#import}
+## インポート {#import}
 
-1. Open the panel header menu `⋯` and choose [[ui:sidebar.import]]. To import straight into a folder, choose [[ui:sidebar.folder.importHere]] in its menu.
-2. Choose a `.glafira-connections.json` file. The [[ui:exchange.import.title]] dialog opens.
-3. In [[ui:exchange.import.target]], choose where new folders and connections go. [[ui:connections.form.folderRoot]] is the top level.
-4. Leave [[ui:exchange.import.updateExisting]] on to update connections that already exist from the file. Turn it off to keep them as they are.
-5. Check the preview and click [[ui:exchange.import.apply]], or [[ui:common.cancel]] to close the dialog without changes.
+1. パネルのヘッダーのメニュー`⋯`を開き、「[[ui:sidebar.import]]」を選びます。フォルダーに直接インポートするには、そのフォルダーのメニューで「[[ui:sidebar.folder.importHere]]」を選びます。
+2. `.glafira-connections.json`ファイルを選びます。[[ui:exchange.import.title]]ダイアログが開きます。
+3. [[ui:exchange.import.target]]で、新しいフォルダーと接続の追加先を選びます。「[[ui:connections.form.folderRoot]]」は最上位です。
+4. ファイルにある既存の接続を更新するには、[[ui:exchange.import.updateExisting]]をオンのままにします。既存の接続をそのまま残すにはオフにします。
+5. プレビューを確認して[[ui:exchange.import.apply]]をクリックします。変更せずにダイアログを閉じるには[[ui:common.cancel]]をクリックします。
 
-The preview updates after each change in the dialog. It shows the totals and expandable lists: [[ui:exchange.import.groupAdded]], [[ui:exchange.import.groupUpdated]], [[ui:exchange.import.groupUnchanged]] and [[ui:exchange.import.groupSkipped]] with the reason for each skipped connection.
+プレビューはダイアログで変更するたびに更新されます。合計と、展開できる一覧が表示されます。一覧は[[ui:exchange.import.groupAdded]]、[[ui:exchange.import.groupUpdated]]、[[ui:exchange.import.groupUnchanged]]、[[ui:exchange.import.groupSkipped]]で、スキップされた接続にはそれぞれ理由が示されます。
 
-How the app matches the file with your connections:
+アプリがファイルとお使いの接続を照合する方法：
 
-- Connections are matched by an internal ID, not by name. A connection counts as existing if the file contains the same connection: for example, it was exported from this computer, or imported from the same source before.
-- An updated connection gets the settings from the file. Your passwords and its place in the tree are kept.
-- Existing folders are not renamed or moved. New connections from the file still go into them.
-- If a new connection has the same name as another one in the same folder, a number is added, for example `kafka-dev (2)`.
-- Connections that this version of Glafira does not support, or that contain secrets in extra properties, are skipped.
+- 接続は名前ではなく内部IDで照合されます。ファイルに同じ接続が含まれている場合、その接続は既存とみなされます。たとえば、このコンピューターからエクスポートした接続や、以前に同じ提供元からインポートした接続です。
+- 更新された接続には、ファイルの設定が適用されます。パスワードとツリー内の位置は保持されます。
+- 既存のフォルダーは名前の変更も移動もされません。ファイルの新しい接続は、そのフォルダーに追加されます。
+- 新しい接続が同じフォルダー内の別の接続と同じ名前の場合は、番号が付きます。例：`kafka-dev (2)`。
+- このバージョンのGlafiraがサポートしていない接続や、追加プロパティにシークレットを含む接続はスキップされます。
 
-The preview also warns when certificate files are not found on this computer, and when prod connections will become read-only because Pro is not active. Passwords are not in the file, so after import the panel says how many connections need them. Open each of these connections, enter the passwords and save.
+プレビューでは、証明書ファイルがこのコンピューターに見つからない場合や、Proが有効でないため本番接続が読み取り専用になる場合にも警告が表示されます。パスワードはファイルに含まれないため、インポート後、パスワードが必要な接続の数がパネルに表示されます。それらの接続を1つずつ開き、パスワードを入力して保存してください。

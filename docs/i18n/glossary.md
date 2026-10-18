@@ -142,3 +142,18 @@ browse (просмотр сообщений) — consultazione, lettura; purge �
 to commit — eseguire il commit; committed offset — offset sottoposto a commit; lock icon — icona a forma di lucchetto;
 macOS menu Help — menu Aiuto; Keychain — Portachiavi; Credential Manager — Gestione credenziali;
 read-only connection — connessione in sola lettura (с меткой: «sulle connessioni con l’opzione [[ui:common.readOnly]] attiva»).
+
+## Слова руководства (pl)
+
+Термины, которые часто встречаются в `docs/guide/pl` и отсутствуют в словаре интерфейса:
+регистр — безличный: шаги инфинитивом («Kliknąć przycisk…»), в тексте «należy», «można», «trzeba», возвратные и страдательные формы;
+tab — karta; screen — ekran; panel (левая панель) — panel; button — przycisk; checkbox — pole wyboru; option — opcja;
+logs — logi (как «Logi:» в интерфейсе), log (m.); batch send — wysyłka wsadowa (как в UI), partia; batch (Kafka) — batch;
+release page — strona wydań; installer — instalator; build — build (m.: buildu); support request — zgłoszenie do pomocy technicznej;
+support — pomoc techniczna; timestamp — znacznik czasu; tombstone — tombstone; listener — listener; handshake — handshake;
+policy — zasady (pl., как «Zasady organizacji» в UI); purge — wyczyścić, czyszczenie (как в UI: Wyczyść);
+to commit — zatwierdzić, zatwierdzanie (как в UI: Zatwierdź); commit (сущ.) — zatwierdzenie; committed offset — zatwierdzony offset;
+экран Producer — «ekran Producer», название не склоняется; macOS menu Help — menu Pomoc; Keychain — pęk kluczy;
+Credential Manager — Menedżer poświadczeń; lock icon — ikona kłódki;
+метки — только в именительном: «w polu [[ui:…]] wpisać…», «przycisk [[ui:…]]», «sekcja [[ui:…]]»;
+read-only connection — połączenie tylko do odczytu (с меткой: «w połączeniach z włączoną opcją [[ui:common.readOnly]]»).

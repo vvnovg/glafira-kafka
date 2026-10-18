@@ -1,146 +1,146 @@
 # Producer
 
-The [[ui:sidebar.producer]] sends messages to Kafka: one at a time from a form, or many at once. Open it from the connection in the [[ui:sidebar.connections]] panel, or with [[ui:topics.details.produce]] on a topic tab, which fills in the topic. Each connection has its own Producer tab.
+Ekran [[ui:sidebar.producer]] wysyła wiadomości do Kafki: pojedynczo z formularza lub wiele naraz. Otwiera się go z poziomu połączenia w panelu [[ui:sidebar.connections]] albo przyciskiem [[ui:topics.details.produce]] na karcie topiku, który wypełnia pole topiku. Każde połączenie ma własną kartę Producer.
 
-On [[ui:common.readOnly]] connections, the Producer opens with the warning [[ui:producer.readOnly]]. The send buttons are hidden, but templates and history can still be viewed.
+W połączeniach z włączoną opcją [[ui:common.readOnly]] ekran Producer otwiera się z ostrzeżeniem [[ui:producer.readOnly]]. Przyciski wysyłania są ukryte, ale szablony i historię nadal można przeglądać.
 
-## Send a message {#send-message}
+## Wysyłanie wiadomości {#send-message}
 
-1. Enter the [[ui:producer.topic]]. The field suggests the topics of the cluster, without internal topics.
-2. Optionally, enter a [[ui:producer.partition]] number. When the field shows [[ui:producer.partitionAuto]], the partition is chosen by the key: messages with the same key go to the same partition, as with the Java client. Messages without a key go to a random partition.
-3. Fill in the [[ui:producer.key]] and the [[ui:producer.value]], and choose their formats. See [Key and value formats](producer.md#key-value-formats).
-4. Optionally, add headers.
-5. Click [[ui:producer.send]].
+1. W polu [[ui:producer.topic]] wpisać topik. Pole podpowiada topiki klastra, bez topików wewnętrznych.
+2. Opcjonalnie w polu [[ui:producer.partition]] wpisać numer partycji. Gdy pole pokazuje wartość [[ui:producer.partitionAuto]], partycja jest wybierana według klucza: wiadomości z tym samym kluczem trafiają do tej samej partycji, tak jak w kliencie Java. Wiadomości bez klucza trafiają do losowej partycji.
+3. Wypełnić pola [[ui:producer.key]] i [[ui:producer.value]] oraz wybrać ich formaty. Zob. [Formaty klucza i wartości](producer.md#key-value-formats).
+4. Opcjonalnie dodać nagłówki.
+5. Kliknąć przycisk [[ui:producer.send]].
 
-After a successful send, a line below the form shows the partition, the offset and the time of the message. With `acks` set to `0`, the broker does not return an offset, and `—` is shown instead.
+Po udanym wysłaniu wiersz pod formularzem pokazuje partycję, offset i czas wiadomości. Przy `acks` ustawionym na `0` broker nie zwraca offsetu i zamiast niego wyświetlany jest znak `—`.
 
-If the partition number is too large, or the broker does not confirm the message within the connection timeout, the app shows an error. A topic that does not exist also gives an error, unless the broker creates topics automatically (`auto.create.topics.enable`). With auto-creation off, this error can take up to about 30 s to appear (the connection timeout). Errors in the form, such as invalid JSON or an unknown placeholder, are shown before anything is sent.
+Jeśli numer partycji jest zbyt duży lub broker nie potwierdzi wiadomości w limicie czasu połączenia, aplikacja pokazuje błąd. Nieistniejący topik również powoduje błąd, chyba że broker tworzy topiki automatycznie (`auto.create.topics.enable`). Przy wyłączonym automatycznym tworzeniu ten błąd może pojawić się dopiero po około 30 s (limit czasu połączenia). Błędy w formularzu, takie jak niepoprawny JSON lub nieznany symbol zastępczy, są wyświetlane, zanim cokolwiek zostanie wysłane.
 
-On a prod connection, sending asks you to type the connection name and confirm with [[ui:producer.confirmLabel]]. See [Environments and prod](connections.md#environments).
+W połączeniu prod wysłanie wymaga wpisania nazwy połączenia i potwierdzenia przyciskiem [[ui:producer.confirmLabel]]. Zob. [Środowiska i prod](connections.md#environments).
 
-[[ui:producer.clearForm]] empties the form and returns the producer settings to their defaults. The topic stays.
+Przycisk [[ui:producer.clearForm]] opróżnia formularz i przywraca domyślne ustawienia producenta. Topik pozostaje.
 
-## Key and value formats {#key-value-formats}
+## Formaty klucza i wartości {#key-value-formats}
 
-[[ui:producer.keyFormat]] and [[ui:producer.valueFormat]] set how the text in the field is turned into bytes:
+Pola [[ui:producer.keyFormat]] i [[ui:producer.valueFormat]] określają, jak tekst z pola jest zamieniany na bajty:
 
-- `string` — the text as is, in UTF-8.
-- `json` — the text is checked to be valid JSON and sent as typed, without reformatting.
-- `hex` — two hex digits per byte, for example `48656c6c6f`. Spaces and line breaks are ignored.
-- `base64` — bytes in standard Base64.
-- `null` — no key or no value at all. The text field is disabled.
+- `string` — tekst bez zmian, w UTF-8.
+- `json` — tekst jest sprawdzany pod kątem poprawności JSON i wysyłany tak, jak został wpisany, bez przeformatowania.
+- `hex` — dwie cyfry szesnastkowe na bajt, na przykład `48656c6c6f`. Spacje i podziały wierszy są ignorowane.
+- `base64` — bajty w standardowym Base64.
+- `null` — całkowity brak klucza lub wartości. Pole tekstowe jest nieaktywne.
 
-The default is `string` for the key and `json` for the value. An empty key field with `string` sends an empty key, not a missing one: all such messages get the same hash and go to one partition. To send a message without a key, choose `null`.
+Domyślnie klucz ma format `string`, a wartość — `json`. Puste pole klucza z formatem `string` wysyła pusty klucz, a nie brak klucza: wszystkie takie wiadomości mają ten sam hash i trafiają do jednej partycji. Aby wysłać wiadomość bez klucza, należy wybrać `null`.
 
-A message with a `null` value is a tombstone. In a topic with `cleanup.policy=compact`, it tells Kafka to remove older messages with the same key.
+Wiadomość z wartością `null` to tombstone. W topiku z `cleanup.policy=compact` sygnalizuje Kafce, że należy usunąć starsze wiadomości z tym samym kluczem.
 
-## Headers {#headers}
+## Nagłówki {#headers}
 
-Headers are name and value pairs sent with the message. Click [[ui:producer.headers.add]] to add a row, then fill in [[ui:producer.headers.colName]], [[ui:producer.headers.colValue]] and [[ui:producer.headers.colFormat]]. The `×` button removes the row.
+Nagłówki to pary nazwa–wartość wysyłane razem z wiadomością. Przycisk [[ui:producer.headers.add]] dodaje wiersz, w którym należy wypełnić kolumny [[ui:producer.headers.colName]], [[ui:producer.headers.colValue]] i [[ui:producer.headers.colFormat]]. Przycisk `×` usuwa wiersz.
 
-The format of a header value is `string` (text in UTF-8) or `hex` (bytes as hex digits). Rows with an empty name are not sent. Kafka allows several headers with the same name, and they are all sent.
+Format wartości nagłówka to `string` (tekst w UTF-8) lub `hex` (bajty jako cyfry szesnastkowe). Wiersze z pustą nazwą nie są wysyłane. Kafka dopuszcza kilka nagłówków o tej samej nazwie i wszystkie są wysyłane.
 
-Placeholders work in header values, but not in header names.
+Symbole zastępcze działają w wartościach nagłówków, ale nie w ich nazwach.
 
-## Placeholders {#placeholders}
+## Symbole zastępcze {#placeholders}
 
-Placeholders are replaced with values at every send. They work in the key, the value and the header values. The list is shown below the headers:
+Symbole zastępcze są zastępowane wartościami przy każdym wysłaniu. Działają w kluczu, wartości i wartościach nagłówków. Ich lista jest wyświetlana pod nagłówkami:
 
-- `{{uuid}}` — a new random UUID, for example `0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`.
-- `{{now}}` — the current time in UTC in ISO 8601 format with milliseconds, for example `2026-10-15T12:30:00.000Z`.
-- `{{nowMillis}}` — the current time in milliseconds since 1970-01-01 UTC.
-- `{{seq}}` — the number of the copy in a batch, starting at 0. For a single send, it is `0`.
-- `{{randomInt 1 100}}` — a random integer between the two numbers, both included.
-- `{{randomString 8}}` — a random string of Latin letters and digits of the given length, up to 100000.
-- `{{env NAME}}` — the value of the environment variable `NAME`. If it is not set, nothing is sent and an error is shown.
+- `{{uuid}}` — nowy losowy UUID, na przykład `0b6f6f2c-3c1e-4a8e-9a54-2f0d6f1d7c21`.
+- `{{now}}` — bieżący czas UTC w formacie ISO 8601 z milisekundami, na przykład `2026-10-15T12:30:00.000Z`.
+- `{{nowMillis}}` — bieżący czas w milisekundach od 1970-01-01 UTC.
+- `{{seq}}` — numer kopii w partii, licząc od 0. Przy pojedynczym wysłaniu wynosi `0`.
+- `{{randomInt 1 100}}` — losowa liczba całkowita z przedziału między dwiema liczbami, włącznie z nimi.
+- `{{randomString 8}}` — losowy ciąg liter łacińskich i cyfr o podanej długości, maksymalnie 100000.
+- `{{env NAME}}` — wartość zmiennej środowiskowej `NAME`. Jeśli nie jest ustawiona, nic nie jest wysyłane i wyświetlany jest błąd.
 
-Spaces inside the braces are allowed. An unknown placeholder or a missing `}}` stops the send with an error. To send `{{` as text, write `\{{`.
+Spacje wewnątrz nawiasów klamrowych są dozwolone. Nieznany symbol zastępczy lub brak `}}` zatrzymuje wysyłanie z błędem. Aby wysłać `{{` jako tekst, należy napisać `\{{`.
 
-With the `json` format, the JSON is checked after the placeholders are replaced. Placeholders that produce text need quotes: `{"id": "{{uuid}}"}`. Numbers do not: `{"n": {{seq}}}`.
+W formacie `json` poprawność JSON jest sprawdzana po podstawieniu symboli zastępczych. Symbole zastępcze, które dają tekst, wymagają cudzysłowów: `{"id": "{{uuid}}"}`. Liczby ich nie wymagają: `{"n": {{seq}}}`.
 
-`{{env NAME}}` reads the environment of the Glafira process. If you start Glafira from the Dock or the Start menu, variables set only in your terminal profile may be missing.
+`{{env NAME}}` odczytuje środowisko procesu Glafiry. Jeśli Glafira jest uruchamiana z Docka lub menu Start, może brakować zmiennych ustawionych tylko w profilu terminala.
 
-When a message comes from [Open in Producer](browse.md#open-in-producer) or from the history, every `{{` in it is written as `\{{`. The message is then sent exactly as it was, without replacing anything.
+Gdy wiadomość pochodzi z [otwierania na ekranie Producer](browse.md#open-in-producer) lub z historii, każde `{{` jest w niej zapisane jako `\{{`. Wiadomość jest wtedy wysyłana dokładnie w takiej postaci, w jakiej była, bez żadnych podstawień.
 
-## Templates {#templates}
+## Szablony {#templates}
 
-A template saves the whole form: topic, partition, key, value, headers, formats and producer settings. Placeholders are saved as written and are replaced at each send.
+Szablon zapisuje cały formularz: topik, partycję, klucz, wartość, nagłówki, formaty i ustawienia producenta. Symbole zastępcze są zapisywane tak, jak zostały wpisane, i podstawiane przy każdym wysłaniu.
 
-To save a template, click [[ui:producer.templates.saveAs]], enter the [[ui:producer.templates.nameLabel]] and click [[ui:common.save]]. The topic may be empty. By default, the template belongs to this connection. Select [[ui:producer.templates.global]] to show it on every connection; such templates are marked [[ui:producer.templates.allSuffix]] in the list.
+Aby zapisać szablon, należy kliknąć przycisk [[ui:producer.templates.saveAs]], w polu [[ui:producer.templates.nameLabel]] wpisać nazwę i kliknąć przycisk [[ui:common.save]]. Topik może być pusty. Domyślnie szablon należy do tego połączenia. Zaznaczenie opcji [[ui:producer.templates.global]] pokazuje go we wszystkich połączeniach; takie szablony są oznaczone na liście dopiskiem [[ui:producer.templates.allSuffix]].
 
-To use a template, choose it in the [[ui:producer.templates.label]] list. The form is replaced with the template. You can edit the form before sending; the template does not change.
+Aby użyć szablonu, należy wybrać go z listy [[ui:producer.templates.label]]. Formularz zostaje zastąpiony szablonem. Przed wysłaniem formularz można edytować; szablon się nie zmienia.
 
-Saving always creates a new template. To change one, load it, edit the form, save it under a new name and delete the old one. To delete the selected template, click [[ui:producer.templates.delete]] and confirm with [[ui:common.delete]].
+Zapisanie zawsze tworzy nowy szablon. Aby zmienić istniejący, należy go wczytać, zmienić formularz, zapisać pod nową nazwą i usunąć stary. Aby usunąć wybrany szablon, należy kliknąć przycisk [[ui:producer.templates.delete]] i potwierdzić przyciskiem [[ui:common.delete]].
 
-Templates of a connection are deleted together with the connection.
+Szablony połączenia są usuwane razem z połączeniem.
 
-## History {#history}
+## Historia {#history}
 
-[[ui:producer.history.title]] lists the last 100 single sends of this connection, newest first. Messages from batch sends are not added. Each row shows the time, the topic, the partition and offset, and the start of the key.
+Sekcja [[ui:producer.history.title]] zawiera 100 ostatnich pojedynczych wysłań tego połączenia, od najnowszych. Wiadomości z wysyłek wsadowych nie są dodawane. Każdy wiersz pokazuje czas, topik, partycję i offset oraz początek klucza.
 
-History stores the message as it was sent, with the placeholders already replaced. [[ui:producer.history.repeat]] loads it into the form together with its producer settings. Nothing is sent until you click [[ui:producer.send]]. The copy is sent exactly as stored: for example, the same UUID is sent again.
+Historia przechowuje wiadomość w takiej postaci, w jakiej została wysłana, z już podstawionymi symbolami zastępczymi. Przycisk [[ui:producer.history.repeat]] wczytuje ją do formularza razem z ustawieniami producenta. Nic nie jest wysyłane, dopóki nie zostanie kliknięty przycisk [[ui:producer.send]]. Kopia jest wysyłana dokładnie tak, jak została zapisana: na przykład ponownie wysyłany jest ten sam UUID.
 
-A key, value or header value longer than 64 KB is stored only partly. For such rows, [[ui:producer.history.repeat]] is disabled.
+Klucz, wartość lub wartość nagłówka dłuższe niż 64 KB są zapisywane tylko częściowo. Dla takich wierszy przycisk [[ui:producer.history.repeat]] jest nieaktywny.
 
-History is stored on this computer in plain text, including the values of `{{env NAME}}`. Do not send secrets through the Producer if this matters. The history of a connection is deleted together with the connection.
+Historia jest przechowywana na tym komputerze otwartym tekstem, łącznie z wartościami `{{env NAME}}`. Jeśli ma to znaczenie, nie należy wysyłać sekretów przez ekran Producer. Historia połączenia jest usuwana razem z połączeniem.
 
-## N copies of the form {#batch-copies}
+## N kopii formularza {#batch-copies}
 
-[[ui:producer.batch.legend]] below the form sends many messages in one run. In the [[ui:producer.batch.modeCopies]] mode, it sends the form the given number of times.
+Sekcja [[ui:producer.batch.legend]] pod formularzem wysyła wiele wiadomości w jednym przebiegu. W trybie [[ui:producer.batch.modeCopies]] wysyła formularz podaną liczbę razy.
 
-1. Fill in the form as for a single send.
-2. Select [[ui:producer.batch.modeCopies]] and enter the number of [[ui:producer.batch.count]], from 1 to 1000000.
-3. Optionally, set the [[ui:producer.batch.rate]]. See [Send rate](producer.md#batch-rate).
-4. Click [[ui:producer.batch.start]].
+1. Wypełnić formularz jak do pojedynczego wysłania.
+2. Wybrać tryb [[ui:producer.batch.modeCopies]] i w polu [[ui:producer.batch.count]] wpisać liczbę od 1 do 1000000.
+3. Opcjonalnie ustawić pole [[ui:producer.batch.rate]]. Zob. [Szybkość wysyłania](producer.md#batch-rate).
+4. Kliknąć przycisk [[ui:producer.batch.start]].
 
-Placeholders are replaced separately for each copy. `{{seq}}` is the copy number, from 0 to N−1, so each message can get its own key, for example `order-{{seq}}`. Placeholder errors are checked on the first copy before the run starts.
+Symbole zastępcze są podstawiane osobno dla każdej kopii. `{{seq}}` to numer kopii, od 0 do N−1, więc każda wiadomość może otrzymać własny klucz, na przykład `order-{{seq}}`. Błędy symboli zastępczych są sprawdzane na pierwszej kopii przed rozpoczęciem przebiegu.
 
-During the run, the panel shows how many messages were sent and how many failed. At the end, it shows [[ui:producer.batch.done]]. Errors are listed with the copy number, counted from 1. The list shows the first 20 errors; if there are more, a note below gives the total.
+W trakcie przebiegu panel pokazuje, ile wiadomości wysłano, a ile się nie powiodło. Na koniec pokazuje stan [[ui:producer.batch.done]]. Błędy są wyświetlane z numerem kopii, liczonym od 1. Lista pokazuje pierwsze 20 błędów; jeśli jest ich więcej, uwaga pod listą podaje łączną liczbę.
 
-[[ui:producer.batch.cancel]] stops the run. Messages that have not left the app yet are not sent, and the panel shows their count. The app waits up to 2 seconds for the broker to confirm messages already sent. Messages that are still not confirmed count as errors, because it is unknown whether they were written. Closing the Producer tab also stops the run.
+Przycisk [[ui:producer.batch.cancel]] zatrzymuje przebieg. Wiadomości, które jeszcze nie opuściły aplikacji, nie są wysyłane, a panel pokazuje ich liczbę. Aplikacja czeka do 2 sekund, aż broker potwierdzi już wysłane wiadomości. Wiadomości, które nadal nie są potwierdzone, liczą się jako błędy, ponieważ nie wiadomo, czy zostały zapisane. Zamknięcie karty Producer również zatrzymuje przebieg.
 
-On a prod connection, the run asks for the connection name and is confirmed with [[ui:producer.batch.confirmLabel]].
+W połączeniu prod przebieg wymaga wpisania nazwy połączenia i potwierdzenia przyciskiem [[ui:producer.batch.confirmLabel]].
 
-## Send from a file {#batch-file}
+## Wysyłanie z pliku {#batch-file}
 
-In the [[ui:producer.batch.modeFile]] mode, each line or row of a file becomes a message. Supported files are JSON Lines (`.jsonl`, `.ndjson`) and CSV (`.csv`).
+W trybie [[ui:producer.batch.modeFile]] każdy wiersz lub rekord pliku staje się wiadomością. Obsługiwane pliki to JSON Lines (`.jsonl`, `.ndjson`) i CSV (`.csv`).
 
-1. Enter the [[ui:producer.topic]] in the form above. All messages go to this topic.
-2. Select [[ui:producer.batch.modeFile]] and click [[ui:producer.batch.chooseFile]].
-3. Click [[ui:producer.batch.start]].
+1. W polu [[ui:producer.topic]] w formularzu powyżej wpisać topik. Wszystkie wiadomości trafiają do tego topiku.
+2. Wybrać tryb [[ui:producer.batch.modeFile]] i kliknąć przycisk [[ui:producer.batch.chooseFile]].
+3. Kliknąć przycisk [[ui:producer.batch.start]].
 
-The key, value, headers and partition from the form are not used, and placeholders are not replaced. The producer settings of the form apply.
+Klucz, wartość, nagłówki i partycja z formularza nie są używane, a symbole zastępcze nie są podstawiane. Obowiązują ustawienia producenta z formularza.
 
-In JSON Lines, each line is one JSON object, for example `{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`. All fields are optional:
+W JSON Lines każdy wiersz to jeden obiekt JSON, na przykład `{"key": "k1", "value": {"id": 1}, "headers": {"source": "test"}, "partition": 0}`. Wszystkie pola są opcjonalne:
 
-- `key` and `value` — a JSON string is sent as its text, without quotes. Any other JSON value, such as an object or a number, is sent as JSON text. `null` or a missing field means no key or no value.
-- `headers` — an object of string values.
-- `partition` — a partition number. Without it, the partition is chosen by the key.
+- `key` i `value` — ciąg JSON jest wysyłany jako jego tekst, bez cudzysłowów. Każda inna wartość JSON, na przykład obiekt lub liczba, jest wysyłana jako tekst JSON. `null` lub brak pola oznacza brak klucza lub wartości.
+- `headers` — obiekt z wartościami tekstowymi.
+- `partition` — numer partycji. Bez niego partycja jest wybierana według klucza.
 
-Empty lines are skipped. The file must be in UTF-8.
+Puste wiersze są pomijane. Plik musi być w UTF-8.
 
-In CSV, the first row holds the column names. The `value` column is required; `key`, `partition` and `header.NAME` columns are optional, for example `header.source`. An empty `key` cell means no key, and an empty header cell means no such header. An empty `value` cell sends an empty value, not `null`, so a tombstone cannot be sent from CSV.
+W CSV pierwszy wiersz zawiera nazwy kolumn. Kolumna `value` jest wymagana; kolumny `key`, `partition` i `header.NAME` są opcjonalne, na przykład `header.source`. Pusta komórka `key` oznacza brak klucza, a pusta komórka nagłówka — brak tego nagłówka. Pusta komórka `value` wysyła pustą wartość, a nie `null`, więc z CSV nie można wysłać tombstone.
 
-The file is read as a stream, so the total number is not known in advance and is shown as `—`. A line or record larger than 16 MB, invalid JSON or a negative partition counts as an error for that line, and the run goes on with the next line. Errors are shown with the line number.
+Plik jest odczytywany strumieniowo, więc łączna liczba nie jest znana z góry i jest wyświetlana jako `—`. Wiersz lub rekord większy niż 16 MB, niepoprawny JSON lub ujemny numer partycji liczy się jako błąd dla danego wiersza, a przebieg jest kontynuowany od następnego wiersza. Błędy są wyświetlane z numerem wiersza.
 
-## Send rate {#batch-rate}
+## Szybkość wysyłania {#batch-rate}
 
-[[ui:producer.batch.rate]] limits a batch to the given number of messages per second. Enter an integer of 1 or more. An empty field means [[ui:producer.batch.rateUnlimited]].
+Pole [[ui:producer.batch.rate]] ogranicza partię do podanej liczby wiadomości na sekundę. Należy wpisać liczbę całkowitą równą 1 lub większą. Puste pole oznacza wartość [[ui:producer.batch.rateUnlimited]].
 
-The messages are spread evenly over time: at 10 messages per second, one message leaves about every 100 ms. Use the limit to avoid overloading a shared cluster, or to imitate a steady load.
+Wiadomości są rozkładane równomiernie w czasie: przy 10 wiadomościach na sekundę jedna wiadomość wychodzi mniej więcej co 100 ms. Limit pozwala uniknąć przeciążenia współdzielonego klastra lub symulować stałe obciążenie.
 
-Without a limit, the app sends as fast as the broker accepts. The rate applies to both batch modes.
+Bez limitu aplikacja wysyła tak szybko, jak broker przyjmuje wiadomości. Szybkość dotyczy obu trybów wysyłki wsadowej.
 
-## Producer settings {#producer-settings}
+## Ustawienia producenta {#producer-settings}
 
-[[ui:producer.settings.legend]] apply to single sends and batches. They are saved in templates and history.
+[[ui:producer.settings.legend]] obowiązują przy pojedynczych wysłaniach i w partiach. Są zapisywane w szablonach i historii.
 
-`acks` sets how many replicas must confirm a write:
+`acks` określa, ile replik musi potwierdzić zapis:
 
-- `all` — the default. The leader waits for all in-sync replicas. This is the safest choice. If fewer replicas are in sync than the topic setting `min.insync.replicas` requires, the write fails.
-- `1` — only the leader confirms. Faster, but a message can be lost if the leader fails before the followers copy it.
-- `0` — the producer does not wait for a confirmation. Messages can be lost, and no offset is returned.
+- `all` — domyślnie. Leader czeka na wszystkie zsynchronizowane repliki. To najbezpieczniejszy wybór. Jeśli zsynchronizowanych replik jest mniej, niż wymaga ustawienie topiku `min.insync.replicas`, zapis kończy się błędem.
+- `1` — potwierdza tylko leader. Szybciej, ale wiadomość może zostać utracona, jeśli leader ulegnie awarii, zanim followery ją skopiują.
+- `0` — producent nie czeka na potwierdzenie. Wiadomości mogą zostać utracone, a offset nie jest zwracany.
 
-[[ui:producer.settings.compression]] compresses message batches: `none` (the default), `gzip`, `snappy`, `lz4` or `zstd`. Compression saves network traffic and disk space at the cost of some CPU. `zstd` and `lz4` are common choices. For a single small message, the gain is small.
+Opcja [[ui:producer.settings.compression]] kompresuje partie wiadomości: `none` (domyślnie), `gzip`, `snappy`, `lz4` lub `zstd`. Kompresja oszczędza ruch sieciowy i miejsce na dysku kosztem pewnego obciążenia procesora. Często wybierane są `zstd` i `lz4`. Przy pojedynczej małej wiadomości zysk jest niewielki.
 
-[[ui:producer.settings.idempotence]] sets `enable.idempotence`. It prevents duplicates when the client retries a send after a network error. It requires `acks` set to `all`; with other values, the app shows an error and sends nothing.
+Opcja [[ui:producer.settings.idempotence]] ustawia `enable.idempotence`. Zapobiega duplikatom, gdy klient ponawia wysłanie po błędzie sieci. Wymaga `acks` ustawionego na `all`; przy innych wartościach aplikacja pokazuje błąd i niczego nie wysyła.

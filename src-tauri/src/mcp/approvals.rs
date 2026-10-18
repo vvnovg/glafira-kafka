@@ -52,14 +52,16 @@ impl Approvals {
     /// Право сессии. Второе значение — true, если сессия только что стала ожидающей
     /// (показать диалог и привлечь внимание). Запоминание клиента пишет `settings.json`.
     pub fn access(&self, s: &SessionView, now_ms: u64) -> (SessionAccess, bool) {
+        // Пустое имя — как отсутствующее: такой клиент не запоминается (спец. §4).
+        let client = s.client.clone().filter(|c| !c.name.trim().is_empty());
         let mut entries = self.entries();
         if let Some(e) = entries.iter_mut().find(|e| e.session_id == s.id) {
             if e.client.is_none() {
-                e.client = s.client.clone();
+                e.client = client.clone();
             }
             return (to_access(e.decision), false);
         }
-        if let Some(c) = &s.client
+        if let Some(c) = &client
             && self.settings.is_client_approved(&c.name)
         {
             if let Err(e) = self.settings.remember_client(&c.name, &c.version, now_ms) {
@@ -67,14 +69,14 @@ impl Approvals {
             }
             entries.push(Entry {
                 session_id: s.id.clone(),
-                client: s.client.clone(),
+                client: client.clone(),
                 decision: Decision::Approved,
             });
             return (SessionAccess::Approved, false);
         }
         entries.push(Entry {
             session_id: s.id.clone(),
-            client: s.client.clone(),
+            client,
             decision: Decision::Pending,
         });
         (SessionAccess::Pending, true)
@@ -225,6 +227,18 @@ mod tests {
         assert_eq!(
             a.access(&view("s2", None), 3),
             (SessionAccess::Pending, true)
+        );
+    }
+
+    #[test]
+    fn blank_client_name_is_treated_as_unnamed() {
+        let (_d, settings, a) = approvals();
+        a.access(&view("s1", Some("  ")), 1);
+        assert_eq!(a.pending()[0].client_name, None);
+        assert_eq!(a.answer("s1", true, 2).unwrap(), Some(None));
+        assert!(
+            settings.mcp().approved_clients.is_empty(),
+            "пустое имя не запоминается"
         );
     }
 

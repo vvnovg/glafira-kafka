@@ -11,7 +11,7 @@ use rdkafka::admin::ResourceSpecifier;
 
 use super::approvals::Approvals;
 use crate::commands::{blocking, pooled_configs};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::pool::KafkaHandles;
 use crate::kafka::{cluster, group_ops, topics};
 use crate::state::AppState;
@@ -25,12 +25,20 @@ pub struct AppBackend {
     on_change: OnChange,
 }
 
+/// Код ошибки — как в приложении (`CONNECTION_FAILED`, `TIMEOUT`…). Тексты ошибок настроек и
+/// файлов содержат пути к сертификатам (спец. §6) — LLM получает вместо них общий текст.
 fn to_backend(e: AppError) -> BackendError {
     let code = serde_json::to_value(e.code)
         .ok()
         .and_then(|v| v.as_str().map(String::from))
         .unwrap_or_else(|| "INTERNAL".into());
-    BackendError::new(code, e.message)
+    let message = match e.code {
+        ErrorCode::InvalidInput | ErrorCode::Internal => {
+            "The settings or certificate files of this connection cannot be used; ask the user to check the connection in Glafira".to_string()
+        }
+        _ => e.message,
+    };
+    BackendError::new(code, message)
 }
 
 impl AppBackend {
@@ -442,5 +450,29 @@ mod tests {
             client: None,
         };
         assert_eq!(b.access(&v), SessionAccess::Disabled);
+    }
+
+    #[tokio::test]
+    async fn certificate_paths_never_reach_the_llm() {
+        let (_d, b) = backend();
+        let mut p = sample_profile("tls");
+        p.llm_access = LlmAccess::Metadata;
+        p.security = crate::storage::connections::SecurityConfig::Ssl {
+            tls: crate::storage::connections::TlsConfig {
+                ca_location: Some("/nonexistent/secret-path/ca.pem".into()),
+                ca_format: crate::storage::connections::CertFormat::Pem,
+                verify_hostname: true,
+                client_cert: None,
+            },
+        };
+        b.state.connections.upsert(p).unwrap();
+        let e = b
+            .read(ReadOp::ListTopics {
+                connection_id: "tls".into(),
+            })
+            .await
+            .unwrap_err();
+        assert_eq!(e.code, "INVALID_INPUT", "{e:?}");
+        assert!(!e.message.contains("secret-path"), "{e:?}");
     }
 }

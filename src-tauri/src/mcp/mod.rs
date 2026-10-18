@@ -7,7 +7,8 @@ pub mod backend;
 pub mod controller;
 pub mod files;
 
-use std::path::Path;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
@@ -60,6 +61,15 @@ fn shell_quote(s: &str) -> String {
     }
 }
 
+/// Путь, который запускают клиенты MCP и шим: в AppImage `current_exe()` — временная точка
+/// монтирования, исчезающая после выхода, поэтому берётся `$APPIMAGE` (спец. §3, §8).
+pub fn launch_path(exe: &Path, appimage: Option<OsString>) -> PathBuf {
+    match appimage {
+        Some(a) if !a.is_empty() => PathBuf::from(a),
+        _ => exe.to_path_buf(),
+    }
+}
+
 pub fn client_configs(exe: &Path) -> ClientConfigs {
     let command = exe.to_string_lossy().into_owned();
     let key = crate::product::MCP_CLIENT_KEY;
@@ -96,5 +106,16 @@ mod tests {
             "claude mcp add glafira -- /usr/bin/glafira-kafka mcp"
         );
         assert_eq!(shell_quote("/a/it's"), r"'/a/it'\''s'");
+    }
+
+    #[test]
+    fn appimage_path_wins_over_the_mount_point() {
+        let exe = Path::new("/tmp/.mount_abc/usr/bin/glafira-kafka");
+        assert_eq!(
+            launch_path(exe, Some("/home/u/Glafira.AppImage".into())),
+            PathBuf::from("/home/u/Glafira.AppImage")
+        );
+        assert_eq!(launch_path(exe, None), exe.to_path_buf());
+        assert_eq!(launch_path(exe, Some("".into())), exe.to_path_buf());
     }
 }

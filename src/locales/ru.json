@@ -343,7 +343,7 @@
     },
     "mcp": {
       "startFailed": "MCP-сервер не запустился: {{error}}",
-      "disabledByPolicy": "MCP отключён администратором",
+      "disabledByPolicy": "MCP отключён вашей организацией",
       "noExe": "Не удалось найти исполняемый файл Glafira: {{error}}",
       "auditMissing": "Журнал MCP пока недоступен: {{error}}"
     }

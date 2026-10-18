@@ -6,7 +6,7 @@ use tauri::State;
 
 use super::blocking;
 use crate::error::{AppResult, ErrorCode};
-use crate::mcp::{ClientConfigs, McpController, McpStatus, client_configs};
+use crate::mcp::{ClientConfigs, McpController, McpStatus, client_configs, launch_path};
 
 type Ctl<'a> = State<'a, Arc<McpController>>;
 
@@ -57,7 +57,10 @@ pub fn get_mcp_client_configs() -> AppResult<ClientConfigs> {
             error = e
         )
     })?;
-    Ok(client_configs(&exe))
+    Ok(client_configs(&launch_path(
+        &exe,
+        std::env::var_os("APPIMAGE"),
+    )))
 }
 
 #[tauri::command]

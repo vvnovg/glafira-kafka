@@ -394,7 +394,7 @@ impl GatewayServer {
         if !e.limiter.try_take() {
             return Err(BackendError::new(
                 "rate_limited",
-                "Too many calls: at most 60 per minute; retry later",
+                format!("Too many calls: at most {CALLS_PER_MINUTE} per minute; retry later"),
             ));
         }
         e.calls += 1;

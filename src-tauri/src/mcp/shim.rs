@@ -41,7 +41,11 @@ impl fmt::Display for ShimError {
                 "MCP is disabled in Glafira: turn it on in Settings → LLM assistants (MCP)"
             ),
             Self::Launch(e) => write!(f, "Cannot start Glafira: {e}"),
-            Self::NotStarted => write!(f, "Glafira did not start the MCP server within 30 s"),
+            Self::NotStarted => write!(
+                f,
+                "Glafira did not start the MCP server within {} s",
+                WAIT.as_secs()
+            ),
             Self::Handshake(e) => write!(f, "{e}"),
         }
     }

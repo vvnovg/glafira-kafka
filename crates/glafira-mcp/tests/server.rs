@@ -564,6 +564,13 @@ async fn calls_are_rate_limited_and_audited() {
     }
     let msg = err(&call(&c, "list_connections", json!({})).await);
     assert!(msg.starts_with("rate_limited:"), "{msg}");
+    assert!(
+        msg.contains(&format!(
+            "at most {} per minute",
+            glafira_mcp::limits::CALLS_PER_MINUTE
+        )),
+        "{msg}"
+    );
     let other = client(&e.ep).await;
     ok(call(
         &other,

@@ -165,11 +165,13 @@ impl AuditLog {
             let Ok(f) = File::open(self.dir.join(name)) else {
                 continue;
             };
+            // По байтам, не `lines()`: строка с битым UTF-8 (оборванная запись) пропускается,
+            // а не обрывает чтение остального файла.
             lines.extend(
                 BufReader::new(f)
-                    .lines()
+                    .split(b'\n')
                     .map_while(Result::ok)
-                    .filter_map(|l| serde_json::from_str(&l).ok()),
+                    .filter_map(|l| serde_json::from_slice(&l).ok()),
             );
         }
         let start = lines.len().saturating_sub(limit);
@@ -237,6 +239,24 @@ mod tests {
             1,
             "старый файл из пробелов не разбирается"
         );
+    }
+
+    #[test]
+    fn broken_line_is_skipped_not_the_rest() {
+        let dir = tempfile::tempdir().unwrap();
+        let log = AuditLog::new(dir.path());
+        log.record(AuditEvent::ServerStopped);
+        // Строка, оборванная посреди многобайтного символа (сбой записи), и строка не JSON.
+        let mut f = OpenOptions::new().append(true).open(log.path()).unwrap();
+        f.write_all(b"{\"event\":\"call\",\"tool\":\"\xd0\n{not json\n")
+            .unwrap();
+        log.record(AuditEvent::Revoked {
+            client: "cursor".into(),
+        });
+        let r = log.recent(10);
+        assert_eq!(r.len(), 2, "{r:?}");
+        assert_eq!(r[0]["event"], "revoked");
+        assert_eq!(r[1]["event"], "serverStopped");
     }
 
     #[test]

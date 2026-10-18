@@ -51,7 +51,7 @@
     },
     "updates": {
       "managed": "更新由你的组织管理",
-      "notConfigured": "此 build 中未配置更新",
+      "notConfigured": "此版本中未配置更新",
       "badPolicyUrl": "策略中的更新地址无效：{{url}}",
       "unavailable": "更新不可用",
       "noRelease": "更新服务器上没有已发布的版本（或暂时不可用）",
@@ -692,7 +692,7 @@
       "startLatest": "最新 N 条",
       "startEarliest": "从头开始",
       "startOffset": "从偏移量",
-      "startTimestamp": "从时间",
+      "startTimestamp": "从指定时间",
       "startLastMinutes": "最近 X 分钟",
       "offsetAria": "偏移量",
       "timeAria": "时间",
@@ -1066,7 +1066,7 @@
     "browse": {
       "startPosition": "从哪里开始读取：最新 N 条消息、从头开始、从某个偏移量、从某个时间点，或最近 X 分钟。",
       "limit": "显示的消息数量。数值越大，读取越慢。",
-      "format": "如何解码键和值：字符串、JSON、hex 或 base64。只改变显示方式，不改变数据。",
+      "format": "如何解码键和值：string、JSON、hex 或 base64。只改变显示方式，不改变数据。",
       "readerNotGroup": "浏览不会加入消费者组，也不提交任何内容，因此不会改变集群。"
     },
     "producer": {

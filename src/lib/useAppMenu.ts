@@ -12,40 +12,60 @@ export function isMacOS(): boolean {
   return typeof navigator !== "undefined" && navigator.userAgent.includes("Mac");
 }
 
+/** Собранное меню и хэндлы его пунктов: их закрываем, когда меню заменено или хук размонтирован. */
+interface BuiltMenu {
+  menu: Menu;
+  parts: { close(): Promise<void> }[];
+}
+
 /** Меню приложения: стандартные подменю Tauri + Help с пунктами Glafira (подписи — из словаря текущего языка). */
-async function buildAppMenu(): Promise<Menu> {
+async function buildAppMenu(): Promise<BuiltMenu> {
   const t = i18n.t.bind(i18n);
   const { open } = useWorkspace.getState();
   const menu = await Menu.default();
   const stock = await menu.get(TAURI_HELP_ID);
-  if (stock) await menu.remove(stock);
-  const help = await Submenu.new({
-    id: "glafira-help",
-    text: t("menu.help"),
-    items: [
-      // ⌘? — на раскладке US это ⇧⌘/; символ «?» как клавишу Tauri не принимает.
-      await MenuItem.new({ id: "guide", text: t("menu.guide"), accelerator: "CmdOrCtrl+Shift+/", action: () => open({ kind: "help" }) }),
-      await MenuItem.new({
-        id: "troubleshooting",
-        text: t("menu.troubleshooting"),
-        action: () => open({ kind: "help", chapter: "troubleshooting" }),
-      }),
-      await PredefinedMenuItem.new({ item: "Separator" }),
-      await MenuItem.new({ id: "about", text: t("menu.about"), action: () => open({ kind: "about" }) }),
-      await MenuItem.new({
-        id: "diagnostics",
-        text: t("menu.diagnostics"),
-        action: () => {
-          useDiagnosticsRequest.getState().request();
-          open({ kind: "about" });
-        },
-      }),
-    ],
-  });
+  if (stock) {
+    await menu.remove(stock);
+    await stock.close();
+  }
+  const items = [
+    // ⌘? — на раскладке US это ⇧⌘/; символ «?» как клавишу Tauri не принимает.
+    await MenuItem.new({ id: "guide", text: t("menu.guide"), accelerator: "CmdOrCtrl+Shift+/", action: () => open({ kind: "help" }) }),
+    await MenuItem.new({
+      id: "troubleshooting",
+      text: t("menu.troubleshooting"),
+      action: () => open({ kind: "help", chapter: "troubleshooting" }),
+    }),
+    await PredefinedMenuItem.new({ item: "Separator" }),
+    await MenuItem.new({ id: "about", text: t("menu.about"), action: () => open({ kind: "about" }) }),
+    await MenuItem.new({
+      id: "diagnostics",
+      text: t("menu.diagnostics"),
+      action: () => {
+        useDiagnosticsRequest.getState().request();
+        open({ kind: "about" });
+      },
+    }),
+  ];
+  const help = await Submenu.new({ id: "glafira-help", text: t("menu.help"), items });
   await menu.append(help);
-  await menu.setAsAppMenu();
+  // setAsAppMenu возвращает новый хэндл прежнего меню — его закрываем сразу.
+  const previous = await menu.setAsAppMenu();
+  await previous?.close();
   await help.setAsHelpMenuForNSApp();
-  return menu;
+  return { menu, parts: [help, ...items] };
+}
+
+/** Закрывает хэндлы меню и его пунктов. Только для заменённого меню: у пунктов действующего Tauri снимет обработчики. */
+async function release(built: BuiltMenu | null): Promise<void> {
+  if (!built) return;
+  for (const r of [...built.parts, built.menu]) {
+    try {
+      await r.close();
+    } catch (e) {
+      console.warn("app menu close", e);
+    }
+  }
 }
 
 /** Меню Help на macOS; перестраивается при смене языка интерфейса. */
@@ -53,7 +73,7 @@ export function useAppMenu(): void {
   useEffect(() => {
     if (!isMacOS()) return;
     let disposed = false;
-    let current: Menu | null = null;
+    let current: BuiltMenu | null = null;
     // Сборки идут по очереди: при быстрой смене языка последним установится меню последнего языка.
     let queue: Promise<void> = Promise.resolve();
     const rebuild = () => {
@@ -63,7 +83,7 @@ export function useAppMenu(): void {
           const next = await buildAppMenu();
           const previous = current;
           current = next;
-          await previous?.close();
+          await release(previous);
         } catch (e) {
           console.warn("app menu", e);
         }
@@ -74,6 +94,12 @@ export function useAppMenu(): void {
     return () => {
       disposed = true;
       i18n.off("languageChanged", rebuild);
+      // После сборки, которая уже идёт: освобождаем последнее меню и его пункты.
+      queue = queue.then(async () => {
+        const last = current;
+        current = null;
+        await release(last);
+      });
     };
   }, []);
 }

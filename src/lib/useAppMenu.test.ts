@@ -2,17 +2,23 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Opts = { id?: string; text?: string; accelerator?: string; action?: (id: string) => void; item?: unknown; items?: Item[] };
-type Item = { kind: string; opts: Opts };
+type Item = { kind: string; opts: Opts; closed: boolean };
 
 // Мок меню Tauri: записывает созданные пункты и последнее меню приложения.
 const h = vi.hoisted(() => ({
   menus: [] as { items: Item[]; removed: string[]; closed: boolean }[],
   appMenu: null as null | { items: Item[] },
   helpForNSApp: [] as string[],
+  /** Хэндлы прежнего меню, которые вернул setAsAppMenu. */
+  previous: [] as { closed: boolean }[],
 }));
 
 vi.mock("@tauri-apps/api/menu", () => {
   class MenuItem {
+    closed = false;
+    async close() {
+      this.closed = true;
+    }
     kind = "item";
     constructor(public opts: Opts) {}
     static async new(opts: Opts) {
@@ -20,6 +26,10 @@ vi.mock("@tauri-apps/api/menu", () => {
     }
   }
   class PredefinedMenuItem {
+    closed = false;
+    async close() {
+      this.closed = true;
+    }
     kind = "predefined";
     constructor(public opts: Opts) {}
     static async new(opts: Opts) {
@@ -27,6 +37,10 @@ vi.mock("@tauri-apps/api/menu", () => {
     }
   }
   class Submenu {
+    closed = false;
+    async close() {
+      this.closed = true;
+    }
     kind = "submenu";
     constructor(public opts: Opts) {}
     static async new(opts: Opts) {
@@ -51,6 +65,7 @@ vi.mock("@tauri-apps/api/menu", () => {
       return this.state.items.find((i) => i.opts.id === id) ?? null;
     }
     async remove(item: Item) {
+      (this.state as { stock?: Item }).stock = item;
       this.state.items = this.state.items.filter((i) => i !== item);
       this.state.removed.push(item.opts.id ?? "");
     }
@@ -59,7 +74,14 @@ vi.mock("@tauri-apps/api/menu", () => {
     }
     async setAsAppMenu() {
       h.appMenu = this.state;
-      return null;
+      const previous = {
+        closed: false,
+        async close() {
+          previous.closed = true;
+        },
+      };
+      h.previous.push(previous);
+      return previous;
     }
     async close() {
       this.state.closed = true;
@@ -87,6 +109,7 @@ beforeEach(() => {
   h.menus = [];
   h.appMenu = null;
   h.helpForNSApp = [];
+  h.previous = [];
   useWorkspace.setState({ tabs: [], activeId: null });
   useDiagnosticsRequest.setState({ pending: false });
 });
@@ -140,6 +163,39 @@ describe("useAppMenu", () => {
     click("diagnostics");
     expect(useWorkspace.getState().activeId).toBe("about");
     expect(useDiagnosticsRequest.getState().pending).toBe(true);
+  });
+
+  it("хэндлы освобождаются: стандартный Help, прежнее меню из setAsAppMenu, пункты заменённого меню", async () => {
+    setUA("Macintosh");
+    const stockHelp = () => h.menus[0] && (h.menus[0] as unknown as { stock?: Item }).stock;
+    renderHook(() => useAppMenu());
+    await waitFor(() => expect(helpSubmenu()?.opts.text).toBe("Справка"));
+    expect(h.menus[0].removed).toEqual(["__tauri_help_menu__"]);
+    expect(stockHelp()?.closed).toBe(true);
+    expect(h.previous.map((p) => p.closed)).toEqual([true]);
+    const first = helpSubmenu()!;
+    const firstItems = first.opts.items!;
+    expect([first, ...firstItems].every((i) => !i.closed)).toBe(true);
+
+    await act(() => i18n.changeLanguage("en"));
+    await waitFor(() => expect(helpSubmenu()?.opts.text).toBe("Help"));
+    await waitFor(() => expect(first.closed).toBe(true));
+    expect(firstItems.every((i) => i.closed)).toBe(true);
+    expect(h.previous.map((p) => p.closed)).toEqual([true, true]);
+    // Пункты действующего меню не закрыты: иначе Tauri снимет обработчики нажатий.
+    const live = helpSubmenu()!;
+    expect([live, ...live.opts.items!].every((i) => !i.closed)).toBe(true);
+    expect(h.menus[1].closed).toBe(false);
+  });
+
+  it("при размонтировании меню и его пункты освобождаются", async () => {
+    setUA("Macintosh");
+    const { unmount } = renderHook(() => useAppMenu());
+    await waitFor(() => expect(helpSubmenu()).toBeDefined());
+    const live = helpSubmenu()!;
+    unmount();
+    await waitFor(() => expect(h.menus[0].closed).toBe(true));
+    expect([live, ...live.opts.items!].every((i) => i.closed)).toBe(true);
   });
 
   it("вне macOS меню не строится", async () => {

@@ -39,11 +39,12 @@ G2 — эта спека; G3 — предложения LLM, которые от
 ```
 
 - `src-tauri/src/health/mod.rs` — `Checker`: запуск проверки, ожидание уже идущей, дедлайн, событие.
-- `health/snapshot.rs` — `ClusterSnapshot` и его сборка через существующие `kafka::cluster`, `kafka::topics`,
-  `kafka::configs`, `kafka::group_ops`. Для конфигов топиков добавляется пакетный `kafka::configs::describe_configs_many`
+- `health/snapshot.rs` — `ClusterSnapshot` (только данные); сборка — `health/collect.rs` (трейт `Source`, лимиты и дедлайн)
+  и `health/kafka_source.rs` (через существующие `kafka::cluster`, `kafka::configs`, `kafka::group_ops`). Для конфигов топиков добавляется пакетный `kafka::configs::describe_configs_many`
   (до 100 ресурсов за запрос); сейчас есть только вызов на один ресурс.
-- `health/rules/{brokers,topics,broker_configs,groups}.rs` — правила: `fn(&ClusterSnapshot, Environment) -> Vec<Finding>`.
-  `health/rules/mod.rs` — реестр `RULES` и константа `RULE_IDS`.
+- `health/rules/{brokers,topics,broker_configs,groups}.rs` — правила над `&ClusterSnapshot`; находки собирает
+  `Findings::emit`, строгость берётся из таблицы по окружению. `health/rules/mod.rs` — таблица `RULES`, `rule_ids()`,
+  `evaluate(&ClusterSnapshot, Environment) -> Vec<Finding>`.
 - `health/store.rs` — последняя проверка, скрытые находки, замечания LLM; срок, лимиты, атомарная запись.
 - `src-tauri/src/commands/health.rs` — команды интерфейса (§7).
 - Крейт `glafira-mcp`: `Backend` получает метод `health(&self, op: HealthOp) -> BoxFuture<Result<HealthOutput, BackendError>>`
@@ -83,7 +84,7 @@ G2 — эта спека; G3 — предложения LLM, которые от
 |---|---|---|---|---|---|
 | `cluster.noController` | cluster | контроллер неизвестен | К | К | К |
 | `partition.offline` | topic | есть партиции без лидера; в параметрах — номера (до 20) | К | К | К |
-| `partition.underReplicated` | topic | есть партиции с ISR меньше реплик; номера (до 20) | К | П | И |
+| `partition.underReplicated` | topic | есть партиции с ISR меньше реплик (кроме offline — у них своя находка); номера (до 20) | К | П | И |
 | `cluster.singleBroker` | cluster | ровно один брокер | К | П | — |
 | `broker.leaderSkew` | broker | среднее лидеров на брокер ≥ 10 и у брокера лидеров больше или меньше среднего более чем на 20 % | П | П | — |
 | `partition.notPreferredLeader` | cluster | есть партиции, где лидер — не первая реплика; одна находка с числом и примерами (до 10) | И | И | — |
@@ -115,7 +116,7 @@ G2 — эта спека; G3 — предложения LLM, которые от
 Находка правила: `{ key, ruleId, severity, target { kind, name? }, params }`. `key` — `ruleId` + объект; по нему работают
 скрытие и значки. Тексты в интерфейсе строятся из ключей `health.rules.<ruleId>.title`, `.details`, `.fix` с параметрами
 (12 языков); LLM получает английские `title` и `details` из Rust (`health/texts.rs`). Тест Rust проверяет, что для каждого
-`RULE_IDS` в `src/locales/en.json` есть все три ключа.
+правила из `rule_ids()` в `src/locales/en.json` есть все три ключа.
 
 ## 5. Находки, замечания и хранение
 
@@ -172,7 +173,7 @@ status, closedAtMs? }`:
   Ожидание ответа (своей или идущей проверки) — до 50 с (`GatewayOptions::check_wait`), дальше `check_in_progress_timeout`.
 - `annotate`: объект сверяется с кластером — топик и брокер по метаданным, группа по списку групп, `cluster` без имени
   (имя отбрасывается); имя брокера — его числовой id; нет объекта — `not_found`; пустой `target.name` у брокера, топика или
-  группы и пустой `title` — `invalid_argument`; `relatedRuleId` должен быть из `RULE_IDS`, иначе `invalid_argument`.
+  группы и пустой `title` — `invalid_argument`; `relatedRuleId` должен быть из `rule_ids()`, иначе `invalid_argument`.
   Автор замечания — имя клиента из диалога подтверждения G1; у безымянного клиента — сессия.
 - `remove_annotation`: чужое замечание — `not_allowed`, нет такого — `not_found`.
 - Подсказки инструментов: у `annotate` и `remove_annotation` — `readOnlyHint: false`, `destructiveHint: false`,

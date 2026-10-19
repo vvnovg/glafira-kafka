@@ -12,9 +12,10 @@ use crate::health::snapshot::ClusterSnapshot;
 /// Сколько номеров партиций и примеров попадает в параметры находки.
 const MAX_LISTED: usize = 20;
 const MAX_EXAMPLES: usize = 10;
-/// `broker.leaderSkew`: среднее лидеров на брокер не меньше этого и отклонение строже 20 %.
-const SKEW_MIN_AVERAGE: f64 = 10.0;
-const SKEW_RATIO: f64 = 0.2;
+/// `broker.leaderSkew`: среднее лидеров на брокер не меньше этого и отклонение больше 1/5 (20 %).
+/// Сравнение — в целых числах: дробное среднее даёт ложное срабатывание ровно на границе.
+const SKEW_MIN_AVERAGE: usize = 10;
+const SKEW_DENOMINATOR: usize = 5;
 
 pub(super) fn check(s: &ClusterSnapshot, out: &mut Findings) {
     if s.controller_id.is_none() {
@@ -73,13 +74,16 @@ fn leader_skew(s: &ClusterSnapshot, out: &mut Findings) {
         }
     }
     let total: usize = leaders.values().sum();
-    let average = total as f64 / leaders.len() as f64;
-    if average < SKEW_MIN_AVERAGE {
+    let brokers = leaders.len();
+    // Среднее ≥ 10 ⇔ total ≥ 10 · brokers.
+    if total < SKEW_MIN_AVERAGE * brokers {
         return;
     }
+    let average = total as f64 / brokers as f64;
     for (id, n) in leaders {
-        let deviation = (n as f64 - average) / average;
-        if deviation.abs() > SKEW_RATIO {
+        // |n − total/brokers| > total/brokers / 5 ⇔ 5 · |n · brokers − total| > total.
+        if SKEW_DENOMINATOR * (n * brokers).abs_diff(total) > total {
+            let deviation = (n as f64 - average) / average;
             out.emit(
                 "broker.leaderSkew",
                 Target::broker(id),
@@ -244,6 +248,16 @@ mod tests {
         let s = snap(
             3,
             vec![led_by("a", 1, 12), led_by("b", 2, 10), led_by("c", 3, 8)],
+        );
+        assert!(
+            !ids(&s, Environment::Prod)
+                .iter()
+                .any(|k| k.starts_with("broker.leaderSkew"))
+        );
+        // Ровно 20 % при дробном среднем: 14 / 11 / 10 (среднее 35/3) — не срабатывает.
+        let s = snap(
+            3,
+            vec![led_by("a", 1, 14), led_by("b", 2, 11), led_by("c", 3, 10)],
         );
         assert!(
             !ids(&s, Environment::Prod)

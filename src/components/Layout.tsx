@@ -11,6 +11,7 @@ import { Sidebar } from "./Sidebar";
 import { i18n } from "../i18n";
 import { TabContent } from "./TabContent";
 import { useHelpShortcut } from "../lib/useHelpShortcut";
+import { useHealthEvents } from "../lib/useHealth";
 import { useMcpEvents } from "../lib/useMcpStatus";
 import { ApprovalDialog } from "./mcp/ApprovalDialog";
 
@@ -50,6 +51,7 @@ export function Layout() {
   const { tabs, activeId, activate, close } = useWorkspace();
   useHelpShortcut();
   useMcpEvents();
+  useHealthEvents();
   const { data: connections = [] } = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const byId = new Map(connections.map((c) => [c.id, c]));
   const active = tabs.find((x) => x.id === activeId);

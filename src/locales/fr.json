@@ -1127,6 +1127,119 @@
       "title": "Sessions MCP : ouvrir les Paramètres"
     }
   },
+  "health": {
+    "severity": {
+      "critical": "Critique",
+      "warning": "Avertissement",
+      "info": "Information"
+    },
+    "source": {
+      "topic": "défini sur le topic",
+      "inherited": "hérité"
+    },
+    "rules": {
+      "cluster.noController": {
+        "title": "Aucun contrôleur actif",
+        "details": "Le cluster n’indique aucun contrôleur : les modifications de topics, les élections de leader et les autres opérations sur les métadonnées ne fonctionnent pas tant qu’aucun contrôleur n’est élu.",
+        "fix": "Vérifiez le quorum de contrôleurs (KRaft) ou ZooKeeper et les journaux des brokers."
+      },
+      "partition.offline": {
+        "title": "Partitions indisponibles dans {{name}}",
+        "details": "Les partitions sans leader ne peuvent être ni lues ni écrites : {{partitions}} ({{count}} au total).",
+        "fix": "Remettez en service les brokers qui portent leurs répliques et vérifiez les journaux des brokers."
+      },
+      "partition.underReplicated": {
+        "title": "Partitions sous-répliquées dans {{name}}",
+        "details": "Ces partitions ont moins de répliques synchronisées que de répliques : {{partitions}} ({{count}} au total).",
+        "fix": "Vérifiez que tous les brokers fonctionnent et suivent la réplication : disques, réseau, charge."
+      },
+      "cluster.singleBroker": {
+        "title": "Cluster à un seul broker",
+        "details": "Les données ne peuvent être répliquées nulle part, et un redémarrage ou une panne du broker rend toutes les partitions indisponibles.",
+        "fix": "Utilisez au moins trois brokers pour stage et prod."
+      },
+      "broker.leaderSkew": {
+        "title": "Déséquilibre des leaders sur le broker {{name}}",
+        "details": "Partitions dont le leader est sur ce broker : {{leaders}}, moyenne par broker : {{average}} ({{deviation}}). La charge des brokers est inégale.",
+        "fix": "Lancez une élection des leaders préférés ou réaffectez les partitions ; vérifiez auto.leader.rebalance.enable."
+      },
+      "partition.notPreferredLeader": {
+        "title": "Leaders hors de la réplique préférée",
+        "details": "Partitions dont le leader n’est pas la première réplique : {{count}}, par exemple {{examples}}. C’est souvent le cas après un redémarrage des brokers.",
+        "fix": "Lancez une élection des leaders préférés ou activez auto.leader.rebalance.enable."
+      },
+      "topic.replicationFactorOne": {
+        "title": "Facteur de réplication 1 pour {{name}}",
+        "details": "Chaque partition n’a qu’une réplique : perdre ce broker, c’est perdre les données et rendre les partitions indisponibles.",
+        "fix": "Augmentez le facteur de réplication à 3 en réaffectant les partitions."
+      },
+      "topic.minIsrUnreachable": {
+        "title": "min.insync.replicas supérieur au facteur de réplication pour {{name}}",
+        "details": "min.insync.replicas = {{minIsr}} ({{source}}) avec un facteur de réplication de {{replicationFactor}} : les producteurs avec acks=all ne peuvent jamais écrire.",
+        "fix": "Réglez min.insync.replicas en dessous du facteur de réplication ou augmentez le facteur de réplication."
+      },
+      "topic.minIsrEqualsRf": {
+        "title": "min.insync.replicas égal au facteur de réplication pour {{name}}",
+        "details": "min.insync.replicas = {{minIsr}} ({{source}}) avec un facteur de réplication de {{replicationFactor}} : si une réplique tombe, les écritures avec acks=all s’arrêtent.",
+        "fix": "Réglez min.insync.replicas à un de moins que le facteur de réplication, par exemple 2 avec un facteur de 3."
+      },
+      "topic.minIsrOne": {
+        "title": "min.insync.replicas = 1 pour {{name}}",
+        "details": "min.insync.replicas = 1 ({{source}}) avec un facteur de réplication de {{replicationFactor}} : une seule réplique confirme une écriture acks=all, une panne de broker peut donc faire perdre des messages confirmés.",
+        "fix": "Réglez min.insync.replicas = 2 pour les topics importants."
+      },
+      "topic.uncleanElection": {
+        "title": "Élection de leader non propre autorisée pour {{name}}",
+        "details": "unclean.leader.election.enable = true ({{source}}) : une réplique non synchronisée peut devenir leader, et des messages confirmés peuvent être perdus.",
+        "fix": "Réglez unclean.leader.election.enable = false, sauf si la disponibilité compte plus que les données."
+      },
+      "broker.autoCreateTopics": {
+        "title": "Les brokers créent les topics automatiquement",
+        "details": "auto.create.topics.enable = true (broker {{brokerId}}) : une faute de frappe dans un nom de topic crée un nouveau topic avec les réglages par défaut.",
+        "fix": "Réglez auto.create.topics.enable = false et créez les topics explicitement."
+      },
+      "broker.defaultReplicationFactorOne": {
+        "title": "Facteur de réplication par défaut à 1",
+        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers dans le cluster : {{brokers}}. Les topics créés sans facteur explicite n’ont aucune copie.",
+        "fix": "Réglez default.replication.factor = 3."
+      },
+      "broker.defaultMinIsrOne": {
+        "title": "min.insync.replicas par défaut à 1",
+        "details": "min.insync.replicas = 1 (broker {{brokerId}}), brokers dans le cluster : {{brokers}}. Les topics sans valeur propre confirment les écritures acks=all avec une seule réplique.",
+        "fix": "Réglez min.insync.replicas = 2 sur les brokers."
+      },
+      "broker.configDrift": {
+        "title": "{{config}} diffère d’un broker à l’autre",
+        "details": "Valeurs par broker : {{values}}. Le cluster se comporte différemment selon le broker leader d’une partition.",
+        "fix": "Définissez la même valeur sur tous les brokers."
+      },
+      "group.abandoned": {
+        "title": "Le consumer group {{name}} est vide mais a du lag",
+        "details": "Le groupe n’a aucun membre ; messages non lus : {{lag}}.",
+        "fix": "Si l’application n’est plus utilisée, supprimez le groupe ; sinon, démarrez ses consommateurs."
+      },
+      "group.rebalancing": {
+        "title": "Le consumer group {{name}} est en rééquilibrage",
+        "details": "Au moment de la vérification, le groupe est dans l’état {{state}}.",
+        "fix": "Si les rééquilibrages se répètent, demandez à l’assistant LLM d’observer le groupe ou vérifiez les journaux et les délais des consommateurs."
+      },
+      "group.idleMembers": {
+        "title": "Membres sans partition dans {{name}}",
+        "details": "Membres sans partition : {{idle}} sur {{members}} ; partitions assignées : {{partitions}}. Il y a plus de membres que de partitions.",
+        "fix": "Réduisez le nombre de consommateurs ou ajoutez des partitions au topic."
+      },
+      "group.lagGrowing": {
+        "title": "Le lag du consumer group {{name}} augmente",
+        "details": "Le lag est passé de {{previousLag}} à {{lag}} depuis la vérification d’il y a {{minutesAgo}} min : les consommateurs ne suivent pas.",
+        "fix": "Vérifiez que les consommateurs tournent et sont assez rapides ; ajoutez des consommateurs ou des partitions si nécessaire."
+      },
+      "check.partial": {
+        "title": "La vérification est incomplète",
+        "details": "Configurations de topics vérifiées : {{topicsChecked}} sur {{topicsTotal}} ; groupes : {{groupsChecked}} sur {{groupsTotal}} ; erreurs de lecture : {{errors}}.",
+        "fix": "Les constats ne couvrent que ce qui a été lu. Une vérification lit jusqu’à 2000 topics et 500 groupes en 45 secondes ; si le cluster était lent, réessayez plus tard."
+      }
+    }
+  },
   "hints": {
     "label": "Aide : {{name}}",
     "connections": {

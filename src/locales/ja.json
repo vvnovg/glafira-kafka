@@ -1111,6 +1111,119 @@
       "title": "MCPセッション：設定を開く"
     }
   },
+  "health": {
+    "severity": {
+      "critical": "重大",
+      "warning": "警告",
+      "info": "情報"
+    },
+    "source": {
+      "topic": "トピックで設定",
+      "inherited": "継承"
+    },
+    "rules": {
+      "cluster.noController": {
+        "title": "アクティブなコントローラーがありません",
+        "details": "クラスターがコントローラーを報告していません。コントローラーが選出されるまで、トピックの変更、リーダー選出などのメタデータ操作は行えません。",
+        "fix": "コントローラーのクォーラム（KRaft）またはZooKeeperと、ブローカーのログを確認してください。"
+      },
+      "partition.offline": {
+        "title": "{{name}}に利用できないパーティションがあります",
+        "details": "リーダーのないパーティションは読み書きできません：{{partitions}}（合計{{count}}）。",
+        "fix": "レプリカを持つブローカーを復旧し、ブローカーのログを確認してください。"
+      },
+      "partition.underReplicated": {
+        "title": "{{name}}にレプリカ不足のパーティションがあります",
+        "details": "これらのパーティションは同期済みレプリカがレプリカ数より少なくなっています：{{partitions}}（合計{{count}}）。",
+        "fix": "すべてのブローカーが稼働し、レプリケーションに追いついているか確認してください（ディスク、ネットワーク、負荷）。"
+      },
+      "cluster.singleBroker": {
+        "title": "ブローカーが1台のクラスター",
+        "details": "データの複製先がなく、ブローカーの再起動や障害ですべてのパーティションが利用できなくなります。",
+        "fix": "stageとprodでは少なくとも3台のブローカーを使用してください。"
+      },
+      "broker.leaderSkew": {
+        "title": "ブローカー{{name}}のリーダーが偏っています",
+        "details": "このブローカーがリーダーのパーティション：{{leaders}}、ブローカーあたりの平均：{{average}}（{{deviation}}）。ブローカーの負荷が不均等です。",
+        "fix": "優先リーダーの選出またはパーティションの再割り当てを行い、auto.leader.rebalance.enableを確認してください。"
+      },
+      "partition.notPreferredLeader": {
+        "title": "リーダーが優先レプリカにありません",
+        "details": "リーダーが最初のレプリカではないパーティション：{{count}}、例：{{examples}}。通常はブローカーの再起動後に残ります。",
+        "fix": "優先リーダーの選出を行うか、auto.leader.rebalance.enableを有効にしてください。"
+      },
+      "topic.replicationFactorOne": {
+        "title": "{{name}}のレプリケーションファクターが1です",
+        "details": "各パーティションのレプリカは1つだけです。そのブローカーを失うとデータが失われ、パーティションも利用できなくなります。",
+        "fix": "パーティションを再割り当てして、レプリケーションファクターを3に増やしてください。"
+      },
+      "topic.minIsrUnreachable": {
+        "title": "{{name}}のmin.insync.replicasがレプリケーションファクターより大きくなっています",
+        "details": "min.insync.replicas = {{minIsr}}（{{source}}）、レプリケーションファクター{{replicationFactor}}：acks=allのプロデューサーは書き込めません。",
+        "fix": "min.insync.replicasをレプリケーションファクターより小さくするか、レプリケーションファクターを増やしてください。"
+      },
+      "topic.minIsrEqualsRf": {
+        "title": "{{name}}のmin.insync.replicasがレプリケーションファクターと同じです",
+        "details": "min.insync.replicas = {{minIsr}}（{{source}}）、レプリケーションファクター{{replicationFactor}}：レプリカが1つ停止すると、acks=allの書き込みが止まります。",
+        "fix": "min.insync.replicasをレプリケーションファクターより1小さくしてください（例：ファクター3なら2）。"
+      },
+      "topic.minIsrOne": {
+        "title": "{{name}}のmin.insync.replicasが1です",
+        "details": "min.insync.replicas = 1（{{source}}）、レプリケーションファクター{{replicationFactor}}：acks=allの書き込みを1つのレプリカだけが確認するため、ブローカー障害で確認済みのメッセージが失われる可能性があります。",
+        "fix": "重要なトピックではmin.insync.replicasを2にしてください。"
+      },
+      "topic.uncleanElection": {
+        "title": "{{name}}でアンクリーンなリーダー選出が許可されています",
+        "details": "unclean.leader.election.enable = true（{{source}}）：同期していないレプリカがリーダーになり、確認済みのメッセージが失われる可能性があります。",
+        "fix": "データより可用性を優先する場合を除き、unclean.leader.election.enableをfalseにしてください。"
+      },
+      "broker.autoCreateTopics": {
+        "title": "ブローカーがトピックを自動作成します",
+        "details": "auto.create.topics.enable = true（ブローカー{{brokerId}}）：トピック名の入力ミスで、デフォルト設定の新しいトピックが作成されます。",
+        "fix": "auto.create.topics.enableをfalseにし、トピックは明示的に作成してください。"
+      },
+      "broker.defaultReplicationFactorOne": {
+        "title": "デフォルトのレプリケーションファクターが1です",
+        "details": "default.replication.factor = 1（ブローカー{{brokerId}}）、クラスターのブローカー数：{{brokers}}。ファクターを指定せずに作成したトピックにはコピーがありません。",
+        "fix": "default.replication.factorを3にしてください。"
+      },
+      "broker.defaultMinIsrOne": {
+        "title": "デフォルトのmin.insync.replicasが1です",
+        "details": "min.insync.replicas = 1（ブローカー{{brokerId}}）、クラスターのブローカー数：{{brokers}}。独自の値を持たないトピックは、acks=allの書き込みを1つのレプリカで確認します。",
+        "fix": "ブローカーでmin.insync.replicasを2にしてください。"
+      },
+      "broker.configDrift": {
+        "title": "{{config}}がブローカー間で異なります",
+        "details": "ブローカーごとの値：{{values}}。どのブローカーがパーティションのリーダーかによって、クラスターの動作が変わります。",
+        "fix": "すべてのブローカーで同じ値を設定してください。"
+      },
+      "group.abandoned": {
+        "title": "コンシューマーグループ{{name}}は空ですがラグがあります",
+        "details": "グループにメンバーがなく、未読メッセージ：{{lag}}。",
+        "fix": "アプリケーションが不要ならグループを削除し、そうでなければコンシューマーを起動してください。"
+      },
+      "group.rebalancing": {
+        "title": "コンシューマーグループ{{name}}がリバランス中です",
+        "details": "チェック時点でグループの状態は{{state}}です。",
+        "fix": "リバランスが繰り返される場合は、LLMアシスタントにグループの監視を依頼するか、コンシューマーのログとタイムアウトを確認してください。"
+      },
+      "group.idleMembers": {
+        "title": "{{name}}にパーティションのないメンバーがいます",
+        "details": "パーティションのないメンバー：{{idle}}/{{members}}、割り当て済みパーティション：{{partitions}}。メンバーがパーティションより多くなっています。",
+        "fix": "コンシューマーの数を減らすか、トピックにパーティションを追加してください。"
+      },
+      "group.lagGrowing": {
+        "title": "コンシューマーグループ{{name}}のラグが増えています",
+        "details": "{{minutesAgo}}分前のチェックからラグが{{previousLag}}から{{lag}}に増えました。コンシューマーが追いついていません。",
+        "fix": "コンシューマーが稼働していて十分に速いか確認し、必要に応じてコンシューマーかパーティションを追加してください。"
+      },
+      "check.partial": {
+        "title": "チェックが不完全です",
+        "details": "確認したトピック設定：{{topicsChecked}}/{{topicsTotal}}、グループ：{{groupsChecked}}/{{groupsTotal}}、読み取りエラー：{{errors}}。",
+        "fix": "結果は読み取れた範囲だけを対象にしています。1回のチェックでは45秒以内に最大2000トピック、500グループを読み取ります。クラスターの応答が遅かった場合は、後でもう一度実行してください。"
+      }
+    }
+  },
   "hints": {
     "label": "ヒント：{{name}}",
     "connections": {

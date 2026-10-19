@@ -1111,6 +1111,119 @@
       "title": "MCP 工作階段：開啟設定"
     }
   },
+  "health": {
+    "severity": {
+      "critical": "嚴重",
+      "warning": "警告",
+      "info": "資訊"
+    },
+    "source": {
+      "topic": "在主題上設定",
+      "inherited": "繼承"
+    },
+    "rules": {
+      "cluster.noController": {
+        "title": "沒有作用中的控制器",
+        "details": "叢集未回報控制器：在選出控制器之前，主題變更、Leader 選舉與其他中繼資料作業都無法進行。",
+        "fix": "請檢查控制器仲裁（KRaft）或 ZooKeeper 以及 Broker 日誌。"
+      },
+      "partition.offline": {
+        "title": "{{name}} 中有無法使用的分區",
+        "details": "沒有 Leader 的分區無法讀取也無法寫入：{{partitions}}（共 {{count}} 個）。",
+        "fix": "請恢復存放其複本的 Broker，並檢查 Broker 日誌。"
+      },
+      "partition.underReplicated": {
+        "title": "{{name}} 中有複本不足的分區",
+        "details": "這些分區的同步複本少於複本數：{{partitions}}（共 {{count}} 個）。",
+        "fix": "請檢查所有 Broker 是否正在執行並跟上複寫：磁碟、網路、負載。"
+      },
+      "cluster.singleBroker": {
+        "title": "單一 Broker 叢集",
+        "details": "資料無處複寫，Broker 重新啟動或故障會讓所有分區無法使用。",
+        "fix": "stage 與 prod 環境請至少使用三個 Broker。"
+      },
+      "broker.leaderSkew": {
+        "title": "Broker {{name}} 上的 Leader 分布不均",
+        "details": "Leader 在此 Broker 上的分區：{{leaders}}，每個 Broker 平均：{{average}}（{{deviation}}）。Broker 負載不平均。",
+        "fix": "請執行偏好 Leader 選舉或重新指派分區；並檢查 auto.leader.rebalance.enable。"
+      },
+      "partition.notPreferredLeader": {
+        "title": "Leader 不在偏好複本上",
+        "details": "Leader 不是第一個複本的分區：{{count}} 個，例如 {{examples}}。通常在 Broker 重新啟動後出現。",
+        "fix": "請執行偏好 Leader 選舉或啟用 auto.leader.rebalance.enable。"
+      },
+      "topic.replicationFactorOne": {
+        "title": "{{name}} 的複寫係數為 1",
+        "details": "每個分區只有一個複本：失去該 Broker 就會遺失資料，分區也會無法使用。",
+        "fix": "請重新指派分區，將複寫係數提高到 3。"
+      },
+      "topic.minIsrUnreachable": {
+        "title": "{{name}} 的 min.insync.replicas 大於複寫係數",
+        "details": "min.insync.replicas = {{minIsr}}（{{source}}），複寫係數為 {{replicationFactor}}：使用 acks=all 的生產者永遠無法寫入。",
+        "fix": "請將 min.insync.replicas 設為小於複寫係數，或提高複寫係數。"
+      },
+      "topic.minIsrEqualsRf": {
+        "title": "{{name}} 的 min.insync.replicas 等於複寫係數",
+        "details": "min.insync.replicas = {{minIsr}}（{{source}}），複寫係數為 {{replicationFactor}}：只要一個複本故障，acks=all 的寫入就會停止。",
+        "fix": "請將 min.insync.replicas 設為複寫係數減一，例如複寫係數為 3 時設為 2。"
+      },
+      "topic.minIsrOne": {
+        "title": "{{name}} 的 min.insync.replicas 為 1",
+        "details": "min.insync.replicas = 1（{{source}}），複寫係數為 {{replicationFactor}}：acks=all 的寫入只由一個複本確認，Broker 故障可能遺失已確認的訊息。",
+        "fix": "重要主題請將 min.insync.replicas 設為 2。"
+      },
+      "topic.uncleanElection": {
+        "title": "{{name}} 允許不乾淨的 Leader 選舉",
+        "details": "unclean.leader.election.enable = true（{{source}}）：未同步的複本可能成為 Leader，已確認的訊息可能遺失。",
+        "fix": "除非可用性比資料更重要，否則請將 unclean.leader.election.enable 設為 false。"
+      },
+      "broker.autoCreateTopics": {
+        "title": "Broker 會自動建立主題",
+        "details": "auto.create.topics.enable = true（Broker {{brokerId}}）：主題名稱打錯字就會以預設設定建立新主題。",
+        "fix": "請將 auto.create.topics.enable 設為 false，並明確建立主題。"
+      },
+      "broker.defaultReplicationFactorOne": {
+        "title": "預設複寫係數為 1",
+        "details": "default.replication.factor = 1（Broker {{brokerId}}），叢集中的 Broker：{{brokers}}。未指定係數建立的主題沒有複本。",
+        "fix": "請將 default.replication.factor 設為 3。"
+      },
+      "broker.defaultMinIsrOne": {
+        "title": "預設 min.insync.replicas 為 1",
+        "details": "min.insync.replicas = 1（Broker {{brokerId}}），叢集中的 Broker：{{brokers}}。沒有自身值的主題只以一個複本確認 acks=all 的寫入。",
+        "fix": "請在 Broker 上將 min.insync.replicas 設為 2。"
+      },
+      "broker.configDrift": {
+        "title": "{{config}} 在各 Broker 之間不一致",
+        "details": "各 Broker 的值：{{values}}。叢集的行為取決於哪個 Broker 是分區的 Leader。",
+        "fix": "請在所有 Broker 上設定相同的值。"
+      },
+      "group.abandoned": {
+        "title": "消費者群組 {{name}} 是空的，但有延遲",
+        "details": "此群組沒有成員，未讀訊息：{{lag}}。",
+        "fix": "若應用程式已停用，請刪除此群組；否則請啟動它的消費者。"
+      },
+      "group.rebalancing": {
+        "title": "消費者群組 {{name}} 正在重新平衡",
+        "details": "檢查當下此群組處於 {{state}} 狀態。",
+        "fix": "若重新平衡反覆發生，請讓 LLM 助理觀察此群組，或檢查消費者的日誌與逾時設定。"
+      },
+      "group.idleMembers": {
+        "title": "{{name}} 中有沒有分區的成員",
+        "details": "沒有分區的成員：{{idle}} 個（共 {{members}} 個），已指派的分區：{{partitions}}。成員多於分區。",
+        "fix": "請減少消費者數量，或為主題新增分區。"
+      },
+      "group.lagGrowing": {
+        "title": "消費者群組 {{name}} 的延遲正在增加",
+        "details": "自 {{minutesAgo}} 分鐘前的檢查以來，延遲從 {{previousLag}} 增加到 {{lag}}：消費者跟不上。",
+        "fix": "請檢查消費者是否正在執行且夠快；必要時新增消費者或分區。"
+      },
+      "check.partial": {
+        "title": "檢查不完整",
+        "details": "已檢查的主題設定：{{topicsChecked}}/{{topicsTotal}}，消費者群組：{{groupsChecked}}/{{groupsTotal}}，讀取錯誤：{{errors}}。",
+        "fix": "檢查結果只涵蓋已讀取的內容。一次檢查會在 45 秒內最多讀取 2000 個主題與 500 個群組；若叢集回應緩慢，請稍後再試。"
+      }
+    }
+  },
   "hints": {
     "label": "提示：{{name}}",
     "connections": {

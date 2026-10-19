@@ -642,3 +642,60 @@ export interface McpAuditEntry {
   code?: string | null;
   ms?: number;
 }
+
+// ---- Проверка кластера и замечания (G2) ----
+
+export type Severity = "info" | "warning" | "critical";
+export type TargetKind = "cluster" | "broker" | "topic" | "group";
+
+/** Объект находки или замечания: у кластера имени нет, у брокера имя — его id. */
+export interface HealthTarget {
+  kind: TargetKind;
+  name?: string;
+}
+
+/** Находка правила; тексты — `health.rules.<ruleId>.*` с `params`. */
+export interface Finding {
+  key: string;
+  ruleId: string;
+  severity: Severity;
+  target: HealthTarget;
+  params: Record<string, unknown>;
+}
+
+export type CheckTrigger = { kind: "ui" } | { kind: "mcp"; client?: string };
+
+export interface CheckRun {
+  runId: string;
+  startedAtMs: number;
+  durationMs: number;
+  trigger: CheckTrigger;
+  environment: Environment;
+  incomplete: boolean;
+  scope: { brokers: number; topicsChecked: number; topicsTotal: number; groupsChecked: number; groupsTotal: number };
+  findings: Finding[];
+}
+
+export type AnnotationStatus = "open" | "resolved" | "dismissed";
+
+/** Замечание LLM: текст как есть, без разметки. */
+export interface Annotation {
+  id: string;
+  target: HealthTarget;
+  severity: Severity;
+  title: string;
+  body: string;
+  relatedRuleId?: string;
+  client: string | null;
+  createdAtMs: number;
+  updatedAtMs: number;
+  status: AnnotationStatus;
+  closedAtMs?: number;
+}
+
+/** Состояние подключения: последняя проверка, скрытые находки (ключи), замечания LLM. */
+export interface HealthView {
+  lastCheck: CheckRun | null;
+  ignored: string[];
+  annotations: Annotation[];
+}

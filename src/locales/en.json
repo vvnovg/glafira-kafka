@@ -1119,6 +1119,119 @@
       "title": "MCP sessions: open Settings"
     }
   },
+  "health": {
+    "severity": {
+      "critical": "Critical",
+      "warning": "Warning",
+      "info": "Info"
+    },
+    "source": {
+      "topic": "set on the topic",
+      "inherited": "inherited"
+    },
+    "rules": {
+      "cluster.noController": {
+        "title": "No active controller",
+        "details": "The cluster reports no controller: topic changes, leader elections and other metadata operations stop until a controller is elected.",
+        "fix": "Check the controller quorum (KRaft) or ZooKeeper and the broker logs."
+      },
+      "partition.offline": {
+        "title": "Offline partitions in {{name}}",
+        "details": "Partitions without a leader cannot be read or written: {{partitions}} ({{count}} in total).",
+        "fix": "Bring back the brokers that hold their replicas and check the broker logs."
+      },
+      "partition.underReplicated": {
+        "title": "Under-replicated partitions in {{name}}",
+        "details": "These partitions have fewer in-sync replicas than replicas: {{partitions}} ({{count}} in total).",
+        "fix": "Check that all brokers are running and keep up with replication: disks, network, load."
+      },
+      "cluster.singleBroker": {
+        "title": "Single-broker cluster",
+        "details": "There is nowhere to replicate data, and a restart or failure of the broker makes every partition unavailable.",
+        "fix": "Use at least three brokers for stage and prod."
+      },
+      "broker.leaderSkew": {
+        "title": "Leader skew on broker {{name}}",
+        "details": "Partitions led by this broker: {{leaders}}, average per broker: {{average}} ({{deviation}}). The load on brokers is uneven.",
+        "fix": "Run a preferred leader election or reassign partitions; check auto.leader.rebalance.enable."
+      },
+      "partition.notPreferredLeader": {
+        "title": "Leaders not on the preferred replica",
+        "details": "Partitions whose leader is not the first replica: {{count}}, for example {{examples}}. This usually remains after broker restarts.",
+        "fix": "Run a preferred leader election or enable auto.leader.rebalance.enable."
+      },
+      "topic.replicationFactorOne": {
+        "title": "Replication factor 1 for {{name}}",
+        "details": "Each partition has a single replica: losing that broker loses the data and makes the partitions unavailable.",
+        "fix": "Increase the replication factor to 3 by reassigning the partitions."
+      },
+      "topic.minIsrUnreachable": {
+        "title": "min.insync.replicas is above the replication factor for {{name}}",
+        "details": "min.insync.replicas = {{minIsr}} ({{source}}) with replication factor {{replicationFactor}}: producers with acks=all can never write.",
+        "fix": "Set min.insync.replicas below the replication factor or increase the replication factor."
+      },
+      "topic.minIsrEqualsRf": {
+        "title": "min.insync.replicas equals the replication factor for {{name}}",
+        "details": "min.insync.replicas = {{minIsr}} ({{source}}) with replication factor {{replicationFactor}}: if one replica fails, writes with acks=all stop.",
+        "fix": "Set min.insync.replicas one below the replication factor, for example 2 with factor 3."
+      },
+      "topic.minIsrOne": {
+        "title": "min.insync.replicas is 1 for {{name}}",
+        "details": "min.insync.replicas = 1 ({{source}}) with replication factor {{replicationFactor}}: one replica confirms an acks=all write, so a broker failure can lose confirmed messages.",
+        "fix": "Set min.insync.replicas = 2 for important topics."
+      },
+      "topic.uncleanElection": {
+        "title": "Unclean leader election is allowed for {{name}}",
+        "details": "unclean.leader.election.enable = true ({{source}}): an out-of-sync replica can become the leader, and confirmed messages can be lost.",
+        "fix": "Set unclean.leader.election.enable = false unless availability matters more than data."
+      },
+      "broker.autoCreateTopics": {
+        "title": "Brokers create topics automatically",
+        "details": "auto.create.topics.enable = true (broker {{brokerId}}): a typo in a topic name creates a new topic with default settings.",
+        "fix": "Set auto.create.topics.enable = false and create topics explicitly."
+      },
+      "broker.defaultReplicationFactorOne": {
+        "title": "Default replication factor is 1",
+        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers in the cluster: {{brokers}}. Topics created without an explicit factor have no copies.",
+        "fix": "Set default.replication.factor = 3."
+      },
+      "broker.defaultMinIsrOne": {
+        "title": "Default min.insync.replicas is 1",
+        "details": "min.insync.replicas = 1 (broker {{brokerId}}), brokers in the cluster: {{brokers}}. Topics without their own value confirm acks=all writes with one replica.",
+        "fix": "Set min.insync.replicas = 2 on the brokers."
+      },
+      "broker.configDrift": {
+        "title": "{{config}} differs between brokers",
+        "details": "Values by broker: {{values}}. The cluster behaves differently depending on which broker leads a partition.",
+        "fix": "Set the same value on all brokers."
+      },
+      "group.abandoned": {
+        "title": "Group {{name}} is empty but has lag",
+        "details": "The group has no members; unread messages: {{lag}}.",
+        "fix": "If the application is retired, delete the group; otherwise start its consumers."
+      },
+      "group.rebalancing": {
+        "title": "Group {{name}} is rebalancing",
+        "details": "At the moment of the check the group is in state {{state}}.",
+        "fix": "If rebalances repeat, ask the LLM assistant to observe the group, or check the consumer logs and timeouts."
+      },
+      "group.idleMembers": {
+        "title": "Members without partitions in {{name}}",
+        "details": "Members without partitions: {{idle}} of {{members}}; partitions assigned: {{partitions}}. There are more members than partitions.",
+        "fix": "Reduce the number of consumers or add partitions to the topic."
+      },
+      "group.lagGrowing": {
+        "title": "Lag of group {{name}} is growing",
+        "details": "The lag grew from {{previousLag}} to {{lag}} since the check {{minutesAgo}} min ago: the consumers do not keep up.",
+        "fix": "Check that the consumers are running and fast enough; add consumers or partitions if needed."
+      },
+      "check.partial": {
+        "title": "The check is incomplete",
+        "details": "Topic configs checked: {{topicsChecked}} of {{topicsTotal}}; groups: {{groupsChecked}} of {{groupsTotal}}; read errors: {{errors}}.",
+        "fix": "Findings cover only what was read. A check reads up to 2000 topics and 500 groups within 45 seconds; if the cluster was slow, retry later."
+      }
+    }
+  },
   "hints": {
     "label": "Hint: {{name}}",
     "connections": {

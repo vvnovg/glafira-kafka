@@ -1111,6 +1111,119 @@
       "title": "MCP 会话：打开设置"
     }
   },
+  "health": {
+    "severity": {
+      "critical": "严重",
+      "warning": "警告",
+      "info": "信息"
+    },
+    "source": {
+      "topic": "在主题上设置",
+      "inherited": "继承"
+    },
+    "rules": {
+      "cluster.noController": {
+        "title": "没有活动的控制器",
+        "details": "集群未报告控制器：在选出控制器之前，主题变更、Leader 选举和其他元数据操作都无法进行。",
+        "fix": "检查控制器仲裁（KRaft）或 ZooKeeper 以及 Broker 日志。"
+      },
+      "partition.offline": {
+        "title": "{{name}} 中有不可用的分区",
+        "details": "没有 Leader 的分区既不能读也不能写：{{partitions}}（共 {{count}} 个）。",
+        "fix": "恢复存放其副本的 Broker，并检查 Broker 日志。"
+      },
+      "partition.underReplicated": {
+        "title": "{{name}} 中有副本不足的分区",
+        "details": "这些分区的同步副本少于副本数：{{partitions}}（共 {{count}} 个）。",
+        "fix": "检查所有 Broker 是否在运行并跟上复制：磁盘、网络、负载。"
+      },
+      "cluster.singleBroker": {
+        "title": "单 Broker 集群",
+        "details": "数据无处复制，Broker 重启或故障会使所有分区不可用。",
+        "fix": "stage 和 prod 环境至少使用三个 Broker。"
+      },
+      "broker.leaderSkew": {
+        "title": "Broker {{name}} 上的 Leader 分布不均",
+        "details": "Leader 在此 Broker 上的分区：{{leaders}}，每个 Broker 平均：{{average}}（{{deviation}}）。Broker 负载不均衡。",
+        "fix": "执行首选 Leader 选举或重新分配分区；检查 auto.leader.rebalance.enable。"
+      },
+      "partition.notPreferredLeader": {
+        "title": "Leader 不在首选副本上",
+        "details": "Leader 不是第一个副本的分区：{{count}} 个，例如 {{examples}}。通常在 Broker 重启后出现。",
+        "fix": "执行首选 Leader 选举或启用 auto.leader.rebalance.enable。"
+      },
+      "topic.replicationFactorOne": {
+        "title": "{{name}} 的副本因子为 1",
+        "details": "每个分区只有一个副本：失去该 Broker 就会丢失数据，分区也将不可用。",
+        "fix": "通过重新分配分区将副本因子提高到 3。"
+      },
+      "topic.minIsrUnreachable": {
+        "title": "{{name}} 的 min.insync.replicas 大于副本因子",
+        "details": "min.insync.replicas = {{minIsr}}（{{source}}），副本因子为 {{replicationFactor}}：使用 acks=all 的生产者永远无法写入。",
+        "fix": "将 min.insync.replicas 设为小于副本因子，或提高副本因子。"
+      },
+      "topic.minIsrEqualsRf": {
+        "title": "{{name}} 的 min.insync.replicas 等于副本因子",
+        "details": "min.insync.replicas = {{minIsr}}（{{source}}），副本因子为 {{replicationFactor}}：一个副本故障，acks=all 的写入就会停止。",
+        "fix": "将 min.insync.replicas 设为副本因子减一，例如副本因子为 3 时设为 2。"
+      },
+      "topic.minIsrOne": {
+        "title": "{{name}} 的 min.insync.replicas 为 1",
+        "details": "min.insync.replicas = 1（{{source}}），副本因子为 {{replicationFactor}}：acks=all 的写入只由一个副本确认，Broker 故障可能丢失已确认的消息。",
+        "fix": "重要主题请将 min.insync.replicas 设为 2。"
+      },
+      "topic.uncleanElection": {
+        "title": "{{name}} 允许不干净的 Leader 选举",
+        "details": "unclean.leader.election.enable = true（{{source}}）：不同步的副本可能成为 Leader，已确认的消息可能丢失。",
+        "fix": "除非可用性比数据更重要，否则将 unclean.leader.election.enable 设为 false。"
+      },
+      "broker.autoCreateTopics": {
+        "title": "Broker 会自动创建主题",
+        "details": "auto.create.topics.enable = true（Broker {{brokerId}}）：主题名称中的拼写错误会以默认设置创建新主题。",
+        "fix": "将 auto.create.topics.enable 设为 false，并显式创建主题。"
+      },
+      "broker.defaultReplicationFactorOne": {
+        "title": "默认副本因子为 1",
+        "details": "default.replication.factor = 1（Broker {{brokerId}}），集群中的 Broker：{{brokers}}。未指定副本因子创建的主题没有副本。",
+        "fix": "将 default.replication.factor 设为 3。"
+      },
+      "broker.defaultMinIsrOne": {
+        "title": "默认 min.insync.replicas 为 1",
+        "details": "min.insync.replicas = 1（Broker {{brokerId}}），集群中的 Broker：{{brokers}}。没有自身值的主题只用一个副本确认 acks=all 的写入。",
+        "fix": "在 Broker 上将 min.insync.replicas 设为 2。"
+      },
+      "broker.configDrift": {
+        "title": "{{config}} 在各 Broker 之间不一致",
+        "details": "各 Broker 的值：{{values}}。集群的行为取决于哪个 Broker 是分区的 Leader。",
+        "fix": "在所有 Broker 上设置相同的值。"
+      },
+      "group.abandoned": {
+        "title": "消费者组 {{name}} 为空，但存在延迟",
+        "details": "该组没有成员，未读消息：{{lag}}。",
+        "fix": "如果应用已停用，请删除该组；否则请启动它的消费者。"
+      },
+      "group.rebalancing": {
+        "title": "消费者组 {{name}} 正在重平衡",
+        "details": "检查时该组处于 {{state}} 状态。",
+        "fix": "如果重平衡反复发生，请让 LLM 助手观察该组，或检查消费者的日志和超时设置。"
+      },
+      "group.idleMembers": {
+        "title": "{{name}} 中有没有分区的成员",
+        "details": "没有分区的成员：{{idle}} 个（共 {{members}} 个），已分配的分区：{{partitions}}。成员多于分区。",
+        "fix": "减少消费者数量，或为主题添加分区。"
+      },
+      "group.lagGrowing": {
+        "title": "消费者组 {{name}} 的延迟在增长",
+        "details": "自 {{minutesAgo}} 分钟前的检查以来，延迟从 {{previousLag}} 增长到 {{lag}}：消费者跟不上。",
+        "fix": "检查消费者是否在运行且足够快；必要时添加消费者或分区。"
+      },
+      "check.partial": {
+        "title": "检查不完整",
+        "details": "已检查主题配置：{{topicsChecked}}/{{topicsTotal}}，消费者组：{{groupsChecked}}/{{groupsTotal}}，读取错误：{{errors}}。",
+        "fix": "检查结果仅涵盖已读取的内容。一次检查在 45 秒内最多读取 2000 个主题和 500 个组；如果集群响应慢，请稍后重试。"
+      }
+    }
+  },
   "hints": {
     "label": "提示：{{name}}",
     "connections": {

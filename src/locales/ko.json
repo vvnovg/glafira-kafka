@@ -1111,6 +1111,119 @@
       "title": "MCP 세션: 설정 열기"
     }
   },
+  "health": {
+    "severity": {
+      "critical": "심각",
+      "warning": "경고",
+      "info": "정보"
+    },
+    "source": {
+      "topic": "토픽에 설정됨",
+      "inherited": "상속됨"
+    },
+    "rules": {
+      "cluster.noController": {
+        "title": "활성 컨트롤러가 없습니다",
+        "details": "클러스터가 컨트롤러를 보고하지 않습니다. 컨트롤러가 선출될 때까지 토픽 변경, 리더 선출 등 메타데이터 작업이 동작하지 않습니다.",
+        "fix": "컨트롤러 쿼럼(KRaft) 또는 ZooKeeper와 브로커 로그를 확인하세요."
+      },
+      "partition.offline": {
+        "title": "{{name}}에 사용할 수 없는 파티션이 있습니다",
+        "details": "리더가 없는 파티션은 읽거나 쓸 수 없습니다: {{partitions}}(총 {{count}}개).",
+        "fix": "복제본이 있는 브로커를 복구하고 브로커 로그를 확인하세요."
+      },
+      "partition.underReplicated": {
+        "title": "{{name}}에 복제 부족 파티션이 있습니다",
+        "details": "이 파티션들은 동기화된 복제본이 복제본 수보다 적습니다: {{partitions}}(총 {{count}}개).",
+        "fix": "모든 브로커가 실행 중이고 복제를 따라잡는지 확인하세요: 디스크, 네트워크, 부하."
+      },
+      "cluster.singleBroker": {
+        "title": "브로커가 하나인 클러스터",
+        "details": "데이터를 복제할 곳이 없고, 브로커가 재시작되거나 장애가 나면 모든 파티션을 사용할 수 없습니다.",
+        "fix": "stage와 prod에는 브로커를 3개 이상 사용하세요."
+      },
+      "broker.leaderSkew": {
+        "title": "브로커 {{name}}의 리더 편중",
+        "details": "이 브로커가 리더인 파티션: {{leaders}}, 브로커당 평균: {{average}}({{deviation}}). 브로커 부하가 고르지 않습니다.",
+        "fix": "선호 리더 선출이나 파티션 재할당을 실행하고 auto.leader.rebalance.enable 설정을 확인하세요."
+      },
+      "partition.notPreferredLeader": {
+        "title": "선호 복제본에 있지 않은 리더",
+        "details": "리더가 첫 번째 복제본이 아닌 파티션: {{count}}개, 예: {{examples}}. 보통 브로커를 재시작한 뒤에 남습니다.",
+        "fix": "선호 리더 선출을 실행하거나 auto.leader.rebalance.enable 설정을 켜세요."
+      },
+      "topic.replicationFactorOne": {
+        "title": "{{name}}의 복제 계수가 1입니다",
+        "details": "각 파티션에 복제본이 하나뿐입니다. 해당 브로커를 잃으면 데이터가 손실되고 파티션을 사용할 수 없습니다.",
+        "fix": "파티션을 재할당해 복제 계수를 3으로 늘리세요."
+      },
+      "topic.minIsrUnreachable": {
+        "title": "{{name}}: min.insync.replicas 값이 복제 계수보다 큽니다",
+        "details": "min.insync.replicas = {{minIsr}}({{source}}), 복제 계수 {{replicationFactor}}: acks=all을 쓰는 프로듀서는 절대 쓸 수 없습니다.",
+        "fix": "min.insync.replicas 값을 복제 계수보다 작게 하거나 복제 계수를 늘리세요."
+      },
+      "topic.minIsrEqualsRf": {
+        "title": "{{name}}: min.insync.replicas 값이 복제 계수와 같습니다",
+        "details": "min.insync.replicas = {{minIsr}}({{source}}), 복제 계수 {{replicationFactor}}: 복제본 하나에 장애가 나면 acks=all 쓰기가 멈춥니다.",
+        "fix": "min.insync.replicas 값을 복제 계수보다 1 작게 설정하세요(예: 복제 계수 3이면 2)."
+      },
+      "topic.minIsrOne": {
+        "title": "{{name}}: min.insync.replicas 값이 1입니다",
+        "details": "min.insync.replicas = 1({{source}}), 복제 계수 {{replicationFactor}}: acks=all 쓰기를 복제본 하나만 확인하므로 브로커 장애 시 확인된 메시지가 손실될 수 있습니다.",
+        "fix": "중요한 토픽은 min.insync.replicas 값을 2로 설정하세요."
+      },
+      "topic.uncleanElection": {
+        "title": "{{name}}: 언클린 리더 선출이 허용되어 있습니다",
+        "details": "unclean.leader.election.enable = true({{source}}): 동기화되지 않은 복제본이 리더가 될 수 있어 확인된 메시지가 손실될 수 있습니다.",
+        "fix": "데이터보다 가용성이 중요한 경우가 아니라면 unclean.leader.election.enable 값을 false로 설정하세요."
+      },
+      "broker.autoCreateTopics": {
+        "title": "브로커가 토픽을 자동으로 만듭니다",
+        "details": "auto.create.topics.enable = true(브로커 {{brokerId}}): 토픽 이름에 오타가 있으면 기본 설정으로 새 토픽이 만들어집니다.",
+        "fix": "auto.create.topics.enable 값을 false로 설정하고 토픽은 명시적으로 만드세요."
+      },
+      "broker.defaultReplicationFactorOne": {
+        "title": "기본 복제 계수가 1입니다",
+        "details": "default.replication.factor = 1(브로커 {{brokerId}}), 클러스터의 브로커 수: {{brokers}}. 복제 계수를 지정하지 않고 만든 토픽에는 복사본이 없습니다.",
+        "fix": "default.replication.factor 값을 3으로 설정하세요."
+      },
+      "broker.defaultMinIsrOne": {
+        "title": "기본 min.insync.replicas 값이 1입니다",
+        "details": "min.insync.replicas = 1(브로커 {{brokerId}}), 클러스터의 브로커 수: {{brokers}}. 자체 값이 없는 토픽은 acks=all 쓰기를 복제본 하나로 확인합니다.",
+        "fix": "브로커에서 min.insync.replicas 값을 2로 설정하세요."
+      },
+      "broker.configDrift": {
+        "title": "브로커마다 {{config}} 값이 다릅니다",
+        "details": "브로커별 값: {{values}}. 어느 브로커가 파티션의 리더인지에 따라 클러스터 동작이 달라집니다.",
+        "fix": "모든 브로커에 같은 값을 설정하세요."
+      },
+      "group.abandoned": {
+        "title": "컨슈머 그룹 {{name}}: 비어 있지만 랙이 있습니다",
+        "details": "그룹에 멤버가 없고, 읽지 않은 메시지: {{lag}}.",
+        "fix": "애플리케이션을 더 이상 쓰지 않으면 그룹을 삭제하고, 그렇지 않으면 컨슈머를 시작하세요."
+      },
+      "group.rebalancing": {
+        "title": "컨슈머 그룹 {{name}}: 리밸런싱 중입니다",
+        "details": "점검 시점의 그룹 상태: {{state}}.",
+        "fix": "리밸런싱이 반복되면 LLM 어시스턴트에게 그룹 관찰을 요청하거나 컨슈머 로그와 타임아웃을 확인하세요."
+      },
+      "group.idleMembers": {
+        "title": "{{name}}: 파티션이 없는 멤버가 있습니다",
+        "details": "파티션이 없는 멤버: {{idle}}/{{members}}, 할당된 파티션: {{partitions}}. 멤버가 파티션보다 많습니다.",
+        "fix": "컨슈머 수를 줄이거나 토픽에 파티션을 추가하세요."
+      },
+      "group.lagGrowing": {
+        "title": "컨슈머 그룹 {{name}}: 랙이 늘고 있습니다",
+        "details": "랙 변화: {{previousLag}} → {{lag}}({{minutesAgo}}분 전 점검 이후). 컨슈머가 따라가지 못합니다.",
+        "fix": "컨슈머가 실행 중이고 충분히 빠른지 확인하고, 필요하면 컨슈머나 파티션을 추가하세요."
+      },
+      "check.partial": {
+        "title": "점검이 완료되지 않았습니다",
+        "details": "확인한 토픽 설정: {{topicsChecked}}/{{topicsTotal}}, 그룹: {{groupsChecked}}/{{groupsTotal}}, 읽기 오류: {{errors}}.",
+        "fix": "발견 사항은 읽은 내용만 다룹니다. 한 번의 점검은 45초 안에 토픽 2000개, 그룹 500개까지 읽습니다. 클러스터 응답이 느렸다면 나중에 다시 시도하세요."
+      }
+    }
+  },
   "hints": {
     "label": "도움말: {{name}}",
     "connections": {

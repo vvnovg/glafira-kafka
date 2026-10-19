@@ -1135,6 +1135,119 @@
       "title": "Sesje MCP: otwórz Ustawienia"
     }
   },
+  "health": {
+    "severity": {
+      "critical": "Krytyczne",
+      "warning": "Ostrzeżenie",
+      "info": "Informacja"
+    },
+    "source": {
+      "topic": "ustawione w topiku",
+      "inherited": "dziedziczone"
+    },
+    "rules": {
+      "cluster.noController": {
+        "title": "Brak aktywnego kontrolera",
+        "details": "Klaster nie zgłasza kontrolera: zmiany topików, wybory leadera i inne operacje na metadanych nie działają, dopóki kontroler nie zostanie wybrany.",
+        "fix": "Sprawdź kworum kontrolerów (KRaft) lub ZooKeeper oraz logi brokerów."
+      },
+      "partition.offline": {
+        "title": "Niedostępne partycje w {{name}}",
+        "details": "Partycji bez leadera nie można ani czytać, ani zapisywać: {{partitions}} (łącznie {{count}}).",
+        "fix": "Przywróć brokery, na których są ich repliki, i sprawdź logi brokerów."
+      },
+      "partition.underReplicated": {
+        "title": "Niedoreplikowane partycje w {{name}}",
+        "details": "Te partycje mają mniej zsynchronizowanych replik niż replik: {{partitions}} (łącznie {{count}}).",
+        "fix": "Sprawdź, czy wszystkie brokery działają i nadążają z replikacją: dyski, sieć, obciążenie."
+      },
+      "cluster.singleBroker": {
+        "title": "Klaster z jednym brokerem",
+        "details": "Danych nie ma gdzie replikować, a restart lub awaria brokera wyłącza wszystkie partycje.",
+        "fix": "Na stage i prod używaj co najmniej trzech brokerów."
+      },
+      "broker.leaderSkew": {
+        "title": "Nierówny rozkład leaderów na brokerze {{name}}",
+        "details": "Partycje z leaderem na tym brokerze: {{leaders}}, średnio na broker: {{average}} ({{deviation}}). Obciążenie brokerów jest nierówne.",
+        "fix": "Uruchom wybór preferowanych leaderów lub przypisz partycje na nowo; sprawdź auto.leader.rebalance.enable."
+      },
+      "partition.notPreferredLeader": {
+        "title": "Leaderzy poza preferowaną repliką",
+        "details": "Partycje, których leader nie jest pierwszą repliką: {{count}}, na przykład {{examples}}. Zwykle zostaje tak po restartach brokerów.",
+        "fix": "Uruchom wybór preferowanych leaderów lub włącz auto.leader.rebalance.enable."
+      },
+      "topic.replicationFactorOne": {
+        "title": "Współczynnik replikacji 1 dla {{name}}",
+        "details": "Każda partycja ma jedną replikę: utrata brokera to utrata danych i niedostępne partycje.",
+        "fix": "Zwiększ współczynnik replikacji do 3, przypisując partycje na nowo."
+      },
+      "topic.minIsrUnreachable": {
+        "title": "min.insync.replicas większe niż współczynnik replikacji dla {{name}}",
+        "details": "min.insync.replicas = {{minIsr}} ({{source}}) przy współczynniku replikacji {{replicationFactor}}: producenci z acks=all nigdy nie zapiszą danych.",
+        "fix": "Ustaw min.insync.replicas poniżej współczynnika replikacji albo zwiększ współczynnik replikacji."
+      },
+      "topic.minIsrEqualsRf": {
+        "title": "min.insync.replicas równe współczynnikowi replikacji dla {{name}}",
+        "details": "min.insync.replicas = {{minIsr}} ({{source}}) przy współczynniku replikacji {{replicationFactor}}: awaria jednej repliki zatrzymuje zapis z acks=all.",
+        "fix": "Ustaw min.insync.replicas o jeden mniej niż współczynnik replikacji, na przykład 2 przy współczynniku 3."
+      },
+      "topic.minIsrOne": {
+        "title": "min.insync.replicas = 1 dla {{name}}",
+        "details": "min.insync.replicas = 1 ({{source}}) przy współczynniku replikacji {{replicationFactor}}: zapis z acks=all potwierdza jedna replika, więc awaria brokera może zgubić potwierdzone wiadomości.",
+        "fix": "Dla ważnych topików ustaw min.insync.replicas = 2."
+      },
+      "topic.uncleanElection": {
+        "title": "Dozwolony nieczysty wybór leadera dla {{name}}",
+        "details": "unclean.leader.election.enable = true ({{source}}): leaderem może zostać niezsynchronizowana replika, a potwierdzone wiadomości mogą zostać utracone.",
+        "fix": "Ustaw unclean.leader.election.enable = false, chyba że dostępność jest ważniejsza niż dane."
+      },
+      "broker.autoCreateTopics": {
+        "title": "Brokery tworzą topiki automatycznie",
+        "details": "auto.create.topics.enable = true (broker {{brokerId}}): literówka w nazwie topiku tworzy nowy topik z ustawieniami domyślnymi.",
+        "fix": "Ustaw auto.create.topics.enable = false i twórz topiki jawnie."
+      },
+      "broker.defaultReplicationFactorOne": {
+        "title": "Domyślny współczynnik replikacji to 1",
+        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokerów w klastrze: {{brokers}}. Topiki utworzone bez jawnego współczynnika nie mają kopii.",
+        "fix": "Ustaw default.replication.factor = 3."
+      },
+      "broker.defaultMinIsrOne": {
+        "title": "Domyślne min.insync.replicas to 1",
+        "details": "min.insync.replicas = 1 (broker {{brokerId}}), brokerów w klastrze: {{brokers}}. Topiki bez własnej wartości potwierdzają zapis z acks=all jedną repliką.",
+        "fix": "Ustaw min.insync.replicas = 2 na brokerach."
+      },
+      "broker.configDrift": {
+        "title": "{{config}} różni się między brokerami",
+        "details": "Wartości według brokera: {{values}}. Klaster zachowuje się różnie w zależności od tego, który broker jest leaderem partycji.",
+        "fix": "Ustaw tę samą wartość na wszystkich brokerach."
+      },
+      "group.abandoned": {
+        "title": "Grupa {{name}} jest pusta, ale ma lag",
+        "details": "Grupa nie ma członków; nieprzeczytane wiadomości: {{lag}}.",
+        "fix": "Jeśli aplikacja nie jest już potrzebna, usuń grupę; w przeciwnym razie uruchom jej konsumentów."
+      },
+      "group.rebalancing": {
+        "title": "Grupa {{name}} jest w trakcie rebalansu",
+        "details": "W chwili sprawdzenia grupa jest w stanie {{state}}.",
+        "fix": "Jeśli rebalanse się powtarzają, poproś asystenta LLM o obserwację grupy albo sprawdź logi i timeouty konsumentów."
+      },
+      "group.idleMembers": {
+        "title": "Członkowie bez partycji w {{name}}",
+        "details": "Członkowie bez partycji: {{idle}} z {{members}}; przypisane partycje: {{partitions}}. Członków jest więcej niż partycji.",
+        "fix": "Zmniejsz liczbę konsumentów albo dodaj partycje do topiku."
+      },
+      "group.lagGrowing": {
+        "title": "Lag grupy {{name}} rośnie",
+        "details": "Lag wzrósł z {{previousLag}} do {{lag}} od sprawdzenia {{minutesAgo}} min temu: konsumenci nie nadążają.",
+        "fix": "Sprawdź, czy konsumenci działają i są dość szybcy; w razie potrzeby dodaj konsumentów lub partycje."
+      },
+      "check.partial": {
+        "title": "Sprawdzenie jest niepełne",
+        "details": "Sprawdzone konfiguracje topików: {{topicsChecked}} z {{topicsTotal}}; grupy: {{groupsChecked}} z {{groupsTotal}}; błędy odczytu: {{errors}}.",
+        "fix": "Ustalenia obejmują tylko to, co odczytano. Sprawdzenie czyta do 2000 topików i 500 grup w 45 sekund; jeśli klaster działał wolno, spróbuj później."
+      }
+    }
+  },
   "hints": {
     "label": "Podpowiedź: {{name}}",
     "connections": {

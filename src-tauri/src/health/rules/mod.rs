@@ -214,6 +214,20 @@ mod tests {
     }
 
     #[test]
+    fn every_rule_has_interface_texts() {
+        let en: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../src/locales/en.json")).unwrap();
+        for id in rule_ids() {
+            for part in ["title", "details", "fix"] {
+                assert!(
+                    en["health"]["rules"][id][part].is_string(),
+                    "health.rules.{id}.{part}"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn findings_drop_hidden_levels_and_sort_by_severity() {
         let mut f = Findings::new(Environment::Local);
         f.emit("cluster.singleBroker", Target::cluster(), None, Value::Null);

@@ -26,6 +26,8 @@ import type {
   GroupLag,
   GroupList,
   GroupPartitionOffset,
+  HealthView,
+  AnnotationStatus,
   NewTopicSpec,
   OffsetTarget,
   PurgedPartition,
@@ -90,6 +92,15 @@ export const api = {
   getMcpAudit: (limit: number) => call<McpAuditEntry[]>("get_mcp_audit", { limit }),
   getMcpClientConfigs: () => call<McpClientConfigs>("get_mcp_client_configs"),
   revealMcpAudit: () => call<void>("reveal_mcp_audit"),
+  runHealthCheck: (connectionId: string) => call<HealthView>("run_health_check", { connectionId }),
+  getHealth: (connectionId: string) => call<HealthView>("get_health", { connectionId }),
+  setFindingIgnored: (connectionId: string, key: string, ignored: boolean) =>
+    call<HealthView>("set_finding_ignored", { connectionId, key, ignored }),
+  setAnnotationStatus: (connectionId: string, annotationId: string, status: AnnotationStatus) =>
+    call<HealthView>("set_annotation_status", { connectionId, annotationId, status }),
+  deleteAnnotation: (connectionId: string, annotationId: string) =>
+    call<HealthView>("delete_annotation", { connectionId, annotationId }),
+  deleteAllAnnotations: (connectionId: string) => call<HealthView>("delete_all_annotations", { connectionId }),
   listConnections: () => call<ConnectionProfile[]>("list_connections"),
   saveConnection: (profile: ConnectionProfile, saslPassword?: string, tlsPasswords?: TlsPasswordsInput) =>
     call<ConnectionProfile>("save_connection", {

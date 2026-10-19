@@ -389,7 +389,8 @@
       "importHere": "Importa qui…"
     },
     "exportAll": "Esporta tutto…",
-    "import": "Importa…"
+    "import": "Importa…",
+    "findings": "Rilievi"
   },
   "tabs": {
     "settings": "Impostazioni",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · Topic",
     "groups": "{{conn}} · Gruppi",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · Sessione {{target}}"
+    "consumer": "{{conn}} · Sessione {{target}}",
+    "findings": "{{conn}} · Rilievi"
   },
   "settings": {
     "title": "Impostazioni",
@@ -1238,6 +1240,72 @@
         "details": "Configurazioni dei topic controllate: {{topicsChecked}} su {{topicsTotal}}; gruppi: {{groupsChecked}} su {{groupsTotal}}; errori di lettura: {{errors}}.",
         "fix": "I rilievi coprono solo ciò che è stato letto. Un controllo legge fino a 2000 topic e 500 gruppi in 45 secondi; se il cluster era lento, riprova più tardi."
       }
+    },
+    "title": "Rilievi",
+    "check": "Controlla cluster",
+    "checking": "Controllo in corso…",
+    "never": "Il cluster non è ancora stato controllato.",
+    "last": "Ultimo controllo: {{when}} · {{who}}",
+    "byUi": "da Glafira",
+    "scope": "Broker: {{brokers}}; configurazioni dei topic: {{topicsChecked}} su {{topicsTotal}}; gruppi: {{groupsChecked}} su {{groupsTotal}}",
+    "partial": "controllato in parte",
+    "filterSeverity": "Gravità",
+    "allSeverities": "Tutte le gravità",
+    "filterSource": "Origine",
+    "allSources": "Tutte le origini",
+    "sourceRules": "Regole",
+    "sourceLlm": "Note LLM",
+    "filterKind": "Oggetto",
+    "allKinds": "Tutti gli oggetti",
+    "kind": {
+      "cluster": "Cluster",
+      "broker": "Broker",
+      "topic": "Topic",
+      "group": "Gruppo"
+    },
+    "search": "Cerca per nome",
+    "showHidden": "Mostra nascosti ({{count}})",
+    "hide": "Nascondi per questo oggetto",
+    "restore": "Ripristina",
+    "groupSize": "oggetti: {{count}}",
+    "noFindings": "Nessun rilievo: le regole non hanno trovato problemi.",
+    "nothingMatches": "Nessun risultato per i filtri.",
+    "fix": "Cosa fare:",
+    "notes": "Note LLM",
+    "noteBy": "Nota LLM · {{client}}",
+    "resolve": "Risolto",
+    "dismiss": "Non pertinente",
+    "reopen": "Riapri",
+    "deleteAll": "Elimina tutte le note LLM",
+    "deleteAllConfirm": "Eliminare tutte le note LLM di questa connessione?",
+    "closedNotes": "Chiuse ({{count}})",
+    "noNotes": "Nessuna nota LLM.",
+    "proNotes": "Con Glafira Pro gli assistenti LLM possono lasciare qui note su cluster, topic e gruppi.",
+    "status": {
+      "resolved": "risolta",
+      "dismissed": "non pertinente"
+    },
+    "ruleNames": {
+      "cluster.noController": "Nessun controller",
+      "partition.offline": "Partizioni non disponibili",
+      "partition.underReplicated": "Partizioni sotto-replicate",
+      "cluster.singleBroker": "Un solo broker",
+      "broker.leaderSkew": "Squilibrio dei leader",
+      "partition.notPreferredLeader": "Leader non sulla replica preferita",
+      "topic.replicationFactorOne": "Fattore di replica 1",
+      "topic.minIsrUnreachable": "min.insync.replicas maggiore del fattore di replica",
+      "topic.minIsrEqualsRf": "min.insync.replicas uguale al fattore di replica",
+      "topic.minIsrOne": "min.insync.replicas uguale a 1",
+      "topic.uncleanElection": "Elezione unclean del leader",
+      "broker.autoCreateTopics": "Creazione automatica dei topic",
+      "broker.defaultReplicationFactorOne": "Fattore di replica predefinito 1",
+      "broker.defaultMinIsrOne": "min.insync.replicas predefinito 1",
+      "broker.configDrift": "Configurazione diversa tra broker",
+      "group.abandoned": "Gruppi abbandonati",
+      "group.rebalancing": "Gruppi in ribilanciamento",
+      "group.idleMembers": "Membri senza partizioni",
+      "group.lagGrowing": "Lag in crescita",
+      "check.partial": "Controllo incompleto"
     }
   },
   "hints": {
@@ -1342,6 +1410,10 @@
     },
     "settings": {
       "mcpEnable": "Avvia un server MCP locale per gli assistenti LLM. L’accesso si apre per ogni connessione ed è disattivato per impostazione predefinita; ogni nuovo client viene confermato in una finestra di dialogo."
+    },
+    "health": {
+      "check": "Esegue le regole integrate di Glafira: partizioni e replica, configurazioni di topic e broker, consumer group. La gravità dipende dall’ambiente della connessione. Il controllo legge soltanto il cluster.",
+      "hidden": "Rilievi che hai nascosto per un oggetto specifico. Non contano nei badge; gli assistenti LLM li vedono contrassegnati come nascosti."
     }
   }
 }

@@ -7,6 +7,7 @@ import { ConsumerPanel } from "./consumer/ConsumerPanel";
 import { TopicList } from "./topics/TopicList";
 import { GroupList } from "./groups/GroupList";
 import { GroupDetails } from "./groups/GroupDetails";
+import { FindingsPanel } from "./health/FindingsPanel";
 import { ProducerPanel } from "./producer/ProducerPanel";
 import { AboutPanel } from "./about/AboutPanel";
 import { SettingsPanel } from "./settings/SettingsPanel";
@@ -58,6 +59,8 @@ export function TabContent({ tab }: { tab: Tab }) {
       return <TopicDetails connectionId={tab.connectionId} topic={tab.topic} />;
     case "groups":
       return <GroupList connectionId={tab.connectionId} />;
+    case "findings":
+      return <FindingsPanel connectionId={tab.connectionId} />;
     case "group":
       return <GroupDetails connectionId={tab.connectionId} groupId={tab.groupId} resetPrefill={tab.resetPrefill} />;
     case "producer":

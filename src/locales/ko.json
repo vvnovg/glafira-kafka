@@ -389,7 +389,8 @@
       "importHere": "여기로 가져오기…"
     },
     "exportAll": "모두 내보내기…",
-    "import": "가져오기…"
+    "import": "가져오기…",
+    "findings": "발견 사항"
   },
   "tabs": {
     "settings": "설정",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · 토픽",
     "groups": "{{conn}} · 그룹",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · 세션 {{target}}"
+    "consumer": "{{conn}} · 세션 {{target}}",
+    "findings": "{{conn}} · 발견 사항"
   },
   "settings": {
     "title": "설정",
@@ -1222,6 +1224,72 @@
         "details": "확인한 토픽 설정: {{topicsChecked}}/{{topicsTotal}}, 그룹: {{groupsChecked}}/{{groupsTotal}}, 읽기 오류: {{errors}}.",
         "fix": "발견 사항은 읽은 내용만 다룹니다. 한 번의 점검은 45초 안에 토픽 2000개, 그룹 500개까지 읽습니다. 클러스터 응답이 느렸다면 나중에 다시 시도하세요."
       }
+    },
+    "title": "발견 사항",
+    "check": "클러스터 점검",
+    "checking": "점검 중…",
+    "never": "아직 이 클러스터를 점검하지 않았습니다.",
+    "last": "마지막 점검: {{when}} · {{who}}",
+    "byUi": "Glafira에서",
+    "scope": "브로커: {{brokers}}, 토픽 설정: {{topicsChecked}}/{{topicsTotal}}, 그룹: {{groupsChecked}}/{{groupsTotal}}",
+    "partial": "일부만 점검됨",
+    "filterSeverity": "심각도",
+    "allSeverities": "모든 심각도",
+    "filterSource": "출처",
+    "allSources": "모든 출처",
+    "sourceRules": "규칙",
+    "sourceLlm": "LLM 메모",
+    "filterKind": "개체",
+    "allKinds": "모든 개체",
+    "kind": {
+      "cluster": "클러스터",
+      "broker": "브로커",
+      "topic": "토픽",
+      "group": "그룹"
+    },
+    "search": "이름으로 검색",
+    "showHidden": "숨긴 항목 표시({{count}})",
+    "hide": "이 개체에서 숨기기",
+    "restore": "되돌리기",
+    "groupSize": "개체: {{count}}",
+    "noFindings": "발견 사항이 없습니다. 규칙에서 문제를 찾지 못했습니다.",
+    "nothingMatches": "필터와 일치하는 항목이 없습니다.",
+    "fix": "조치:",
+    "notes": "LLM 메모",
+    "noteBy": "LLM 메모 · {{client}}",
+    "resolve": "해결됨",
+    "dismiss": "해당 없음",
+    "reopen": "다시 열기",
+    "deleteAll": "LLM 메모 모두 삭제",
+    "deleteAllConfirm": "이 연결의 LLM 메모를 모두 삭제하시겠습니까?",
+    "closedNotes": "닫힘({{count}})",
+    "noNotes": "LLM 메모가 없습니다.",
+    "proNotes": "Glafira Pro를 사용하면 LLM 어시스턴트가 클러스터, 토픽, 그룹에 대한 메모를 여기에 남길 수 있습니다.",
+    "status": {
+      "resolved": "해결됨",
+      "dismissed": "해당 없음"
+    },
+    "ruleNames": {
+      "cluster.noController": "컨트롤러 없음",
+      "partition.offline": "사용할 수 없는 파티션",
+      "partition.underReplicated": "복제 부족 파티션",
+      "cluster.singleBroker": "단일 브로커",
+      "broker.leaderSkew": "리더 편중",
+      "partition.notPreferredLeader": "선호 복제본에 있지 않은 리더",
+      "topic.replicationFactorOne": "복제 계수 1",
+      "topic.minIsrUnreachable": "복제 계수보다 큰 min.insync.replicas",
+      "topic.minIsrEqualsRf": "복제 계수와 같은 min.insync.replicas",
+      "topic.minIsrOne": "min.insync.replicas 값 1",
+      "topic.uncleanElection": "언클린 리더 선출",
+      "broker.autoCreateTopics": "토픽 자동 생성",
+      "broker.defaultReplicationFactorOne": "기본 복제 계수 1",
+      "broker.defaultMinIsrOne": "기본 min.insync.replicas 값 1",
+      "broker.configDrift": "브로커 간 설정 차이",
+      "group.abandoned": "방치된 그룹",
+      "group.rebalancing": "리밸런싱 중인 그룹",
+      "group.idleMembers": "파티션이 없는 멤버",
+      "group.lagGrowing": "늘어나는 랙",
+      "check.partial": "불완전한 점검"
     }
   },
   "hints": {
@@ -1326,6 +1394,10 @@
     },
     "settings": {
       "mcpEnable": "LLM 어시스턴트용 로컬 MCP 서버를 시작합니다. 접근은 연결별로 따로 열며 기본적으로 꺼져 있습니다. 새 클라이언트는 대화 상자에서 확인합니다."
+    },
+    "health": {
+      "check": "Glafira 기본 제공 규칙을 실행합니다: 파티션과 복제, 토픽과 브로커 설정, 컨슈머 그룹. 심각도는 연결 환경에 따라 다릅니다. 점검은 클러스터를 읽기만 합니다.",
+      "hidden": "특정 개체에 대해 숨긴 발견 사항입니다. 배지 수에 포함되지 않으며, LLM 어시스턴트에게는 숨김으로 표시됩니다."
     }
   }
 }

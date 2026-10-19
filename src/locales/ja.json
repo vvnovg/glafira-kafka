@@ -389,7 +389,8 @@
       "importHere": "ここにインポート…"
     },
     "exportAll": "すべてエクスポート…",
-    "import": "インポート…"
+    "import": "インポート…",
+    "findings": "検出事項"
   },
   "tabs": {
     "settings": "設定",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · トピック",
     "groups": "{{conn}} · グループ",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · セッション{{target}}"
+    "consumer": "{{conn}} · セッション{{target}}",
+    "findings": "{{conn}} · 検出事項"
   },
   "settings": {
     "title": "設定",
@@ -1222,6 +1224,72 @@
         "details": "確認したトピック設定：{{topicsChecked}}/{{topicsTotal}}、グループ：{{groupsChecked}}/{{groupsTotal}}、読み取りエラー：{{errors}}。",
         "fix": "結果は読み取れた範囲だけを対象にしています。1回のチェックでは45秒以内に最大2000トピック、500グループを読み取ります。クラスターの応答が遅かった場合は、後でもう一度実行してください。"
       }
+    },
+    "title": "検出事項",
+    "check": "クラスターをチェック",
+    "checking": "チェック中…",
+    "never": "このクラスターはまだチェックされていません。",
+    "last": "前回のチェック：{{when}} · {{who}}",
+    "byUi": "Glafiraから",
+    "scope": "ブローカー：{{brokers}}、トピック設定：{{topicsChecked}}/{{topicsTotal}}、グループ：{{groupsChecked}}/{{groupsTotal}}",
+    "partial": "一部のみチェック",
+    "filterSeverity": "重要度",
+    "allSeverities": "すべての重要度",
+    "filterSource": "ソース",
+    "allSources": "すべてのソース",
+    "sourceRules": "ルール",
+    "sourceLlm": "LLMの注記",
+    "filterKind": "オブジェクト",
+    "allKinds": "すべてのオブジェクト",
+    "kind": {
+      "cluster": "クラスター",
+      "broker": "ブローカー",
+      "topic": "トピック",
+      "group": "グループ"
+    },
+    "search": "名前で検索",
+    "showHidden": "非表示を表示（{{count}}）",
+    "hide": "このオブジェクトで非表示",
+    "restore": "元に戻す",
+    "groupSize": "オブジェクト：{{count}}",
+    "noFindings": "検出事項はありません。ルールは問題を見つけませんでした。",
+    "nothingMatches": "フィルターに一致する項目はありません。",
+    "fix": "対処：",
+    "notes": "LLMの注記",
+    "noteBy": "LLMの注記 · {{client}}",
+    "resolve": "解決済み",
+    "dismiss": "該当なし",
+    "reopen": "再度開く",
+    "deleteAll": "LLMの注記をすべて削除",
+    "deleteAllConfirm": "この接続のLLMの注記をすべて削除しますか？",
+    "closedNotes": "クローズ済み（{{count}}）",
+    "noNotes": "LLMの注記はありません。",
+    "proNotes": "Glafira Proでは、LLMアシスタントがクラスター、トピック、グループについての注記をここに残せます。",
+    "status": {
+      "resolved": "解決済み",
+      "dismissed": "該当なし"
+    },
+    "ruleNames": {
+      "cluster.noController": "コントローラーなし",
+      "partition.offline": "利用できないパーティション",
+      "partition.underReplicated": "レプリカ不足のパーティション",
+      "cluster.singleBroker": "ブローカー1台",
+      "broker.leaderSkew": "リーダーの偏り",
+      "partition.notPreferredLeader": "優先レプリカにないリーダー",
+      "topic.replicationFactorOne": "レプリケーションファクター1",
+      "topic.minIsrUnreachable": "レプリケーションファクターを超えるmin.insync.replicas",
+      "topic.minIsrEqualsRf": "レプリケーションファクターと同じmin.insync.replicas",
+      "topic.minIsrOne": "min.insync.replicasが1",
+      "topic.uncleanElection": "アンクリーンなリーダー選出",
+      "broker.autoCreateTopics": "トピックの自動作成",
+      "broker.defaultReplicationFactorOne": "デフォルトのレプリケーションファクター1",
+      "broker.defaultMinIsrOne": "デフォルトのmin.insync.replicasが1",
+      "broker.configDrift": "ブローカー間の設定の違い",
+      "group.abandoned": "放置されたグループ",
+      "group.rebalancing": "リバランス中のグループ",
+      "group.idleMembers": "パーティションのないメンバー",
+      "group.lagGrowing": "増加するラグ",
+      "check.partial": "不完全なチェック"
     }
   },
   "hints": {
@@ -1326,6 +1394,10 @@
     },
     "settings": {
       "mcpEnable": "LLMアシスタント向けにローカルのMCPサーバーを起動します。アクセスは接続ごとに個別に開放され、デフォルトではオフです。新しいクライアントはダイアログで確認します。"
+    },
+    "health": {
+      "check": "Glafiraの組み込みルールを実行します（パーティションとレプリケーション、トピックとブローカーの設定、コンシューマーグループ）。重要度は接続の環境によって変わります。チェックはクラスターを読み取るだけです。",
+      "hidden": "特定のオブジェクトについて非表示にした検出事項です。バッジには数えられません。LLMアシスタントには非表示として表示されます。"
     }
   }
 }

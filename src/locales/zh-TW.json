@@ -389,7 +389,8 @@
       "importHere": "匯入到這裡…"
     },
     "exportAll": "全部匯出…",
-    "import": "匯入…"
+    "import": "匯入…",
+    "findings": "檢查結果"
   },
   "tabs": {
     "settings": "設定",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · 主題",
     "groups": "{{conn}} · 群組",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · 工作階段 {{target}}"
+    "consumer": "{{conn}} · 工作階段 {{target}}",
+    "findings": "{{conn}} · 檢查結果"
   },
   "settings": {
     "title": "設定",
@@ -1222,6 +1224,72 @@
         "details": "已檢查的主題設定：{{topicsChecked}}/{{topicsTotal}}，消費者群組：{{groupsChecked}}/{{groupsTotal}}，讀取錯誤：{{errors}}。",
         "fix": "檢查結果只涵蓋已讀取的內容。一次檢查會在 45 秒內最多讀取 2000 個主題與 500 個群組；若叢集回應緩慢，請稍後再試。"
       }
+    },
+    "title": "檢查結果",
+    "check": "檢查叢集",
+    "checking": "正在檢查…",
+    "never": "尚未檢查過此叢集。",
+    "last": "上次檢查：{{when}} · {{who}}",
+    "byUi": "在 Glafira 中",
+    "scope": "Broker：{{brokers}}；主題設定：{{topicsChecked}}/{{topicsTotal}}；消費者群組：{{groupsChecked}}/{{groupsTotal}}",
+    "partial": "部分檢查",
+    "filterSeverity": "嚴重程度",
+    "allSeverities": "所有嚴重程度",
+    "filterSource": "來源",
+    "allSources": "所有來源",
+    "sourceRules": "規則",
+    "sourceLlm": "LLM 註記",
+    "filterKind": "物件",
+    "allKinds": "所有物件",
+    "kind": {
+      "cluster": "叢集",
+      "broker": "Broker",
+      "topic": "主題",
+      "group": "消費者群組"
+    },
+    "search": "依名稱搜尋",
+    "showHidden": "顯示已隱藏（{{count}}）",
+    "hide": "對此物件隱藏",
+    "restore": "還原",
+    "groupSize": "物件：{{count}}",
+    "noFindings": "沒有檢查結果：規則未發現問題。",
+    "nothingMatches": "沒有符合篩選條件的項目。",
+    "fix": "處理方式：",
+    "notes": "LLM 註記",
+    "noteBy": "LLM 註記 · {{client}}",
+    "resolve": "已解決",
+    "dismiss": "不相關",
+    "reopen": "重新開啟",
+    "deleteAll": "刪除所有 LLM 註記",
+    "deleteAllConfirm": "要刪除此連線的所有 LLM 註記嗎？",
+    "closedNotes": "已關閉（{{count}}）",
+    "noNotes": "沒有 LLM 註記。",
+    "proNotes": "使用 Glafira Pro 時，LLM 助理可以在這裡留下關於叢集、主題和群組的註記。",
+    "status": {
+      "resolved": "已解決",
+      "dismissed": "不相關"
+    },
+    "ruleNames": {
+      "cluster.noController": "沒有控制器",
+      "partition.offline": "無法使用的分區",
+      "partition.underReplicated": "複本不足的分區",
+      "cluster.singleBroker": "單一 Broker",
+      "broker.leaderSkew": "Leader 分布不均",
+      "partition.notPreferredLeader": "Leader 不在偏好複本上",
+      "topic.replicationFactorOne": "複寫係數為 1",
+      "topic.minIsrUnreachable": "min.insync.replicas 大於複寫係數",
+      "topic.minIsrEqualsRf": "min.insync.replicas 等於複寫係數",
+      "topic.minIsrOne": "min.insync.replicas 為 1",
+      "topic.uncleanElection": "不乾淨的 Leader 選舉",
+      "broker.autoCreateTopics": "自動建立主題",
+      "broker.defaultReplicationFactorOne": "預設複寫係數為 1",
+      "broker.defaultMinIsrOne": "預設 min.insync.replicas 為 1",
+      "broker.configDrift": "Broker 設定不一致",
+      "group.abandoned": "已廢棄的消費者群組",
+      "group.rebalancing": "正在重新平衡的消費者群組",
+      "group.idleMembers": "沒有分區的成員",
+      "group.lagGrowing": "延遲增加",
+      "check.partial": "檢查不完整"
     }
   },
   "hints": {
@@ -1326,6 +1394,10 @@
     },
     "settings": {
       "mcpEnable": "為 LLM 助理啟動本機 MCP 伺服器。存取權限依連線分別開放，預設為關閉；每個新用戶端都需在對話框中確認。"
+    },
+    "health": {
+      "check": "執行 Glafira 內建規則：分區與複寫、主題與 Broker 設定、消費者群組。嚴重程度取決於連線的環境。檢查只會讀取叢集。",
+      "hidden": "你為特定物件隱藏的檢查結果。它們不計入標記；LLM 助理會看到它們被標示為已隱藏。"
     }
   }
 }

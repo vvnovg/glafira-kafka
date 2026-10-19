@@ -163,3 +163,24 @@ label.inline { display: inline-flex; gap: 4px; align-items: center; white-space:
 .llm-badge { font-size: 9px; padding: 0 3px; border: 1px solid var(--accent); border-radius: 3px; color: var(--accent); }
 .mcp-config pre { margin: 4px 0 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-alt); white-space: pre-wrap; word-break: break-all; font-size: 12px; }
 .mcp-indicator.active::before { content: "● "; color: var(--accent); }
+
+/* Проверка кластера и замечания (G2) */
+.sev { font-size: 11px; line-height: 1; white-space: nowrap; }
+.sev-critical { color: var(--danger); }
+.sev-warning { color: var(--warn); }
+.sev-info { color: var(--accent); }
+.sev-count { margin-left: 2px; color: var(--fg); font-size: 11px; }
+.check-bar { display: flex; flex-direction: column; gap: 4px; }
+.check-bar p { margin: 0; }
+.check-bar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.check-bar-count { margin-left: 8px; }
+.finding-group { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; margin-bottom: 6px; }
+.finding-group > summary { cursor: pointer; padding: 4px 0; }
+.finding-list { list-style: none; margin: 0; padding: 0; }
+.finding { padding: 6px 0; border-top: 1px solid var(--border); }
+.finding:first-child { border-top: none; }
+.finding p { margin: 2px 0; }
+.finding-head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.finding-actions { display: flex; gap: 12px; }
+.finding.is-hidden, .finding.is-closed { opacity: 0.65; }
+.note-body { white-space: pre-wrap; overflow-wrap: anywhere; }

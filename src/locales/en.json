@@ -389,7 +389,8 @@
       "importHere": "Import here…"
     },
     "exportAll": "Export all…",
-    "import": "Import…"
+    "import": "Import…",
+    "findings": "Findings"
   },
   "tabs": {
     "settings": "Settings",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · Topics",
     "groups": "{{conn}} · Groups",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · Session {{target}}"
+    "consumer": "{{conn}} · Session {{target}}",
+    "findings": "{{conn}} · Findings"
   },
   "settings": {
     "title": "Settings",
@@ -1230,6 +1232,72 @@
         "details": "Topic configs checked: {{topicsChecked}} of {{topicsTotal}}; groups: {{groupsChecked}} of {{groupsTotal}}; read errors: {{errors}}.",
         "fix": "Findings cover only what was read. A check reads up to 2000 topics and 500 groups within 45 seconds; if the cluster was slow, retry later."
       }
+    },
+    "title": "Findings",
+    "check": "Check cluster",
+    "checking": "Checking…",
+    "never": "The cluster has not been checked yet.",
+    "last": "Last check: {{when}} · {{who}}",
+    "byUi": "in Glafira",
+    "scope": "Brokers: {{brokers}}; topic configs: {{topicsChecked}} of {{topicsTotal}}; groups: {{groupsChecked}} of {{groupsTotal}}",
+    "partial": "checked partially",
+    "filterSeverity": "Severity",
+    "allSeverities": "All severities",
+    "filterSource": "Source",
+    "allSources": "All sources",
+    "sourceRules": "Rules",
+    "sourceLlm": "LLM notes",
+    "filterKind": "Object",
+    "allKinds": "All objects",
+    "kind": {
+      "cluster": "Cluster",
+      "broker": "Broker",
+      "topic": "Topic",
+      "group": "Group"
+    },
+    "search": "Search by name",
+    "showHidden": "Show hidden ({{count}})",
+    "hide": "Hide for this object",
+    "restore": "Restore",
+    "groupSize": "objects: {{count}}",
+    "noFindings": "No findings: the rules found no problems.",
+    "nothingMatches": "Nothing matches the filters.",
+    "fix": "What to do:",
+    "notes": "LLM notes",
+    "noteBy": "LLM note · {{client}}",
+    "resolve": "Resolved",
+    "dismiss": "Not relevant",
+    "reopen": "Reopen",
+    "deleteAll": "Delete all LLM notes",
+    "deleteAllConfirm": "Delete all LLM notes of this connection?",
+    "closedNotes": "Closed ({{count}})",
+    "noNotes": "No LLM notes.",
+    "proNotes": "With Glafira Pro, LLM assistants can leave notes here about the cluster, topics and groups.",
+    "status": {
+      "resolved": "resolved",
+      "dismissed": "not relevant"
+    },
+    "ruleNames": {
+      "cluster.noController": "No controller",
+      "partition.offline": "Offline partitions",
+      "partition.underReplicated": "Under-replicated partitions",
+      "cluster.singleBroker": "Single broker",
+      "broker.leaderSkew": "Leader skew",
+      "partition.notPreferredLeader": "Leaders not on the preferred replica",
+      "topic.replicationFactorOne": "Replication factor 1",
+      "topic.minIsrUnreachable": "min.insync.replicas above the replication factor",
+      "topic.minIsrEqualsRf": "min.insync.replicas equals the replication factor",
+      "topic.minIsrOne": "min.insync.replicas is 1",
+      "topic.uncleanElection": "Unclean leader election",
+      "broker.autoCreateTopics": "Topic auto-creation",
+      "broker.defaultReplicationFactorOne": "Default replication factor 1",
+      "broker.defaultMinIsrOne": "Default min.insync.replicas 1",
+      "broker.configDrift": "Config drift between brokers",
+      "group.abandoned": "Abandoned groups",
+      "group.rebalancing": "Rebalancing groups",
+      "group.idleMembers": "Members without partitions",
+      "group.lagGrowing": "Growing lag",
+      "check.partial": "Incomplete check"
     }
   },
   "hints": {
@@ -1334,6 +1402,10 @@
     },
     "settings": {
       "mcpEnable": "Starts a local MCP server for LLM assistants. Access is opened per connection and is off by default; each new client is confirmed in a dialog."
+    },
+    "health": {
+      "check": "Runs Glafira’s built-in rules: partitions and replication, topic and broker configs, consumer groups. Severity depends on the connection environment. The check only reads the cluster.",
+      "hidden": "Findings you hid for a specific object. They do not count in badges; LLM assistants see them marked as hidden."
     }
   }
 }

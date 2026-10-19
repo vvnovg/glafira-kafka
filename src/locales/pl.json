@@ -389,7 +389,8 @@
       "importHere": "Importuj tutaj…"
     },
     "exportAll": "Eksportuj wszystko…",
-    "import": "Importuj…"
+    "import": "Importuj…",
+    "findings": "Ustalenia"
   },
   "tabs": {
     "settings": "Ustawienia",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · Topiki",
     "groups": "{{conn}} · Grupy",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · Sesja {{target}}"
+    "consumer": "{{conn}} · Sesja {{target}}",
+    "findings": "{{conn}} · Ustalenia"
   },
   "settings": {
     "title": "Ustawienia",
@@ -1246,6 +1248,72 @@
         "details": "Sprawdzone konfiguracje topików: {{topicsChecked}} z {{topicsTotal}}; grupy: {{groupsChecked}} z {{groupsTotal}}; błędy odczytu: {{errors}}.",
         "fix": "Ustalenia obejmują tylko to, co odczytano. Sprawdzenie czyta do 2000 topików i 500 grup w 45 sekund; jeśli klaster działał wolno, spróbuj później."
       }
+    },
+    "title": "Ustalenia",
+    "check": "Sprawdź klaster",
+    "checking": "Sprawdzanie…",
+    "never": "Klaster nie był jeszcze sprawdzany.",
+    "last": "Ostatnie sprawdzenie: {{when}} · {{who}}",
+    "byUi": "w aplikacji Glafira",
+    "scope": "Brokery: {{brokers}}; konfiguracje topików: {{topicsChecked}} z {{topicsTotal}}; grupy: {{groupsChecked}} z {{groupsTotal}}",
+    "partial": "sprawdzono częściowo",
+    "filterSeverity": "Waga",
+    "allSeverities": "Każda waga",
+    "filterSource": "Źródło",
+    "allSources": "Wszystkie źródła",
+    "sourceRules": "Reguły",
+    "sourceLlm": "Notatki LLM",
+    "filterKind": "Obiekt",
+    "allKinds": "Wszystkie obiekty",
+    "kind": {
+      "cluster": "Klaster",
+      "broker": "Broker",
+      "topic": "Topik",
+      "group": "Grupa"
+    },
+    "search": "Szukaj po nazwie",
+    "showHidden": "Pokaż ukryte ({{count}})",
+    "hide": "Ukryj dla tego obiektu",
+    "restore": "Przywróć",
+    "groupSize": "obiekty: {{count}}",
+    "noFindings": "Brak ustaleń: reguły nie znalazły problemów.",
+    "nothingMatches": "Nic nie pasuje do filtrów.",
+    "fix": "Co zrobić:",
+    "notes": "Notatki LLM",
+    "noteBy": "Notatka LLM · {{client}}",
+    "resolve": "Rozwiązane",
+    "dismiss": "Nieaktualne",
+    "reopen": "Otwórz ponownie",
+    "deleteAll": "Usuń wszystkie notatki LLM",
+    "deleteAllConfirm": "Usunąć wszystkie notatki LLM tego połączenia?",
+    "closedNotes": "Zamknięte ({{count}})",
+    "noNotes": "Brak notatek LLM.",
+    "proNotes": "W Glafira Pro asystenci LLM mogą zostawiać tu notatki o klastrze, topikach i grupach.",
+    "status": {
+      "resolved": "rozwiązana",
+      "dismissed": "nieaktualna"
+    },
+    "ruleNames": {
+      "cluster.noController": "Brak kontrolera",
+      "partition.offline": "Niedostępne partycje",
+      "partition.underReplicated": "Niedoreplikowane partycje",
+      "cluster.singleBroker": "Jeden broker",
+      "broker.leaderSkew": "Nierówny rozkład leaderów",
+      "partition.notPreferredLeader": "Leaderzy poza preferowaną repliką",
+      "topic.replicationFactorOne": "Współczynnik replikacji 1",
+      "topic.minIsrUnreachable": "min.insync.replicas większe niż współczynnik replikacji",
+      "topic.minIsrEqualsRf": "min.insync.replicas równe współczynnikowi replikacji",
+      "topic.minIsrOne": "min.insync.replicas równe 1",
+      "topic.uncleanElection": "Nieczysty wybór leadera",
+      "broker.autoCreateTopics": "Automatyczne tworzenie topików",
+      "broker.defaultReplicationFactorOne": "Domyślny współczynnik replikacji 1",
+      "broker.defaultMinIsrOne": "Domyślne min.insync.replicas 1",
+      "broker.configDrift": "Różna konfiguracja brokerów",
+      "group.abandoned": "Porzucone grupy",
+      "group.rebalancing": "Grupy w trakcie rebalansu",
+      "group.idleMembers": "Członkowie bez partycji",
+      "group.lagGrowing": "Rosnący lag",
+      "check.partial": "Niepełne sprawdzenie"
     }
   },
   "hints": {
@@ -1350,6 +1418,10 @@
     },
     "settings": {
       "mcpEnable": "Uruchamia lokalny serwer MCP dla asystentów LLM. Dostęp otwiera się osobno dla każdego połączenia i domyślnie jest wyłączony; każdy nowy klient jest potwierdzany w oknie dialogowym."
+    },
+    "health": {
+      "check": "Uruchamia wbudowane reguły Glafira: partycje i replikacja, konfiguracje topików i brokerów, grupy konsumentów. Waga zależy od środowiska połączenia. Sprawdzenie tylko odczytuje klaster.",
+      "hidden": "Ustalenia ukryte przez Ciebie dla konkretnego obiektu. Nie są liczone w znaczkach; asystenci LLM widzą je oznaczone jako ukryte."
     }
   }
 }

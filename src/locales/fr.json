@@ -389,7 +389,8 @@
       "importHere": "Importer ici…"
     },
     "exportAll": "Tout exporter…",
-    "import": "Importer…"
+    "import": "Importer…",
+    "findings": "Constats"
   },
   "tabs": {
     "settings": "Paramètres",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · Topics",
     "groups": "{{conn}} · Groupes",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · Session {{target}}"
+    "consumer": "{{conn}} · Session {{target}}",
+    "findings": "{{conn}} · Constats"
   },
   "settings": {
     "title": "Paramètres",
@@ -1238,6 +1240,72 @@
         "details": "Configurations de topics vérifiées : {{topicsChecked}} sur {{topicsTotal}} ; groupes : {{groupsChecked}} sur {{groupsTotal}} ; erreurs de lecture : {{errors}}.",
         "fix": "Les constats ne couvrent que ce qui a été lu. Une vérification lit jusqu’à 2000 topics et 500 groupes en 45 secondes ; si le cluster était lent, réessayez plus tard."
       }
+    },
+    "title": "Constats",
+    "check": "Vérifier le cluster",
+    "checking": "Vérification…",
+    "never": "Le cluster n’a pas encore été vérifié.",
+    "last": "Dernière vérification : {{when}} · {{who}}",
+    "byUi": "dans Glafira",
+    "scope": "Brokers : {{brokers}} ; configurations de topics : {{topicsChecked}} sur {{topicsTotal}} ; groupes : {{groupsChecked}} sur {{groupsTotal}}",
+    "partial": "vérifié partiellement",
+    "filterSeverity": "Gravité",
+    "allSeverities": "Toutes les gravités",
+    "filterSource": "Origine",
+    "allSources": "Toutes les origines",
+    "sourceRules": "Règles",
+    "sourceLlm": "Remarques LLM",
+    "filterKind": "Objet",
+    "allKinds": "Tous les objets",
+    "kind": {
+      "cluster": "Cluster",
+      "broker": "Broker",
+      "topic": "Topic",
+      "group": "Groupe"
+    },
+    "search": "Rechercher par nom",
+    "showHidden": "Afficher les masqués ({{count}})",
+    "hide": "Masquer pour cet objet",
+    "restore": "Rétablir",
+    "groupSize": "objets : {{count}}",
+    "noFindings": "Aucun constat : les règles n’ont trouvé aucun problème.",
+    "nothingMatches": "Rien ne correspond aux filtres.",
+    "fix": "Que faire :",
+    "notes": "Remarques LLM",
+    "noteBy": "Remarque LLM · {{client}}",
+    "resolve": "Résolu",
+    "dismiss": "Sans objet",
+    "reopen": "Rouvrir",
+    "deleteAll": "Supprimer toutes les remarques LLM",
+    "deleteAllConfirm": "Supprimer toutes les remarques LLM de cette connexion ?",
+    "closedNotes": "Fermées ({{count}})",
+    "noNotes": "Aucune remarque LLM.",
+    "proNotes": "Avec Glafira Pro, les assistants LLM peuvent laisser ici des remarques sur le cluster, les topics et les groupes.",
+    "status": {
+      "resolved": "résolue",
+      "dismissed": "sans objet"
+    },
+    "ruleNames": {
+      "cluster.noController": "Aucun contrôleur",
+      "partition.offline": "Partitions indisponibles",
+      "partition.underReplicated": "Partitions sous-répliquées",
+      "cluster.singleBroker": "Un seul broker",
+      "broker.leaderSkew": "Déséquilibre des leaders",
+      "partition.notPreferredLeader": "Leaders hors de la réplique préférée",
+      "topic.replicationFactorOne": "Facteur de réplication 1",
+      "topic.minIsrUnreachable": "min.insync.replicas supérieur au facteur de réplication",
+      "topic.minIsrEqualsRf": "min.insync.replicas égal au facteur de réplication",
+      "topic.minIsrOne": "min.insync.replicas à 1",
+      "topic.uncleanElection": "Élection de leader non propre",
+      "broker.autoCreateTopics": "Création automatique de topics",
+      "broker.defaultReplicationFactorOne": "Facteur de réplication par défaut à 1",
+      "broker.defaultMinIsrOne": "min.insync.replicas par défaut à 1",
+      "broker.configDrift": "Configuration différente entre brokers",
+      "group.abandoned": "Groupes abandonnés",
+      "group.rebalancing": "Groupes en rééquilibrage",
+      "group.idleMembers": "Membres sans partition",
+      "group.lagGrowing": "Lag croissant",
+      "check.partial": "Vérification incomplète"
     }
   },
   "hints": {
@@ -1342,6 +1410,10 @@
     },
     "settings": {
       "mcpEnable": "Démarre un serveur MCP local pour les assistants LLM. L’accès s’ouvre connexion par connexion et est désactivé par défaut ; chaque nouveau client est confirmé dans une boîte de dialogue."
+    },
+    "health": {
+      "check": "Exécute les règles intégrées de Glafira : partitions et réplication, configurations des topics et des brokers, consumer groups. La gravité dépend de l’environnement de la connexion. La vérification ne fait que lire le cluster.",
+      "hidden": "Constats que vous avez masqués pour un objet précis. Ils ne sont pas comptés dans les badges ; les assistants LLM les voient marqués comme masqués."
     }
   }
 }

@@ -389,7 +389,8 @@
       "importHere": "Импортировать сюда…"
     },
     "exportAll": "Экспортировать всё…",
-    "import": "Импортировать…"
+    "import": "Импортировать…",
+    "findings": "Замечания"
   },
   "tabs": {
     "settings": "Настройки",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · Топики",
     "groups": "{{conn}} · Группы",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · Сессия {{target}}"
+    "consumer": "{{conn}} · Сессия {{target}}",
+    "findings": "{{conn}} · Замечания"
   },
   "settings": {
     "title": "Настройки",
@@ -1246,6 +1248,72 @@
         "details": "Проверено конфигов топиков: {{topicsChecked}} из {{topicsTotal}}, групп: {{groupsChecked}} из {{groupsTotal}}, ошибок чтения: {{errors}}.",
         "fix": "Находки охватывают только прочитанное. Проверка читает до 2000 топиков и 500 групп за 45 секунд; если кластер отвечал медленно, повторите позже."
       }
+    },
+    "title": "Замечания",
+    "check": "Проверить кластер",
+    "checking": "Проверка…",
+    "never": "Кластер ещё не проверялся.",
+    "last": "Последняя проверка: {{when}} · {{who}}",
+    "byUi": "в Glafira",
+    "scope": "Брокеров: {{brokers}}; конфигов топиков: {{topicsChecked}} из {{topicsTotal}}; групп: {{groupsChecked}} из {{groupsTotal}}",
+    "partial": "проверено частично",
+    "filterSeverity": "Строгость",
+    "allSeverities": "Любая строгость",
+    "filterSource": "Источник",
+    "allSources": "Все источники",
+    "sourceRules": "Правила",
+    "sourceLlm": "Замечания LLM",
+    "filterKind": "Объект",
+    "allKinds": "Все объекты",
+    "kind": {
+      "cluster": "Кластер",
+      "broker": "Брокер",
+      "topic": "Топик",
+      "group": "Группа"
+    },
+    "search": "Поиск по имени",
+    "showHidden": "Показать скрытые ({{count}})",
+    "hide": "Скрыть для этого объекта",
+    "restore": "Вернуть",
+    "groupSize": "объектов: {{count}}",
+    "noFindings": "Находок нет: правила не нашли проблем.",
+    "nothingMatches": "Под фильтры ничего не подходит.",
+    "fix": "Что делать:",
+    "notes": "Замечания LLM",
+    "noteBy": "Замечание LLM · {{client}}",
+    "resolve": "Решено",
+    "dismiss": "Не актуально",
+    "reopen": "Открыть снова",
+    "deleteAll": "Удалить все замечания LLM",
+    "deleteAllConfirm": "Удалить все замечания LLM у этого подключения?",
+    "closedNotes": "Закрытые ({{count}})",
+    "noNotes": "Замечаний LLM нет.",
+    "proNotes": "С Glafira Pro LLM-ассистенты могут оставлять здесь замечания о кластере, топиках и группах.",
+    "status": {
+      "resolved": "решено",
+      "dismissed": "не актуально"
+    },
+    "ruleNames": {
+      "cluster.noController": "Нет контроллера",
+      "partition.offline": "Недоступные партиции",
+      "partition.underReplicated": "Недореплицированные партиции",
+      "cluster.singleBroker": "Один брокер",
+      "broker.leaderSkew": "Перекос лидеров",
+      "partition.notPreferredLeader": "Лидеры не на preferred-репликах",
+      "topic.replicationFactorOne": "Фактор репликации 1",
+      "topic.minIsrUnreachable": "min.insync.replicas больше фактора репликации",
+      "topic.minIsrEqualsRf": "min.insync.replicas равен фактору репликации",
+      "topic.minIsrOne": "min.insync.replicas равен 1",
+      "topic.uncleanElection": "Unclean-выбор лидера",
+      "broker.autoCreateTopics": "Автосоздание топиков",
+      "broker.defaultReplicationFactorOne": "Фактор репликации по умолчанию — 1",
+      "broker.defaultMinIsrOne": "min.insync.replicas по умолчанию — 1",
+      "broker.configDrift": "Расхождение конфигов брокеров",
+      "group.abandoned": "Брошенные группы",
+      "group.rebalancing": "Группы в ребалансировке",
+      "group.idleMembers": "Участники без партиций",
+      "group.lagGrowing": "Растущий лаг",
+      "check.partial": "Неполная проверка"
     }
   },
   "hints": {
@@ -1350,6 +1418,10 @@
     },
     "settings": {
       "mcpEnable": "Запускает локальный MCP-сервер для LLM-ассистентов. Доступ открывается для каждого подключения отдельно и по умолчанию выключен; новый клиент подтверждается в диалоге."
+    },
+    "health": {
+      "check": "Запускает встроенные правила Glafira: партиции и репликация, конфиги топиков и брокеров, consumer groups. Строгость зависит от окружения подключения. Проверка только читает кластер.",
+      "hidden": "Находки, которые вы скрыли для конкретного объекта. Они не считаются в значках; LLM-ассистенты видят их с пометкой «скрыто»."
     }
   }
 }

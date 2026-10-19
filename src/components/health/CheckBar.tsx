@@ -1,0 +1,64 @@
+import { useTranslation } from "react-i18next";
+import type { CheckRun } from "../../api/types";
+import { currentLocale } from "../../i18n";
+import { useHealth, useHealthActions } from "../../lib/useHealth";
+import { ErrorBanner } from "../common/ErrorBanner";
+import { Hint } from "../common/Hint";
+import { SeverityMark } from "./parts";
+import { findingsOf, SEVERITIES } from "./findings";
+
+/** «5 минут назад» в формате языка интерфейса. */
+export function formatAgo(atMs: number, nowMs: number, lang: string): string {
+  const s = Math.round((atMs - nowMs) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto" });
+  const abs = Math.abs(s);
+  if (abs < 60) return rtf.format(s, "second");
+  if (abs < 3600) return rtf.format(Math.round(s / 60), "minute");
+  if (abs < 86_400) return rtf.format(Math.round(s / 3600), "hour");
+  return rtf.format(Math.round(s / 86_400), "day");
+}
+
+function useWho() {
+  const { t } = useTranslation();
+  return (run: CheckRun) =>
+    run.trigger.kind === "ui" ? t("health.byUi") : (run.trigger.client ?? t("mcp.unknownClient"));
+}
+
+/** Кнопка «Проверить кластер» и итог последней проверки: время, кто, число находок по строгости. */
+export function CheckBar({ connectionId }: { connectionId: string }) {
+  const { t } = useTranslation();
+  const health = useHealth(connectionId);
+  const { run } = useHealthActions(connectionId);
+  const who = useWho();
+  const last = health.data?.lastCheck ?? null;
+  const visible = findingsOf(health.data, false);
+  return (
+    <div className="check-bar">
+      <div className="check-bar-row">
+        <button type="button" disabled={run.isPending} onClick={() => run.mutate()}>
+          {run.isPending ? t("health.checking") : t("health.check")}
+        </button>
+        <Hint k="hints.health.check" label={t("health.check")} />
+        {last ? (
+          <span>
+            {t("health.last", { when: formatAgo(last.startedAtMs, Date.now(), currentLocale()), who: who(last) })}
+            {SEVERITIES.map((s) => {
+              const n = visible.filter((f) => f.severity === s).length;
+              return n > 0 ? (
+                <span key={s} className="check-bar-count">
+                  <SeverityMark severity={s} count={n} />
+                </span>
+              ) : null;
+            })}
+            {last.incomplete && <span className="warn"> · {t("health.partial")}</span>}
+          </span>
+        ) : (
+          !health.isPending && <span className="muted">{t("health.never")}</span>
+        )}
+      </div>
+      {last && <p className="muted">{t("health.scope", last.scope)}</p>}
+      {run.error && <ErrorBanner error={run.error} onRetry={() => run.mutate()} />}
+      {health.error && <ErrorBanner error={health.error} onRetry={() => health.refetch()} />}
+    </div>
+  );
+}

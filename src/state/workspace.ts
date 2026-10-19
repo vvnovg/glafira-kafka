@@ -11,6 +11,8 @@ export type TabSpec =
   | { kind: "topics"; connectionId: string }
   | { kind: "topic"; connectionId: string; topic: string }
   | { kind: "groups"; connectionId: string }
+  /** «Замечания»: находки проверки кластера и замечания LLM (G2). */
+  | { kind: "findings"; connectionId: string }
   | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill }
   | { kind: "producer"; connectionId: string; prefill?: ProducerPrefill }
   | { kind: "consumer"; connectionId: string; key: string; topic?: string; groupId?: string }

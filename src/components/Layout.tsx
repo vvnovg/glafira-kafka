@@ -37,6 +37,8 @@ function tabTitle(tab: Tab, byId: Map<string, ConnectionProfile>): string {
       return `${conn} · ${tab.topic}`;
     case "groups":
       return i18n.t("tabs.groups", { conn });
+    case "findings":
+      return i18n.t("tabs.findings", { conn });
     case "group":
       return `${conn} · ${tab.groupId}`;
     case "producer":

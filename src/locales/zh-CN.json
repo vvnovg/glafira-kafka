@@ -389,7 +389,8 @@
       "importHere": "导入到此处…"
     },
     "exportAll": "全部导出…",
-    "import": "导入…"
+    "import": "导入…",
+    "findings": "检查结果"
   },
   "tabs": {
     "settings": "设置",
@@ -402,7 +403,8 @@
     "topics": "{{conn}} · 主题",
     "groups": "{{conn}} · 消费者组",
     "producer": "{{conn}} · Producer",
-    "consumer": "{{conn}} · 会话 {{target}}"
+    "consumer": "{{conn}} · 会话 {{target}}",
+    "findings": "{{conn}} · 检查结果"
   },
   "settings": {
     "title": "设置",
@@ -1222,6 +1224,72 @@
         "details": "已检查主题配置：{{topicsChecked}}/{{topicsTotal}}，消费者组：{{groupsChecked}}/{{groupsTotal}}，读取错误：{{errors}}。",
         "fix": "检查结果仅涵盖已读取的内容。一次检查在 45 秒内最多读取 2000 个主题和 500 个组；如果集群响应慢，请稍后重试。"
       }
+    },
+    "title": "检查结果",
+    "check": "检查集群",
+    "checking": "正在检查…",
+    "never": "尚未检查过该集群。",
+    "last": "上次检查：{{when}} · {{who}}",
+    "byUi": "在 Glafira 中",
+    "scope": "Broker：{{brokers}}；主题配置：{{topicsChecked}}/{{topicsTotal}}；消费者组：{{groupsChecked}}/{{groupsTotal}}",
+    "partial": "部分检查",
+    "filterSeverity": "严重程度",
+    "allSeverities": "全部严重程度",
+    "filterSource": "来源",
+    "allSources": "全部来源",
+    "sourceRules": "规则",
+    "sourceLlm": "LLM 批注",
+    "filterKind": "对象",
+    "allKinds": "全部对象",
+    "kind": {
+      "cluster": "集群",
+      "broker": "Broker",
+      "topic": "主题",
+      "group": "消费者组"
+    },
+    "search": "按名称搜索",
+    "showHidden": "显示已隐藏（{{count}}）",
+    "hide": "对此对象隐藏",
+    "restore": "恢复",
+    "groupSize": "对象：{{count}}",
+    "noFindings": "没有检查结果：规则未发现问题。",
+    "nothingMatches": "没有符合筛选条件的内容。",
+    "fix": "处理方法：",
+    "notes": "LLM 批注",
+    "noteBy": "LLM 批注 · {{client}}",
+    "resolve": "已解决",
+    "dismiss": "不相关",
+    "reopen": "重新打开",
+    "deleteAll": "删除所有 LLM 批注",
+    "deleteAllConfirm": "删除此连接的所有 LLM 批注？",
+    "closedNotes": "已关闭（{{count}}）",
+    "noNotes": "没有 LLM 批注。",
+    "proNotes": "使用 Glafira Pro 时，LLM 助手可以在这里留下关于集群、主题和组的批注。",
+    "status": {
+      "resolved": "已解决",
+      "dismissed": "不相关"
+    },
+    "ruleNames": {
+      "cluster.noController": "没有控制器",
+      "partition.offline": "不可用的分区",
+      "partition.underReplicated": "副本不足的分区",
+      "cluster.singleBroker": "单 Broker",
+      "broker.leaderSkew": "Leader 分布不均",
+      "partition.notPreferredLeader": "Leader 不在首选副本上",
+      "topic.replicationFactorOne": "副本因子为 1",
+      "topic.minIsrUnreachable": "min.insync.replicas 大于副本因子",
+      "topic.minIsrEqualsRf": "min.insync.replicas 等于副本因子",
+      "topic.minIsrOne": "min.insync.replicas 为 1",
+      "topic.uncleanElection": "不干净的 Leader 选举",
+      "broker.autoCreateTopics": "自动创建主题",
+      "broker.defaultReplicationFactorOne": "默认副本因子为 1",
+      "broker.defaultMinIsrOne": "默认 min.insync.replicas 为 1",
+      "broker.configDrift": "Broker 配置不一致",
+      "group.abandoned": "废弃的消费者组",
+      "group.rebalancing": "正在重平衡的消费者组",
+      "group.idleMembers": "没有分区的成员",
+      "group.lagGrowing": "延迟增长",
+      "check.partial": "检查不完整"
     }
   },
   "hints": {
@@ -1326,6 +1394,10 @@
     },
     "settings": {
       "mcpEnable": "为 LLM 助手启动本地 MCP 服务器。访问权限按连接分别开放，默认关闭；每个新客户端都需在对话框中确认。"
+    },
+    "health": {
+      "check": "运行 Glafira 内置规则：分区与复制、主题与 Broker 配置、消费者组。严重程度取决于连接的环境。检查只读取集群。",
+      "hidden": "你为特定对象隐藏的检查结果。它们不计入标记；LLM 助手会看到它们被标为已隐藏。"
     }
   }
 }

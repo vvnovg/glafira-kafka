@@ -2,10 +2,11 @@
 //! фальшивый Backend.
 
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use glafira_mcp::health::*;
 use glafira_mcp::model::*;
 use glafira_mcp::{
     AuditLog, Backend, BackendError, BoxFuture, GatewayOptions, McpServerHandle, endpoint,
@@ -34,6 +35,12 @@ struct Fake {
     /// Операций чтения сейчас и наибольшее число одновременных.
     active: AtomicUsize,
     peak: AtomicUsize,
+    /// Операции проверки и замечаний, которые дошли до Backend.
+    health_ops: Mutex<Vec<HealthOp>>,
+    pro: AtomicBool,
+    check_delay: Mutex<Duration>,
+    /// Находки с длинными пояснениями (предел 100 КБ).
+    big_findings: AtomicBool,
 }
 
 /// Считает одновременные операции чтения на любом выходе из `read`.
@@ -72,6 +79,10 @@ impl Fake {
             lag_delay: Mutex::new(Duration::ZERO),
             active: AtomicUsize::new(0),
             peak: AtomicUsize::new(0),
+            health_ops: Mutex::new(Vec::new()),
+            pro: AtomicBool::new(true),
+            check_delay: Mutex::new(Duration::ZERO),
+            big_findings: AtomicBool::new(false),
         })
     }
 }
@@ -137,6 +148,92 @@ fn partition(id: i32) -> Partition {
         message_count: Some(100),
         under_replicated: false,
         error: None,
+    }
+}
+
+fn finding(
+    rule: &str,
+    severity: Severity,
+    kind: TargetKind,
+    name: &str,
+    ignored: bool,
+    details: String,
+) -> HealthFinding {
+    HealthFinding {
+        key: format!("{rule}:{name}"),
+        rule_id: rule.into(),
+        severity,
+        target: Target {
+            kind,
+            name: Some(name.into()),
+        },
+        title: format!("{rule} {name}"),
+        details,
+        params: Default::default(),
+        ignored,
+    }
+}
+
+fn sample_run(big: bool) -> HealthRun {
+    let findings = if big {
+        (0..300)
+            .map(|i| {
+                finding(
+                    "topic.replicationFactorOne",
+                    Severity::Critical,
+                    TargetKind::Topic,
+                    &format!("t{i}"),
+                    false,
+                    "x".repeat(1000),
+                )
+            })
+            .collect()
+    } else {
+        vec![
+            finding(
+                "topic.replicationFactorOne",
+                Severity::Critical,
+                TargetKind::Topic,
+                "orders",
+                false,
+                "d".into(),
+            ),
+            finding(
+                "topic.replicationFactorOne",
+                Severity::Critical,
+                TargetKind::Topic,
+                "legacy",
+                true,
+                "d".into(),
+            ),
+            finding(
+                "group.abandoned",
+                Severity::Warning,
+                TargetKind::Group,
+                "orders-svc",
+                false,
+                "d".into(),
+            ),
+            finding(
+                "group.rebalancing",
+                Severity::Info,
+                TargetKind::Group,
+                "orders-svc",
+                false,
+                "d".into(),
+            ),
+        ]
+    };
+    HealthRun {
+        run_id: "r1".into(),
+        started_at_ms: 1,
+        duration_ms: 2,
+        trigger: json!({ "kind": "ui" }),
+        environment: "prod".into(),
+        incomplete: false,
+        reused: true,
+        scope: HealthScope::default(),
+        findings,
     }
 }
 
@@ -278,6 +375,68 @@ impl Backend for Fake {
     }
 
     fn sessions_changed(&self) {}
+
+    fn health(&self, op: HealthOp) -> BoxFuture<'_, Result<HealthOutput, BackendError>> {
+        Box::pin(async move {
+            self.health_ops.lock().unwrap().push(op.clone());
+            match op {
+                HealthOp::Check { run_id, .. } => {
+                    pause(&self.check_delay).await;
+                    if run_id.as_deref() == Some("old") {
+                        return Err(BackendError::not_found(
+                            "The check was replaced; run health_check again",
+                        ));
+                    }
+                    Ok(HealthOutput::Run(sample_run(
+                        self.big_findings.load(Ordering::SeqCst),
+                    )))
+                }
+                HealthOp::Annotate { note, .. } => {
+                    if note.target.name.as_deref() == Some("missing") {
+                        return Err(BackendError::not_found("Topic missing not found"));
+                    }
+                    if note.title == "too many" {
+                        return Err(BackendError::new("limit_reached", "At most 200 open notes"));
+                    }
+                    Ok(HealthOutput::Annotated {
+                        annotation_id: "n1".into(),
+                        created: true,
+                    })
+                }
+                HealthOp::ListAnnotations { .. } => {
+                    Ok(HealthOutput::Annotations(vec![AnnotationView {
+                        id: "n1".into(),
+                        target: Target {
+                            kind: TargetKind::Topic,
+                            name: Some("orders".into()),
+                        },
+                        severity: Severity::Warning,
+                        title: "Lag grows".into(),
+                        body: "b".into(),
+                        related_rule_id: None,
+                        client: Some("claude-ai".into()),
+                        status: "open".into(),
+                        created_at_ms: 1,
+                        updated_at_ms: 1,
+                    }]))
+                }
+                HealthOp::RemoveAnnotation { annotation_id, .. } => {
+                    if annotation_id == "foreign" {
+                        Err(BackendError::new(
+                            "not_allowed",
+                            "Only notes created by this client can be removed",
+                        ))
+                    } else {
+                        Ok(HealthOutput::Removed)
+                    }
+                }
+            }
+        })
+    }
+
+    fn pro_active(&self) -> bool {
+        self.pro.load(Ordering::SeqCst)
+    }
 }
 
 struct Env {
@@ -288,6 +447,10 @@ struct Env {
 }
 
 async fn env(fake: Arc<Fake>) -> Env {
+    env_with(fake, |_| {}).await
+}
+
+async fn env_with(fake: Arc<Fake>, tune: impl FnOnce(&mut GatewayOptions)) -> Env {
     let dir = tempfile::tempdir().unwrap();
     let ep = endpoint::choose(
         dir.path(),
@@ -296,6 +459,7 @@ async fn env(fake: Arc<Fake>) -> Env {
     let audit = Arc::new(AuditLog::new(dir.path()));
     let mut opts = GatewayOptions::new("glafira-kafka", "0.3.0");
     opts.observe_unit = Duration::from_millis(10);
+    tune(&mut opts);
     let handle = glafira_mcp::start(&ep, TOKEN.into(), fake, audit.clone(), opts)
         .await
         .unwrap();
@@ -356,22 +520,20 @@ fn err(r: &CallToolResult) -> String {
 }
 
 #[tokio::test]
-async fn exposes_exactly_the_read_only_tools() {
+async fn exposes_exactly_the_tools() {
     let e = env(Fake::new(SessionAccess::Approved)).await;
     let c = client(&e.ep).await;
     let info = c.peer_info().unwrap();
-    assert!(
-        info.instructions
-            .as_deref()
-            .unwrap()
-            .contains("read-only gateway")
-    );
+    let instructions = info.instructions.as_deref().unwrap();
+    assert!(instructions.contains("read-only gateway"));
+    assert!(instructions.contains("start with health_check"));
     let mut tools = c.list_all_tools().await.unwrap();
     tools.sort_by(|a, b| a.name.cmp(&b.name));
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
     assert_eq!(
         names,
         [
+            "annotate",
             "describe_consumer_group",
             "describe_topic",
             "get_broker_config",
@@ -380,20 +542,28 @@ async fn exposes_exactly_the_read_only_tools() {
             "get_topic_configs",
             "get_topic_consumer_groups",
             "get_topics_message_counts",
+            "health_check",
+            "list_annotations",
             "list_connections",
             "list_consumer_groups",
             "list_topics",
             "observe_consumer_group",
+            "remove_annotation",
         ]
     );
     for t in &tools {
         let a = t.annotations.as_ref().unwrap();
+        // Замечания пишутся в Glafira (не в кластер): только они не read-only.
+        let writes = matches!(t.name.as_ref(), "annotate" | "remove_annotation");
         assert_eq!(
             (a.read_only_hint, a.destructive_hint),
-            (Some(true), Some(false)),
+            (Some(!writes), Some(false)),
             "{}",
             t.name
         );
+        if writes {
+            assert_eq!(a.idempotent_hint, Some(true), "{}", t.name);
+        }
         assert!(
             t.description.as_deref().is_some_and(|d| d.len() > 30),
             "{}",
@@ -986,4 +1156,217 @@ async fn wrong_token_is_rejected_before_mcp() {
     assert!(
         matches!(r, Err(handshake::HandshakeError::Rejected { ref code, .. }) if code == "bad_token")
     );
+}
+
+#[tokio::test]
+async fn health_check_summarizes_filters_and_pages() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(
+        &c,
+        "health_check",
+        json!({"connectionId": "c1", "minSeverity": "warning", "includeIgnored": false, "limit": 1}),
+    )
+    .await);
+    assert_eq!(
+        v["summary"][0],
+        json!({"ruleId": "topic.replicationFactorOne", "severity": "critical", "count": 2})
+    );
+    assert_eq!(v["summary"].as_array().unwrap().len(), 3);
+    // Скрытая и info не попали в страницу.
+    assert_eq!(v["findings"]["total"], 2);
+    assert_eq!(
+        v["findings"]["items"][0]["target"],
+        json!({"kind": "topic", "name": "orders"})
+    );
+    assert_eq!(v["findings"]["nextOffset"], 1);
+    assert_eq!(
+        (v["reused"].as_bool(), v["truncated"].as_bool()),
+        (Some(true), Some(false))
+    );
+    let ops = fake.health_ops.lock().unwrap().clone();
+    let HealthOp::Check {
+        connection_id,
+        max_age_ms,
+        run_id,
+        session,
+    } = &ops[0]
+    else {
+        panic!("{ops:?}")
+    };
+    assert_eq!(
+        (connection_id.as_str(), *max_age_ms, run_id.as_deref()),
+        ("c1", 300_000, None)
+    );
+    assert!(!session.id.is_empty());
+    for (args, code) in [
+        (
+            json!({"connectionId": "c1", "maxAgeSeconds": 4000}),
+            "invalid_argument",
+        ),
+        (
+            json!({"connectionId": "c1", "limit": 201}),
+            "invalid_argument",
+        ),
+        (json!({"connectionId": "c1", "runId": "old"}), "not_found"),
+    ] {
+        let msg = err(&call(&c, "health_check", args).await);
+        assert!(msg.starts_with(code), "{msg}");
+    }
+}
+
+#[tokio::test]
+async fn health_check_fits_the_size_limit() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.big_findings.store(true, Ordering::SeqCst);
+    let e = env(fake).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(
+        &c,
+        "health_check",
+        json!({"connectionId": "c1", "limit": 200}),
+    )
+    .await);
+    assert_eq!(v["truncated"], true);
+    let shown = v["findings"]["items"].as_array().unwrap().len();
+    assert!(shown > 0 && shown < 200, "{shown}");
+    assert_eq!(v["findings"]["nextOffset"], shown);
+    assert!(serde_json::to_vec(&v).unwrap().len() <= 100 * 1024);
+}
+
+#[tokio::test]
+async fn health_check_gives_up_waiting() {
+    let fake = Fake::new(SessionAccess::Approved);
+    *fake.check_delay.lock().unwrap() = Duration::from_secs(5);
+    let e = env_with(fake, |o| o.check_wait = Duration::from_millis(100)).await;
+    let c = client(&e.ep).await;
+    let msg = err(&call(&c, "health_check", json!({"connectionId": "c1"})).await);
+    assert!(msg.starts_with("check_in_progress_timeout"), "{msg}");
+}
+
+fn note(target: Value, title: &str) -> Value {
+    json!({
+        "connectionId": "c1",
+        "target": target,
+        "severity": "warning",
+        "title": title,
+        "body": "the body of the note",
+        "relatedRuleId": "group.abandoned",
+    })
+}
+
+#[tokio::test]
+async fn annotations_require_pro_but_check_is_free() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.pro.store(false, Ordering::SeqCst);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    for (tool, args) in [
+        (
+            "annotate",
+            note(json!({"kind": "topic", "name": "orders"}), "t"),
+        ),
+        ("list_annotations", json!({"connectionId": "c1"})),
+        (
+            "remove_annotation",
+            json!({"connectionId": "c1", "annotationId": "n1"}),
+        ),
+    ] {
+        let msg = err(&call(&c, tool, args).await);
+        assert!(msg.starts_with("pro_required"), "{tool}: {msg}");
+    }
+    assert!(fake.health_ops.lock().unwrap().is_empty());
+    ok(call(&c, "health_check", json!({"connectionId": "c1"})).await);
+}
+
+#[tokio::test]
+async fn annotate_validates_and_keeps_text_out_of_the_log() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    for (args, code) in [
+        (note(json!({"kind": "group"}), "t"), "invalid_argument"),
+        (
+            note(json!({"kind": "topic", "name": "orders"}), "  "),
+            "invalid_argument",
+        ),
+        (
+            note(json!({"kind": "topic", "name": "missing"}), "t"),
+            "not_found",
+        ),
+        (
+            note(json!({"kind": "topic", "name": "orders"}), "too many"),
+            "limit_reached",
+        ),
+    ] {
+        let msg = err(&call(&c, "annotate", args).await);
+        assert!(msg.starts_with(code), "{msg}");
+    }
+    let v = ok(call(
+        &c,
+        "annotate",
+        note(json!({"kind": "topic", "name": "orders"}), "Lag grows"),
+    )
+    .await);
+    assert_eq!(v, json!({"annotationId": "n1", "created": true}));
+    let ops = fake.health_ops.lock().unwrap().clone();
+    let Some(HealthOp::Annotate { note, session, .. }) = ops.last() else {
+        panic!("{ops:?}")
+    };
+    assert_eq!(
+        (note.title.as_str(), note.related_rule_id.as_deref()),
+        ("Lag grows", Some("group.abandoned"))
+    );
+    assert!(!session.id.is_empty());
+    let line = e.audit.recent(1)[0].to_string();
+    assert!(
+        line.contains("\"annotate\"") && line.contains("orders"),
+        "{line}"
+    );
+    assert!(
+        !line.contains("Lag grows") && !line.contains("the body"),
+        "{line}"
+    );
+}
+
+#[tokio::test]
+async fn annotations_are_listed_and_removed() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(
+        &c,
+        "list_annotations",
+        json!({"connectionId": "c1", "status": "all"}),
+    )
+    .await);
+    assert_eq!(
+        (
+            v["items"][0]["id"].as_str(),
+            v["items"][0]["client"].as_str()
+        ),
+        (Some("n1"), Some("claude-ai"))
+    );
+    assert!(matches!(
+        fake.health_ops.lock().unwrap()[0],
+        HealthOp::ListAnnotations {
+            status: StatusFilter::All,
+            ..
+        }
+    ));
+    let v = ok(call(
+        &c,
+        "remove_annotation",
+        json!({"connectionId": "c1", "annotationId": "n1"}),
+    )
+    .await);
+    assert_eq!(v, json!({"removed": true}));
+    let msg = err(&call(
+        &c,
+        "remove_annotation",
+        json!({"connectionId": "c1", "annotationId": "foreign"}),
+    )
+    .await);
+    assert!(msg.starts_with("not_allowed"), "{msg}");
 }

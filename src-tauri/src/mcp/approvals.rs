@@ -114,6 +114,15 @@ impl Approvals {
             .collect()
     }
 
+    /// Имя клиента сессии, каким его видел пользователь (автор замечаний G2); `None` —
+    /// безымянный клиент или сессии нет.
+    pub fn shown_name(&self, session_id: &str) -> Option<String> {
+        self.entries()
+            .iter()
+            .find(|e| e.session_id == session_id)
+            .and_then(|e| e.shown.as_ref().map(|c| c.name.clone()))
+    }
+
     pub fn is_approved(&self, session_id: &str) -> bool {
         self.entries()
             .iter()

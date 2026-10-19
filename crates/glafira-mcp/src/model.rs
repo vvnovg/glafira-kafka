@@ -158,6 +158,13 @@ pub trait Backend: Send + Sync + 'static {
     fn session_closed(&self, session_id: &str);
     /// Сессии изменились: открыта, закрыта, опознан клиент, начат или закончен вызов.
     fn sessions_changed(&self);
+    /// Проверка кластера и замечания (спец. G2 §6). Реализация проверяет `llmAccess` подключения.
+    fn health(
+        &self,
+        op: crate::health::HealthOp,
+    ) -> BoxFuture<'_, Result<crate::health::HealthOutput, BackendError>>;
+    /// Лицензия Pro активна (замечания LLM).
+    fn pro_active(&self) -> bool;
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

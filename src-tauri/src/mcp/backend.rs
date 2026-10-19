@@ -3,6 +3,7 @@
 
 use std::sync::Arc;
 
+use glafira_mcp::health as mh;
 use glafira_mcp::model as m;
 use glafira_mcp::{
     Backend, BackendError, BoxFuture, ReadOp, ReadOutput, SessionAccess, SessionView,
@@ -12,6 +13,12 @@ use rdkafka::admin::ResourceSpecifier;
 use super::approvals::Approvals;
 use crate::commands::{blocking, pooled_configs};
 use crate::error::{AppError, AppResult, ErrorCode};
+use crate::health::model::{Finding, Severity, Target, TargetKind};
+use crate::health::service::now_ms;
+use crate::health::store::{
+    Annotated, AnnotationStatus, Author, CheckRun, NewAnnotation, Removed, Trigger,
+};
+use crate::health::{rules, texts};
 use crate::kafka::pool::KafkaHandles;
 use crate::kafka::{cluster, group_ops, topics};
 use crate::state::AppState;
@@ -257,6 +264,311 @@ impl AppBackend {
     }
 }
 
+impl AppBackend {
+    /// Автор замечаний и проверок: имя из диалога подтверждения.
+    fn author(&self, session: &SessionView) -> Author {
+        Author {
+            client: self.approvals.shown_name(&session.id),
+            session_id: session.id.clone(),
+        }
+    }
+
+    /// Объект замечания есть в кластере (защита от придуманных имён).
+    async fn target_exists(&self, connection_id: &str, t: &mh::Target) -> Result<(), BackendError> {
+        let name = t.name.clone().unwrap_or_default();
+        let found = match t.kind {
+            mh::TargetKind::Cluster => true,
+            mh::TargetKind::Broker => {
+                let id: i32 = name.trim().parse().map_err(|_| {
+                    BackendError::invalid_argument("target.name of a broker is its numeric id")
+                })?;
+                let md = self
+                    .on(connection_id.into(), cluster::cluster_metadata)
+                    .await?;
+                md.brokers.iter().any(|b| b.id == id)
+            }
+            mh::TargetKind::Topic => {
+                let md = self
+                    .on(connection_id.into(), cluster::cluster_metadata)
+                    .await?;
+                md.topics.iter().any(|x| x.name == name)
+            }
+            mh::TargetKind::Group => {
+                let l = self
+                    .on(connection_id.into(), group_ops::list_groups)
+                    .await?;
+                l.groups.iter().any(|g| g.group_id == name)
+            }
+        };
+        if found {
+            Ok(())
+        } else {
+            Err(BackendError::not_found(format!(
+                "There is no {} {name} in this cluster",
+                kind_name(t.kind)
+            )))
+        }
+    }
+
+    async fn health_impl(&self, op: mh::HealthOp) -> Result<mh::HealthOutput, BackendError> {
+        self.allowed(op.connection_id())?;
+        let st = self.state.clone();
+        match op {
+            mh::HealthOp::Check {
+                connection_id,
+                max_age_ms,
+                run_id,
+                session,
+            } => {
+                let (run, reused) = match run_id {
+                    Some(id) => {
+                        let (st2, cid) = (st.clone(), connection_id.clone());
+                        let last = crate::commands::blocking(move || {
+                            Ok(st2.health.store.load(&cid, now_ms())?.last_check)
+                        })
+                        .await
+                        .map_err(to_backend)?;
+                        match last {
+                            Some(r) if r.run_id == id => (std::sync::Arc::new(r), true),
+                            _ => {
+                                return Err(BackendError::not_found(
+                                    "This check was replaced by a newer one; call health_check without runId",
+                                ));
+                            }
+                        }
+                    }
+                    None => {
+                        let trigger = Trigger::Mcp {
+                            client: self.author(&session).client,
+                        };
+                        st.health
+                            .clone()
+                            .latest_or_run(&st, &connection_id, trigger, max_age_ms)
+                            .await
+                            .map_err(to_backend)?
+                    }
+                };
+                let ignored = st
+                    .health
+                    .store
+                    .load(&connection_id, now_ms())
+                    .map_err(to_backend)?
+                    .ignored;
+                Ok(mh::HealthOutput::Run(map_run(&run, reused, |k| {
+                    ignored.iter().any(|i| i.key == k)
+                })))
+            }
+            mh::HealthOp::Annotate {
+                connection_id,
+                session,
+                note,
+            } => {
+                if let Some(r) = &note.related_rule_id
+                    && !rules::rule_ids().any(|id| id == r)
+                {
+                    return Err(BackendError::invalid_argument(format!(
+                        "relatedRuleId {r} is not a health_check rule"
+                    )));
+                }
+                self.target_exists(&connection_id, &note.target).await?;
+                let new = NewAnnotation {
+                    target: to_target(&note.target),
+                    severity: to_severity(note.severity),
+                    title: note.title,
+                    body: note.body,
+                    related_rule_id: note.related_rule_id,
+                    author: self.author(&session),
+                };
+                let id = connection_id.clone();
+                let st2 = st.clone();
+                let r = crate::commands::blocking(move || {
+                    st2.health.store.annotate(&id, new, now_ms())
+                })
+                .await
+                .map_err(to_backend)?;
+                let (annotation_id, created) = match r {
+                    Annotated::Created(id) => (id, true),
+                    Annotated::Updated(id) => (id, false),
+                    Annotated::LimitReached => {
+                        return Err(BackendError::new(
+                            "limit_reached",
+                            "This connection already has 200 open notes; ask the user to close some in Glafira",
+                        ));
+                    }
+                };
+                st.health.changed(&connection_id);
+                Ok(mh::HealthOutput::Annotated {
+                    annotation_id,
+                    created,
+                })
+            }
+            mh::HealthOp::ListAnnotations {
+                connection_id,
+                status,
+            } => {
+                let f = st
+                    .health
+                    .store
+                    .load(&connection_id, now_ms())
+                    .map_err(to_backend)?;
+                let items = f
+                    .annotations
+                    .into_iter()
+                    .filter(|a| match status {
+                        mh::StatusFilter::Open => a.status == AnnotationStatus::Open,
+                        mh::StatusFilter::Closed => a.status != AnnotationStatus::Open,
+                        mh::StatusFilter::All => true,
+                    })
+                    .map(|a| mh::AnnotationView {
+                        id: a.id,
+                        target: from_target(&a.target),
+                        severity: from_severity(a.severity),
+                        title: a.title,
+                        body: a.body,
+                        related_rule_id: a.related_rule_id,
+                        client: a.client,
+                        status: status_name(a.status).into(),
+                        created_at_ms: a.created_at_ms,
+                        updated_at_ms: a.updated_at_ms,
+                    })
+                    .collect();
+                Ok(mh::HealthOutput::Annotations(items))
+            }
+            mh::HealthOp::RemoveAnnotation {
+                connection_id,
+                session,
+                annotation_id,
+            } => {
+                let author = self.author(&session);
+                let id = connection_id.clone();
+                let st2 = st.clone();
+                let r = crate::commands::blocking(move || {
+                    st2.health
+                        .store
+                        .remove_own(&id, &annotation_id, &author, now_ms())
+                })
+                .await
+                .map_err(to_backend)?;
+                match r {
+                    Removed::Removed => {
+                        st.health.changed(&connection_id);
+                        Ok(mh::HealthOutput::Removed)
+                    }
+                    Removed::NotFound => Err(BackendError::not_found(
+                        "The note was deleted or has expired",
+                    )),
+                    Removed::NotOwner => Err(BackendError::new(
+                        "not_allowed",
+                        "Only notes created by this client can be removed",
+                    )),
+                }
+            }
+        }
+    }
+}
+
+fn kind_name(k: mh::TargetKind) -> &'static str {
+    match k {
+        mh::TargetKind::Cluster => "cluster",
+        mh::TargetKind::Broker => "broker",
+        mh::TargetKind::Topic => "topic",
+        mh::TargetKind::Group => "group",
+    }
+}
+
+fn to_target(t: &mh::Target) -> Target {
+    let kind = match t.kind {
+        mh::TargetKind::Cluster => TargetKind::Cluster,
+        mh::TargetKind::Broker => TargetKind::Broker,
+        mh::TargetKind::Topic => TargetKind::Topic,
+        mh::TargetKind::Group => TargetKind::Group,
+    };
+    Target {
+        kind,
+        name: match kind {
+            TargetKind::Cluster => None,
+            _ => t.name.as_ref().map(|n| n.trim().to_string()),
+        },
+    }
+}
+
+fn from_target(t: &Target) -> mh::Target {
+    mh::Target {
+        kind: match t.kind {
+            TargetKind::Cluster => mh::TargetKind::Cluster,
+            TargetKind::Broker => mh::TargetKind::Broker,
+            TargetKind::Topic => mh::TargetKind::Topic,
+            TargetKind::Group => mh::TargetKind::Group,
+        },
+        name: t.name.clone(),
+    }
+}
+
+fn to_severity(s: mh::Severity) -> Severity {
+    match s {
+        mh::Severity::Info => Severity::Info,
+        mh::Severity::Warning => Severity::Warning,
+        mh::Severity::Critical => Severity::Critical,
+    }
+}
+
+fn from_severity(s: Severity) -> mh::Severity {
+    match s {
+        Severity::Info => mh::Severity::Info,
+        Severity::Warning => mh::Severity::Warning,
+        Severity::Critical => mh::Severity::Critical,
+    }
+}
+
+fn status_name(s: AnnotationStatus) -> &'static str {
+    match s {
+        AnnotationStatus::Open => "open",
+        AnnotationStatus::Resolved => "resolved",
+        AnnotationStatus::Dismissed => "dismissed",
+    }
+}
+
+fn map_finding(f: &Finding, ignored: bool) -> mh::HealthFinding {
+    let (title, details) = texts::english(f);
+    mh::HealthFinding {
+        key: f.key.clone(),
+        rule_id: f.rule_id.clone(),
+        severity: from_severity(f.severity),
+        target: from_target(&f.target),
+        title,
+        details,
+        params: f.params.clone(),
+        ignored,
+    }
+}
+
+fn map_run(r: &CheckRun, reused: bool, ignored: impl Fn(&str) -> bool) -> mh::HealthRun {
+    mh::HealthRun {
+        run_id: r.run_id.clone(),
+        started_at_ms: r.started_at_ms,
+        duration_ms: r.duration_ms,
+        trigger: serde_json::to_value(&r.trigger).unwrap_or_default(),
+        environment: serde_json::to_value(r.environment)
+            .ok()
+            .and_then(|v| v.as_str().map(String::from))
+            .unwrap_or_default(),
+        incomplete: r.incomplete,
+        reused,
+        scope: mh::HealthScope {
+            brokers: r.scope.brokers,
+            topics_checked: r.scope.topics_checked,
+            topics_total: r.scope.topics_total,
+            groups_checked: r.scope.groups_checked,
+            groups_total: r.scope.groups_total,
+        },
+        findings: r
+            .findings
+            .iter()
+            .map(|f| map_finding(f, ignored(&f.key)))
+            .collect(),
+    }
+}
+
 fn map_cluster(o: cluster::ClusterOverview) -> m::ClusterOverview {
     m::ClusterOverview {
         cluster_id: o.cluster_id,
@@ -378,6 +690,14 @@ impl Backend for AppBackend {
 
     fn sessions_changed(&self) {
         (self.on_change)(false);
+    }
+
+    fn health(&self, op: mh::HealthOp) -> BoxFuture<'_, Result<mh::HealthOutput, BackendError>> {
+        Box::pin(self.health_impl(op))
+    }
+
+    fn pro_active(&self) -> bool {
+        self.state.license.require_pro().is_ok()
     }
 }
 
@@ -514,5 +834,165 @@ mod tests {
         assert_eq!(e.code, "INTERNAL", "{e:?}");
         assert!(!e.message.contains("secret-path"), "{e:?}");
         assert!(e.message.contains("certificate files"), "{e:?}");
+    }
+
+    fn view(id: &str, name: Option<&str>) -> SessionView {
+        SessionView {
+            id: id.into(),
+            client: name.map(|n| glafira_mcp::ClientIdent {
+                name: n.into(),
+                version: "1".into(),
+            }),
+        }
+    }
+
+    fn cluster_note(title: &str, related: Option<&str>) -> mh::NewNote {
+        mh::NewNote {
+            target: mh::Target {
+                kind: mh::TargetKind::Cluster,
+                name: Some("ignored".into()),
+            },
+            severity: mh::Severity::Warning,
+            title: title.into(),
+            body: "body".into(),
+            related_rule_id: related.map(String::from),
+        }
+    }
+
+    async fn annotate(
+        b: &AppBackend,
+        session: &SessionView,
+        title: &str,
+    ) -> Result<mh::HealthOutput, BackendError> {
+        b.health(mh::HealthOp::Annotate {
+            connection_id: "open".into(),
+            session: session.clone(),
+            note: cluster_note(title, Some("cluster.singleBroker")),
+        })
+        .await
+    }
+
+    #[tokio::test]
+    async fn health_ops_need_llm_access() {
+        let (_d, b) = backend();
+        let e = b
+            .health(mh::HealthOp::ListAnnotations {
+                connection_id: "closed".into(),
+                status: mh::StatusFilter::All,
+            })
+            .await
+            .unwrap_err();
+        assert_eq!(e.code, "not_allowed");
+        assert!(!b.pro_active());
+    }
+
+    #[tokio::test]
+    async fn notes_are_written_listed_and_removed_by_their_author() {
+        let (_d, b) = backend();
+        let claude = view("s1", Some("claude-ai"));
+        let _ = b.approvals.access(&claude, 0);
+        let e = b
+            .health(mh::HealthOp::Annotate {
+                connection_id: "open".into(),
+                session: claude.clone(),
+                note: cluster_note("t", Some("no.such.rule")),
+            })
+            .await
+            .unwrap_err();
+        assert_eq!(e.code, "invalid_argument");
+        let mh::HealthOutput::Annotated {
+            annotation_id,
+            created,
+        } = annotate(&b, &claude, "Single broker").await.unwrap()
+        else {
+            panic!()
+        };
+        assert!(created);
+        let again = annotate(&b, &claude, "single broker").await.unwrap();
+        assert_eq!(
+            again,
+            mh::HealthOutput::Annotated {
+                annotation_id: annotation_id.clone(),
+                created: false
+            }
+        );
+        let mh::HealthOutput::Annotations(items) = b
+            .health(mh::HealthOp::ListAnnotations {
+                connection_id: "open".into(),
+                status: mh::StatusFilter::Open,
+            })
+            .await
+            .unwrap()
+        else {
+            panic!()
+        };
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].client.as_deref(), Some("claude-ai"));
+        // Имя у кластера отбрасывается.
+        assert_eq!(items[0].target.name, None);
+        let other = view("s2", Some("cursor"));
+        let _ = b.approvals.access(&other, 0);
+        let remove = |s: &SessionView| {
+            b.health(mh::HealthOp::RemoveAnnotation {
+                connection_id: "open".into(),
+                session: s.clone(),
+                annotation_id: annotation_id.clone(),
+            })
+        };
+        assert_eq!(remove(&other).await.unwrap_err().code, "not_allowed");
+        assert_eq!(remove(&claude).await.unwrap(), mh::HealthOutput::Removed);
+        assert_eq!(remove(&claude).await.unwrap_err().code, "not_found");
+    }
+
+    #[tokio::test]
+    async fn check_reuses_the_last_run_and_marks_ignored() {
+        let (_d, b) = backend();
+        let run = CheckRun {
+            run_id: "r1".into(),
+            started_at_ms: now_ms(),
+            duration_ms: 5,
+            trigger: Trigger::Ui,
+            environment: crate::storage::connections::Environment::Prod,
+            incomplete: false,
+            scope: Default::default(),
+            findings: vec![Finding::new(
+                "cluster.singleBroker",
+                Severity::Critical,
+                Target::cluster(),
+                None,
+                serde_json::json!({}),
+            )],
+            group_lag: Default::default(),
+        };
+        b.state
+            .health
+            .store
+            .save_check("open", run, now_ms())
+            .unwrap();
+        b.state
+            .health
+            .store
+            .set_ignored("open", "cluster.singleBroker:cluster:", true, now_ms())
+            .unwrap();
+        let check = |run_id: Option<&str>| {
+            b.health(mh::HealthOp::Check {
+                connection_id: "open".into(),
+                max_age_ms: 300_000,
+                run_id: run_id.map(String::from),
+                session: view("s1", None),
+            })
+        };
+        let mh::HealthOutput::Run(r) = check(None).await.unwrap() else {
+            panic!()
+        };
+        assert!(r.reused);
+        assert_eq!((r.run_id.as_str(), r.environment.as_str()), ("r1", "prod"));
+        assert!(r.findings[0].ignored);
+        assert_eq!(r.findings[0].title, "Single-broker cluster");
+        assert!(matches!(
+            check(Some("r1")).await.unwrap(),
+            mh::HealthOutput::Run(_)
+        ));
+        assert_eq!(check(Some("r0")).await.unwrap_err().code, "not_found");
     }
 }

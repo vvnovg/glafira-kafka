@@ -346,6 +346,9 @@
       "disabledByPolicy": "MCP ist von Ihrer Organisation deaktiviert",
       "noExe": "Die ausführbare Datei von Glafira wurde nicht gefunden: {{error}}",
       "auditMissing": "Das MCP-Protokoll ist noch nicht verfügbar: {{error}}"
+    },
+    "health": {
+      "annotationNotFound": "Die Anmerkung wurde gelöscht oder ist abgelaufen"
     }
   },
   "messages": {

@@ -346,6 +346,9 @@
       "disabledByPolicy": "MCP отключён вашей организацией",
       "noExe": "Не удалось найти исполняемый файл Glafira: {{error}}",
       "auditMissing": "Журнал MCP пока недоступен: {{error}}"
+    },
+    "health": {
+      "annotationNotFound": "Замечание удалено или его срок истёк"
     }
   },
   "messages": {

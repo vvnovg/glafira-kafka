@@ -346,6 +346,9 @@
       "disabledByPolicy": "MCPは組織によって無効にされています",
       "noExe": "Glafiraの実行ファイルが見つかりません：{{error}}",
       "auditMissing": "MCPのログはまだ利用できません：{{error}}"
+    },
+    "health": {
+      "annotationNotFound": "この注記は削除されたか、期限が切れています"
     }
   },
   "messages": {

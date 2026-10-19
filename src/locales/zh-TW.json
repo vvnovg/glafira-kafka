@@ -346,6 +346,9 @@
       "disabledByPolicy": "MCP 已被你的組織停用",
       "noExe": "找不到 Glafira 的可執行檔：{{error}}",
       "auditMissing": "MCP 日誌尚無法使用：{{error}}"
+    },
+    "health": {
+      "annotationNotFound": "此註記已刪除或已過期"
     }
   },
   "messages": {

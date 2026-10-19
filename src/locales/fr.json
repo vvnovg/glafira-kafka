@@ -346,6 +346,9 @@
       "disabledByPolicy": "MCP est désactivé par votre organisation",
       "noExe": "Impossible de trouver l’exécutable de Glafira : {{error}}",
       "auditMissing": "Le journal MCP n’est pas encore disponible : {{error}}"
+    },
+    "health": {
+      "annotationNotFound": "La remarque a été supprimée ou a expiré"
     }
   },
   "messages": {

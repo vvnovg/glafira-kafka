@@ -346,6 +346,9 @@
       "disabledByPolicy": "MCP è disattivato dalla tua organizzazione",
       "noExe": "Impossibile trovare l’eseguibile di Glafira: {{error}}",
       "auditMissing": "Il log MCP non è ancora disponibile: {{error}}"
+    },
+    "health": {
+      "annotationNotFound": "La nota è stata eliminata o è scaduta"
     }
   },
   "messages": {

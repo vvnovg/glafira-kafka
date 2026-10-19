@@ -346,6 +346,9 @@
       "disabledByPolicy": "MCP jest wyłączony przez organizację",
       "noExe": "Nie znaleziono pliku wykonywalnego aplikacji Glafira: {{error}}",
       "auditMissing": "Log MCP nie jest jeszcze dostępny: {{error}}"
+    },
+    "health": {
+      "annotationNotFound": "Notatka została usunięta lub wygasła"
     }
   },
   "messages": {

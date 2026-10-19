@@ -3,6 +3,7 @@
 
 mod broker_configs;
 mod brokers;
+mod groups;
 mod topics;
 
 use serde_json::Value;
@@ -115,6 +116,8 @@ pub fn evaluate(s: &ClusterSnapshot, env: Environment) -> Vec<Finding> {
     brokers::check(s, &mut out);
     topics::check(s, &mut out);
     broker_configs::check(s, &mut out);
+    groups::check(s, &mut out);
+    groups::partial(s, &mut out);
     out.into_sorted()
 }
 

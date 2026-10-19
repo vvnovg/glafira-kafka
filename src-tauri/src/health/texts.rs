@@ -159,6 +159,52 @@ pub fn english(f: &Finding) -> (String, String) {
                 drift_values(f)
             ),
         ),
+        "group.abandoned" => (
+            format!("Group {name} is empty but has lag"),
+            format!(
+                "The group has no members and {} unconsumed messages. If the application is retired, the group can be deleted; otherwise its consumers are not running.",
+                num(f, "lag")
+            ),
+        ),
+        "group.rebalancing" => (
+            format!("Group {name} is rebalancing"),
+            format!(
+                "State {} at the moment of the check. To see whether rebalances repeat, use observe_consumer_group.",
+                num(f, "state")
+            ),
+        ),
+        "group.idleMembers" => (
+            format!("Group {name} has members without partitions"),
+            format!(
+                "{} of {} members have no partitions ({} partitions assigned): there are more consumers than partitions they read.",
+                num(f, "idle"),
+                num(f, "members"),
+                num(f, "partitions")
+            ),
+        ),
+        "group.lagGrowing" => (
+            format!("Lag of group {name} is growing"),
+            format!(
+                "Lag grew from {} to {} since the previous check {} min ago: consumers do not keep up with producers.",
+                num(f, "previousLag"),
+                num(f, "lag"),
+                num(f, "minutesAgo")
+            ),
+        ),
+        "check.partial" => (
+            "The check is incomplete".into(),
+            format!(
+                "Topic configs checked: {} of {} ({} errors); broker config errors: {}; groups checked: {} of {} ({} errors); time limit reached: {}. Findings cover only what was read.",
+                num(f, "topicsChecked"),
+                num(f, "topicsTotal"),
+                num(f, "topicConfigErrors"),
+                num(f, "brokerConfigErrors"),
+                num(f, "groupsChecked"),
+                num(f, "groupsTotal"),
+                num(f, "groupErrors"),
+                num(f, "timedOut")
+            ),
+        ),
         other => (other.to_string(), String::new()),
     }
 }
@@ -181,5 +227,21 @@ mod tests {
         assert_eq!(title, "Topic orders has offline partitions");
         assert!(details.starts_with("2 partition(s) have no leader"));
         assert!(details.contains("0, 3"));
+    }
+
+    #[test]
+    fn every_rule_has_a_text() {
+        for id in crate::health::rules::rule_ids() {
+            let f = Finding::new(
+                id,
+                Severity::Info,
+                Target::cluster(),
+                None,
+                serde_json::json!({}),
+            );
+            let (title, details) = english(&f);
+            assert_ne!(title, id, "{id}");
+            assert!(!details.is_empty(), "{id}");
+        }
     }
 }

@@ -5,6 +5,7 @@ pub mod connections;
 pub mod consume;
 pub mod folders;
 pub mod groups;
+pub mod health;
 pub mod license;
 pub mod mcp;
 pub mod produce;

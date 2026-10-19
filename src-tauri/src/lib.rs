@@ -114,6 +114,14 @@ pub fn run() {
                     "mcp: the shim looks for mcp.json in another data directory"
                 );
             }
+            let handle = app.handle().clone();
+            st.health.set_notify(Arc::new(move |id: &str| {
+                use tauri::Emitter;
+                let payload = serde_json::json!({ "connectionId": id });
+                if let Err(e) = handle.emit(crate::health::CHANGED_EVENT, payload) {
+                    tracing::warn!("health event not sent: {e}");
+                }
+            }));
             let mcp = crate::mcp::McpController::new(st.clone(), &dir);
             mcp.set_ui(Box::new(crate::mcp::TauriUi(app.handle().clone())));
             app.manage(st);
@@ -155,6 +163,12 @@ pub fn run() {
             commands::groups::preview_offset_reset,
             commands::groups::reset_offsets,
             commands::groups::delete_group,
+            commands::health::run_health_check,
+            commands::health::get_health,
+            commands::health::set_finding_ignored,
+            commands::health::set_annotation_status,
+            commands::health::delete_annotation,
+            commands::health::delete_all_annotations,
             commands::produce::produce,
             commands::produce::produce_batch,
             commands::produce::list_history,

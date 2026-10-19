@@ -106,7 +106,7 @@ kubectl get secret kafka-client -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/ce
 Локальный стенд слушает mTLS на `localhost:9095` (сертификаты — `dev/certs/out`, см. `dev/certs/README.md`).
 
 ## LLM-ассистенты (MCP)
-- Glafira — MCP-шлюз только для чтения: LLM-клиент (Claude Desktop, Claude Code, Cursor) запускает `glafira-kafka mcp`, тот соединяется с запущенной Glafira через локальный сокет (Windows — named pipe) и читает метаданные подключений с флажком «Доступ для LLM (только метаданные)». Изменить кластер через шлюз нельзя; сообщения, пароли и настройки безопасности не передаются.
+- Glafira — MCP-шлюз, который не меняет кластер: LLM-клиент (Claude Desktop, Claude Code, Cursor) запускает `glafira-kafka mcp`, тот соединяется с запущенной Glafira через локальный сокет (Windows — named pipe) и читает метаданные подключений с флажком «Доступ для LLM (только метаданные)». Изменить кластер через шлюз нельзя: замечания LLM (Pro, см. ниже) пишутся только в файл Glafira; сообщения, пароли и настройки безопасности не передаются.
 - Включается в «Настройки» → «LLM-ассистенты (MCP)», там же — фрагменты конфига клиентов, подтверждённые клиенты, сессии и журнал. Новый клиент подтверждается диалогом. Политика `mcpEnabled = false` запрещает MCP (`docs/admin.md`).
 - Протокол, инструменты и лимиты — крейт `crates/glafira-mcp` (не зависит от rdkafka и приложения); связь с приложением — `src-tauri/src/mcp/`. Спецификация: `docs/superpowers/specs/2026-10-18-glafira-mcp-gateway-g1-design.md`.
 - Разработка: отладочный бинарь — `src-tauri/target/debug/kafka-explorer` (`… mcp` — режим шима); Glafira запускайте через `pnpm tauri dev` до подключения клиента — шим не поднимет dev-сервер Vite.

@@ -6,6 +6,7 @@ pub mod consume;
 pub mod diagnostics;
 pub mod error;
 pub mod guard;
+pub mod health;
 pub mod kafka;
 pub mod license;
 pub mod logging;

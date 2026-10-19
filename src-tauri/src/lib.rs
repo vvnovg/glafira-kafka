@@ -4,6 +4,7 @@ pub mod browse;
 pub mod commands;
 pub mod consume;
 pub mod diagnostics;
+mod dock_name;
 pub mod error;
 pub mod guard;
 pub mod health;
@@ -80,6 +81,9 @@ pub fn run() {
         .setup(|app| {
             crate::logging::init(&app.path().app_log_dir()?);
             tracing::info!(version = env!("CARGO_PKG_VERSION"), "starting");
+            if !crate::dock_name::set(crate::product::PRODUCT_NAME) {
+                tracing::warn!("dock name was not set: LaunchServices refused");
+            }
             let dir = app.path().app_data_dir()?;
             // Каталог данных Tauri — `<базовый каталог>/<identifier>`: прежние лежат рядом.
             if let Some(parent) = dir.parent() {

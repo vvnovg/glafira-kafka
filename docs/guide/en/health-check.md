@@ -4,15 +4,15 @@ Glafira checks a cluster with a set of built-in rules and shows the problems it 
 
 ## Running a check {#run}
 
-Open [[ui:sidebar.cluster]] or [[ui:sidebar.findings]] for a connection and press [[ui:health.check]]. A check takes up to 45 seconds: Glafira reads the brokers, partitions, topic configs (up to 2000 topics) and consumer groups (up to 500). On large clusters the result is marked [[ui:health.partial]], and the [[ui:health.ruleNames.check.partial]] finding shows what was not read.
+Open [[ui:sidebar.cluster]] or [[ui:sidebar.findings]] for a connection and click [[ui:health.check]]. A check takes up to 45 seconds: Glafira reads the brokers, partitions, topic configs (up to 2000 topics) and consumer groups (up to 500). If there are more topics or groups than that, something cannot be read, or the 45 seconds run out, the result is marked [[ui:health.partial]], and the [[ui:health.ruleNames.check.partial]] finding shows what was not read.
 
-Glafira does not poll the cluster on its own: a check runs only when you press the button or an LLM assistant asks for it. The result is kept until the next check.
+Glafira does not poll the cluster on its own: a check runs only when you click the button or an LLM assistant asks for it. The result is kept until the next check.
 
 ## What is checked {#rules}
 
 - Brokers and partitions: no controller, offline and under-replicated partitions, a single-broker cluster, leader skew, leaders not on the preferred replica.
-- Topic durability: replication factor 1, `min.insync.replicas` above or equal to the replication factor or equal to 1, unclean leader election.
-- Broker configs: automatic topic creation, the default replication factor and `min.insync.replicas`, important settings that differ between brokers.
+- Topic durability: replication factor 1, `min.insync.replicas` above the replication factor, `min.insync.replicas` equal to the replication factor, `min.insync.replicas` equal to 1, unclean leader election.
+- Broker configs: automatic topic creation, default replication factor 1, default `min.insync.replicas` 1, important settings that differ between brokers.
 - Consumer groups: empty groups with lag, rebalancing groups, members without partitions, lag that grew since the previous check.
 
 ## Severity and environment {#severity}
@@ -23,11 +23,11 @@ Each finding has a severity: [[ui:health.severity.critical]], [[ui:health.severi
 
 On the [[ui:sidebar.findings]] tab, findings are grouped by rule; each one explains the problem and what to do. Filter them by [[ui:health.filterSeverity]], [[ui:health.filterSource]] and [[ui:health.filterKind]], or search by name. The object name opens its screen.
 
-A badge with a number in the connection tree and in the topic and group lists shows how many critical findings and warnings concern the object.
+A badge with a number in the connection tree and in the topic and group lists shows how many findings and open LLM notes with the severity [[ui:health.severity.critical]] or [[ui:health.severity.warning]] concern the object. Point at the badge to see their titles.
 
 ## Hiding findings {#hide}
 
-If a finding is expected for a specific object, for example a test topic with replication factor 1 on prod, press [[ui:health.hide]]. A hidden finding is not counted in badges and stays hidden after later checks. To see hidden findings, turn on “Show hidden”; there you can press [[ui:health.restore]].
+If a finding is expected for a specific object, for example a test topic with replication factor 1 on prod, click [[ui:health.hide]]. A hidden finding is not counted in badges and stays hidden after later checks. To see hidden findings, turn on "Show hidden"; there you can click [[ui:health.restore]].
 
 ## LLM notes {#notes}
 
@@ -41,4 +41,4 @@ Without Pro, an assistant can still run the check and read the findings, but it 
 
 ## With an LLM assistant {#with-llm}
 
-The assistant runs the same check with the `health_check` tool and sees the same findings, including hidden ones, which are marked. If the last check is less than 5 minutes old, the assistant gets its result without querying the cluster again. Ask, for example: “Check the health of the cluster and leave notes on the most important problems.”
+The assistant runs the same check with the `health_check` tool and sees the same findings, including hidden ones, which are marked. If the last check is less than 5 minutes old, the assistant gets its result without querying the cluster again. Ask, for example: "Check the health of the cluster and leave notes on the most important problems."

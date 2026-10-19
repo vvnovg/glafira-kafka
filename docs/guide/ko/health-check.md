@@ -4,15 +4,15 @@ Glafira는 기본 제공 규칙으로 클러스터를 점검하고, 찾은 문�
 
 ## 점검 실행 {#run}
 
-연결의 [[ui:sidebar.cluster]] 화면이나 [[ui:sidebar.findings]] 탭을 열고 [[ui:health.check]] 버튼을 누르세요. 점검은 최대 45초가 걸립니다. Glafira는 브로커, 파티션, 토픽 설정(토픽 최대 2000개), 컨슈머 그룹(최대 500개)을 읽습니다. 큰 클러스터에서는 결과에 [[ui:health.partial]] 표시가 붙고, [[ui:health.ruleNames.check.partial]] 항목에 읽지 못한 내용이 나옵니다.
+연결의 [[ui:sidebar.cluster]] 화면이나 [[ui:sidebar.findings]] 탭을 열고 [[ui:health.check]] 버튼을 클릭하세요. 점검은 최대 45초가 걸립니다. Glafira는 브로커, 파티션, 토픽 설정(토픽 최대 2000개), 컨슈머 그룹(최대 500개)을 읽습니다. 토픽이나 그룹이 이 한도를 넘거나, 읽지 못한 항목이 있거나, 45초가 지나면 결과에 [[ui:health.partial]] 표시가 붙고, [[ui:health.ruleNames.check.partial]] 항목에 읽지 못한 내용이 나옵니다.
 
-Glafira는 스스로 클러스터를 조회하지 않습니다. 점검은 버튼을 누르거나 LLM 어시스턴트가 요청할 때만 실행됩니다. 결과는 다음 점검까지 보관됩니다.
+Glafira는 스스로 클러스터를 조회하지 않습니다. 점검은 버튼을 클릭하거나 LLM 어시스턴트가 요청할 때만 실행됩니다. 결과는 다음 점검까지 보관됩니다.
 
 ## 점검 항목 {#rules}
 
 - 브로커와 파티션: 컨트롤러 없음, 사용할 수 없는 파티션과 복제 부족 파티션, 브로커가 하나인 클러스터, 리더 편중, 선호 복제본에 있지 않은 리더.
-- 토픽 내구성: 복제 계수 1, 복제 계수 이상이거나 1인 `min.insync.replicas`, 언클린 리더 선출.
-- 브로커 설정: 토픽 자동 생성, 기본 복제 계수와 `min.insync.replicas`, 브로커마다 다른 중요 설정.
+- 토픽 내구성: 복제 계수 1, 복제 계수보다 큰 `min.insync.replicas`, 복제 계수와 같은 `min.insync.replicas`, `min.insync.replicas` 값 1, 언클린 리더 선출.
+- 브로커 설정: 토픽 자동 생성, 기본 복제 계수 1, 기본 `min.insync.replicas` 값 1, 브로커마다 다른 중요 설정.
 - 컨슈머 그룹: 랙이 있는 빈 그룹, 리밸런싱 중인 그룹, 파티션이 없는 멤버, 이전 점검 이후 늘어난 랙.
 
 ## 심각도와 환경 {#severity}
@@ -21,13 +21,13 @@ Glafira는 스스로 클러스터를 조회하지 않습니다. 점검은 버튼
 
 ## 발견 사항 탭 {#tab}
 
-[[ui:sidebar.findings]] 탭에서는 발견 사항이 규칙별로 묶여 있고, 항목마다 문제와 조치가 설명됩니다. [[ui:health.filterSeverity]], [[ui:health.filterSource]], [[ui:health.filterKind]] 필터로 거르거나 이름으로 검색하세요. 개체 이름을 누르면 해당 화면이 열립니다.
+[[ui:sidebar.findings]] 탭에서는 발견 사항이 규칙별로 묶여 있고, 항목마다 문제와 조치가 설명됩니다. [[ui:health.filterSeverity]], [[ui:health.filterSource]], [[ui:health.filterKind]] 필터로 거르거나 이름으로 검색하세요. 개체 이름을 클릭하면 해당 화면이 열립니다.
 
-연결 트리와 토픽·그룹 목록의 숫자 배지는 해당 개체에 관련된 심각한 발견 사항과 경고의 수를 보여 줍니다.
+연결 트리와 토픽·그룹 목록의 숫자 배지는 해당 개체에 관련된 발견 사항과 열린 LLM 메모 중 심각도가 [[ui:health.severity.critical]] 또는 [[ui:health.severity.warning]] 수준인 항목의 수를 보여 줍니다. 배지에 포인터를 올리면 이 항목들의 제목을 볼 수 있습니다.
 
 ## 발견 사항 숨기기 {#hide}
 
-특정 개체에서 예상된 발견 사항이라면(예: prod에 있는 복제 계수 1의 테스트 토픽) [[ui:health.hide]] 버튼을 누르세요. 숨긴 발견 사항은 배지 수에 포함되지 않고 이후 점검에서도 숨겨진 채로 유지됩니다. 숨긴 항목을 보려면 '숨긴 항목 표시'를 켜세요. 그곳에서 [[ui:health.restore]] 버튼을 누를 수 있습니다.
+특정 개체에서 예상된 발견 사항이라면(예: prod에 있는 복제 계수 1의 테스트 토픽) [[ui:health.hide]] 버튼을 클릭하세요. 숨긴 발견 사항은 배지 수에 포함되지 않고 이후 점검에서도 숨겨진 채로 유지됩니다. 숨긴 항목을 보려면 '숨긴 항목 표시'를 켜세요. 그곳에서 [[ui:health.restore]] 버튼을 클릭할 수 있습니다.
 
 ## LLM 메모 {#notes}
 

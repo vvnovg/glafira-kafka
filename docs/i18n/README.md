@@ -47,7 +47,7 @@ ru, pl — `one`/`few`/`many`/`other`; zh-CN, zh-TW, ja, ko — только `ot
    сопоставляется не по первой части тега (как `pt-PT` → `pt-BR`, `zh-HK` → `zh-TW`), — правило в `match_language_in`.
 2. Столбец в `glossary.md`, затем `src/locales/<код>.json` переводом `en.json`.
 3. `pnpm i18n:check`, `pnpm vitest run src/i18n/locales.test.ts`, смоук по `docs/smoke/e.md` (12 языков, `lang`, сопоставление языка ОС, поиск по иероглифам).
-4. Главы `docs/guide/<код>/*.md` — все 9, переводом: копия en не проходит `pnpm i18n:check` («глава не переведена»), поэтому словарь и главы нового языка приходят вместе.
+4. Главы `docs/guide/<код>/*.md` — все главы из `src/guide/chapters.ts`, переводом: копия en не проходит `pnpm i18n:check` («глава не переведена»), поэтому словарь и главы нового языка приходят вместе.
 
 ## Подсказки
 Значок «?» — компонент `<Hint k="hints.<экран>.<поле>" label={t("…подпись…")} />` (`src/components/common/Hint.tsx`).

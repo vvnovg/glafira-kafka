@@ -4,16 +4,17 @@
 
 ## Free 與 Pro {#free-and-pro}
 
-Free 涵蓋 Kafka 的日常工作：所有安全性通訊協定（包括 mTLS）、叢集概觀和主題、瀏覽訊息、支援批次傳送的 Producer、消費者群組以及偏移量重設。所有介面語言也都包含在內。請參閱[介面語言](getting-started.md#language)。
+Free 涵蓋 Kafka 的日常工作：所有安全性通訊協定（包括 mTLS）、叢集概觀和主題、瀏覽訊息、支援批次傳送的 Producer、消費者群組、偏移量重設以及叢集檢查。所有介面語言也都包含在內。請參閱[介面語言](getting-started.md#language)。
 
 Pro 增加：
 
 - 消費者工作階段：以群組成員身分讀取、提交偏移量、暫停分區。請參閱[消費者工作階段](consumer-sessions.md#what-is)；
-- 正式環境模式：建立正式環境連線、將連線切換為正式環境，以及在正式環境連線上取消勾選[[ui:common.readOnly]]。請參閱[環境與正式環境](connections.md#environments)。
+- 正式環境模式：建立正式環境連線、將連線切換為正式環境，以及在正式環境連線上取消勾選[[ui:common.readOnly]]。請參閱[環境與正式環境](connections.md#environments)；
+- LLM 註記：透過 MCP 連線的助理可以留下關於叢集、主題和消費者群組的註記。請參閱[叢集檢查與註記](health-check.md#notes)。
 
 在 Free 中，這些功能看得到但無法使用。消費者工作階段指令會停用，並標示鎖頭和 `Pro`。正式環境選項顯示為 [[ui:connections.form.prodPro]]。如果某個動作需要 Pro，錯誤訊息會顯示「[[ui:errors.license.proRequired]]」，並提供按鈕：[[ui:common.openLicense]]。
 
-[[ui:tabs.license]]畫面會在「[[ui:license.whatProGives]]」下列出消費者工作階段和正式環境模式。
+[[ui:tabs.license]]畫面會在「[[ui:license.whatProGives]]」下列出消費者工作階段、正式環境模式和 LLM 註記。
 
 ## 啟用金鑰 {#activate}
 

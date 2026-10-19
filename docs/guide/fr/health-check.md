@@ -4,15 +4,15 @@ Glafira vérifie un cluster à l’aide de règles intégrées et affiche les pr
 
 ## Lancer une vérification {#run}
 
-Ouvrez [[ui:sidebar.cluster]] ou [[ui:sidebar.findings]] d’une connexion et cliquez sur [[ui:health.check]]. Une vérification dure jusqu’à 45 secondes : Glafira lit les brokers, les partitions, les configurations de topics (jusqu’à 2000 topics) et les consumer groups (jusqu’à 500). Sur les grands clusters, le résultat est marqué [[ui:health.partial]] et le constat [[ui:health.ruleNames.check.partial]] indique ce qui n’a pas été lu.
+Ouvrez [[ui:sidebar.cluster]] ou [[ui:sidebar.findings]] d’une connexion et cliquez sur [[ui:health.check]]. Une vérification dure jusqu’à 45 secondes : Glafira lit les brokers, les partitions, les configurations de topics (jusqu’à 2000 topics) et les consumer groups (jusqu’à 500). S’il y a plus de topics ou de groupes, si quelque chose n’a pas pu être lu ou si les 45 secondes sont écoulées, le résultat est marqué [[ui:health.partial]] et le constat [[ui:health.ruleNames.check.partial]] indique ce qui n’a pas été lu.
 
 Glafira n’interroge pas le cluster d’elle-même : une vérification ne se lance que lorsque vous cliquez sur le bouton ou qu’un assistant LLM la demande. Le résultat est conservé jusqu’à la vérification suivante.
 
 ## Ce qui est vérifié {#rules}
 
 - Brokers et partitions : absence de contrôleur, partitions indisponibles et sous-répliquées, cluster à un seul broker, déséquilibre des leaders, leaders hors de la réplique préférée.
-- Durabilité des topics : facteur de réplication 1, `min.insync.replicas` supérieur ou égal au facteur de réplication ou égal à 1, élection de leader non propre.
-- Configuration des brokers : création automatique de topics, facteur de réplication et `min.insync.replicas` par défaut, réglages importants qui diffèrent d’un broker à l’autre.
+- Durabilité des topics : facteur de réplication 1, `min.insync.replicas` supérieur au facteur de réplication, `min.insync.replicas` égal au facteur de réplication, `min.insync.replicas` à 1, élection de leader non propre.
+- Configuration des brokers : création automatique de topics, facteur de réplication par défaut à 1, `min.insync.replicas` par défaut à 1, réglages importants qui diffèrent d’un broker à l’autre.
 - Consumer groups : groupes vides avec du lag, groupes en rééquilibrage, membres sans partition, lag qui a augmenté depuis la vérification précédente.
 
 ## Gravité et environnement {#severity}
@@ -23,7 +23,7 @@ Chaque constat a une gravité : [[ui:health.severity.critical]], [[ui:health.se
 
 Dans l’onglet [[ui:sidebar.findings]], les constats sont regroupés par règle ; chacun explique le problème et ce qu’il faut faire. Filtrez-les par [[ui:health.filterSeverity]], [[ui:health.filterSource]] et [[ui:health.filterKind]], ou recherchez par nom. Le nom de l’objet ouvre son écran.
 
-Un badge avec un nombre dans l’arborescence des connexions et dans les listes de topics et de groupes indique combien de constats critiques et d’avertissements concernent l’objet.
+Un badge avec un nombre dans l’arborescence des connexions et dans les listes de topics et de groupes indique combien de constats et de remarques LLM ouvertes de gravité [[ui:health.severity.critical]] ou [[ui:health.severity.warning]] concernent l’objet. Survolez le badge pour voir leurs titres.
 
 ## Masquer des constats {#hide}
 

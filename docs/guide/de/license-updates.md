@@ -4,16 +4,17 @@ Dieses Kapitel beschreibt, was Pro bietet, wie Sie einen Lizenzschlüssel aktivi
 
 ## Free und Pro {#free-and-pro}
 
-Free deckt die tägliche Arbeit mit Kafka ab: alle Sicherheitsprotokolle einschließlich mTLS, Cluster-Übersicht und Topics, Durchsuchen von Nachrichten, den Producer mit Stapelversand, Consumer Groups und das Zurücksetzen von Offsets. Auch alle Sprachen der Oberfläche sind in Free enthalten. Siehe [Sprache der Oberfläche](getting-started.md#language).
+Free deckt die tägliche Arbeit mit Kafka ab: alle Sicherheitsprotokolle einschließlich mTLS, Cluster-Übersicht und Topics, Durchsuchen von Nachrichten, den Producer mit Stapelversand, Consumer Groups, das Zurücksetzen von Offsets und die Clusterprüfung. Auch alle Sprachen der Oberfläche sind in Free enthalten. Siehe [Sprache der Oberfläche](getting-started.md#language).
 
 Pro bietet zusätzlich:
 
 - Consumer-Sessions: Lesen als Gruppenmitglied, Committen von Offsets, Pausieren von Partitionen. Siehe [Consumer-Sessions](consumer-sessions.md#what-is);
-- den Prod-Modus: Prod-Verbindungen anlegen, Verbindungen auf Prod umstellen und [[ui:common.readOnly]] bei einer Prod-Verbindung aufheben. Siehe [Umgebungen und Prod](connections.md#environments).
+- den Prod-Modus: Prod-Verbindungen anlegen, Verbindungen auf Prod umstellen und [[ui:common.readOnly]] bei einer Prod-Verbindung aufheben. Siehe [Umgebungen und Prod](connections.md#environments);
+- LLM-Anmerkungen: Über MCP verbundene Assistenten hinterlassen Anmerkungen zum Cluster, zu Topics und Gruppen. Siehe [Clusterprüfung und Anmerkungen](health-check.md#notes).
 
 In Free sind diese Funktionen sichtbar, aber nicht verfügbar. Die Befehle für Consumer-Sessions sind deaktiviert und mit einem Schloss und `Pro` gekennzeichnet. Die Prod-Option wird als [[ui:connections.form.prodPro]] angezeigt. Erfordert eine Aktion Pro, lautet der Fehler [[ui:errors.license.proRequired]], und die Schaltfläche [[ui:common.openLicense]] wird angeboten.
 
-Der Bildschirm [[ui:tabs.license]] führt Consumer-Sessions und den Prod-Modus unter [[ui:license.whatProGives]] auf.
+Der Bildschirm [[ui:tabs.license]] führt Consumer-Sessions, den Prod-Modus und LLM-Anmerkungen unter [[ui:license.whatProGives]] auf.
 
 ## Schlüssel aktivieren {#activate}
 

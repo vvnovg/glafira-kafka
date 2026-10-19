@@ -1,19 +1,19 @@
 # Clusterprüfung und Anmerkungen
 
-Glafira prüft einen Cluster mit integrierten Regeln und zeigt die gefundenen Probleme direkt bei den Objekten: im Verbindungsbaum, in den Listen der Topics und Groups und auf den Seiten von Topic und Group. Mit Glafira Pro kann ein LLM-Assistent diese Befunde um eigene Anmerkungen ergänzen. Die Prüfung liest den Cluster nur und ändert nichts daran.
+Glafira prüft einen Cluster mit integrierten Regeln und zeigt die gefundenen Probleme direkt bei den Objekten: im Verbindungsbaum, in den Listen der Topics und Consumer Groups und auf den Bildschirmen von Topics und Gruppen. Mit Glafira Pro kann ein LLM-Assistent diese Befunde um eigene Anmerkungen ergänzen. Die Prüfung liest den Cluster nur und ändert nichts daran.
 
 ## Prüfung starten {#run}
 
-Öffnen Sie bei einer Verbindung [[ui:sidebar.cluster]] oder [[ui:sidebar.findings]] und klicken Sie auf [[ui:health.check]]. Eine Prüfung dauert bis zu 45 Sekunden: Glafira liest Broker, Partitionen, Topic-Konfigurationen (bis zu 2000 Topics) und Consumer Groups (bis zu 500). Bei großen Clustern wird das Ergebnis als [[ui:health.partial]] markiert, und der Befund [[ui:health.ruleNames.check.partial]] zeigt, was nicht gelesen wurde.
+Öffnen Sie bei einer Verbindung [[ui:sidebar.cluster]] oder [[ui:sidebar.findings]] und klicken Sie auf [[ui:health.check]]. Eine Prüfung dauert bis zu 45 Sekunden: Glafira liest Broker, Partitionen, Topic-Konfigurationen (bis zu 2000 Topics) und Consumer Groups (bis zu 500). Gibt es mehr Topics oder Gruppen, lässt sich etwas nicht lesen oder sind die 45 Sekunden abgelaufen, wird das Ergebnis als [[ui:health.partial]] markiert, und der Befund [[ui:health.ruleNames.check.partial]] zeigt, was nicht gelesen wurde.
 
 Glafira fragt den Cluster nicht von selbst ab: Eine Prüfung läuft nur, wenn Sie auf die Schaltfläche klicken oder ein LLM-Assistent sie anfordert. Das Ergebnis bleibt bis zur nächsten Prüfung gespeichert.
 
 ## Was geprüft wird {#rules}
 
 - Broker und Partitionen: kein Controller, nicht verfügbare und unterreplizierte Partitionen, ein Cluster mit nur einem Broker, ungleich verteilte Leader, Leader nicht auf dem bevorzugten Replikat.
-- Haltbarkeit von Topics: Replikationsfaktor 1, `min.insync.replicas` größer oder gleich dem Replikationsfaktor oder gleich 1, Unclean Leader Election.
-- Broker-Konfiguration: automatisches Erstellen von Topics, Standardwerte für den Replikationsfaktor und `min.insync.replicas`, wichtige Einstellungen, die sich zwischen Brokern unterscheiden.
-- Consumer Groups: leere Groups mit Lag, Groups im Rebalance, Mitglieder ohne Partitionen, Lag, der seit der letzten Prüfung gewachsen ist.
+- Haltbarkeit von Topics: Replikationsfaktor 1, `min.insync.replicas` über dem Replikationsfaktor, `min.insync.replicas` gleich dem Replikationsfaktor, `min.insync.replicas` gleich 1, Unclean Leader Election.
+- Broker-Konfiguration: automatisches Erstellen von Topics, Standard-Replikationsfaktor 1, Standardwert von `min.insync.replicas` 1, wichtige Einstellungen, die sich zwischen Brokern unterscheiden.
+- Consumer Groups: leere Gruppen mit Lag, Gruppen im Rebalance, Mitglieder ohne Partitionen, Lag, der seit der letzten Prüfung gewachsen ist.
 
 ## Schweregrad und Umgebung {#severity}
 
@@ -21,9 +21,9 @@ Jeder Befund hat einen Schweregrad: [[ui:health.severity.critical]], [[ui:health
 
 ## Der Tab „Befunde“ {#tab}
 
-Im Tab [[ui:sidebar.findings]] sind die Befunde nach Regeln gruppiert; jeder erklärt das Problem und was zu tun ist. Filtern Sie nach [[ui:health.filterSeverity]], [[ui:health.filterSource]] und [[ui:health.filterKind]] oder suchen Sie nach Namen. Der Objektname öffnet dessen Seite.
+Im Tab [[ui:sidebar.findings]] sind die Befunde nach Regeln gruppiert; jeder erklärt das Problem und was zu tun ist. Filtern Sie nach [[ui:health.filterSeverity]], [[ui:health.filterSource]] und [[ui:health.filterKind]] oder suchen Sie nach Namen. Der Objektname öffnet dessen Bildschirm.
 
-Ein Badge mit einer Zahl im Verbindungsbaum und in den Listen der Topics und Groups zeigt, wie viele kritische Befunde und Warnungen das Objekt betreffen.
+Ein Badge mit einer Zahl im Verbindungsbaum und in den Listen der Topics und Gruppen zeigt, wie viele Befunde und offene LLM-Anmerkungen mit dem Schweregrad [[ui:health.severity.critical]] oder [[ui:health.severity.warning]] das Objekt betreffen. Zeigen Sie mit der Maus auf das Badge, um ihre Titel zu sehen.
 
 ## Befunde ausblenden {#hide}
 
@@ -31,7 +31,7 @@ Ist ein Befund für ein bestimmtes Objekt zu erwarten, etwa ein Test-Topic mit R
 
 ## LLM-Anmerkungen {#notes}
 
-Mit Glafira Pro kann ein über MCP verbundener LLM-Assistent (siehe [LLM-Assistenten (MCP)](llm-mcp.md#how-it-works)) eine Anmerkung zum Cluster, zu einem Broker, einem Topic oder einer Group hinterlassen. Anmerkungen erscheinen unter [[ui:health.notes]] und auf den Seiten der Objekte, versehen mit dem Namen des Clients. Der Text wird unverändert angezeigt, ohne Formatierung und ohne Links.
+Mit Glafira Pro kann ein über MCP verbundener LLM-Assistent (siehe [LLM-Assistenten (MCP)](llm-mcp.md#how-it-works)) eine Anmerkung zum Cluster, zu einem Broker, einem Topic oder einer Gruppe hinterlassen. Anmerkungen erscheinen unter [[ui:health.notes]] und auf den Bildschirmen der Objekte, versehen mit dem Namen des Clients. Der Text wird unverändert angezeigt, ohne Formatierung und ohne Links.
 
 - [[ui:health.resolve]] und [[ui:health.dismiss]] schließen eine Anmerkung; geschlossene bleiben in einem eingeklappten Abschnitt.
 - [[ui:common.delete]] entfernt eine Anmerkung, [[ui:health.deleteAll]] entfernt alle Anmerkungen der Verbindung.

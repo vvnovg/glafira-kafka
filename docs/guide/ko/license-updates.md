@@ -4,16 +4,17 @@
 
 ## Free와 Pro {#free-and-pro}
 
-Free로 Kafka의 일상적인 작업을 모두 할 수 있습니다. mTLS를 포함한 모든 보안 프로토콜, 클러스터 개요와 토픽, 메시지 조회, 일괄 전송을 포함한 Producer, 컨슈머 그룹, 오프셋 재설정이 포함됩니다. 모든 표시 언어도 포함됩니다. [표시 언어](getting-started.md#language)를 참고하세요.
+Free로 Kafka의 일상적인 작업을 모두 할 수 있습니다. mTLS를 포함한 모든 보안 프로토콜, 클러스터 개요와 토픽, 메시지 조회, 일괄 전송을 포함한 Producer, 컨슈머 그룹, 오프셋 재설정, 클러스터 점검이 포함됩니다. 모든 표시 언어도 포함됩니다. [표시 언어](getting-started.md#language)를 참고하세요.
 
 Pro에서 추가되는 기능:
 
 - 컨슈머 세션: 그룹 멤버로 읽기, 오프셋 커밋, 파티션 일시 중지. [컨슈머 세션](consumer-sessions.md#what-is)을 참고하세요.
 - 운영 환경 모드: 운영 환경 연결 만들기, 연결을 운영 환경으로 바꾸기, 운영 환경 연결에서 [[ui:common.readOnly]] 해제. [환경과 운영 환경 연결](connections.md#environments)을 참고하세요.
+- LLM 메모: MCP로 연결된 어시스턴트가 클러스터, 토픽, 그룹에 대한 메모를 남깁니다. [클러스터 점검과 메모](health-check.md#notes)를 참고하세요.
 
 Free에서는 이러한 기능이 보이지만 사용할 수 없습니다. 컨슈머 세션 명령은 비활성화되고 자물쇠와 `Pro` 표시가 붙습니다. 운영 환경 옵션은 [[ui:connections.form.prodPro]] 항목으로 표시됩니다. Pro가 필요한 작업을 하면 [[ui:common.openLicense]] 버튼과 함께 다음 오류가 표시됩니다: [[ui:errors.license.proRequired]].
 
-[[ui:tabs.license]] 화면의 [[ui:license.whatProGives]] 아래에 컨슈머 세션과 운영 환경 모드가 나열됩니다.
+[[ui:tabs.license]] 화면의 [[ui:license.whatProGives]] 아래에 컨슈머 세션, 운영 환경 모드, LLM 메모가 나열됩니다.
 
 ## 키 활성화 {#activate}
 

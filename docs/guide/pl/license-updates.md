@@ -4,16 +4,17 @@ W tym rozdziale opisano, co daje Pro, jak aktywować klucz licencyjny, co się d
 
 ## Free i Pro {#free-and-pro}
 
-Free obejmuje codzienną pracę z Kafką: wszystkie protokoły zabezpieczeń, w tym mTLS, przegląd klastra i topiki, przeglądanie wiadomości, ekran Producer z wysyłką wsadową, grupy konsumentów i reset offsetów. Obejmuje też wszystkie języki interfejsu. Zob. [Język interfejsu](getting-started.md#language).
+Free obejmuje codzienną pracę z Kafką: wszystkie protokoły zabezpieczeń, w tym mTLS, przegląd klastra i topiki, przeglądanie wiadomości, ekran Producer z wysyłką wsadową, grupy konsumentów, reset offsetów i sprawdzenie klastra. Obejmuje też wszystkie języki interfejsu. Zob. [Język interfejsu](getting-started.md#language).
 
 Pro dodaje:
 
 - sesje konsumenta: odczyt jako członek grupy, zatwierdzanie offsetów, wstrzymywanie partycji. Zob. [Sesje konsumenta](consumer-sessions.md#what-is);
-- tryb prod: tworzenie połączeń prod, przełączanie połączeń na prod i wyłączanie opcji [[ui:common.readOnly]] w połączeniu prod. Zob. [Środowiska i prod](connections.md#environments).
+- tryb prod: tworzenie połączeń prod, przełączanie połączeń na prod i wyłączanie opcji [[ui:common.readOnly]] w połączeniu prod. Zob. [Środowiska i prod](connections.md#environments);
+- notatki LLM: asystenci połączeni przez MCP zostawiają notatki o klastrze, topikach i grupach. Zob. [Sprawdzanie klastra i notatki](health-check.md#notes).
 
 W Free te funkcje są widoczne, ale niedostępne. Polecenia sesji konsumenta są nieaktywne i oznaczone kłódką oraz napisem `Pro`. Opcja prod jest wyświetlana jako [[ui:connections.form.prodPro]]. Jeśli działanie wymaga Pro, błąd brzmi [[ui:errors.license.proRequired]] i proponuje przycisk [[ui:common.openLicense]].
 
-Ekran [[ui:tabs.license]] wymienia sesje konsumenta i tryb prod w sekcji [[ui:license.whatProGives]].
+Ekran [[ui:tabs.license]] wymienia sesje konsumenta, tryb prod i notatki LLM w sekcji [[ui:license.whatProGives]].
 
 ## Aktywacja klucza {#activate}
 

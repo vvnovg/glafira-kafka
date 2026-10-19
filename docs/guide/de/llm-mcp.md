@@ -63,7 +63,7 @@ Um MCP ganz auszuschalten, deaktivieren Sie [[ui:settings.mcp.enable]]: Die Clie
 
 ## Clusterprüfung und Anmerkungen {#health}
 
-Der Assistent kann die integrierte Clusterprüfung von Glafira (Tool `health_check`) ausführen und sich auf ihre Befunde stützen. Mit Glafira Pro kann er außerdem Anmerkungen zu Objekten hinterlassen: Sie erscheinen im Tab [[ui:sidebar.findings]] und auf den Seiten von Topics und Groups, der Cluster wird dabei nicht geändert. Siehe [Clusterprüfung und Anmerkungen](health-check.md#with-llm).
+Der Assistent kann die integrierte Clusterprüfung von Glafira (Tool `health_check`) ausführen und sich auf ihre Befunde stützen. Mit Glafira Pro kann er außerdem Anmerkungen zu Objekten hinterlassen: Sie erscheinen im Tab [[ui:sidebar.findings]] und auf den Bildschirmen von Topics und Gruppen, der Cluster wird dabei nicht geändert. Siehe [Clusterprüfung und Anmerkungen](health-check.md#with-llm).
 
 ## Wenn es nicht funktioniert {#troubleshooting}
 

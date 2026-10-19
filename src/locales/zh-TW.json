@@ -1026,7 +1026,8 @@
       "expired": "Pro 授權已於 {{date}} 到期：Pro 功能已停用。",
       "more": "詳細資訊",
       "hideAria": "關閉通知"
-    }
+    },
+    "proLlmNotes": "LLM 註記：透過 MCP 連線的助理可以留下關於叢集、主題和消費者群組的註記（叢集檢查本身包含在 Free 中）。"
   },
   "about": {
     "summary": "Glafira 是專為測試人員和開發人員打造的 Apache Kafka 桌面用戶端。可透過 PLAINTEXT、SASL 或 mTLS 連線到叢集，瀏覽主題和消費者群組，搜尋訊息，逐則傳送或從檔案批次傳送訊息，以及重設偏移量。Pro 另提供消費者工作階段和正式環境連線。",

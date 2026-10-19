@@ -105,6 +105,7 @@ export function LicensePanel() {
         <ul>
           <li>{t("license.proConsumer")}</li>
           <li>{t("license.proProd")}</li>
+          <li>{t("license.proLlmNotes")}</li>
         </ul>
       </section>
 

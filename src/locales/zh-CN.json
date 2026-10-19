@@ -1026,7 +1026,8 @@
       "expired": "Pro 许可证已于 {{date}} 过期：Pro 功能已停用。",
       "more": "详细信息",
       "hideAria": "关闭通知"
-    }
+    },
+    "proLlmNotes": "LLM 批注：通过 MCP 连接的助手可以留下关于集群、主题和消费者组的批注（集群检查本身包含在 Free 中）。"
   },
   "about": {
     "summary": "Glafira 是面向测试和开发人员的 Apache Kafka 桌面客户端。可通过 PLAINTEXT、SASL 或 mTLS 连接集群，浏览主题和消费者组，搜索消息，逐条发送或从文件批量发送消息，以及重置偏移量。Pro 增加了消费者会话和生产环境连接。",

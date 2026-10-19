@@ -1034,7 +1034,8 @@
       "expired": "A licença Pro expirou em {{date}}: os recursos Pro estão desativados.",
       "more": "Detalhes",
       "hideAria": "Dispensar notificação"
-    }
+    },
+    "proLlmNotes": "Notas de LLM: assistentes conectados por MCP deixam notas sobre o cluster, os tópicos e os grupos (a verificação do cluster em si está incluída no Free)."
   },
   "about": {
     "summary": "Glafira é um cliente desktop do Apache Kafka para testadores e desenvolvedores. Conexão a clusters via PLAINTEXT, SASL ou mTLS, navegação por tópicos e consumer groups, busca de mensagens, envio individual ou em lote a partir de um arquivo e redefinição de offsets. O Pro adiciona sessões de consumer e conexões prod.",

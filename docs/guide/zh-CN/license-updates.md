@@ -4,16 +4,17 @@
 
 ## Free 和 Pro {#free-and-pro}
 
-Free 涵盖 Kafka 的日常工作：包括 mTLS 在内的所有安全协议、集群概览和主题、浏览消息、支持批量发送的 Producer、消费者组以及偏移量重置。所有界面语言也都包含在内。参见[界面语言](getting-started.md#language)。
+Free 涵盖 Kafka 的日常工作：包括 mTLS 在内的所有安全协议、集群概览和主题、浏览消息、支持批量发送的 Producer、消费者组、偏移量重置以及集群检查。所有界面语言也都包含在内。参见[界面语言](getting-started.md#language)。
 
 Pro 增加：
 
 - 消费者会话：以组成员身份读取、提交偏移量、暂停分区。参见[消费者会话](consumer-sessions.md#what-is)；
-- 生产模式：创建生产环境连接、将连接切换为 prod，以及在生产环境连接上取消[[ui:common.readOnly]]。参见[环境与 prod](connections.md#environments)。
+- 生产模式：创建生产环境连接、将连接切换为 prod，以及在生产环境连接上取消[[ui:common.readOnly]]。参见[环境与 prod](connections.md#environments)；
+- LLM 批注：通过 MCP 连接的助手可以留下关于集群、主题和消费者组的批注。参见[集群检查与批注](health-check.md#notes)。
 
 在 Free 中，这些功能可见但不可用。消费者会话命令被禁用，并带有锁形图标和 `Pro` 标记。prod 选项显示为 [[ui:connections.form.prodPro]]。如果某项操作需要 Pro，错误信息会显示[[ui:errors.license.proRequired]]，并提供按钮：[[ui:common.openLicense]]。
 
-[[ui:tabs.license]]页面在 [[ui:license.whatProGives]]下列出消费者会话和生产模式。
+[[ui:tabs.license]]页面在 [[ui:license.whatProGives]]下列出消费者会话、生产模式和 LLM 批注。
 
 ## 激活密钥 {#activate}
 

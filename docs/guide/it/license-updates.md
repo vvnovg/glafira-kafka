@@ -4,16 +4,17 @@ Questo capitolo tratta che cosa aggiunge Pro, come attivare una chiave di licenz
 
 ## Free e Pro {#free-and-pro}
 
-Free copre il lavoro quotidiano con Kafka: tutti i protocolli di sicurezza, mTLS compreso, la panoramica del cluster e i topic, la consultazione dei messaggi, il Producer con l’invio in batch, i consumer group e la reimpostazione degli offset. Sono incluse anche tutte le lingue dell’interfaccia. Vedi [Lingua dell’interfaccia](getting-started.md#language).
+Free copre il lavoro quotidiano con Kafka: tutti i protocolli di sicurezza, mTLS compreso, la panoramica del cluster e i topic, la consultazione dei messaggi, il Producer con l’invio in batch, i consumer group, la reimpostazione degli offset e il controllo del cluster. Sono incluse anche tutte le lingue dell’interfaccia. Vedi [Lingua dell’interfaccia](getting-started.md#language).
 
 Pro aggiunge:
 
 - le sessioni consumer: lettura come membro di un gruppo, commit degli offset, pausa delle partizioni. Vedi [Sessioni consumer](consumer-sessions.md#what-is);
-- la modalità prod: creazione di connessioni prod, passaggio di connessioni a prod e disattivazione dell’opzione [[ui:common.readOnly]] su una connessione prod. Vedi [Ambienti e prod](connections.md#environments).
+- la modalità prod: creazione di connessioni prod, passaggio di connessioni a prod e disattivazione dell’opzione [[ui:common.readOnly]] su una connessione prod. Vedi [Ambienti e prod](connections.md#environments);
+- le note LLM: gli assistenti collegati tramite MCP lasciano note su cluster, topic e gruppi. Vedi [Controllo del cluster e note](health-check.md#notes).
 
 In Free queste funzioni sono visibili ma non disponibili. I comandi delle sessioni consumer sono disattivati e contrassegnati da un lucchetto e da `Pro`. L’opzione prod compare come [[ui:connections.form.prodPro]]. Se un’azione richiede Pro, l’errore indica [[ui:errors.license.proRequired]] e offre il pulsante [[ui:common.openLicense]].
 
-La schermata [[ui:tabs.license]] elenca le sessioni consumer e la modalità prod in [[ui:license.whatProGives]].
+La schermata [[ui:tabs.license]] elenca le sessioni consumer, la modalità prod e le note LLM in [[ui:license.whatProGives]].
 
 ## Attivare una chiave {#activate}
 

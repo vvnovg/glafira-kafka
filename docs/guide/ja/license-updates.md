@@ -4,16 +4,17 @@
 
 ## FreeとPro {#free-and-pro}
 
-Freeは、Kafkaを使う日常の作業をカバーします。mTLSを含むすべてのセキュリティプロトコル、クラスターの概要とトピック、メッセージの閲覧、一括送信付きのProducer、コンシューマーグループ、オフセットのリセットです。すべての表示言語も含まれます。[表示言語](getting-started.md#language)を参照してください。
+Freeは、Kafkaを使う日常の作業をカバーします。mTLSを含むすべてのセキュリティプロトコル、クラスターの概要とトピック、メッセージの閲覧、一括送信付きのProducer、コンシューマーグループ、オフセットのリセット、クラスターのチェックです。すべての表示言語も含まれます。[表示言語](getting-started.md#language)を参照してください。
 
 Proで追加される機能：
 
 - コンシューマーセッション：グループのメンバーとしての読み取り、オフセットのコミット、パーティションの一時停止。[コンシューマーセッション](consumer-sessions.md#what-is)を参照してください。
 - 本番モード：本番接続の作成、接続の本番への切り替え、本番接続での[[ui:common.readOnly]]の解除。[環境と本番](connections.md#environments)を参照してください。
+- LLMの注記：MCPで接続したアシスタントが、クラスター、トピック、グループについての注記を残せます。[クラスターのチェックと注記](health-check.md#notes)を参照してください。
 
 Freeでは、これらの機能は表示されますが利用できません。コンシューマーセッションのコマンドは無効になっており、鍵と`Pro`のマークが付いています。本番の選択肢は「[[ui:connections.form.prodPro]]」と表示されます。Proが必要な操作を行うと、次のエラーが表示されます：[[ui:errors.license.proRequired]]。エラーには次のボタンもあります：[[ui:common.openLicense]]。
 
-[[ui:tabs.license]]画面では、[[ui:license.whatProGives]]の下にコンシューマーセッションと本番モードが記載されています。
+[[ui:tabs.license]]画面では、[[ui:license.whatProGives]]の下にコンシューマーセッション、本番モード、LLMの注記が記載されています。
 
 ## キーを有効にする {#activate}
 

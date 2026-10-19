@@ -4,16 +4,17 @@
 
 ## Free и Pro {#free-and-pro}
 
-Во Free доступно всё для повседневной работы с Kafka: все протоколы безопасности, включая mTLS, обзор кластера и топики, просмотр сообщений, Producer с пакетной отправкой, consumer groups и сброс оффсетов. Все языки интерфейса тоже входят во Free. См. [Язык интерфейса](getting-started.md#language).
+Во Free доступно всё для повседневной работы с Kafka: все протоколы безопасности, включая mTLS, обзор кластера и топики, просмотр сообщений, Producer с пакетной отправкой, consumer groups, сброс оффсетов и проверка кластера. Все языки интерфейса тоже входят во Free. См. [Язык интерфейса](getting-started.md#language).
 
 Pro добавляет:
 
 - consumer-сессии: чтение как участник группы, коммит оффсетов, пауза партиций. См. [Consumer-сессии](consumer-sessions.md#what-is);
-- режим prod: создание prod-подключений, перевод подключений в prod и снятие флажка [[ui:common.readOnly]] у prod-подключения. См. [Окружения и prod](connections.md#environments).
+- режим prod: создание prod-подключений, перевод подключений в prod и снятие флажка [[ui:common.readOnly]] у prod-подключения. См. [Окружения и prod](connections.md#environments);
+- замечания LLM: ассистенты, подключённые по MCP, оставляют замечания о кластере, топиках и группах. См. [Проверка кластера и замечания](health-check.md#notes).
 
 Во Free эти функции видны, но недоступны. Команды consumer-сессий неактивны и помечены замком и `Pro`. Вариант prod показан как [[ui:connections.form.prodPro]]. Если действие требует Pro, в ошибке написано «[[ui:errors.license.proRequired]]», а рядом есть кнопка [[ui:common.openLicense]].
 
-На экране [[ui:tabs.license]] в разделе [[ui:license.whatProGives]] перечислены consumer-сессии и режим prod.
+На экране [[ui:tabs.license]] в разделе [[ui:license.whatProGives]] перечислены consumer-сессии, режим prod и замечания LLM.
 
 ## Активация ключа {#activate}
 

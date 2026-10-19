@@ -63,7 +63,7 @@ Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor
 
 ## 集群检查与批注 {#health}
 
-助手可以运行 Glafira 内置的集群检查（`health_check` 工具），并以其检查结果为依据。使用 Glafira Pro 时，它还可以为对象留下批注：批注显示在[[ui:sidebar.findings]]选项卡以及主题和消费者组页面中，集群不会被更改。参见 [集群检查与批注](health-check.md#with-llm)。
+助手可以运行 Glafira 内置的集群检查（`health_check` 工具），并以其检查结果为依据。使用 Glafira Pro 时，它还可以为对象留下批注：批注显示在[[ui:sidebar.findings]]标签页以及主题和消费者组页面中，集群不会被更改。参见[集群检查与批注](health-check.md#with-llm)。
 
 ## 无法使用时 {#troubleshooting}
 

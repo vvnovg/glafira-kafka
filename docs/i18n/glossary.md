@@ -96,6 +96,7 @@ DNS, TCP, ID, MCP, LLM, stdio, Claude Desktop, Claude Code, Cursor, Build (сб�
 | severity | строгость | Schweregrad | gravité | gravedad | gravità | waga | gravidade | 严重程度 | 嚴重程度 | 重要度 | 심각도 |
 | critical / warning / info | критично / предупреждение / информация | Kritisch / Warnung / Hinweis | Critique / Avertissement / Information | Crítico / Advertencia / Información | Critico / Avviso / Informazione | Krytyczne / Ostrzeżenie / Informacja | Crítico / Aviso / Informação | 严重 / 警告 / 信息 | 嚴重 / 警告 / 資訊 | 重大 / 警告 / 情報 | 심각 / 경고 / 정보 |
 | hide for this object | скрыть для этого объекта | für dieses Objekt ausblenden | masquer pour cet objet | ocultar para este objeto | nascondi per questo oggetto | ukryj dla tego obiektu | ocultar para este objeto | 对此对象隐藏 | 對此物件隱藏 | このオブジェクトで非表示 | 이 개체에서 숨기기 |
+| badge (число у объекта в дереве и списках) | значок | Badge (das, Pl. Badges) | badge (m.) | insignia (как цветная метка окружения; не «indicador» — это индикатор `LLM` в панели) | badge (m.) | znaczek | selo (как цветная метка окружения; не «indicador» — это индикатор `LLM` в панели) | 标记 | 標記 | バッジ | 배지 |
 
 ## Частые слова интерфейса
 

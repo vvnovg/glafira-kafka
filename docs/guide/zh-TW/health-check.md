@@ -1,18 +1,18 @@
 # 叢集檢查與註記
 
-Glafira 使用一組內建規則檢查叢集，並在物件旁顯示發現的問題：連線樹、主題與消費者群組清單，以及主題和消費者群組的頁面。使用 Glafira Pro 時，LLM 助理可以為這些檢查結果補充自己的註記。檢查只會讀取叢集，不會變更其中的任何內容。
+Glafira 使用一組內建規則檢查叢集，並在物件旁顯示發現的問題：連線樹、主題與消費者群組清單，以及主題和消費者群組的畫面。使用 Glafira Pro 時，LLM 助理可以為這些檢查結果補充自己的註記。檢查只會讀取叢集，不會變更其中的任何內容。
 
 ## 執行檢查 {#run}
 
-開啟連線的[[ui:sidebar.cluster]]或[[ui:sidebar.findings]]，然後按一下[[ui:health.check]]。一次檢查最多需要 45 秒：Glafira 會讀取 Broker、分區、主題設定（最多 2000 個主題）與消費者群組（最多 500 個）。在大型叢集上，結果會標示為[[ui:health.partial]]，檢查結果[[ui:health.ruleNames.check.partial]]會說明哪些內容沒有讀取。
+開啟連線的[[ui:sidebar.cluster]]或[[ui:sidebar.findings]]，然後按一下[[ui:health.check]]。一次檢查最多需要 45 秒：Glafira 會讀取 Broker、分區、主題設定（最多 2000 個主題）與消費者群組（最多 500 個）。如果主題或消費者群組超過上述數量、某些內容無法讀取或 45 秒時間已到，結果會標示為[[ui:health.partial]]，檢查結果[[ui:health.ruleNames.check.partial]]會說明哪些內容沒有讀取。
 
-Glafira 不會自行輪詢叢集：只有在你按下按鈕或 LLM 助理要求時才會執行檢查。結果會保留到下一次檢查。
+Glafira 不會自行輪詢叢集：只有在你按一下按鈕或 LLM 助理要求時才會執行檢查。結果會保留到下一次檢查。
 
 ## 檢查內容 {#rules}
 
 - Broker 與分區：沒有控制器、無法使用與複本不足的分區、單一 Broker 叢集、Leader 分布不均、Leader 不在偏好複本上。
-- 主題的持久性：複寫係數為 1，`min.insync.replicas` 大於或等於複寫係數或等於 1，不乾淨的 Leader 選舉。
-- Broker 設定：自動建立主題、預設複寫係數與 `min.insync.replicas`、各 Broker 之間不一致的重要設定。
+- 主題的持久性：複寫係數為 1、`min.insync.replicas` 大於複寫係數、`min.insync.replicas` 等於複寫係數、`min.insync.replicas` 為 1、不乾淨的 Leader 選舉。
+- Broker 設定：自動建立主題、預設複寫係數為 1、預設 `min.insync.replicas` 為 1、各 Broker 之間不一致的重要設定。
 - 消費者群組：有延遲的空群組、正在重新平衡的群組、沒有分區的成員、自上次檢查以來增加的延遲。
 
 ## 嚴重程度與環境 {#severity}
@@ -21,9 +21,9 @@ Glafira 不會自行輪詢叢集：只有在你按下按鈕或 LLM 助理要求�
 
 ## 「檢查結果」分頁 {#tab}
 
-在[[ui:sidebar.findings]]分頁中，檢查結果依規則分組，每一筆都會說明問題與處理方式。可以依[[ui:health.filterSeverity]]、[[ui:health.filterSource]]與[[ui:health.filterKind]]篩選，也可以依名稱搜尋。按一下物件名稱會開啟它的頁面。
+在[[ui:sidebar.findings]]分頁中，檢查結果依規則分組，每一筆都會說明問題與處理方式。可以依[[ui:health.filterSeverity]]、[[ui:health.filterSource]]與[[ui:health.filterKind]]篩選，也可以依名稱搜尋。按一下物件名稱會開啟它的畫面。
 
-連線樹以及主題和消費者群組清單中帶數字的標記，會顯示與該物件相關的嚴重問題與警告數量。
+連線樹以及主題和消費者群組清單中帶數字的標記，會顯示與該物件相關的檢查結果和未關閉的 LLM 註記中，嚴重程度為[[ui:health.severity.critical]]或[[ui:health.severity.warning]]的數量。將指標停在標記上即可查看它們的標題。
 
 ## 隱藏檢查結果 {#hide}
 
@@ -31,7 +31,7 @@ Glafira 不會自行輪詢叢集：只有在你按下按鈕或 LLM 助理要求�
 
 ## LLM 註記 {#notes}
 
-使用 Glafira Pro 時，透過 MCP 連線的 LLM 助理（請參閱 [LLM 助理（MCP）](llm-mcp.md#how-it-works)）可以為叢集、Broker、主題或消費者群組留下註記。註記會顯示在「[[ui:health.notes]]」與物件頁面中，並署名用戶端名稱。文字會原樣顯示，不含格式與連結。
+使用 Glafira Pro 時，透過 MCP 連線的 LLM 助理（請參閱 [LLM 助理（MCP）](llm-mcp.md#how-it-works)）可以為叢集、Broker、主題或消費者群組留下註記。註記會顯示在「[[ui:health.notes]]」與物件畫面中，並署名用戶端名稱。文字會原樣顯示，不含格式與連結。
 
 - [[ui:health.resolve]]與[[ui:health.dismiss]]會關閉註記，已關閉的註記保留在摺疊的區段中。
 - [[ui:common.delete]]會刪除一則註記，[[ui:health.deleteAll]]會刪除此連線的所有註記。

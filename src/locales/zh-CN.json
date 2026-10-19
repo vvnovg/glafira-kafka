@@ -348,7 +348,8 @@
       "auditMissing": "MCP 日志尚不可用：{{error}}"
     },
     "health": {
-      "annotationNotFound": "该批注已被删除或已过期"
+      "annotationNotFound": "该批注已被删除或已过期",
+      "checkTimeout": "集群检查未能及时获取元数据"
     }
   },
   "messages": {

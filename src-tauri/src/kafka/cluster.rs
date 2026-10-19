@@ -41,15 +41,34 @@ pub fn summarize_cluster(
     }
 }
 
-pub fn cluster_overview(h: &KafkaHandles) -> AppResult<ClusterOverview> {
+/// Метаданные кластера одним запросом: брокеры, все топики с партициями, id и контроллер.
+#[derive(Debug, Clone, Default)]
+pub struct ClusterMetadata {
+    pub cluster_id: Option<String>,
+    pub controller_id: Option<i32>,
+    pub brokers: Vec<BrokerInfo>,
+    pub topics: Vec<TopicMeta>,
+}
+
+pub fn cluster_metadata(h: &KafkaHandles) -> AppResult<ClusterMetadata> {
     let md = fetch_metadata_fast_fail(&h.consumer, None, h.timeout)?;
     let (brokers, topics) = convert(&md);
     let (cluster_id, controller_id) = native_cluster_info(h);
-    Ok(summarize_cluster(
-        brokers,
-        &topics,
+    Ok(ClusterMetadata {
         cluster_id,
         controller_id,
+        brokers,
+        topics,
+    })
+}
+
+pub fn cluster_overview(h: &KafkaHandles) -> AppResult<ClusterOverview> {
+    let m = cluster_metadata(h)?;
+    Ok(summarize_cluster(
+        m.brokers,
+        &m.topics,
+        m.cluster_id,
+        m.controller_id,
     ))
 }
 

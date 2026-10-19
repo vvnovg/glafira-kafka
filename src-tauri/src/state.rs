@@ -20,6 +20,7 @@ pub struct AppState {
     pub policy: Arc<crate::policy::Policy>,
     pub license: Arc<crate::license::LicenseManager>,
     pub settings: Arc<crate::settings::SettingsStore>,
+    pub health: Arc<crate::health::service::HealthService>,
 }
 
 impl AppState {
@@ -39,6 +40,7 @@ impl AppState {
                 crate::license::LicenseManager::embedded_key(),
             )),
             settings: Arc::new(crate::settings::SettingsStore::open(data_dir)),
+            health: Arc::new(crate::health::service::HealthService::open(data_dir)),
         })
     }
 
@@ -116,6 +118,12 @@ impl AppState {
         if let Err(e) = self.templates.delete_for_connection(id) {
             tracing::warn!(
                 "failed to delete templates of connection {id}: {}",
+                e.message
+            );
+        }
+        if let Err(e) = self.health.store.delete_connection(id) {
+            tracing::warn!(
+                "failed to delete health data of connection {id}: {}",
                 e.message
             );
         }

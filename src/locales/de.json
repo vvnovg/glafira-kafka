@@ -348,7 +348,8 @@
       "auditMissing": "Das MCP-Protokoll ist noch nicht verfügbar: {{error}}"
     },
     "health": {
-      "annotationNotFound": "Die Anmerkung wurde gelöscht oder ist abgelaufen"
+      "annotationNotFound": "Die Anmerkung wurde gelöscht oder ist abgelaufen",
+      "checkTimeout": "Die Clusterprüfung hat die Metadaten nicht rechtzeitig erhalten"
     }
   },
   "messages": {

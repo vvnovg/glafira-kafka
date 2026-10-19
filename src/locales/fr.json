@@ -348,7 +348,8 @@
       "auditMissing": "Le journal MCP n’est pas encore disponible : {{error}}"
     },
     "health": {
-      "annotationNotFound": "La remarque a été supprimée ou a expiré"
+      "annotationNotFound": "La remarque a été supprimée ou a expiré",
+      "checkTimeout": "La vérification du cluster n’a pas reçu les métadonnées à temps"
     }
   },
   "messages": {

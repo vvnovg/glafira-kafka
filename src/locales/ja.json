@@ -348,7 +348,8 @@
       "auditMissing": "MCPのログはまだ利用できません：{{error}}"
     },
     "health": {
-      "annotationNotFound": "この注記は削除されたか、期限が切れています"
+      "annotationNotFound": "この注記は削除されたか、期限が切れています",
+      "checkTimeout": "クラスターチェックで時間内にメタデータを取得できませんでした"
     }
   },
   "messages": {

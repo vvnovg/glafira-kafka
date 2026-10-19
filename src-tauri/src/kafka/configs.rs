@@ -61,6 +61,55 @@ pub async fn describe_configs(
     Ok(entries)
 }
 
+/// Выбранные ключи конфигов набора топиков одним пакетным DescribeConfigs (для проверки
+/// кластера). `None` у топика — брокер вернул ошибку для ресурса. Значения чувствительных
+/// ключей не возвращаются.
+pub async fn describe_topic_configs(
+    h: &Arc<KafkaHandles>,
+    topics: &[String],
+    keys: &[&str],
+) -> AppResult<Vec<(String, Option<Vec<ConfigEntryDto>>)>> {
+    if topics.is_empty() {
+        return Ok(Vec::new());
+    }
+    let specs: Vec<ResourceSpecifier> =
+        topics.iter().map(|t| ResourceSpecifier::Topic(t)).collect();
+    let started = Instant::now();
+    let opts = AdminOptions::new().request_timeout(Some(h.timeout));
+    let results = match h.admin.describe_configs(&specs, &opts).await {
+        Ok(r) => r,
+        Err(e) => return Err(admin_error(h, started, e).await),
+    };
+    // Ответ сопоставляется по имени ресурса: порядок librdkafka не гарантирует.
+    let mut found: std::collections::HashMap<String, Vec<ConfigEntryDto>> = Default::default();
+    for r in results.into_iter().flatten() {
+        if let OwnedResourceSpecifier::Topic(name) = &r.specifier {
+            let entries = r
+                .entries
+                .iter()
+                .filter(|e| keys.contains(&e.name.as_str()))
+                .map(|e| ConfigEntryDto {
+                    name: e.name.clone(),
+                    value: if e.is_sensitive {
+                        None
+                    } else {
+                        e.value.clone()
+                    },
+                    source: format!("{:?}", e.source),
+                    is_default: e.is_default,
+                    is_read_only: e.is_read_only,
+                    is_sensitive: e.is_sensitive,
+                })
+                .collect();
+            found.insert(name.clone(), entries);
+        }
+    }
+    Ok(topics
+        .iter()
+        .map(|t| (t.clone(), found.remove(t)))
+        .collect())
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicPolicy {

@@ -348,7 +348,8 @@
       "auditMissing": "MCP 日誌尚無法使用：{{error}}"
     },
     "health": {
-      "annotationNotFound": "此註記已刪除或已過期"
+      "annotationNotFound": "此註記已刪除或已過期",
+      "checkTimeout": "叢集檢查未能及時取得中繼資料"
     }
   },
   "messages": {

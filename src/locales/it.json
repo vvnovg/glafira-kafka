@@ -348,7 +348,8 @@
       "auditMissing": "Il log MCP non è ancora disponibile: {{error}}"
     },
     "health": {
-      "annotationNotFound": "La nota è stata eliminata o è scaduta"
+      "annotationNotFound": "La nota è stata eliminata o è scaduta",
+      "checkTimeout": "Il controllo del cluster non ha ricevuto i metadati in tempo"
     }
   },
   "messages": {

@@ -348,7 +348,8 @@
       "auditMissing": "O log do MCP ainda não está disponível: {{error}}"
     },
     "health": {
-      "annotationNotFound": "A nota foi excluída ou expirou"
+      "annotationNotFound": "A nota foi excluída ou expirou",
+      "checkTimeout": "A verificação do cluster não recebeu os metadados a tempo"
     }
   },
   "messages": {

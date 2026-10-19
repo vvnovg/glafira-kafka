@@ -6,6 +6,8 @@ mod brokers;
 mod groups;
 mod topics;
 
+pub use broker_configs::DRIFT_KEYS;
+
 use serde_json::Value;
 
 use super::model::{Finding, Levels, Severity, Target};

@@ -348,7 +348,8 @@
       "auditMissing": "Log MCP nie jest jeszcze dostępny: {{error}}"
     },
     "health": {
-      "annotationNotFound": "Notatka została usunięta lub wygasła"
+      "annotationNotFound": "Notatka została usunięta lub wygasła",
+      "checkTimeout": "Sprawdzenie klastra nie otrzymało metadanych na czas"
     }
   },
   "messages": {

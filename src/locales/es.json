@@ -348,7 +348,8 @@
       "auditMissing": "El registro de MCP aún no está disponible: {{error}}"
     },
     "health": {
-      "annotationNotFound": "La nota se eliminó o caducó"
+      "annotationNotFound": "La nota se eliminó o caducó",
+      "checkTimeout": "La comprobación del clúster no recibió los metadatos a tiempo"
     }
   },
   "messages": {

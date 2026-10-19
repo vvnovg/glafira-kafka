@@ -348,7 +348,8 @@
       "auditMissing": "Журнал MCP пока недоступен: {{error}}"
     },
     "health": {
-      "annotationNotFound": "Замечание удалено или его срок истёк"
+      "annotationNotFound": "Замечание удалено или его срок истёк",
+      "checkTimeout": "Проверка кластера не получила метаданные вовремя"
     }
   },
   "messages": {

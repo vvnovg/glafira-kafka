@@ -123,30 +123,14 @@ pub async fn describe_topic_policies(
     h: &Arc<KafkaHandles>,
     topics: &[String],
 ) -> AppResult<Vec<TopicPolicy>> {
-    if topics.is_empty() {
-        return Ok(Vec::new());
-    }
-    let specs: Vec<ResourceSpecifier> =
-        topics.iter().map(|t| ResourceSpecifier::Topic(t)).collect();
-    let started = Instant::now();
-    let opts = AdminOptions::new().request_timeout(Some(h.timeout));
-    let results = match h.admin.describe_configs(&specs, &opts).await {
-        Ok(r) => r,
-        Err(e) => return Err(admin_error(h, started, e).await),
-    };
-    // Ответ сопоставляется по имени ресурса: порядок librdkafka не гарантирует.
-    let mut found: std::collections::HashMap<String, Option<String>> = Default::default();
-    for r in results.into_iter().flatten() {
-        if let OwnedResourceSpecifier::Topic(name) = &r.specifier {
-            let value = r.get("cleanup.policy").and_then(|e| e.value.clone());
-            found.insert(name.clone(), value);
-        }
-    }
-    Ok(topics
-        .iter()
-        .map(|t| TopicPolicy {
-            name: t.clone(),
-            cleanup_policy: found.get(t).cloned().flatten(),
+    let items = describe_topic_configs(h, topics, &["cleanup.policy"]).await?;
+    Ok(items
+        .into_iter()
+        .map(|(name, entries)| TopicPolicy {
+            name,
+            cleanup_policy: entries
+                .and_then(|e| e.into_iter().find(|e| e.name == "cleanup.policy"))
+                .and_then(|e| e.value),
         })
         .collect())
 }

@@ -41,6 +41,8 @@ pub struct Coverage {
     /// Группы, описание которых прочитано.
     pub groups_checked: usize,
     pub group_errors: usize,
+    /// Группы, лаг которых не прочитан (ошибка группы или всего пакета).
+    pub lag_errors: usize,
     /// Сбор остановлен общим дедлайном.
     pub timed_out: bool,
 }
@@ -52,6 +54,7 @@ impl Coverage {
             || self.groups_checked < self.groups_total
             || self.broker_config_errors > 0
             || self.group_errors > 0
+            || self.lag_errors > 0
     }
 }
 

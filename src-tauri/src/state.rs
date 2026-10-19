@@ -121,7 +121,7 @@ impl AppState {
                 e.message
             );
         }
-        if let Err(e) = self.health.store.delete_connection(id) {
+        if let Err(e) = self.health.forget(id) {
             tracing::warn!(
                 "failed to delete health data of connection {id}: {}",
                 e.message

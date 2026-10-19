@@ -3,7 +3,7 @@
 
 use rdkafka::admin::ResourceSpecifier;
 
-use super::collect::{Fut, GroupRead, Metadata, Source};
+use super::collect::{Fut, GroupRead, LagRead, Metadata, Source};
 use super::rules::DRIFT_KEYS;
 use super::snapshot::{ConfigMap, ConfigValue, GroupSnapshot, TOPIC_CONFIG_KEYS};
 use crate::commands::{blocking, pooled_configs, with_pooled};
@@ -76,11 +76,12 @@ impl Source for KafkaSource {
         })
     }
 
-    fn list_groups(&self) -> Fut<Vec<String>> {
+    fn list_groups(&self) -> Fut<(Vec<String>, usize)> {
         let (st, id) = self.parts();
         Box::pin(async move {
             let l = blocking(move || st.with_handles(&id, group_ops::list_groups)).await?;
-            Ok(l.groups.into_iter().map(|g| g.group_id).collect())
+            let errors = l.errors.len();
+            Ok((l.groups.into_iter().map(|g| g.group_id).collect(), errors))
         })
     }
 
@@ -107,14 +108,21 @@ impl Source for KafkaSource {
         })
     }
 
-    fn groups_lag(&self, ids: Vec<String>) -> Fut<Vec<(String, Option<i64>)>> {
+    fn groups_lag(&self, ids: Vec<String>) -> Fut<Vec<LagRead>> {
         let (st, id) = self.parts();
         Box::pin(async move {
             let lags =
                 blocking(move || st.with_handles(&id, |h| group_ops::groups_lag(h, &ids))).await?;
             Ok(lags
                 .into_iter()
-                .map(|l| (l.group_id, l.total_lag))
+                .map(|l| {
+                    let lag = if l.error.is_some() {
+                        Err(())
+                    } else {
+                        Ok(l.total_lag)
+                    };
+                    (l.group_id, lag)
+                })
                 .collect())
         })
     }

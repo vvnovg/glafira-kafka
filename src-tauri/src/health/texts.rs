@@ -194,7 +194,7 @@ pub fn english(f: &Finding) -> (String, String) {
         "check.partial" => (
             "The check is incomplete".into(),
             format!(
-                "Topic configs checked: {} of {} ({} errors); broker config errors: {}; groups checked: {} of {} ({} errors); time limit reached: {}. Findings cover only what was read.",
+                "Topic configs checked: {} of {} ({} errors); broker config errors: {}; groups checked: {} of {} ({} errors, lag not read for {}); time limit reached: {}. Findings cover only what was read.",
                 num(f, "topicsChecked"),
                 num(f, "topicsTotal"),
                 num(f, "topicConfigErrors"),
@@ -202,6 +202,7 @@ pub fn english(f: &Finding) -> (String, String) {
                 num(f, "groupsChecked"),
                 num(f, "groupsTotal"),
                 num(f, "groupErrors"),
+                num(f, "lagErrors"),
                 num(f, "timedOut")
             ),
         ),
@@ -243,6 +244,32 @@ mod tests {
             assert_ne!(title, id, "{id}");
             assert!(!details.is_empty(), "{id}");
         }
+    }
+
+    #[test]
+    fn partial_text_includes_lag_errors() {
+        let f = Finding::new(
+            "check.partial",
+            Severity::Info,
+            Target::cluster(),
+            None,
+            serde_json::json!({
+                "topicsChecked": 5,
+                "topicsTotal": 5,
+                "topicConfigErrors": 0,
+                "brokerConfigErrors": 0,
+                "groupsChecked": 3,
+                "groupsTotal": 4,
+                "groupErrors": 1,
+                "lagErrors": 2,
+                "timedOut": false,
+            }),
+        );
+        let (_, details) = english(&f);
+        assert!(
+            details.contains("groups checked: 3 of 4 (1 errors, lag not read for 2)"),
+            "{details}"
+        );
     }
 
     #[test]

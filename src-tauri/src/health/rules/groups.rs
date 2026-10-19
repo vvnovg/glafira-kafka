@@ -82,6 +82,7 @@ pub(super) fn partial(s: &ClusterSnapshot, out: &mut Findings) {
                 "groupsChecked": c.groups_checked,
                 "groupsTotal": c.groups_total,
                 "groupErrors": c.group_errors,
+                "lagErrors": c.lag_errors,
                 "timedOut": c.timed_out,
             }),
         );
@@ -218,7 +219,24 @@ mod tests {
         assert_eq!(f[0].rule_id, "check.partial");
         assert_eq!(f[0].params["topicsChecked"], 2000);
         assert_eq!(f[0].params["topicsTotal"], 2500);
+        assert_eq!(f[0].params["lagErrors"], 0);
         s.coverage = Coverage::default();
         assert!(evaluate(&s, Environment::Prod).is_empty());
+    }
+
+    #[test]
+    fn lag_errors_alone_make_check_partial() {
+        let mut s = snap(vec![group("g", "Stable", "classic", &[1], None)]);
+        s.coverage = Coverage {
+            groups_total: 1,
+            groups_checked: 1,
+            lag_errors: 1,
+            ..Default::default()
+        };
+        let f = evaluate(&s, Environment::Prod);
+        assert_eq!(f.len(), 1);
+        assert_eq!(f[0].rule_id, "check.partial");
+        assert_eq!(f[0].params["lagErrors"], 1);
+        assert_eq!(f[0].params["groupErrors"], 0);
     }
 }

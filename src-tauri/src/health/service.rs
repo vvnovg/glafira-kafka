@@ -29,6 +29,9 @@ pub fn now_ms() -> i64 {
 pub struct HealthService {
     pub store: HealthStore,
     running: Mutex<HashMap<String, watch::Receiver<Outcome>>>,
+    /// Поколение данных подключения: растёт при удалении (`forget`), нет записи — 0. Идущая проверка
+    /// сохраняет результат, только если поколение с её начала не изменилось.
+    generations: Mutex<HashMap<String, u64>>,
     notify: RwLock<Option<Notify>>,
 }
 
@@ -37,12 +40,20 @@ impl HealthService {
         Self {
             store: HealthStore::open(data_dir),
             running: Mutex::new(HashMap::new()),
+            generations: Mutex::new(HashMap::new()),
             notify: RwLock::new(None),
         }
     }
 
     pub fn set_notify(&self, f: Notify) {
         *self.notify.write_safe() = Some(f);
+    }
+
+    /// Подключение удалено: данные проверки стираются, идущая проверка своё не сохранит.
+    pub fn forget(&self, connection_id: &str) -> AppResult<()> {
+        let mut generations = self.generations.lock_safe();
+        *generations.entry(connection_id.to_string()).or_insert(0) += 1;
+        self.store.delete_connection(connection_id)
     }
 
     /// Состояние подключения изменилось (проверка, скрытие, замечания).
@@ -128,6 +139,7 @@ impl HealthService {
         src: Arc<dyn Source>,
         limits: Limits,
     ) -> AppResult<CheckRun> {
+        let generation = self.generation(connection_id);
         let started_at = now_ms();
         let previous = self.store.load(connection_id, started_at)?.last_check;
         let mut snap = collect(src, limits).await?;
@@ -158,9 +170,29 @@ impl HealthService {
                 .filter_map(|g| g.total_lag.map(|l| (g.group_id.clone(), l)))
                 .collect::<BTreeMap<_, _>>(),
         };
+        // Сохранение — под тем же замком, что и `forget`: подключение, удалённое за время проверки,
+        // не получит обратно свой файл.
+        let generations = self.generations.lock_safe();
+        if generations.get(connection_id).copied().unwrap_or(0) != generation {
+            return Err(app_err!(
+                ErrorCode::NotFound,
+                "errors.connections.notFound",
+                "Connection {{id}} not found",
+                id = connection_id
+            ));
+        }
         self.store
             .save_check(connection_id, run.clone(), now_ms())?;
+        drop(generations);
         Ok(run)
+    }
+
+    fn generation(&self, connection_id: &str) -> u64 {
+        self.generations
+            .lock_safe()
+            .get(connection_id)
+            .copied()
+            .unwrap_or(0)
     }
 }
 
@@ -186,7 +218,7 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
-    use crate::health::collect::{Fut, GroupRead, Metadata};
+    use crate::health::collect::{Fut, GroupRead, LagRead, Metadata};
     use crate::health::rules::fixtures::{brokers, topic};
     use crate::health::snapshot::ConfigMap;
 
@@ -217,8 +249,8 @@ mod tests {
                 async move { Ok(t.into_iter().map(|n| (n, Some(ConfigMap::new()))).collect()) },
             )
         }
-        fn list_groups(&self) -> Fut<Vec<String>> {
-            Box::pin(async { Ok(vec!["g".to_string()]) })
+        fn list_groups(&self) -> Fut<(Vec<String>, usize)> {
+            Box::pin(async { Ok((vec!["g".to_string()], 0)) })
         }
         fn describe_groups(&self, ids: Vec<String>) -> Fut<Vec<GroupRead>> {
             Box::pin(async move {
@@ -237,9 +269,9 @@ mod tests {
                     .collect())
             })
         }
-        fn groups_lag(&self, ids: Vec<String>) -> Fut<Vec<(String, Option<i64>)>> {
+        fn groups_lag(&self, ids: Vec<String>) -> Fut<Vec<LagRead>> {
             let lag = self.lag;
-            Box::pin(async move { Ok(ids.into_iter().map(|id| (id, Some(lag))).collect()) })
+            Box::pin(async move { Ok(ids.into_iter().map(|id| (id, Ok(Some(lag)))).collect()) })
         }
     }
 
@@ -291,6 +323,90 @@ mod tests {
             .unwrap();
         assert_ne!(c.run_id, a.run_id);
         assert_eq!(src.metadata_calls.load(Ordering::SeqCst), 2);
+    }
+
+    /// `Counting`, у которого `metadata` ждёт разрешения; о входе в проверку сообщает `entered`.
+    struct Gated {
+        inner: Counting,
+        entered: Arc<tokio::sync::Notify>,
+        gate: Arc<tokio::sync::Notify>,
+    }
+
+    impl Source for Gated {
+        fn metadata(&self) -> Fut<Metadata> {
+            let (entered, gate) = (self.entered.clone(), self.gate.clone());
+            let next = self.inner.metadata();
+            Box::pin(async move {
+                entered.notify_one();
+                gate.notified().await;
+                next.await
+            })
+        }
+        fn broker_config(&self, id: i32) -> Fut<ConfigMap> {
+            self.inner.broker_config(id)
+        }
+        fn topic_configs(&self, t: Vec<String>) -> Fut<Vec<(String, Option<ConfigMap>)>> {
+            self.inner.topic_configs(t)
+        }
+        fn list_groups(&self) -> Fut<(Vec<String>, usize)> {
+            self.inner.list_groups()
+        }
+        fn describe_groups(&self, ids: Vec<String>) -> Fut<Vec<GroupRead>> {
+            self.inner.describe_groups(ids)
+        }
+        fn groups_lag(&self, ids: Vec<String>) -> Fut<Vec<LagRead>> {
+            self.inner.groups_lag(ids)
+        }
+    }
+
+    #[tokio::test]
+    async fn check_of_deleted_connection_is_not_saved() {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = Arc::new(HealthService::open(dir.path()));
+        let file = dir.path().join("health").join("c1.json");
+        let counting = || {
+            Arc::new(Counting {
+                lag: 1,
+                ..Default::default()
+            })
+        };
+        svc.run_source("c1", Environment::Prod, Trigger::Ui, counting(), LIMITS)
+            .await
+            .unwrap();
+        assert!(file.exists());
+
+        // Подключение удаляют, пока проверка ещё читает кластер.
+        let (entered, gate) = (
+            Arc::new(tokio::sync::Notify::new()),
+            Arc::new(tokio::sync::Notify::new()),
+        );
+        let gated = Arc::new(Gated {
+            inner: Counting::default(),
+            entered: entered.clone(),
+            gate: gate.clone(),
+        });
+        let running = tokio::spawn({
+            let svc = svc.clone();
+            async move {
+                svc.run_source("c1", Environment::Prod, Trigger::Ui, gated, LIMITS)
+                    .await
+            }
+        });
+        entered.notified().await;
+        svc.forget("c1").unwrap();
+        assert!(!file.exists());
+        gate.notify_one();
+        let err = running.await.unwrap().unwrap_err();
+        assert_eq!(err.code, ErrorCode::NotFound);
+        assert_eq!(err.key, "errors.connections.notFound");
+        assert!(!file.exists(), "результат удалённого подключения сохранён");
+
+        // Подключение с тем же id, созданное заново, сохраняется как обычно.
+        svc.run_source("c1", Environment::Prod, Trigger::Ui, counting(), LIMITS)
+            .await
+            .unwrap();
+        assert!(file.exists());
+        assert!(svc.store.load("c1", now_ms()).unwrap().last_check.is_some());
     }
 
     #[tokio::test]

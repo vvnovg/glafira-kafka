@@ -1290,7 +1290,9 @@
       "group.idleMembers": "没有分区的成员",
       "group.lagGrowing": "延迟增长",
       "check.partial": "检查不完整"
-    }
+    },
+    "allFindings": "全部检查结果",
+    "badgeTitle": "需要关注：{{count}}"
   },
   "hints": {
     "label": "提示：{{name}}",

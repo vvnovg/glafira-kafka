@@ -1314,7 +1314,9 @@
       "group.idleMembers": "Członkowie bez partycji",
       "group.lagGrowing": "Rosnący lag",
       "check.partial": "Niepełne sprawdzenie"
-    }
+    },
+    "allFindings": "Wszystkie ustalenia",
+    "badgeTitle": "Wymagają uwagi: {{count}}"
   },
   "hints": {
     "label": "Podpowiedź: {{name}}",

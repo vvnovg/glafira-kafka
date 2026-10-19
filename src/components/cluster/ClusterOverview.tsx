@@ -6,6 +6,8 @@ import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { CheckBar } from "../health/CheckBar";
+import { HealthBlock } from "../health/HealthBlock";
 
 export function ClusterOverview({ connectionId }: { connectionId: string }) {
   const { t } = useTranslation();
@@ -24,6 +26,8 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
           {t("cluster.overview.refresh")}
         </button>
       </div>
+      <CheckBar connectionId={connectionId} />
+      <HealthBlock connectionId={connectionId} match={(x) => x.kind === "cluster" || x.kind === "broker"} showTarget />
       <dl className="stats">
         <div>
           <dt>Cluster ID</dt>

@@ -12,6 +12,7 @@ import { newConsumerKey, type ResetPrefill, tabId, useWorkspace } from "../../st
 import { ProLock } from "../common/ProLock";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { HealthBlock } from "../health/HealthBlock";
 import { groupTotalLag } from "./groupLag";
 import { ResetOffsetsPanel } from "./ResetOffsetsPanel";
 
@@ -141,6 +142,7 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           )}
         </button>
       </div>
+      <HealthBlock connectionId={connectionId} match={(x) => x.kind === "group" && x.name === groupId} />
       {canMutate && (
         <div className="toolbar">
           <button type="button" disabled={resetBlock !== null} title={resetBlock ?? undefined} onClick={() => setPanel("reset")}>

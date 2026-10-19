@@ -1298,7 +1298,9 @@
       "group.idleMembers": "Mitglieder ohne Partitionen",
       "group.lagGrowing": "Wachsender Lag",
       "check.partial": "Unvollständige Prüfung"
-    }
+    },
+    "allFindings": "Alle Befunde",
+    "badgeTitle": "Erfordern Aufmerksamkeit: {{count}}"
   },
   "hints": {
     "label": "Hinweis: {{name}}",

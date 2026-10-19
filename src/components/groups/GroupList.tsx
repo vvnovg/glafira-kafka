@@ -12,6 +12,7 @@ import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
+import { HealthBadge } from "../health/HealthBlock";
 import { visibleChunks } from "../topics/topicFilter";
 import { filterGroups, GROUP_CHUNK, groupStates } from "./groupFilter";
 
@@ -115,6 +116,9 @@ export function GroupList({ connectionId }: { connectionId: string }) {
             <Hint k="hints.groups.lag" label={t("groups.list.colLag")} />
           </span>
           <span>{t("groups.list.colTopics")}</span>
+          <span title={t("health.title")} aria-label={t("health.title")}>
+            ●
+          </span>
         </div>
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {items.map((item) => {
@@ -139,6 +143,9 @@ export function GroupList({ connectionId }: { connectionId: string }) {
                 <span title={dErr}>{!d ? "…" : dErr ? "—" : full?.assignor || "—"}</span>
                 <span title={lErr ?? lagHint(fullLag)}>{!lag ? "…" : lErr ? "—" : formatCount(fullLag?.totalLag ?? null)}</span>
                 <span title={fullLag?.topics.join(", ")}>{fullLag?.topics.join(", ") ?? ""}</span>
+                <span>
+                  <HealthBadge connectionId={connectionId} match={(x) => x.kind === "group" && x.name === g.groupId} />
+                </span>
               </div>
             );
           })}

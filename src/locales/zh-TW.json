@@ -1290,7 +1290,9 @@
       "group.idleMembers": "沒有分區的成員",
       "group.lagGrowing": "延遲增加",
       "check.partial": "檢查不完整"
-    }
+    },
+    "allFindings": "所有檢查結果",
+    "badgeTitle": "需要注意：{{count}}"
   },
   "hints": {
     "label": "提示：{{name}}",

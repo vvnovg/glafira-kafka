@@ -1290,7 +1290,9 @@
       "group.idleMembers": "파티션이 없는 멤버",
       "group.lagGrowing": "늘어나는 랙",
       "check.partial": "불완전한 점검"
-    }
+    },
+    "allFindings": "모든 발견 사항",
+    "badgeTitle": "확인 필요: {{count}}"
   },
   "hints": {
     "label": "도움말: {{name}}",

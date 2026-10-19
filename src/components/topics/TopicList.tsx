@@ -11,6 +11,7 @@ import { useConnection } from "../../lib/useConnection";
 import { CreateTopicForm } from "./CreateTopicForm";
 import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { HealthBadge } from "../health/HealthBlock";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import {
   buildCounts,
@@ -227,6 +228,9 @@ export function TopicList({ connectionId }: { connectionId: string }) {
           <span>{tt("topics.list.colMessages")}</span>
           <span>cleanup.policy</span>
           <span>{tt("topics.list.colUnderRepl")}</span>
+          <span title={tt("health.title")} aria-label={tt("health.title")}>
+            ●
+          </span>
         </div>
         <div
           style={{ height: virtualizer.getTotalSize(), position: "relative" }}
@@ -267,6 +271,9 @@ export function TopicList({ connectionId }: { connectionId: string }) {
                 </span>
                 <span className={t.underReplicated > 0 ? "warn" : ""}>
                   {t.underReplicated}
+                </span>
+                <span>
+                  <HealthBadge connectionId={connectionId} match={(x) => x.kind === "topic" && x.name === t.name} />
                 </span>
               </div>
             );

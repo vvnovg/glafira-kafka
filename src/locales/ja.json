@@ -1290,7 +1290,9 @@
       "group.idleMembers": "パーティションのないメンバー",
       "group.lagGrowing": "増加するラグ",
       "check.partial": "不完全なチェック"
-    }
+    },
+    "allFindings": "すべての検出事項",
+    "badgeTitle": "要確認：{{count}}"
   },
   "hints": {
     "label": "ヒント：{{name}}",

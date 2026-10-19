@@ -1298,7 +1298,9 @@
       "group.idleMembers": "Members without partitions",
       "group.lagGrowing": "Growing lag",
       "check.partial": "Incomplete check"
-    }
+    },
+    "allFindings": "All findings",
+    "badgeTitle": "Needs attention: {{count}}"
   },
   "hints": {
     "label": "Hint: {{name}}",

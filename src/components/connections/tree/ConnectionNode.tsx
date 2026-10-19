@@ -5,6 +5,7 @@ import { newConsumerKey, useWorkspace } from "../../../state/workspace";
 import { proHint, useLicense } from "../../../lib/useLicense";
 import { ProLock } from "../../common/ProLock";
 import { EnvBadge } from "../../common/EnvBadge";
+import { HealthBadge } from "../../health/HealthBlock";
 
 /**
  * Узел подключения в дереве: точка цвета, имя, окружение и пункты «Обзор», «Топики», «Группы»…
@@ -48,7 +49,7 @@ export function ConnectionNode({ connection: c, rowProps }: { connection: Connec
         </li>
         <li>
           <button type="button" className="link" onClick={() => open({ kind: "findings", connectionId: c.id })}>
-            {t("sidebar.findings")}
+            {t("sidebar.findings")} <HealthBadge connectionId={c.id} match={() => true} />
           </button>
         </li>
         <li>

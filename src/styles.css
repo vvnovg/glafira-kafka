@@ -107,8 +107,8 @@ tr.clickable:hover, .row.clickable:hover { background: var(--bg-alt); }
 .row.header { position: sticky; top: 0; z-index: 1; background: var(--bg-alt); color: var(--muted); }
 tr.selected { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 .row.selected { background: color-mix(in srgb, var(--accent) 15%, transparent); }
-.topic-row { grid-template-columns: 28px minmax(200px, 1fr) 90px 60px 120px 130px 90px; }
-.group-row { grid-template-columns: minmax(220px, 1fr) 150px 90px 110px 110px minmax(120px, 1fr); }
+.topic-row { grid-template-columns: 28px minmax(200px, 1fr) 90px 60px 120px 130px 90px 56px; }
+.group-row { grid-template-columns: minmax(220px, 1fr) 150px 90px 110px 110px minmax(120px, 1fr) 56px; }
 .msg-row { grid-template-columns: 50px 90px 190px minmax(80px, 1fr) minmax(160px, 3fr) 50px 70px; }
 .browse { display: flex; flex-direction: column; gap: 8px; height: 100%; }
 .browse-body { display: flex; gap: 8px; flex: 1; min-height: 300px; }
@@ -184,3 +184,6 @@ label.inline { display: inline-flex; gap: 4px; align-items: center; white-space:
 .finding-actions { display: flex; gap: 12px; }
 .finding.is-hidden, .finding.is-closed { opacity: 0.65; }
 .note-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.health-badge { margin-left: 4px; }
+.health-block { border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
+.health-block h3 { margin: 0 0 4px; font-size: 14px; }

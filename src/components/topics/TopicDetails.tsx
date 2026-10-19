@@ -15,6 +15,7 @@ import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
 import { TOPIC_CONFIG_HINTS } from "../common/topicConfigHints";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { HealthBlock } from "../health/HealthBlock";
 import { TopicActions } from "./TopicActions";
 import { TopicGroups } from "./TopicGroups";
 
@@ -87,6 +88,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
           )}
         </button>
       </div>
+      <HealthBlock connectionId={connectionId} match={(x) => x.kind === "topic" && x.name === topic} />
       {canMutate && connection && !t.internal && (
         <TopicActions
           connection={connection}

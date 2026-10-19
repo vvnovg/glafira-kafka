@@ -1306,7 +1306,9 @@
       "group.idleMembers": "Miembros sin particiones",
       "group.lagGrowing": "Lag en aumento",
       "check.partial": "Comprobación incompleta"
-    }
+    },
+    "allFindings": "Todos los hallazgos",
+    "badgeTitle": "Requieren atención: {{count}}"
   },
   "hints": {
     "label": "Ayuda: {{name}}",

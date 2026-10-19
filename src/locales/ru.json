@@ -1314,7 +1314,9 @@
       "group.idleMembers": "Участники без партиций",
       "group.lagGrowing": "Растущий лаг",
       "check.partial": "Неполная проверка"
-    }
+    },
+    "allFindings": "Все замечания",
+    "badgeTitle": "Требуют внимания: {{count}}"
   },
   "hints": {
     "label": "Подсказка: {{name}}",

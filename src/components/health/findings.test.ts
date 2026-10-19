@@ -143,4 +143,9 @@ describe("badge tooltip", () => {
     expect(lines).toHaveLength(1 + BADGE_TITLES_MAX);
     expect(lines).not.toContain("…");
   });
+
+  it("puts a multi-line note title on one line", () => {
+    const b = badgeFor(view([], [note("warning", "orders", "open", "  Lag grows\non orders\r\n\tfast  ")]), isTopic)!;
+    expect(badgeTooltip(b, t, "ru").split("\n")).toEqual(["Требуют внимания: 1", "Lag grows on orders fast"]);
+  });
 });

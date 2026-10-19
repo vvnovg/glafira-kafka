@@ -101,9 +101,18 @@ describe("FindingsPanel", () => {
     await user.click(within(item).getByRole("button", { name: "Скрыть для этого объекта" }));
     expect(api.setFindingIgnored).toHaveBeenCalledWith("c1", rf1("legacy").key, true);
     await waitFor(() => expect(screen.queryByText("Фактор репликации 1 у legacy")).not.toBeInTheDocument());
-    await user.click(screen.getByRole("checkbox", { name: /Показать скрытые \(1\)/ }));
+    // Подсказка «?» стоит рядом с подписью, а не внутри неё: имя флажка — только подпись.
+    await user.click(screen.getByRole("checkbox", { name: "Показать скрытые (1)" }));
     const hidden = (await screen.findByText("Фактор репликации 1 у legacy")).closest("li")!;
     expect(within(hidden).getByRole("button", { name: "Вернуть" })).toBeInTheDocument();
+  });
+
+  it("когда все находки скрыты, говорит об этом, а не «находок нет»", async () => {
+    const all = view().lastCheck!.findings.map((f) => f.key);
+    vi.mocked(api.getHealth).mockResolvedValue(view({ ignored: all }));
+    renderWithClient(<FindingsPanel connectionId="c1" />);
+    expect(await screen.findByText("Все находки скрыты. Их видно с флажком «Показать скрытые».")).toBeInTheDocument();
+    expect(screen.queryByText("Находок нет: правила не нашли проблем.")).not.toBeInTheDocument();
   });
 
   it("фильтрует по источнику и имени", async () => {

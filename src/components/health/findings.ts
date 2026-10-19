@@ -100,12 +100,13 @@ export function badgeFor(view: HealthView | undefined, match: (t: HealthTarget) 
 
 /**
  * Подсказка значка: первая строка — «Требуют внимания: N», далее заголовки учтённого (не больше 10, затем «…»).
- * Строки через перевод строки: нативная подсказка `title` его показывает.
+ * Строки через перевод строки: нативная подсказка `title` его показывает. Пробелы и переводы строк
+ * в заголовке замечания LLM схлопываются: одна строка подсказки — один заголовок.
  */
 export function badgeTooltip(badge: Badge, t: TFunction, lang: string): string {
   const titles = badge.items
     .slice(0, BADGE_TITLES_MAX)
-    .map((i) => (i.kind === "finding" ? findingTexts(i.finding, t, lang).title : i.note.title));
+    .map((i) => (i.kind === "finding" ? findingTexts(i.finding, t, lang).title : i.note.title.replace(/\s+/g, " ").trim()));
   if (badge.items.length > BADGE_TITLES_MAX) titles.push("…");
   return [t("health.badgeTitle", { count: badge.count }), ...titles].join("\n");
 }

@@ -75,17 +75,23 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
           ))}
         </select>
         <input aria-label={t("health.search")} placeholder={t("health.search")} value={query} onChange={(e) => setQuery(e.target.value)} />
-        <label className="field-label">
-          <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
-          {t("health.showHidden", { count: hiddenCount })}
+        <span className="field-label">
+          <label>
+            <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
+            {t("health.showHidden", { count: hiddenCount })}
+          </label>
           <Hint k="hints.health.hidden" label={t("health.showHidden", { count: hiddenCount })} />
-        </label>
+        </span>
       </div>
       {error && <ErrorBanner error={error} />}
 
       {source !== "llm" && view?.lastCheck && (
         <section aria-label={t("health.sourceRules")}>
-          {groups.size === 0 && <p className="empty">{filtered ? t("health.nothingMatches") : t("health.noFindings")}</p>}
+          {groups.size === 0 && (
+            <p className="empty">
+              {filtered ? t("health.nothingMatches") : hiddenCount > 0 ? t("health.allHidden") : t("health.noFindings")}
+            </p>
+          )}
           {[...groups.entries()].map(([ruleId, items]) => (
             <details key={ruleId} className="finding-group" open={items.length <= 5}>
               <summary>

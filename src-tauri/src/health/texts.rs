@@ -38,7 +38,7 @@ fn drift_values(f: &Finding) -> String {
                 format!(
                     "{}={}",
                     v.get("brokerId").map(Value::to_string).unwrap_or_default(),
-                    v.get("value").and_then(Value::as_str).unwrap_or("")
+                    v.get("value").and_then(Value::as_str).unwrap_or("(unset)")
                 )
             })
             .collect::<Vec<_>>()

@@ -50,7 +50,7 @@ pub(super) fn check(s: &ClusterSnapshot, out: &mut Findings) {
                 "topic.uncleanElection",
                 Target::topic(&t.name),
                 None,
-                json!({ "source": c.source }),
+                json!({ "value": c.value, "source": c.source }),
             );
         }
     }
@@ -179,6 +179,9 @@ mod tests {
             rules(&s, Environment::Prod),
             [("topic.uncleanElection".into(), Severity::Warning)]
         );
+        let f = evaluate(&s, Environment::Prod);
+        assert_eq!(f[0].params["value"], "true");
+        assert_eq!(f[0].params["source"], "DynamicTopic");
         let s = snap(
             3,
             Some(cfg(&[(

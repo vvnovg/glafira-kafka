@@ -71,11 +71,15 @@ fn drift(s: &ClusterSnapshot, out: &mut Findings) {
         return;
     }
     for key in DRIFT_KEYS {
-        // Брокер без ключа в ответе не сравнивается: расхождение — только между значениями.
-        let values: BTreeMap<i32, &str> = s
+        // Брокер без ключа в ответе не сравнивается. Ключ без значения (null — не задан) — тоже
+        // значение: у одного брокера задано, у другого нет — расхождение.
+        let values: BTreeMap<i32, Option<&str>> = s
             .broker_configs
             .iter()
-            .filter_map(|(id, c)| value(c, key).map(|v| (*id, v)))
+            .filter_map(|(id, c)| {
+                c.get(*key)
+                    .map(|v| (*id, v.value.as_deref().map(str::trim)))
+            })
             .collect();
         let mut distinct: Vec<_> = values.values().collect();
         distinct.sort();
@@ -203,5 +207,64 @@ mod tests {
             serde_json::json!({ "brokerId": 2, "value": "6" })
         );
         assert_eq!(evaluate(&s, Environment::Local)[0].severity, Severity::Info);
+    }
+
+    #[test]
+    fn unset_value_differs_from_set_value() {
+        let mut unset = cfg(&[]);
+        unset.insert(
+            "log.retention.ms".into(),
+            ConfigValue {
+                value: None,
+                source: "Default".into(),
+            },
+        );
+        let s = snap(
+            2,
+            vec![(1, cfg(&[("log.retention.ms", "86400000")])), (2, unset)],
+        );
+        let f: Vec<_> = evaluate(&s, Environment::Prod)
+            .into_iter()
+            .filter(|x| x.rule_id == "broker.configDrift")
+            .collect();
+        assert_eq!(f.len(), 1);
+        assert_eq!(
+            f[0].params["values"][1],
+            serde_json::json!({ "brokerId": 2, "value": null })
+        );
+    }
+
+    #[test]
+    fn controller_values_are_the_cluster_values() {
+        let auto = |s: &ClusterSnapshot| -> Vec<serde_json::Value> {
+            evaluate(s, Environment::Prod)
+                .into_iter()
+                .filter(|x| x.rule_id == "broker.autoCreateTopics")
+                .map(|x| x.params["brokerId"].clone())
+                .collect()
+        };
+        let s = ClusterSnapshot {
+            controller_id: Some(3),
+            ..snap(
+                3,
+                vec![
+                    (1, cfg(&[("auto.create.topics.enable", "false")])),
+                    (3, cfg(&[("auto.create.topics.enable", "true")])),
+                ],
+            )
+        };
+        assert_eq!(auto(&s), [serde_json::json!(3)]);
+        // Включено только у брокера 1 (не контроллера) — не срабатывает.
+        let s = ClusterSnapshot {
+            controller_id: Some(3),
+            ..snap(
+                3,
+                vec![
+                    (1, cfg(&[("auto.create.topics.enable", "true")])),
+                    (3, cfg(&[("auto.create.topics.enable", "false")])),
+                ],
+            )
+        };
+        assert!(auto(&s).is_empty());
     }
 }

@@ -1038,7 +1038,7 @@
     "proLlmNotes": "Remarques LLM : les assistants connectés par MCP laissent des remarques sur le cluster, les topics et les groupes (la vérification du cluster elle-même est incluse dans Free)."
   },
   "about": {
-    "summary": "Glafira est un client de bureau Apache Kafka pour les testeurs et les développeurs. Connexion aux clusters via PLAINTEXT, SASL ou mTLS, consultation des topics et des consumer groups, recherche de messages, envoi unitaire ou par lots depuis un fichier, réinitialisation des offsets. Pro ajoute les sessions consumer et les connexions prod.",
+    "summary": "Glafira est un client de bureau Apache Kafka pour les testeurs et les développeurs. Connexion aux clusters via PLAINTEXT, SASL ou mTLS, consultation des topics et des consumer groups, recherche de messages, envoi unitaire ou par lots depuis un fichier, réinitialisation des offsets, vérification du cluster. Pro ajoute les sessions consumer, les connexions prod et les remarques LLM.",
     "version": "Version",
     "build": "Build",
     "system": "Système",
@@ -1203,7 +1203,7 @@
       },
       "broker.defaultReplicationFactorOne": {
         "title": "Facteur de réplication par défaut à 1",
-        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers dans le cluster : {{brokers}}. Les topics créés sans facteur explicite n’ont aucune copie.",
+        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers dans le cluster : {{brokers}}. Les topics créés sans facteur explicite n’ont qu’une réplique, sans redondance.",
         "fix": "Réglez default.replication.factor = 3."
       },
       "broker.defaultMinIsrOne": {
@@ -1309,7 +1309,8 @@
       "check.partial": "Vérification incomplète"
     },
     "allFindings": "Tous les constats",
-    "badgeTitle": "À examiner : {{count}}"
+    "badgeTitle": "À examiner : {{count}}",
+    "allHidden": "Tous les constats sont masqués. Pour les voir, cochez « Afficher les masqués »."
   },
   "hints": {
     "label": "Aide : {{name}}",

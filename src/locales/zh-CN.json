@@ -1030,7 +1030,7 @@
     "proLlmNotes": "LLM 批注：通过 MCP 连接的助手可以留下关于集群、主题和消费者组的批注（集群检查本身包含在 Free 中）。"
   },
   "about": {
-    "summary": "Glafira 是面向测试和开发人员的 Apache Kafka 桌面客户端。可通过 PLAINTEXT、SASL 或 mTLS 连接集群，浏览主题和消费者组，搜索消息，逐条发送或从文件批量发送消息，以及重置偏移量。Pro 增加了消费者会话和生产环境连接。",
+    "summary": "Glafira 是面向测试和开发人员的 Apache Kafka 桌面客户端。可通过 PLAINTEXT、SASL 或 mTLS 连接集群，浏览主题和消费者组，搜索消息，逐条发送或从文件批量发送消息，重置偏移量，以及进行集群检查。Pro 增加了消费者会话、生产环境连接和 LLM 批注。",
     "version": "版本",
     "build": "Build",
     "system": "系统",
@@ -1187,7 +1187,7 @@
       },
       "broker.defaultReplicationFactorOne": {
         "title": "默认副本因子为 1",
-        "details": "default.replication.factor = 1（Broker {{brokerId}}），集群中的 Broker：{{brokers}}。未指定副本因子创建的主题没有副本。",
+        "details": "default.replication.factor = 1（Broker {{brokerId}}），集群中的 Broker：{{brokers}}。未指定副本因子创建的主题只有一个副本，没有冗余。",
         "fix": "将 default.replication.factor 设为 3。"
       },
       "broker.defaultMinIsrOne": {
@@ -1293,7 +1293,8 @@
       "check.partial": "检查不完整"
     },
     "allFindings": "全部检查结果",
-    "badgeTitle": "需要关注：{{count}}"
+    "badgeTitle": "需要关注：{{count}}",
+    "allHidden": "所有检查结果均已隐藏。要查看，请勾选“显示已隐藏”。"
   },
   "hints": {
     "label": "提示：{{name}}",

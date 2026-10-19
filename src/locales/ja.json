@@ -1030,7 +1030,7 @@
     "proLlmNotes": "LLMの注記：MCPで接続したアシスタントが、クラスター、トピック、グループについての注記を残せます（クラスターのチェック自体はFreeに含まれます）。"
   },
   "about": {
-    "summary": "Glafiraは、テスターと開発者のためのApache Kafkaデスクトップクライアントです。PLAINTEXT、SASL、mTLSでクラスターに接続し、トピックやコンシューマーグループの閲覧、メッセージの検索、メッセージの個別送信やファイルからの一括送信、オフセットのリセットを行えます。Proではコンシューマーセッションと本番接続を利用できます。",
+    "summary": "Glafiraは、テスターと開発者のためのApache Kafkaデスクトップクライアントです。PLAINTEXT、SASL、mTLSでクラスターに接続し、トピックやコンシューマーグループの閲覧、メッセージの検索、メッセージの個別送信やファイルからの一括送信、オフセットのリセット、クラスターのチェックを行えます。Proではコンシューマーセッション、本番接続、LLMの注記を利用できます。",
     "version": "バージョン",
     "build": "ビルド",
     "system": "システム",
@@ -1187,7 +1187,7 @@
       },
       "broker.defaultReplicationFactorOne": {
         "title": "デフォルトのレプリケーションファクターが1です",
-        "details": "default.replication.factor = 1（ブローカー{{brokerId}}）、クラスターのブローカー数：{{brokers}}。ファクターを指定せずに作成したトピックにはコピーがありません。",
+        "details": "default.replication.factor = 1（ブローカー{{brokerId}}）、クラスターのブローカー数：{{brokers}}。ファクターを指定せずに作成したトピックのレプリカは1つだけで、冗長性がありません。",
         "fix": "default.replication.factorを3にしてください。"
       },
       "broker.defaultMinIsrOne": {
@@ -1293,7 +1293,8 @@
       "check.partial": "不完全なチェック"
     },
     "allFindings": "すべての検出事項",
-    "badgeTitle": "要確認：{{count}}"
+    "badgeTitle": "要確認：{{count}}",
+    "allHidden": "すべての検出事項が非表示です。見るには「非表示を表示」をオンにします。"
   },
   "hints": {
     "label": "ヒント：{{name}}",

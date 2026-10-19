@@ -1034,7 +1034,7 @@
     "proLlmNotes": "LLM notes: assistants connected over MCP leave notes about the cluster, topics and groups (the cluster check itself is in Free)."
   },
   "about": {
-    "summary": "Glafira is a desktop Apache Kafka client for testers and developers. Connect to clusters over PLAINTEXT, SASL or mTLS, browse topics and consumer groups, search messages, send them one at a time or in batches from a file, and reset offsets. Pro adds consumer sessions and prod connections.",
+    "summary": "Glafira is a desktop Apache Kafka client for testers and developers. Connect to clusters over PLAINTEXT, SASL or mTLS, browse topics and consumer groups, search messages, send them one at a time or in batches from a file, reset offsets, and run cluster checks. Pro adds consumer sessions, prod connections, and LLM notes.",
     "version": "Version",
     "build": "Build",
     "system": "System",
@@ -1195,7 +1195,7 @@
       },
       "broker.defaultReplicationFactorOne": {
         "title": "Default replication factor is 1",
-        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers in the cluster: {{brokers}}. Topics created without an explicit factor have no copies.",
+        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers in the cluster: {{brokers}}. Topics created without an explicit factor get a single replica, with no redundancy.",
         "fix": "Set default.replication.factor = 3."
       },
       "broker.defaultMinIsrOne": {
@@ -1301,7 +1301,8 @@
       "check.partial": "Incomplete check"
     },
     "allFindings": "All findings",
-    "badgeTitle": "Needs attention: {{count}}"
+    "badgeTitle": "Needs attention: {{count}}",
+    "allHidden": "All findings are hidden. To see them, turn on “Show hidden”."
   },
   "hints": {
     "label": "Hint: {{name}}",

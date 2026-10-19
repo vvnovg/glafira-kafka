@@ -1034,7 +1034,7 @@
     "proLlmNotes": "LLM-Anmerkungen: Über MCP verbundene Assistenten hinterlassen Anmerkungen zum Cluster, zu Topics und Gruppen (die Clusterprüfung selbst ist in Free enthalten)."
   },
   "about": {
-    "summary": "Glafira ist ein Desktop-Client für Apache Kafka für Tester und Entwickler. Verbindung zu Clustern über PLAINTEXT, SASL oder mTLS, Topics und Consumer Groups anzeigen, Nachrichten suchen, einzeln oder als Stapel aus einer Datei senden, Offsets zurücksetzen. Pro bietet zusätzlich Consumer-Sessions und Prod-Verbindungen.",
+    "summary": "Glafira ist ein Desktop-Client für Apache Kafka für Tester und Entwickler. Verbindung zu Clustern über PLAINTEXT, SASL oder mTLS, Topics und Consumer Groups anzeigen, Nachrichten suchen, einzeln oder als Stapel aus einer Datei senden, Offsets zurücksetzen, Cluster prüfen. Pro bietet zusätzlich Consumer-Sessions, Prod-Verbindungen und LLM-Anmerkungen.",
     "version": "Version",
     "build": "Build",
     "system": "System",
@@ -1195,7 +1195,7 @@
       },
       "broker.defaultReplicationFactorOne": {
         "title": "Standard-Replikationsfaktor ist 1",
-        "details": "default.replication.factor = 1 (Broker {{brokerId}}), Broker im Cluster: {{brokers}}. Topics ohne expliziten Faktor haben keine Kopien.",
+        "details": "default.replication.factor = 1 (Broker {{brokerId}}), Broker im Cluster: {{brokers}}. Topics ohne expliziten Faktor erhalten nur ein Replikat, ohne Redundanz.",
         "fix": "Setzen Sie default.replication.factor = 3."
       },
       "broker.defaultMinIsrOne": {
@@ -1210,13 +1210,13 @@
       },
       "group.abandoned": {
         "title": "Consumer Group {{name}} ist leer, hat aber Lag",
-        "details": "Die Group hat keine Mitglieder; ungelesene Nachrichten: {{lag}}.",
-        "fix": "Wird die Anwendung nicht mehr gebraucht, löschen Sie die Group; sonst starten Sie ihre Consumer."
+        "details": "Die Gruppe hat keine Mitglieder; ungelesene Nachrichten: {{lag}}.",
+        "fix": "Wird die Anwendung nicht mehr gebraucht, löschen Sie die Gruppe; sonst starten Sie ihre Consumer."
       },
       "group.rebalancing": {
         "title": "Consumer Group {{name}} im Rebalance",
-        "details": "Zum Zeitpunkt der Prüfung ist die Group im Zustand {{state}}.",
-        "fix": "Wiederholen sich Rebalances, bitten Sie den LLM-Assistenten, die Group zu beobachten, oder prüfen Sie Logs und Timeouts der Consumer."
+        "details": "Zum Zeitpunkt der Prüfung ist die Gruppe im Zustand {{state}}.",
+        "fix": "Wiederholen sich Rebalances, bitten Sie den LLM-Assistenten, die Gruppe zu beobachten, oder prüfen Sie Logs und Timeouts der Consumer."
       },
       "group.idleMembers": {
         "title": "Mitglieder ohne Partitionen in {{name}}",
@@ -1230,8 +1230,8 @@
       },
       "check.partial": {
         "title": "Die Prüfung ist unvollständig",
-        "details": "Geprüfte Topic-Konfigurationen: {{topicsChecked}} von {{topicsTotal}}; Groups: {{groupsChecked}} von {{groupsTotal}}; Lesefehler: {{errors}}.",
-        "fix": "Die Befunde decken nur das Gelesene ab. Eine Prüfung liest bis zu 2000 Topics und 500 Groups in 45 Sekunden; war der Cluster langsam, wiederholen Sie sie später."
+        "details": "Geprüfte Topic-Konfigurationen: {{topicsChecked}} von {{topicsTotal}}; Consumer Groups: {{groupsChecked}} von {{groupsTotal}}; Lesefehler: {{errors}}.",
+        "fix": "Die Befunde decken nur das Gelesene ab. Eine Prüfung liest bis zu 2000 Topics und 500 Consumer Groups in 45 Sekunden; war der Cluster langsam, wiederholen Sie sie später."
       }
     },
     "title": "Befunde",
@@ -1240,7 +1240,7 @@
     "never": "Der Cluster wurde noch nicht geprüft.",
     "last": "Letzte Prüfung: {{when}} · {{who}}",
     "byUi": "über Glafira",
-    "scope": "Broker: {{brokers}}; Topic-Konfigurationen: {{topicsChecked}} von {{topicsTotal}}; Groups: {{groupsChecked}} von {{groupsTotal}}",
+    "scope": "Broker: {{brokers}}; Topic-Konfigurationen: {{topicsChecked}} von {{topicsTotal}}; Consumer Groups: {{groupsChecked}} von {{groupsTotal}}",
     "partial": "teilweise geprüft",
     "filterSeverity": "Schweregrad",
     "allSeverities": "Alle Schweregrade",
@@ -1273,7 +1273,7 @@
     "deleteAllConfirm": "Alle LLM-Anmerkungen dieser Verbindung löschen?",
     "closedNotes": "Geschlossen ({{count}})",
     "noNotes": "Keine LLM-Anmerkungen.",
-    "proNotes": "Mit Glafira Pro können LLM-Assistenten hier Anmerkungen zum Cluster, zu Topics und Groups hinterlassen.",
+    "proNotes": "Mit Glafira Pro können LLM-Assistenten hier Anmerkungen zum Cluster, zu Topics und Consumer Groups hinterlassen.",
     "status": {
       "resolved": "erledigt",
       "dismissed": "nicht relevant"
@@ -1294,14 +1294,15 @@
       "broker.defaultReplicationFactorOne": "Standard-Replikationsfaktor 1",
       "broker.defaultMinIsrOne": "Standardwert von min.insync.replicas 1",
       "broker.configDrift": "Abweichende Broker-Konfiguration",
-      "group.abandoned": "Verwaiste Groups",
-      "group.rebalancing": "Groups im Rebalance",
+      "group.abandoned": "Verwaiste Gruppen",
+      "group.rebalancing": "Gruppen im Rebalance",
       "group.idleMembers": "Mitglieder ohne Partitionen",
       "group.lagGrowing": "Wachsender Lag",
       "check.partial": "Unvollständige Prüfung"
     },
     "allFindings": "Alle Befunde",
-    "badgeTitle": "Erfordern Aufmerksamkeit: {{count}}"
+    "badgeTitle": "Erfordern Aufmerksamkeit: {{count}}",
+    "allHidden": "Alle Befunde sind ausgeblendet. Um sie zu sehen, aktivieren Sie „Ausgeblendete anzeigen“."
   },
   "hints": {
     "label": "Hinweis: {{name}}",

@@ -1030,7 +1030,7 @@
     "proLlmNotes": "LLM 註記：透過 MCP 連線的助理可以留下關於叢集、主題和消費者群組的註記（叢集檢查本身包含在 Free 中）。"
   },
   "about": {
-    "summary": "Glafira 是專為測試人員和開發人員打造的 Apache Kafka 桌面用戶端。可透過 PLAINTEXT、SASL 或 mTLS 連線到叢集，瀏覽主題和消費者群組，搜尋訊息，逐則傳送或從檔案批次傳送訊息，以及重設偏移量。Pro 另提供消費者工作階段和正式環境連線。",
+    "summary": "Glafira 是專為測試人員和開發人員打造的 Apache Kafka 桌面用戶端。可透過 PLAINTEXT、SASL 或 mTLS 連線到叢集，瀏覽主題和消費者群組，搜尋訊息，逐則傳送或從檔案批次傳送訊息，重設偏移量，以及進行叢集檢查。Pro 另提供消費者工作階段、正式環境連線和 LLM 註記。",
     "version": "版本",
     "build": "Build",
     "system": "系統",
@@ -1187,7 +1187,7 @@
       },
       "broker.defaultReplicationFactorOne": {
         "title": "預設複寫係數為 1",
-        "details": "default.replication.factor = 1（Broker {{brokerId}}），叢集中的 Broker：{{brokers}}。未指定係數建立的主題沒有複本。",
+        "details": "default.replication.factor = 1（Broker {{brokerId}}），叢集中的 Broker：{{brokers}}。未指定係數建立的主題只有一個複本，沒有備援。",
         "fix": "請將 default.replication.factor 設為 3。"
       },
       "broker.defaultMinIsrOne": {
@@ -1293,7 +1293,8 @@
       "check.partial": "檢查不完整"
     },
     "allFindings": "所有檢查結果",
-    "badgeTitle": "需要注意：{{count}}"
+    "badgeTitle": "需要注意：{{count}}",
+    "allHidden": "所有檢查結果皆已隱藏。若要查看，請勾選「顯示已隱藏」。"
   },
   "hints": {
     "label": "提示：{{name}}",

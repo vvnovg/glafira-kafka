@@ -1038,7 +1038,7 @@
     "proLlmNotes": "Notas de LLM: assistentes conectados por MCP deixam notas sobre o cluster, os tópicos e os grupos (a verificação do cluster em si está incluída no Free)."
   },
   "about": {
-    "summary": "Glafira é um cliente desktop do Apache Kafka para testadores e desenvolvedores. Conexão a clusters via PLAINTEXT, SASL ou mTLS, navegação por tópicos e consumer groups, busca de mensagens, envio individual ou em lote a partir de um arquivo e redefinição de offsets. O Pro adiciona sessões de consumer e conexões prod.",
+    "summary": "Glafira é um cliente desktop do Apache Kafka para testadores e desenvolvedores. Conexão a clusters via PLAINTEXT, SASL ou mTLS, navegação por tópicos e consumer groups, busca de mensagens, envio individual ou em lote a partir de um arquivo, redefinição de offsets e verificação do cluster. O Pro adiciona sessões de consumer, conexões prod e notas de LLM.",
     "version": "Versão",
     "build": "Build",
     "system": "Sistema",
@@ -1203,7 +1203,7 @@
       },
       "broker.defaultReplicationFactorOne": {
         "title": "O fator de replicação padrão é 1",
-        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers no cluster: {{brokers}}. Tópicos criados sem fator explícito não têm cópias.",
+        "details": "default.replication.factor = 1 (broker {{brokerId}}), brokers no cluster: {{brokers}}. Tópicos criados sem fator explícito têm uma única réplica, sem redundância.",
         "fix": "Defina default.replication.factor = 3."
       },
       "broker.defaultMinIsrOne": {
@@ -1309,7 +1309,8 @@
       "check.partial": "Verificação incompleta"
     },
     "allFindings": "Todas as constatações",
-    "badgeTitle": "Exigem atenção: {{count}}"
+    "badgeTitle": "Exigem atenção: {{count}}",
+    "allHidden": "Todas as constatações estão ocultas. Para vê-las, marque “Mostrar ocultas”."
   },
   "hints": {
     "label": "Dica: {{name}}",
@@ -1416,7 +1417,7 @@
     },
     "health": {
       "check": "Executa as regras integradas do Glafira: partições e replicação, configurações de tópicos e brokers, consumer groups. A gravidade depende do ambiente da conexão. A verificação apenas lê o cluster.",
-      "hidden": "Constatações que você ocultou para um objeto específico. Elas não contam nos indicadores; assistentes LLM as veem marcadas como ocultas."
+      "hidden": "Constatações que você ocultou para um objeto específico. Elas não contam nos selos; assistentes LLM as veem marcadas como ocultas."
     }
   }
 }

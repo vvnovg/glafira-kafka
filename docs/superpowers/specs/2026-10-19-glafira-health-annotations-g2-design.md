@@ -18,7 +18,7 @@ G2 — эта спека; G3 — предложения LLM, которые от
 | Строгость | Своя у каждого правила для каждого окружения подключения (`local`, `dev`, `test`, `stage`, `prod`). Порогов и настроек правил нет; человек может скрыть находку для конкретного объекта |
 | Правила | Четыре группы: брокеры и партиции, надёжность топиков, конфиг брокеров, consumer groups (§4) |
 | Срок замечаний LLM | Хранятся на диске по подключению до закрытия человеком или LLM, но не дольше 7 дней с создания |
-| Показ | Вкладка «Замечания» у подключения, значки в дереве и списках топиков и групп, блок замечаний на экранах кластера, топика и группы |
+| Показ | Вкладка «Замечания» у подключения (пункт в дереве подключения со значком), значки в списках топиков и групп, блок замечаний на экранах кластера, топика и группы |
 | Где движок | Модуль приложения `src-tauri/src/health/`: сборщик снимка, чистые функции правил, хранилище. Отдельного крейта нет |
 | MCP | Четыре новых инструмента в крейте `glafira-mcp` (всего 16); типы ответов — свои, типы приложения к LLM не попадают, как в G1 |
 | Изменение кластера | Нет. Правила только читают, замечания пишутся в файл Glafira |
@@ -119,9 +119,10 @@ G2 — эта спека; G3 — предложения LLM, которые от
 
 ## 5. Находки, замечания и хранение
 
-Файл `health/<connectionId>.json` в каталоге данных, права 0600, атомарная запись (временный файл + переименование),
-`schemaVersion: 1`. Удаляется вместе с подключением; в экспорт и импорт подключений не входит. Повреждённый файл
-переименовывается в `<connectionId>.json.bad`, работа продолжается с пустым состоянием, в лог — предупреждение.
+Файл `health/<connectionId>.json` в каталоге данных: файлы 0600, каталог `health/` 0700 (macOS/Linux), атомарная запись
+(временный файл + переименование), `schemaVersion: 1`. Удаляется вместе с подключением; в экспорт и импорт подключений не
+входит. Повреждённый файл переименовывается в `<connectionId>.json.corrupt-<время>` (общий `read_json_or_quarantine`),
+работа продолжается с пустым состоянием, в лог — предупреждение. `connectionId` в имени файла — только `[A-Za-z0-9_-]`.
 
 ```
 { schemaVersion, lastCheck?, ignored [{ key, atMs }], annotations [...] }
@@ -137,11 +138,12 @@ G2 — эта спека; G3 — предложения LLM, которые от
 
 **Замечание LLM** (`annotation`):
 `{ id, target { kind, name? }, severity, title, body, relatedRuleId?, client, sessionId?, createdAtMs, updatedAtMs,
-status, closedAtMs?, closedBy? }`:
+status, closedAtMs? }`:
 - `title` — до 120 символов, `body` — до 2000; длиннее — обрезается с «…»; управляющие символы, кроме перевода строки,
   удаляются; разметка не интерпретируется;
 - `client` — имя клиента, которое человек видел в диалоге подтверждения G1; у безымянного клиента — `null` и `sessionId`;
-- `status` — `open`, `resolved` («Решено»), `dismissed` («Не актуально»); `closedBy` — `user`;
+- `status` — `open`, `resolved` («Решено»), `dismissed` («Не актуально»); закрывает и снова открывает («Открыть снова»)
+  только человек, LLM своё замечание удаляет;
 - повторный `annotate` того же клиента с тем же объектом и заголовком (без учёта регистра и пробелов по краям) среди
   открытых обновляет `severity`, `body`, `relatedRuleId`, `updatedAtMs` и отвечает `created: false`;
 - не больше 200 открытых замечаний на подключение, дальше — `limit_reached`;
@@ -158,17 +160,21 @@ status, closedAtMs?, closedBy? }`:
 
 | Инструмент | Тариф | Параметры | Ответ |
 |---|---|---|---|
-| `health_check` | Free | `connectionId`, `maxAgeSeconds = 300` (0–3600), `runId?`, `ruleIds?`, `minSeverity = info`, `includeIgnored = true`, `offset = 0`, `limit = 100` (≤ 200) | `runId`, `startedAtMs`, `durationMs`, `trigger`, `environment`, `incomplete`, `scope`, `summary [{ ruleId, severity, count }]`, `findings { total, items [{ key, ruleId, severity, target, title, details, params, ignored }], nextOffset? }` |
+| `health_check` | Free | `connectionId`, `maxAgeSeconds = 300` (0–3600), `runId?`, `ruleIds?`, `minSeverity = info`, `includeIgnored = true`, `offset = 0`, `limit = 100` (≤ 200) | `runId`, `startedAtMs`, `durationMs`, `trigger`, `environment`, `incomplete`, `reused`, `scope`, `summary [{ ruleId, severity, count }]`, `findings { total, items [{ key, ruleId, severity, target, title, details, params, ignored }], nextOffset? }`, `truncated`, `hint?` |
 | `annotate` | Pro | `connectionId`, `target { kind, name? }`, `severity` (`info`/`warning`/`critical`), `title`, `body`, `relatedRuleId?` | `{ annotationId, created }` |
-| `list_annotations` | Pro | `connectionId`, `status = open` (`open`/`closed`/`all`) | `{ items [{ id, target, severity, title, body, client, status, createdAtMs, updatedAtMs, closedBy? }] }` |
+| `list_annotations` | Pro | `connectionId`, `status = open` (`open`/`closed`/`all`) | `{ items [{ id, target, severity, title, body, relatedRuleId?, client, status, createdAtMs, updatedAtMs }] }` |
 | `remove_annotation` | Pro | `connectionId`, `annotationId` | `{ removed: true }` |
 
 - `health_check`: если последней проверке меньше `maxAgeSeconds`, новая не запускается; с `runId` возвращает страницы этой
   проверки (`not_found`, если она уже заменена); `summary` — по всем находкам проверки, `findings` — с учётом фильтров;
-  предел ответа 100 KB с усечением, как в G1. Для лимитов G1 вызов — одна операция, занимает один слот параллельности
-  сессии; внутренние запросы проверки — под лимитом §3.
-- `annotate`: объект сверяется с кластером — топик и брокер по метаданным, группа по списку групп, `cluster` без имени;
-  нет объекта — `not_found`; `relatedRuleId` должен быть из `RULE_IDS`, иначе `invalid_argument`.
+  предел ответа 100 KB с усечением, как в G1 (`nextOffset` пересчитывается после усечения). Для лимитов G1 вызов — одна
+  операция, занимает слот параллельности сессии и слот всех сессий, как чтение; внутренние запросы проверки — под лимитом §3.
+  Ожидание ответа (своей или идущей проверки) — до 50 с (`GatewayOptions::check_wait`), дальше `check_in_progress_timeout`.
+- `annotate`: объект сверяется с кластером — топик и брокер по метаданным, группа по списку групп, `cluster` без имени
+  (имя отбрасывается); имя брокера — его числовой id; нет объекта — `not_found`; пустой `target.name` у брокера, топика или
+  группы и пустой `title` — `invalid_argument`; `relatedRuleId` должен быть из `RULE_IDS`, иначе `invalid_argument`.
+  Автор замечания — имя клиента из диалога подтверждения G1; у безымянного клиента — сессия.
+- `remove_annotation`: чужое замечание — `not_allowed`, нет такого — `not_found`.
 - Подсказки инструментов: у `annotate` и `remove_annotation` — `readOnlyHint: false`, `destructiveHint: false`,
   `idempotentHint: true`, `openWorldHint: false`; остальные, как в G1, `readOnlyHint: true`.
 - В Free инструменты замечаний остаются в списке; вызов отвечает `pro_required` с текстом
@@ -178,9 +184,9 @@ status, closedAtMs?, closedBy? }`:
   расставляет приоритеты и связывает; (2) замечания пишутся в Glafira и видны человеку рядом с объектами, кластер не
   меняется; (3) не дублировать находки правил замечаниями — дополнять их выводами со ссылкой `relatedRuleId`;
   (4) находки с `ignored: true` человек решил не трогать.
-- Новые коды ошибок: `pro_required`, `limit_reached`, `check_in_progress_timeout` (не дождались чужой проверки за 45 с).
-- Журнал (`mcp-audit.jsonl`): `health_check` — с `runId`, числом находок и признаком «повторно использована»;
-  `annotate` и `remove_annotation` — с `annotationId`, объектом и строгостью. Тексты замечаний в журнал не пишутся.
+- Новые коды ошибок: `pro_required`, `limit_reached`, `check_in_progress_timeout` (проверка не ответила за 50 с).
+- Журнал (`mcp-audit.jsonl`): как в G1 — аргументы вызова; у `annotate` — только `connectionId`, `target`, `severity`,
+  `relatedRuleId`, без заголовка и текста; у `remove_annotation` — `annotationId`. Тексты замечаний в журнал не пишутся.
 - Тест-«сторожок» сверяет точный список из 16 инструментов.
 
 ## 7. Интерфейс
@@ -188,8 +194,8 @@ status, closedAtMs?, closedBy? }`:
 - **Обзор кластера:** кнопка «Проверить кластер»; строка «Последняя проверка: 5 мин назад · claude-ai · К 2 · П 5 · И 3»
   со ссылкой «Все замечания»; пометка «проверено частично», если `incomplete`; блок «Замечания» с находками уровня
   `cluster` и `broker`.
-- **Вкладка «Замечания»** (`{ kind: "findings", connectionId }`) открывается из ссылки, значка в дереве и контекстного
-  меню подключения:
+- **Вкладка «Замечания»** (`{ kind: "findings", connectionId }`) открывается пунктом «Замечания» в дереве подключения
+  (рядом значок) и ссылкой «Все замечания» в блоках:
   - панель инструментов: «Проверить кластер», время, автор и объём последней проверки;
   - фильтры: строгость, источник («Правила» / «LLM»), вид объекта, поиск по имени; «Показать скрытые (N)»;
   - находки правил сгруппированы по `ruleId` (группа сворачивается: «RF = 1 — 300 топиков»); у находки — иконка и цвет
@@ -203,19 +209,22 @@ status, closedAtMs?, closedBy? }`:
 - **Экраны топика и группы:** блок «Замечания» сверху с находками и замечаниями этого объекта и теми же действиями.
 - **Обновление:** событие Tauri `health://changed { connectionId }` после проверки и любого изменения замечаний;
   панель, значки и блоки перечитывают данные. Замечание LLM появляется без перезагрузки.
-- **Команды:** `run_health_check(connectionId)`, `get_health(connectionId)` (последняя проверка, скрытые, замечания с
-  учётом срока), `set_finding_ignored(connectionId, key, ignored)`, `close_annotation(connectionId, id, status)`,
-  `delete_annotation(connectionId, id)`, `delete_llm_annotations(connectionId)`.
-- **Справка:** F1 на вкладке «Замечания» — глава `health-check`; подсказки «?» у «Проверить кластер» и «Показать скрытые».
+- **Команды:** `run_health_check(connectionId)`, `get_health(connectionId)` (последняя проверка, ключи скрытых, замечания
+  с учётом срока), `set_finding_ignored(connectionId, key, ignored)`, `set_annotation_status(connectionId, annotationId,
+  status)` (`open` — «Открыть снова»), `delete_annotation(connectionId, annotationId)`,
+  `delete_all_annotations(connectionId)`. Все возвращают свежее состояние и шлют `health://changed`.
+- **Справка:** F1 на вкладке «Замечания» — глава `health-check` (`helpChapterFor`); подсказки «?» у «Проверить кластер» и
+  «Показать скрытые». «Удалить все замечания LLM» подтверждается на странице.
 
 ## 8. Локализация и документация
 
-- Все строки — ключами во всех 12 словарях: интерфейс вкладки и блоков, тексты 20 правил (`title`, `details`, `fix`),
-  коды ошибок (`errors.health.*`).
+- Все строки — ключами во всех 12 словарях: интерфейс вкладки и блоков (раздел `health` после `mcp`), тексты 20 правил
+  (`health.rules.<ruleId>.title|details|fix`), короткие имена правил для групп и фильтров (`health.ruleNames`),
+  ошибки (`errors.health.*`), подсказки (`hints.health.*`).
 - Глоссарий (`docs/i18n/glossary.md`): «находка» (finding), «замечание» (annotation), «проверка кластера» (cluster check),
   «скрыть для объекта» (ignore for this object), «строгость» (severity) с уровнями.
 - Глава руководства `health-check` «Проверка кластера и замечания» на 12 языках — перед `llm-mcp` в `GUIDE_CHAPTERS`
-  (`scripts/i18n-check.mjs`, `src/guide/chapters.ts`); глава `llm-mcp` — раздел о новых инструментах и тарифе.
+  (`scripts/i18n-check.mjs`, `src/guide/chapters.ts`); глава `llm-mcp` — раздел `{#health}` о новых инструментах и тарифе.
 - README — раздел о проверке кластера; `docs/smoke/g2.md`.
 
 ## 9. Ошибки

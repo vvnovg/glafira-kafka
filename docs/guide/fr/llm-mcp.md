@@ -61,6 +61,10 @@ Tant qu’un client est connecté, un indicateur `LLM` avec le nom du client s�
 
 Pour désactiver complètement MCP, décochez [[ui:settings.mcp.enable]] : les clients sont déconnectés.
 
+## Vérification du cluster et remarques {#health}
+
+L’assistant peut lancer la vérification intégrée du cluster de Glafira (outil `health_check`) et s’appuyer sur ses constats. Avec Glafira Pro, il peut aussi laisser des remarques sur les objets : elles apparaissent dans l’onglet [[ui:sidebar.findings]] et sur les écrans des topics et des groupes, sans que le cluster soit modifié. Voir [Vérification du cluster et remarques](health-check.md#with-llm).
+
 ## En cas de problème {#troubleshooting}
 
 Le client affiche un message de Glafira :

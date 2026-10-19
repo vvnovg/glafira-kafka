@@ -11,6 +11,7 @@ const cases: [TabSpec | null, string][] = [
   [{ kind: "groups", connectionId: "c" }, "groups"],
   [{ kind: "group", connectionId: "c", groupId: "g" }, "groups"],
   [{ kind: "consumer", connectionId: "c", key: "k" }, "consumer-sessions"],
+  [{ kind: "findings", connectionId: "c" }, "health-check"],
   [{ kind: "license" }, "license-updates"],
   [{ kind: "about" }, "license-updates"],
   [{ kind: "settings" }, "getting-started"],

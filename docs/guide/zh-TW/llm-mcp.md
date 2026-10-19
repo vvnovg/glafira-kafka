@@ -61,6 +61,10 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 
 若要完全關閉 MCP，請取消勾選[[ui:settings.mcp.enable]]：用戶端會被中斷連線。
 
+## 叢集檢查與註記 {#health}
+
+助理可以執行 Glafira 內建的叢集檢查（`health_check` 工具），並以其檢查結果為依據。使用 Glafira Pro 時，它還可以為物件留下註記：註記會顯示在[[ui:sidebar.findings]]分頁以及主題與消費者群組頁面中，叢集不會被變更。請參閱 [叢集檢查與註記](health-check.md#with-llm)。
+
 ## 無法運作時 {#troubleshooting}
 
 用戶端會顯示來自 Glafira 的訊息：

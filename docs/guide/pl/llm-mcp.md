@@ -61,6 +61,10 @@ Dopóki klient jest połączony, na dole lewego panelu widać wskaźnik `LLM` z 
 
 Aby całkowicie wyłączyć MCP, należy odznaczyć opcję [[ui:settings.mcp.enable]]: klienci zostaną rozłączeni.
 
+## Sprawdzanie klastra i notatki {#health}
+
+Asystent może uruchomić wbudowane sprawdzenie klastra Glafira (narzędzie `health_check`) i opierać się na jego ustaleniach. Z Glafira Pro może też zostawiać notatki o obiektach: pojawiają się na karcie [[ui:sidebar.findings]] i na ekranach topików i grup, a klaster się nie zmienia. Zobacz [Sprawdzanie klastra i notatki](health-check.md#with-llm).
+
 ## Gdy nie działa {#troubleshooting}
 
 Klient wyświetla komunikat z Glafira:

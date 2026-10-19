@@ -61,6 +61,10 @@ Glafira가 실행 중이 아니면 클라이언트가 직접 실행하고 최대
 
 MCP를 완전히 끄려면 [[ui:settings.mcp.enable]] 확인란의 선택을 해제하세요. 클라이언트의 연결이 끊어집니다.
 
+## 클러스터 점검과 메모 {#health}
+
+어시스턴트는 Glafira 기본 제공 클러스터 점검(`health_check` 도구)을 실행하고 그 발견 사항을 근거로 삼을 수 있습니다. Glafira Pro를 사용하면 개체에 대한 메모도 남길 수 있습니다. 메모는 [[ui:sidebar.findings]] 탭과 토픽·그룹 화면에 표시되며 클러스터는 바뀌지 않습니다. [클러스터 점검과 메모](health-check.md#with-llm)를 참고하세요.
+
 ## 작동하지 않을 때 {#troubleshooting}
 
 클라이언트에 Glafira의 메시지가 표시됩니다:

@@ -61,6 +61,10 @@ Glafiraが起動していない場合は、クライアントがGlafiraを起動
 
 MCPを完全にオフにするには、[[ui:settings.mcp.enable]]のチェックを外します。クライアントは切断されます。
 
+## クラスターのチェックと注記 {#health}
+
+アシスタントはGlafiraに組み込まれたクラスターのチェック（`health_check`ツール）を実行し、その検出事項をもとに判断できます。Glafira Proでは、オブジェクトについての注記も残せます。注記は[[ui:sidebar.findings]]タブとトピック・グループの画面に表示され、クラスターは変更されません。[クラスターのチェックと注記](health-check.md#with-llm)を参照してください。
+
 ## うまく動かないとき {#troubleshooting}
 
 クライアントにGlafiraからのメッセージが表示されます：

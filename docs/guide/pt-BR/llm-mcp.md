@@ -61,6 +61,10 @@ Enquanto um cliente está conectado, na parte inferior do painel esquerdo aparec
 
 Para desativar o MCP por completo, desmarque [[ui:settings.mcp.enable]]: os clientes são desconectados.
 
+## Verificação do cluster e notas {#health}
+
+O assistente pode executar a verificação integrada do cluster do Glafira (ferramenta `health_check`) e se basear nas constatações dela. Com o Glafira Pro, ele também pode deixar notas sobre os objetos: elas aparecem na aba [[ui:sidebar.findings]] e nas telas de tópicos e grupos, e o cluster não é alterado. Veja [Verificação do cluster e notas](health-check.md#with-llm).
+
 ## Se não funcionar {#troubleshooting}
 
 O cliente mostra uma mensagem do Glafira:

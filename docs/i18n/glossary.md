@@ -89,6 +89,13 @@ DNS, TCP, ID, MCP, LLM, stdio, Claude Desktop, Claude Code, Cursor, Build (сб�
 | approved (client) | подтверждённый | genehmigt | approuvé | aprobado | approvato | zatwierdzony | aprovado | 已批准 | 已核准 | 承認済み | 승인된 |
 | revoke | отозвать | widerrufen | révoquer | revocar | revoca | odwołaj | revogar | 撤销 | 撤銷 | 取り消す | 승인 취소 (кнопка; в журнале — 접근 취소됨) |
 | coordinator (group) | координатор | Koordinator | coordinateur | coordinador | coordinatore | koordynator | coordenador | 协调器 | 協調器 | コーディネーター | 코디네이터 |
+| finding (результат проверки) | находка | Befund | constat | hallazgo | rilievo | ustalenie | constatação | 检查结果 | 檢查結果 | 検出事項 | 발견 사항 |
+| note (замечание LLM) | замечание LLM | LLM-Anmerkung | remarque LLM | nota LLM | nota LLM | notatka LLM | nota de LLM | LLM 批注 | LLM 註記 | LLMの注記 | LLM 메모 |
+| Findings (вкладка) | Замечания | Befunde | Constats | Hallazgos | Rilievi | Ustalenia | Constatações | 检查结果 | 檢查結果 | 検出事項 | 발견 사항 |
+| cluster check | проверка кластера | Clusterprüfung | vérification du cluster | comprobación del clúster | controllo del cluster | sprawdzenie klastra | verificação do cluster | 集群检查 | 叢集檢查 | クラスターのチェック | 클러스터 점검 |
+| severity | строгость | Schweregrad | gravité | gravedad | gravità | waga | gravidade | 严重程度 | 嚴重程度 | 重要度 | 심각도 |
+| critical / warning / info | критично / предупреждение / информация | Kritisch / Warnung / Hinweis | Critique / Avertissement / Information | Crítico / Advertencia / Información | Critico / Avviso / Informazione | Krytyczne / Ostrzeżenie / Informacja | Crítico / Aviso / Informação | 严重 / 警告 / 信息 | 嚴重 / 警告 / 資訊 | 重大 / 警告 / 情報 | 심각 / 경고 / 정보 |
+| hide for this object | скрыть для этого объекта | für dieses Objekt ausblenden | masquer pour cet objet | ocultar para este objeto | nascondi per questo oggetto | ukryj dla tego obiektu | ocultar para este objeto | 对此对象隐藏 | 對此物件隱藏 | このオブジェクトで非表示 | 이 개체에서 숨기기 |
 
 ## Частые слова интерфейса
 

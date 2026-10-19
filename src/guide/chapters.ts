@@ -6,6 +6,7 @@ export const GUIDE_CHAPTERS = [
   "producer",
   "groups",
   "consumer-sessions",
+  "health-check",
   "llm-mcp",
   "license-updates",
   "troubleshooting",

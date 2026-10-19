@@ -1,0 +1,44 @@
+# Cluster check and notes
+
+Glafira checks a cluster with a set of built-in rules and shows the problems it finds next to the objects: in the connection tree, in the topic and group lists, and on the topic and group screens. With Glafira Pro, an LLM assistant can add its own notes to these findings. The check only reads the cluster and changes nothing in it.
+
+## Running a check {#run}
+
+Open [[ui:sidebar.cluster]] or [[ui:sidebar.findings]] for a connection and press [[ui:health.check]]. A check takes up to 45 seconds: Glafira reads the brokers, partitions, topic configs (up to 2000 topics) and consumer groups (up to 500). On large clusters the result is marked [[ui:health.partial]], and the [[ui:health.ruleNames.check.partial]] finding shows what was not read.
+
+Glafira does not poll the cluster on its own: a check runs only when you press the button or an LLM assistant asks for it. The result is kept until the next check.
+
+## What is checked {#rules}
+
+- Brokers and partitions: no controller, offline and under-replicated partitions, a single-broker cluster, leader skew, leaders not on the preferred replica.
+- Topic durability: replication factor 1, `min.insync.replicas` above or equal to the replication factor or equal to 1, unclean leader election.
+- Broker configs: automatic topic creation, the default replication factor and `min.insync.replicas`, important settings that differ between brokers.
+- Consumer groups: empty groups with lag, rebalancing groups, members without partitions, lag that grew since the previous check.
+
+## Severity and environment {#severity}
+
+Each finding has a severity: [[ui:health.severity.critical]], [[ui:health.severity.warning]] or [[ui:health.severity.info]]. It depends on the environment of the connection. For example, replication factor 1 is critical on prod, a warning on stage, and is not shown on dev, test and local. The environment is set in the connection form.
+
+## The Findings tab {#tab}
+
+On the [[ui:sidebar.findings]] tab, findings are grouped by rule; each one explains the problem and what to do. Filter them by [[ui:health.filterSeverity]], [[ui:health.filterSource]] and [[ui:health.filterKind]], or search by name. The object name opens its screen.
+
+A badge with a number in the connection tree and in the topic and group lists shows how many critical findings and warnings concern the object.
+
+## Hiding findings {#hide}
+
+If a finding is expected for a specific object, for example a test topic with replication factor 1 on prod, press [[ui:health.hide]]. A hidden finding is not counted in badges and stays hidden after later checks. To see hidden findings, turn on “Show hidden”; there you can press [[ui:health.restore]].
+
+## LLM notes {#notes}
+
+With Glafira Pro, an LLM assistant connected over MCP (see [LLM assistants (MCP)](llm-mcp.md#how-it-works)) can leave a note about the cluster, a broker, a topic or a group. Notes appear in [[ui:health.notes]] and on the object screens, signed with the client name. The text is shown as is, without formatting or links.
+
+- [[ui:health.resolve]] and [[ui:health.dismiss]] close a note; closed notes are kept in a collapsed section.
+- [[ui:common.delete]] removes a note, and [[ui:health.deleteAll]] removes every note of the connection.
+- A note is removed automatically 7 days after it was created. A connection can have at most 200 open notes.
+
+Without Pro, an assistant can still run the check and read the findings, but it cannot leave notes.
+
+## With an LLM assistant {#with-llm}
+
+The assistant runs the same check with the `health_check` tool and sees the same findings, including hidden ones, which are marked. If the last check is less than 5 minutes old, the assistant gets its result without querying the cluster again. Ask, for example: “Check the health of the cluster and leave notes on the most important problems.”

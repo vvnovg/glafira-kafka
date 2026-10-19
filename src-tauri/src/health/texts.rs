@@ -169,7 +169,7 @@ pub fn english(f: &Finding) -> (String, String) {
         "group.rebalancing" => (
             format!("Group {name} is rebalancing"),
             format!(
-                "State {} at the moment of the check. To see whether rebalances repeat, use observe_consumer_group.",
+                "State {} at the moment of the check. To see whether rebalances repeat, use observe_consumer_group. Groups on the consumer protocol (KIP-848) report transitional states as Unknown, so this check can miss their rebalances.",
                 num(f, "state")
             ),
         ),
@@ -243,5 +243,20 @@ mod tests {
             assert_ne!(title, id, "{id}");
             assert!(!details.is_empty(), "{id}");
         }
+    }
+
+    #[test]
+    fn rebalancing_text_mentions_kip_848() {
+        let f = Finding::new(
+            "group.rebalancing",
+            Severity::Info,
+            Target::group("g"),
+            None,
+            serde_json::json!({ "state": "PreparingRebalance" }),
+        );
+        let (title, details) = english(&f);
+        assert_eq!(title, "Group g is rebalancing");
+        assert!(details.contains("PreparingRebalance"));
+        assert!(details.contains("KIP-848"));
     }
 }

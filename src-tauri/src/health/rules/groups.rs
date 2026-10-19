@@ -54,7 +54,7 @@ pub(super) fn check(s: &ClusterSnapshot, out: &mut Findings) {
         }
         if let (Some(p), Some(now)) = (previous, g.total_lag)
             && let Some(&before) = p.lag.get(&g.group_id)
-            && now - before >= LAG_MIN_GROWTH.max(before / 2)
+            && 2 * (now - before) >= (2 * LAG_MIN_GROWTH).max(before)
         {
             out.emit(
                 "group.lagGrowing",
@@ -191,6 +191,11 @@ mod tests {
         assert!(!growing(&with_previous(120_000, 0, 999)));
         assert!(growing(&with_previous(120_000, 2000, 3000)));
         assert!(!growing(&with_previous(120_000, 4000, 5000)));
+        // Половина нечётного прошлого лага не округляется вниз: 3001 → +1500 — мало, +1501 — да.
+        assert!(!growing(&with_previous(120_000, 3001, 4501)));
+        assert!(growing(&with_previous(120_000, 3001, 4502)));
+        // Ветка «половина прошлого лага» срабатывает: 4000 → 6000.
+        assert!(growing(&with_previous(120_000, 4000, 6000)));
         // Прошлая проверка: от минуты до суток.
         assert!(!growing(&with_previous(59_000, 0, 5000)));
         assert!(growing(&with_previous(60_000, 0, 5000)));

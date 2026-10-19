@@ -100,13 +100,17 @@ impl HealthService {
         connection_id: &str,
         trigger: Trigger,
     ) -> AppResult<Arc<CheckRun>> {
+        // Поколение — до проверки подключения, как в `commands::health::change`: подключение,
+        // удалённое в промежутке, своего файла обратно не получит.
+        let generation = self.generation(connection_id);
         let env = state.profile(connection_id)?.environment;
         let src = Arc::new(KafkaSource::new(state.clone(), connection_id));
-        self.run_source(connection_id, env, trigger, src, LIMITS)
+        self.run_source(connection_id, generation, env, trigger, src, LIMITS)
             .await
     }
 
-    /// Последняя проверка, если ей меньше `max_age_ms`, иначе новая. `true` — использована прошлая.
+    /// Последняя проверка, если ей меньше `max_age_ms` и она сделана в текущем окружении
+    /// подключения, иначе новая. `true` — использована прошлая.
     pub async fn latest_or_run(
         self: &Arc<Self>,
         state: &AppState,
@@ -115,9 +119,12 @@ impl HealthService {
         max_age_ms: i64,
     ) -> AppResult<(Arc<CheckRun>, bool)> {
         let now = now_ms();
+        let env = state.profile(connection_id)?.environment;
         let (this, id) = (self.clone(), connection_id.to_string());
         let last = blocking(move || Ok(this.store.load(&id, now)?.last_check)).await?;
+        // Окружение подключения сменили (например, dev → prod): у прошлой проверки другая строгость.
         if let Some(last) = last
+            && last.environment == env
             && now - last.started_at_ms < max_age_ms
         {
             return Ok((Arc::new(last), true));
@@ -125,10 +132,12 @@ impl HealthService {
         Ok((self.run(state, connection_id, trigger).await?, false))
     }
 
-    /// Ядро запуска на любом источнике (тесты — на фейке).
+    /// Ядро запуска на любом источнике (тесты — на фейке). `generation` прочитано до проверки
+    /// подключения: результат сохраняется, только если подключение с тех пор не удаляли.
     pub async fn run_source(
         self: &Arc<Self>,
         connection_id: &str,
+        generation: u64,
         env: Environment,
         trigger: Trigger,
         src: Arc<dyn Source>,
@@ -146,7 +155,7 @@ impl HealthService {
                     // Проверка доводится до конца, даже если вызвавший перестал ждать.
                     tauri::async_runtime::spawn(async move {
                         let r = this
-                            .check(&id, env, trigger, src, limits)
+                            .check(&id, generation, env, trigger, src, limits)
                             .await
                             .map(Arc::new);
                         this.running.lock_safe().remove(&id);
@@ -163,16 +172,18 @@ impl HealthService {
     }
 
     async fn check(
-        &self,
+        self: &Arc<Self>,
         connection_id: &str,
+        generation: u64,
         env: Environment,
         trigger: Trigger,
         src: Arc<dyn Source>,
         limits: Limits,
     ) -> AppResult<CheckRun> {
-        let generation = self.generation(connection_id);
         let started_at = now_ms();
-        let previous = self.store.load(connection_id, started_at)?.last_check;
+        // Файл читается и пишется на blocking-потоке: `write` держит замок поколений на время fsync.
+        let (this, id) = (self.clone(), connection_id.to_string());
+        let previous = blocking(move || Ok(this.store.load(&id, started_at)?.last_check)).await?;
         let mut snap = collect(src, limits).await?;
         snap.previous = previous.map(|p| PreviousLag {
             age_ms: started_at - p.started_at_ms,
@@ -202,9 +213,9 @@ impl HealthService {
                 .collect::<BTreeMap<_, _>>(),
         };
         // Подключение, удалённое за время проверки, не получит обратно свой файл.
-        self.write(connection_id, generation, |s| {
-            s.save_check(connection_id, run.clone(), now_ms())
-        })?;
+        let (this, id, saved) = (self.clone(), connection_id.to_string(), run.clone());
+        blocking(move || this.write(&id, generation, |s| s.save_check(&id, saved, now_ms())))
+            .await?;
         Ok(run)
     }
 }
@@ -302,9 +313,17 @@ mod tests {
             ..Default::default()
         });
         let (a, b) = tokio::join!(
-            svc.run_source("c1", Environment::Prod, Trigger::Ui, src.clone(), LIMITS),
             svc.run_source(
                 "c1",
+                svc.generation("c1"),
+                Environment::Prod,
+                Trigger::Ui,
+                src.clone(),
+                LIMITS
+            ),
+            svc.run_source(
+                "c1",
+                svc.generation("c1"),
                 Environment::Prod,
                 Trigger::Mcp { client: None },
                 src.clone(),
@@ -331,7 +350,14 @@ mod tests {
         let saved = svc.store.load("c1", now_ms()).unwrap().last_check.unwrap();
         assert_eq!(saved.run_id, a.run_id);
         let c = svc
-            .run_source("c1", Environment::Prod, Trigger::Ui, src.clone(), LIMITS)
+            .run_source(
+                "c1",
+                svc.generation("c1"),
+                Environment::Prod,
+                Trigger::Ui,
+                src.clone(),
+                LIMITS,
+            )
             .await
             .unwrap();
         assert_ne!(c.run_id, a.run_id);
@@ -383,9 +409,16 @@ mod tests {
                 ..Default::default()
             })
         };
-        svc.run_source("c1", Environment::Prod, Trigger::Ui, counting(), LIMITS)
-            .await
-            .unwrap();
+        svc.run_source(
+            "c1",
+            svc.generation("c1"),
+            Environment::Prod,
+            Trigger::Ui,
+            counting(),
+            LIMITS,
+        )
+        .await
+        .unwrap();
         assert!(file.exists());
 
         // Подключение удаляют, пока проверка ещё читает кластер.
@@ -401,8 +434,15 @@ mod tests {
         let running = tokio::spawn({
             let svc = svc.clone();
             async move {
-                svc.run_source("c1", Environment::Prod, Trigger::Ui, gated, LIMITS)
-                    .await
+                svc.run_source(
+                    "c1",
+                    svc.generation("c1"),
+                    Environment::Prod,
+                    Trigger::Ui,
+                    gated,
+                    LIMITS,
+                )
+                .await
             }
         });
         entered.notified().await;
@@ -415,11 +455,42 @@ mod tests {
         assert!(!file.exists(), "результат удалённого подключения сохранён");
 
         // Подключение с тем же id, созданное заново, сохраняется как обычно.
-        svc.run_source("c1", Environment::Prod, Trigger::Ui, counting(), LIMITS)
-            .await
-            .unwrap();
+        svc.run_source(
+            "c1",
+            svc.generation("c1"),
+            Environment::Prod,
+            Trigger::Ui,
+            counting(),
+            LIMITS,
+        )
+        .await
+        .unwrap();
         assert!(file.exists());
         assert!(svc.store.load("c1", now_ms()).unwrap().last_check.is_some());
+    }
+
+    #[tokio::test]
+    async fn generation_read_before_deletion_is_not_saved() {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = Arc::new(HealthService::open(dir.path()));
+        let file = dir.path().join("health").join("c1.json");
+        // Поколение прочитано до проверки подключения, подключение удалили до старта проверки:
+        // проверка пишет по этому поколению, а не по прочитанному позже.
+        let generation = svc.generation("c1");
+        svc.forget("c1").unwrap();
+        let err = svc
+            .run_source(
+                "c1",
+                generation,
+                Environment::Prod,
+                Trigger::Ui,
+                Arc::new(Counting::default()),
+                LIMITS,
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(err.key, "errors.connections.notFound");
+        assert!(!file.exists(), "результат удалённого подключения сохранён");
     }
 
     #[test]
@@ -463,6 +534,7 @@ mod tests {
         let first = svc
             .run_source(
                 "c1",
+                svc.generation("c1"),
                 Environment::Prod,
                 Trigger::Ui,
                 Arc::new(Counting {
@@ -480,6 +552,7 @@ mod tests {
         let second = svc
             .run_source(
                 "c1",
+                svc.generation("c1"),
                 Environment::Prod,
                 Trigger::Ui,
                 Arc::new(Counting {

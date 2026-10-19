@@ -171,7 +171,8 @@ impl GatewayServer {
             session: self.identify(None),
         };
         let wait = self.shared.options.check_wait;
-        let out = tokio::time::timeout(wait, self.health(op, true))
+        // Страница проверки по `runId` читается из файла Glafira — без слотов Kafka.
+        let out = tokio::time::timeout(wait, self.health(op, p.run_id.is_none()))
             .await
             .map_err(|_| {
                 BackendError::new(

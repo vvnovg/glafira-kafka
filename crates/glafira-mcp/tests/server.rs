@@ -1274,6 +1274,43 @@ async fn health_check_gives_up_waiting() {
     assert!(msg.starts_with("check_in_progress_timeout"), "{msg}");
 }
 
+#[tokio::test]
+async fn paging_by_run_id_does_not_take_kafka_slots() {
+    let fake = Fake::new(SessionAccess::Approved);
+    *fake.overview_delay.lock().unwrap() = Duration::from_secs(2);
+    let e = env_with(fake.clone(), |o| o.check_wait = Duration::from_millis(300)).await;
+    let c = Arc::new(client(&e.ep).await);
+    // Оба слота сессии заняты медленными чтениями кластера.
+    let busy: Vec<_> = (0..2)
+        .map(|_| {
+            let c = c.clone();
+            tokio::spawn(async move {
+                ok(call(&c, "get_cluster_overview", json!({"connectionId": "c1"})).await)
+            })
+        })
+        .collect();
+    for _ in 0..100 {
+        if fake.active.load(Ordering::SeqCst) == 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert_eq!(fake.active.load(Ordering::SeqCst), 2);
+    // Страница прошлой проверки читается из файла Glafira — слот Kafka не нужен.
+    ok(call(
+        &c,
+        "health_check",
+        json!({"connectionId": "c1", "runId": "r1"}),
+    )
+    .await);
+    // Новая проверка ходит в кластер: ждёт слот и не дожидается.
+    let msg = err(&call(&c, "health_check", json!({"connectionId": "c1"})).await);
+    assert!(msg.starts_with("check_in_progress_timeout"), "{msg}");
+    for h in busy {
+        h.await.unwrap();
+    }
+}
+
 fn note(target: Value, title: &str) -> Value {
     json!({
         "connectionId": "c1",

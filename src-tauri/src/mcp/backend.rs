@@ -1,5 +1,6 @@
 //! Реализация `glafira_mcp::Backend` (спец. G1 §2): существующие функции чтения и проверка
-//! `llmAccess` подключения при каждой операции. Изменяющих функций здесь нет и быть не должно.
+//! `llmAccess` подключения при каждой операции. Функций, меняющих кластер, здесь нет и быть не
+//! должно; замечания LLM пишутся только в файл Glafira.
 
 use std::sync::Arc;
 
@@ -51,6 +52,21 @@ fn to_backend(e: AppError) -> BackendError {
         _ => e.message,
     };
     BackendError::new(code, message)
+}
+
+/// Текст для LLM при сбое файла `health/<id>.json` (спец. G2 §9): путь к файлу не раскрывается.
+const HEALTH_FILE_FAILED: &str = "Glafira could not read or save its data for this connection";
+
+/// Ошибки операций G2: сбой файла Glafira (диск, права, версия файла — ключи `errors.io`,
+/// `errors.json`, `errors.storage.*`) — `internal` с общим текстом, а не «настройки или сертификаты
+/// подключения». Различаем по ключу, а не по коду: проверка (`latest_or_run`) возвращает и ошибки
+/// Kafka и настроек подключения — они, как и «не найдено», остаются как в G1.
+fn health_to_backend(e: AppError) -> BackendError {
+    if e.key == "errors.io" || e.key == "errors.json" || e.key.starts_with("errors.storage.") {
+        BackendError::new("internal", HEALTH_FILE_FAILED)
+    } else {
+        to_backend(e)
+    }
 }
 
 impl AppBackend {
@@ -329,7 +345,7 @@ impl AppBackend {
                     Some(id) => {
                         let file = blocking(move || st2.health.store.load(&cid, now_ms()))
                             .await
-                            .map_err(to_backend)?;
+                            .map_err(health_to_backend)?;
                         match file.last_check {
                             Some(r) if r.run_id == id => (Arc::new(r), true, file.ignored),
                             _ => {
@@ -348,11 +364,11 @@ impl AppBackend {
                             .clone()
                             .latest_or_run(&st, &connection_id, trigger, max_age_ms)
                             .await
-                            .map_err(to_backend)?;
+                            .map_err(health_to_backend)?;
                         let ignored =
                             blocking(move || Ok(st2.health.store.load(&cid, now_ms())?.ignored))
                                 .await
-                                .map_err(to_backend)?;
+                                .map_err(health_to_backend)?;
                         (run, reused, ignored)
                     }
                 };
@@ -392,7 +408,7 @@ impl AppBackend {
                         .write(&id, generation, |s| s.annotate(&id, new, now_ms()))
                 })
                 .await
-                .map_err(to_backend)?;
+                .map_err(health_to_backend)?;
                 let (annotation_id, created) = match r {
                     Annotated::Created(id) => (id, true),
                     Annotated::Updated(id) => (id, false),
@@ -417,7 +433,7 @@ impl AppBackend {
                     .health
                     .store
                     .load(&connection_id, now_ms())
-                    .map_err(to_backend)?;
+                    .map_err(health_to_backend)?;
                 let items = f
                     .annotations
                     .into_iter()
@@ -455,7 +471,7 @@ impl AppBackend {
                     })
                 })
                 .await
-                .map_err(to_backend)?;
+                .map_err(health_to_backend)?;
                 match r {
                     Removed::Removed => {
                         st.health.changed(&connection_id);
@@ -976,6 +992,48 @@ mod tests {
         assert!(f.annotations.is_empty());
     }
 
+    #[tokio::test]
+    async fn health_file_errors_are_internal_without_the_path() {
+        let (d, b) = backend();
+        // Каталог `health/` не прочитать и не создать: на его месте обычный файл.
+        std::fs::write(d.path().join("health"), b"x").unwrap();
+        let claude = view("s1", Some("claude-ai"));
+        let _ = b.approvals.access(&claude, 0);
+        let check = |run_id: Option<&str>| mh::HealthOp::Check {
+            connection_id: "open".into(),
+            max_age_ms: 300_000,
+            run_id: run_id.map(String::from),
+            session: claude.clone(),
+        };
+        let ops = [
+            check(None),
+            check(Some("r1")),
+            mh::HealthOp::ListAnnotations {
+                connection_id: "open".into(),
+                status: mh::StatusFilter::All,
+            },
+            mh::HealthOp::Annotate {
+                connection_id: "open".into(),
+                session: claude.clone(),
+                note: cluster_note("t", None),
+            },
+            mh::HealthOp::RemoveAnnotation {
+                connection_id: "open".into(),
+                session: claude.clone(),
+                annotation_id: "n1".into(),
+            },
+        ];
+        for op in ops {
+            let name = format!("{op:?}");
+            let e = b.health(op).await.unwrap_err();
+            assert_eq!(
+                (e.code.as_str(), e.message.as_str()),
+                ("internal", HEALTH_FILE_FAILED),
+                "{name}"
+            );
+        }
+    }
+
     #[test]
     fn target_name_is_stored_as_it_was_checked() {
         let target = |kind, name: &str| {
@@ -1016,7 +1074,7 @@ mod tests {
             started_at_ms: now_ms(),
             duration_ms: 5,
             trigger: Trigger::Ui,
-            environment: crate::storage::connections::Environment::Prod,
+            environment: crate::storage::connections::Environment::Dev,
             incomplete: false,
             scope: Default::default(),
             findings: vec![Finding::new(
@@ -1050,7 +1108,7 @@ mod tests {
             panic!()
         };
         assert!(r.reused);
-        assert_eq!((r.run_id.as_str(), r.environment.as_str()), ("r1", "prod"));
+        assert_eq!((r.run_id.as_str(), r.environment.as_str()), ("r1", "dev"));
         assert!(r.findings[0].ignored);
         assert_eq!(r.findings[0].title, "Single-broker cluster");
         assert!(matches!(
@@ -1058,5 +1116,41 @@ mod tests {
             mh::HealthOutput::Run(_)
         ));
         assert_eq!(check(Some("r0")).await.unwrap_err().code, "not_found");
+    }
+
+    #[tokio::test]
+    async fn check_of_another_environment_is_not_reused() {
+        let (_d, b) = backend();
+        // Свежая проверка на prod, а подключение теперь dev: строгость другая — нужна новая.
+        let run = CheckRun {
+            run_id: "r1".into(),
+            started_at_ms: now_ms(),
+            duration_ms: 5,
+            trigger: Trigger::Ui,
+            environment: crate::storage::connections::Environment::Prod,
+            incomplete: false,
+            scope: Default::default(),
+            findings: vec![],
+            group_lag: Default::default(),
+        };
+        b.state
+            .health
+            .store
+            .save_check("open", run, now_ms())
+            .unwrap();
+        let e = b
+            .health(mh::HealthOp::Check {
+                connection_id: "open".into(),
+                max_age_ms: 300_000,
+                run_id: None,
+                session: view("s1", None),
+            })
+            .await
+            .unwrap_err();
+        // Новая проверка ушла в Kafka (127.0.0.1:1 не отвечает).
+        assert!(
+            ["CONNECTION_FAILED", "TIMEOUT"].contains(&e.code.as_str()),
+            "{e:?}"
+        );
     }
 }

@@ -139,7 +139,7 @@ pub fn english(f: &Finding) -> (String, String) {
         "broker.defaultReplicationFactorOne" => (
             "Default replication factor is 1".into(),
             format!(
-                "default.replication.factor = 1 on broker {} in a cluster of {} brokers: topics created without an explicit factor have no replicas.",
+                "default.replication.factor = 1 on broker {} in a cluster of {} brokers: topics created without an explicit factor get a single replica, with no redundancy.",
                 num(f, "brokerId"),
                 num(f, "brokers")
             ),
@@ -228,6 +228,23 @@ mod tests {
         assert_eq!(title, "Topic orders has offline partitions");
         assert!(details.starts_with("2 partition(s) have no leader"));
         assert!(details.contains("0, 3"));
+    }
+
+    #[test]
+    fn default_replication_factor_one_means_a_single_replica() {
+        let f = Finding::new(
+            "broker.defaultReplicationFactorOne",
+            Severity::Warning,
+            Target::broker(1),
+            None,
+            serde_json::json!({ "brokerId": 1, "brokers": 3 }),
+        );
+        let (_, details) = english(&f);
+        // RF = 1 — одна реплика без резерва, а не «нет реплик».
+        assert!(
+            details.ends_with("get a single replica, with no redundancy."),
+            "{details}"
+        );
     }
 
     #[test]

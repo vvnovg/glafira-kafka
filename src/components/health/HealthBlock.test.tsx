@@ -1,5 +1,7 @@
-import { screen, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { HealthView } from "../../api/types";
 import { useWorkspace } from "../../state/workspace";
@@ -73,9 +75,16 @@ describe("HealthBlock", () => {
   });
 
   it("не показывается, если по объекту ничего нет (скрытые не считаются)", async () => {
-    const { container } = renderWithClient(<HealthBlock connectionId="c1" match={isTopic("audit")} />);
-    await vi.waitFor(() => expect(api.getHealth).toHaveBeenCalled());
-    expect(container).toBeEmptyDOMElement();
+    // Два блока в одном дереве: первый дождётся данных, значит, ко второму они тоже дошли — и он остался пустым.
+    renderWithClient(
+      <>
+        <HealthBlock connectionId="c1" match={isTopic("orders")} />
+        <HealthBlock connectionId="c1" match={isTopic("audit")} />
+      </>,
+    );
+    const block = await screen.findByRole("region", { name: "Замечания" });
+    expect(within(block).getByText("Фактор репликации 1 у orders")).toBeInTheDocument();
+    expect(screen.getAllByRole("region", { name: "Замечания" })).toHaveLength(1);
   });
 });
 
@@ -87,8 +96,34 @@ describe("HealthBadge", () => {
         <HealthBadge connectionId="c1" match={(x) => x.kind === "cluster"} />
       </>,
     );
-    const badge = await screen.findByTitle("Требуют внимания: 2");
+    const badge = await screen.findByTitle(/Требуют внимания: 2/);
     expect(within(badge).getByRole("img", { name: "Критично: 2" })).toBeInTheDocument();
     expect(screen.getAllByTitle(/Требуют внимания/)).toHaveLength(1);
+  });
+
+  it("в подсказке — число и заголовки находок и замечаний, самые строгие первыми; метка без своей подсказки", async () => {
+    renderWithClient(<HealthBadge connectionId="c1" match={isTopic("orders")} />);
+    const badge = await screen.findByTitle(/Требуют внимания: 2/);
+    expect(badge).toHaveAttribute("title", "Требуют внимания: 2\nФактор репликации 1 у orders\nOrders is not replicated");
+    // Своя подсказка метки («Критично») перекрыла бы подсказку значка.
+    expect(within(badge).getByRole("img", { name: "Критично: 2" })).not.toHaveAttribute("title");
+  });
+
+  it("повторное появление значка не перечитывает проверку, пока данные свежие", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrap = (ui: ReactElement) => <QueryClientProvider client={client}>{ui}</QueryClientProvider>;
+    const badge = <HealthBadge connectionId="c1" match={isTopic("orders")} />;
+    const { rerender } = render(wrap(badge));
+    await screen.findByRole("img", { name: "Критично: 2" });
+    rerender(
+      wrap(
+        <>
+          {badge}
+          {badge}
+        </>,
+      ),
+    );
+    expect(await screen.findAllByRole("img", { name: "Критично: 2" })).toHaveLength(2);
+    expect(api.getHealth).toHaveBeenCalledTimes(1);
   });
 });

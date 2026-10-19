@@ -8,9 +8,16 @@ import type { AnnotationStatus, HealthView } from "../api/types";
 export const HEALTH_EVENT = "health://changed";
 export const healthKey = (connectionId: string) => ["health", connectionId] as const;
 
+/**
+ * Данные свежи минуту: значок стоит в каждой строке списка и появляется при прокрутке заново, а `get_health` —
+ * чтение файла и разбор JSON. Устаревания можно не бояться: любое изменение приходит событием `health://changed`
+ * (оно помечает запрос устаревшим), а действия кладут свежее состояние через `setQueryData`.
+ */
+const HEALTH_STALE_MS = 60_000;
+
 /** Последняя проверка, скрытые находки и замечания LLM подключения. */
 export function useHealth(connectionId: string) {
-  return useQuery({ queryKey: healthKey(connectionId), queryFn: () => api.getHealth(connectionId) });
+  return useQuery({ queryKey: healthKey(connectionId), queryFn: () => api.getHealth(connectionId), staleTime: HEALTH_STALE_MS });
 }
 
 /** Подписка на изменения — одна на приложение (в Layout). Вне Tauri (тесты) молча не работает. */

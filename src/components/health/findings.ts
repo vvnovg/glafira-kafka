@@ -69,16 +69,43 @@ export function itemsFor(view: HealthView | undefined, match: (t: HealthTarget) 
   };
 }
 
+/** Что посчитал значок: находка или открытое замечание уровня «критично» или «предупреждение». */
+export type BadgeItem =
+  | { kind: "finding"; severity: Severity; finding: Finding }
+  | { kind: "note"; severity: Severity; note: Annotation };
+
 export interface Badge {
   count: number;
   severity: Severity;
+  /** Самые строгие первыми; внутри строгости — сначала находки, затем замечания, порядок данных сохраняется. */
+  items: BadgeItem[];
 }
+
+/** Сколько заголовков показывает подсказка значка; остальное сворачивается в «…». */
+export const BADGE_TITLES_MAX = 10;
 
 /** Значок: число видимых находок и открытых замечаний уровня «критично» и «предупреждение». */
 export function badgeFor(view: HealthView | undefined, match: (t: HealthTarget) => boolean): Badge | null {
   const { findings, notes } = itemsFor(view, match);
-  const severe = [...findings.map((f) => f.severity), ...notes.map((a) => a.severity)].filter((s) => s !== "info");
-  if (severe.length === 0) return null;
-  const top = severe.reduce((a, b) => (SEVERITY_RANK[b] > SEVERITY_RANK[a] ? b : a));
-  return { count: severe.length, severity: top };
+  const items: BadgeItem[] = [
+    ...findings.map((finding): BadgeItem => ({ kind: "finding", severity: finding.severity, finding })),
+    ...notes.map((note): BadgeItem => ({ kind: "note", severity: note.severity, note })),
+  ]
+    .filter((i) => i.severity !== "info")
+    // Сортировка стабильна: порядок внутри одной строгости остаётся прежним.
+    .sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+  if (items.length === 0) return null;
+  return { count: items.length, severity: items[0].severity, items };
+}
+
+/**
+ * Подсказка значка: первая строка — «Требуют внимания: N», далее заголовки учтённого (не больше 10, затем «…»).
+ * Строки через перевод строки: нативная подсказка `title` его показывает.
+ */
+export function badgeTooltip(badge: Badge, t: TFunction, lang: string): string {
+  const titles = badge.items
+    .slice(0, BADGE_TITLES_MAX)
+    .map((i) => (i.kind === "finding" ? findingTexts(i.finding, t, lang).title : i.note.title));
+  if (badge.items.length > BADGE_TITLES_MAX) titles.push("…");
+  return [t("health.badgeTitle", { count: badge.count }), ...titles].join("\n");
 }

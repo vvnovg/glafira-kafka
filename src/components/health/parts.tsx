@@ -4,12 +4,20 @@ import { currentLocale } from "../../i18n";
 import { useWorkspace } from "../../state/workspace";
 import { findingTexts } from "./findings";
 
-/** Точка цвета строгости; число — у значков. */
-export function SeverityMark({ severity, count }: { severity: Severity; count?: number }) {
+/**
+ * Точка цвета строгости; число — у значков. `noTitle` — без своей подсказки: у значка она
+ * общая (заголовки находок) и не должна перекрываться словом «Критично».
+ */
+export function SeverityMark({ severity, count, noTitle }: { severity: Severity; count?: number; noTitle?: boolean }) {
   const { t } = useTranslation();
   const label = t(`health.severity.${severity}`);
   return (
-    <span className={`sev sev-${severity}`} role="img" title={label} aria-label={count === undefined ? label : `${label}: ${count}`}>
+    <span
+      className={`sev sev-${severity}`}
+      role="img"
+      title={noTitle ? undefined : label}
+      aria-label={count === undefined ? label : `${label}: ${count}`}
+    >
       ●{count !== undefined && <span className="sev-count">{count}</span>}
     </span>
   );

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { CheckRun } from "../../api/types";
 import { currentLocale } from "../../i18n";
 import { useHealth, useHealthActions } from "../../lib/useHealth";
+import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
 import { SeverityMark } from "./parts";
@@ -24,9 +25,13 @@ function useWho() {
     run.trigger.kind === "ui" ? t("health.byUi") : (run.trigger.client ?? t("mcp.unknownClient"));
 }
 
-/** Кнопка «Проверить кластер» и итог последней проверки: время, кто, число находок по строгости. */
-export function CheckBar({ connectionId }: { connectionId: string }) {
+/**
+ * Кнопка «Проверить кластер» и итог последней проверки: время, кто, число находок по строгости.
+ * `allLink` — ссылка «Все замечания» на вкладку замечаний (на обзоре кластера; на самой вкладке не нужна).
+ */
+export function CheckBar({ connectionId, allLink = false }: { connectionId: string; allLink?: boolean }) {
   const { t } = useTranslation();
+  const open = useWorkspace((s) => s.open);
   const health = useHealth(connectionId);
   const { run } = useHealthActions(connectionId);
   const who = useWho();
@@ -50,6 +55,14 @@ export function CheckBar({ connectionId }: { connectionId: string }) {
                 </span>
               ) : null;
             })}
+            {allLink && (
+              <>
+                {" · "}
+                <button type="button" className="link" onClick={() => open({ kind: "findings", connectionId })}>
+                  {t("health.allFindings")}
+                </button>
+              </>
+            )}
             {last.incomplete && <span className="warn"> · {t("health.partial")}</span>}
           </span>
         ) : (

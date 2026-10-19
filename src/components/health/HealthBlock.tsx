@@ -1,22 +1,23 @@
 import { useTranslation } from "react-i18next";
 import type { HealthTarget } from "../../api/types";
+import { currentLocale } from "../../i18n";
 import { useHealth, useHealthActions } from "../../lib/useHealth";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
-import { badgeFor, itemsFor } from "./findings";
+import { badgeFor, badgeTooltip, itemsFor } from "./findings";
 import { FindingItem, NoteItem, SeverityMark } from "./parts";
 
 type Match = (t: HealthTarget) => boolean;
 
-/** Значок объекта: число находок и замечаний уровня «критично» и «предупреждение». */
+/** Значок объекта: число находок и замечаний уровня «критично» и «предупреждение»; в подсказке — их заголовки. */
 export function HealthBadge({ connectionId, match }: { connectionId: string; match: Match }) {
   const { t } = useTranslation();
   const health = useHealth(connectionId);
   const b = badgeFor(health.data, match);
   if (!b) return null;
   return (
-    <span className="health-badge" title={t("health.badgeTitle", { count: b.count })}>
-      <SeverityMark severity={b.severity} count={b.count} />
+    <span className="health-badge" title={badgeTooltip(b, t, currentLocale())}>
+      <SeverityMark severity={b.severity} count={b.count} noTitle />
     </span>
   );
 }

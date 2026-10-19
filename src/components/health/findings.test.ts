@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Annotation, Finding, HealthView } from "../../api/types";
 import { i18n } from "../../i18n";
-import { badgeFor, findingsOf, findingTexts, itemsFor, sameTarget } from "./findings";
+import { BADGE_TITLES_MAX, badgeFor, badgeTooltip, findingsOf, findingTexts, itemsFor, sameTarget } from "./findings";
 
 const t = i18n.getFixedT("ru");
 
@@ -9,12 +9,12 @@ function finding(ruleId: string, severity: Finding["severity"], target: Finding[
   return { key: `${ruleId}:${target.kind}:${target.name ?? ""}`, ruleId, severity, target, params };
 }
 
-function note(severity: Annotation["severity"], name: string, status: Annotation["status"] = "open"): Annotation {
+function note(severity: Annotation["severity"], name: string, status: Annotation["status"] = "open", title = "t"): Annotation {
   return {
-    id: name + severity,
+    id: name + severity + title,
     target: { kind: "topic", name },
     severity,
-    title: "t",
+    title,
     body: "b",
     client: "claude-ai",
     createdAtMs: 1,
@@ -98,10 +98,49 @@ describe("selection and badges", () => {
   it("counts severe findings and open notes of an object", () => {
     const v = view([a, b, info], [note("warning", "a"), note("critical", "a", "resolved"), note("info", "a")]);
     const isA = (x: Finding["target"]) => sameTarget(x, { kind: "topic", name: "a" });
-    expect(badgeFor(v, isA)).toEqual({ count: 2, severity: "critical" });
+    expect(badgeFor(v, isA)).toMatchObject({ count: 2, severity: "critical" });
     expect(itemsFor(v, isA).notes).toHaveLength(2);
-    expect(badgeFor(v, () => true)).toEqual({ count: 3, severity: "critical" });
+    expect(badgeFor(v, () => true)).toMatchObject({ count: 3, severity: "critical" });
     expect(badgeFor(view([info]), () => true)).toBeNull();
     expect(sameTarget({ kind: "cluster" }, { kind: "cluster", name: "x" })).toBe(true);
+  });
+});
+
+describe("badge tooltip", () => {
+  const rf = (name: string, severity: Finding["severity"] = "critical") => finding("topic.replicationFactorOne", severity, { kind: "topic", name });
+  const isTopic = (x: Finding["target"]) => x.kind === "topic";
+
+  it("lists what the badge counted, most severe first, without info and hidden", () => {
+    const v = view(
+      [rf("w1", "warning"), rf("c1"), rf("i1", "info"), rf("hidden")],
+      [note("critical", "n1", "open", "Critical note"), note("warning", "n2", "open", "Warning note"), note("critical", "n3", "resolved", "Closed note"), note("info", "n4", "open", "Info note")],
+      [rf("hidden").key],
+    );
+    const b = badgeFor(v, isTopic);
+    expect(b).toMatchObject({ count: 4, severity: "critical" });
+    // Внутри строгости: сначала находки, затем замечания; порядок как в данных.
+    expect(b?.items.map((i) => (i.kind === "finding" ? i.finding.target.name : i.note.title))).toEqual(["c1", "Critical note", "w1", "Warning note"]);
+    expect(badgeTooltip(b!, t, "ru")).toBe(
+      ["Требуют внимания: 4", "Фактор репликации 1 у c1", "Critical note", "Фактор репликации 1 у w1", "Warning note"].join("\n"),
+    );
+  });
+
+  it("caps the titles and marks the rest with an ellipsis", () => {
+    const names = Array.from({ length: BADGE_TITLES_MAX + 2 }, (_, i) => `t${String(i).padStart(2, "0")}`);
+    const b = badgeFor(view(names.map((n) => rf(n))), isTopic)!;
+    expect(b.count).toBe(BADGE_TITLES_MAX + 2);
+    const lines = badgeTooltip(b, t, "ru").split("\n");
+    expect(lines).toHaveLength(1 + BADGE_TITLES_MAX + 1);
+    expect(lines[0]).toBe(`Требуют внимания: ${BADGE_TITLES_MAX + 2}`);
+    expect(lines[1]).toBe("Фактор репликации 1 у t00");
+    expect(lines[BADGE_TITLES_MAX]).toBe("Фактор репликации 1 у t09");
+    expect(lines[lines.length - 1]).toBe("…");
+  });
+
+  it("has no ellipsis at exactly the cap", () => {
+    const b = badgeFor(view(Array.from({ length: BADGE_TITLES_MAX }, (_, i) => rf(`t${i}`))), isTopic)!;
+    const lines = badgeTooltip(b, t, "ru").split("\n");
+    expect(lines).toHaveLength(1 + BADGE_TITLES_MAX);
+    expect(lines).not.toContain("…");
   });
 });

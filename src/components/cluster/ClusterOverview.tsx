@@ -26,7 +26,7 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
           {t("cluster.overview.refresh")}
         </button>
       </div>
-      <CheckBar connectionId={connectionId} />
+      <CheckBar connectionId={connectionId} allLink />
       <HealthBlock connectionId={connectionId} match={(x) => x.kind === "cluster" || x.kind === "broker"} showTarget />
       <dl className="stats">
         <div>

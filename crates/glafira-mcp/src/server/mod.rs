@@ -16,7 +16,7 @@ use rmcp::service::RequestContext;
 use rmcp::{ErrorData, RoleServer, ServerHandler, ServiceExt, tool_handler};
 use serde::Serialize;
 use serde_json::Value;
-use tokio::sync::Semaphore;
+use tokio::sync::{Semaphore, SemaphorePermit};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
@@ -420,39 +420,36 @@ impl GatewayServer {
         })
     }
 
-    /// Операция Kafka под лимитами параллельности сессии и всех сессий.
-    async fn read(&self, op: ReadOp) -> Result<ReadOutput, BackendError> {
-        let _local = self
+    /// Слоты параллельности для операции Kafka: сначала сессии, затем всех сессий.
+    async fn slots(&self) -> Result<(SemaphorePermit<'_>, SemaphorePermit<'_>), BackendError> {
+        let local = self
             .local
             .acquire()
             .await
             .map_err(|_| BackendError::unexpected())?;
-        let _global = self
+        let global = self
             .shared
             .global
             .acquire()
             .await
             .map_err(|_| BackendError::unexpected())?;
+        Ok((local, global))
+    }
+
+    /// Операция Kafka под лимитами параллельности сессии и всех сессий.
+    async fn read(&self, op: ReadOp) -> Result<ReadOutput, BackendError> {
+        let _slots = self.slots().await?;
         self.shared.backend.read(op).await
     }
 
     /// Операция проверки и замечаний. `kafka` — она ходит в кластер (проверка, сверка объекта
     /// замечания): тогда занимает слоты параллельности, как чтение.
     async fn health(&self, op: HealthOp, kafka: bool) -> Result<HealthOutput, BackendError> {
-        if !kafka {
-            return self.shared.backend.health(op).await;
-        }
-        let _local = self
-            .local
-            .acquire()
-            .await
-            .map_err(|_| BackendError::unexpected())?;
-        let _global = self
-            .shared
-            .global
-            .acquire()
-            .await
-            .map_err(|_| BackendError::unexpected())?;
+        let _slots = if kafka {
+            Some(self.slots().await?)
+        } else {
+            None
+        };
         self.shared.backend.health(op).await
     }
 

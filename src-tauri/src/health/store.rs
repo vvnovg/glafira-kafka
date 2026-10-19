@@ -8,7 +8,7 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
 use super::model::{Finding, Severity, Target};
-use crate::error::{AppResult, ErrorCode};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::storage::connections::Environment;
 use crate::storage::fs::{read_json_or_quarantine, write_json};
 use crate::sync::MutexExt;
@@ -190,6 +190,16 @@ fn safe_id(id: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
+/// Подключения нет (или его id не годится для имени файла).
+pub(crate) fn connection_not_found(connection_id: &str) -> AppError {
+    app_err!(
+        ErrorCode::NotFound,
+        "errors.connections.notFound",
+        "Connection {{id}} not found",
+        id = connection_id
+    )
+}
+
 pub struct HealthStore {
     dir: PathBuf,
     lock: Mutex<()>,
@@ -205,12 +215,7 @@ impl HealthStore {
 
     fn path(&self, connection_id: &str) -> AppResult<PathBuf> {
         if !safe_id(connection_id) {
-            return Err(app_err!(
-                ErrorCode::NotFound,
-                "errors.connections.notFound",
-                "Connection {{id}} not found",
-                id = connection_id
-            ));
+            return Err(connection_not_found(connection_id));
         }
         Ok(self.dir.join(format!("{connection_id}.json")))
     }

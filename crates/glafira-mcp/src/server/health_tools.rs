@@ -21,6 +21,9 @@ pub const FINDINGS_LIMIT_MAX: u32 = 200;
 
 const PRO_REQUIRED: &str = "Annotations require Glafira Pro; report findings in the chat instead";
 
+/// У `list_annotations` нет страниц: при обрезке остаются самые свежие, остальное — сужением по status.
+const NOTES_TRUNCATED_HINT: &str = "The response was truncated to 100 KB: only the most recently updated notes are shown; narrow with status";
+
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct HealthCheckParams {
@@ -106,6 +109,28 @@ struct CheckBody {
 
 fn findings_of(b: &mut CheckBody) -> &mut Vec<HealthFinding> {
     &mut b.findings.items
+}
+
+#[derive(Serialize)]
+struct NotesBody {
+    items: Vec<AnnotationView>,
+    truncated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    hint: Option<&'static str>,
+}
+
+fn notes_of(b: &mut NotesBody) -> &mut Vec<AnnotationView> {
+    &mut b.items
+}
+
+/// Сначала недавно обновлённые; при равенстве — созданные позже, затем по id.
+fn newest_first(items: &mut [AnnotationView]) {
+    items.sort_by(|a, b| {
+        b.updated_at_ms
+            .cmp(&a.updated_at_ms)
+            .then(b.created_at_ms.cmp(&a.created_at_ms))
+            .then_with(|| a.id.cmp(&b.id))
+    });
 }
 
 /// Аргументы вызова для журнала.
@@ -295,7 +320,19 @@ impl GatewayServer {
                         status: p.status.unwrap_or_default(),
                     };
                     match self.health(op, false).await? {
-                        HealthOutput::Annotations(items) => to_value(&json!({ "items": items })),
+                        HealthOutput::Annotations(mut items) => {
+                            newest_first(&mut items);
+                            let mut body = NotesBody {
+                                items,
+                                truncated: false,
+                                hint: None,
+                            };
+                            if rules::fit(&mut body, notes_of) {
+                                body.truncated = true;
+                                body.hint = Some(NOTES_TRUNCATED_HINT);
+                            }
+                            to_value(&body)
+                        }
                         _ => Err(BackendError::new("internal", "Unexpected backend response")),
                     }
                 },
@@ -337,5 +374,42 @@ impl GatewayServer {
                 },
             )
             .await)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn note(id: &str, created: i64, updated: i64) -> AnnotationView {
+        AnnotationView {
+            id: id.into(),
+            target: Target {
+                kind: TargetKind::Cluster,
+                name: None,
+            },
+            severity: Severity::Info,
+            title: "t".into(),
+            body: "b".into(),
+            related_rule_id: None,
+            client: None,
+            status: "open".into(),
+            created_at_ms: created,
+            updated_at_ms: updated,
+        }
+    }
+
+    #[test]
+    fn notes_are_sorted_newest_first_with_stable_ties() {
+        let mut v = vec![
+            note("b", 1, 5),
+            note("a", 1, 5),
+            note("old", 0, 1),
+            note("later-created", 3, 5),
+            note("fresh", 0, 9),
+        ];
+        newest_first(&mut v);
+        let ids: Vec<_> = v.iter().map(|n| n.id.as_str()).collect();
+        assert_eq!(ids, ["fresh", "later-created", "a", "b", "old"]);
     }
 }

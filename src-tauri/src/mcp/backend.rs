@@ -16,7 +16,8 @@ use crate::error::{AppError, AppResult, ErrorCode};
 use crate::health::model::{Finding, Severity, Target, TargetKind};
 use crate::health::service::now_ms;
 use crate::health::store::{
-    Annotated, AnnotationStatus, Author, CheckRun, NewAnnotation, Removed, Trigger,
+    Annotated, AnnotationStatus, Author, CheckRun, MAX_TITLE_CHARS, NewAnnotation, Removed,
+    Trigger, sanitize,
 };
 use crate::health::{rules, texts};
 use crate::kafka::pool::KafkaHandles;
@@ -279,7 +280,7 @@ impl AppBackend {
         let found = match t.kind {
             mh::TargetKind::Cluster => true,
             mh::TargetKind::Broker => {
-                let id: i32 = name.trim().parse().map_err(|_| {
+                let id = broker_id(&name).ok_or_else(|| {
                     BackendError::invalid_argument("target.name of a broker is its numeric id")
                 })?;
                 let md = self
@@ -311,6 +312,8 @@ impl AppBackend {
     }
 
     async fn health_impl(&self, op: mh::HealthOp) -> Result<mh::HealthOutput, BackendError> {
+        // Поколение — до проверки доступа: запись в подключение, удалённое за это время, отклоняется.
+        let generation = self.state.health.generation(op.connection_id());
         self.allowed(op.connection_id())?;
         let st = self.state.clone();
         match op {
@@ -320,16 +323,15 @@ impl AppBackend {
                 run_id,
                 session,
             } => {
-                let (run, reused) = match run_id {
+                // Файл подключения читается одним blocking-вызовом на путь.
+                let (st2, cid) = (st.clone(), connection_id.clone());
+                let (run, reused, ignored) = match run_id {
                     Some(id) => {
-                        let (st2, cid) = (st.clone(), connection_id.clone());
-                        let last = crate::commands::blocking(move || {
-                            Ok(st2.health.store.load(&cid, now_ms())?.last_check)
-                        })
-                        .await
-                        .map_err(to_backend)?;
-                        match last {
-                            Some(r) if r.run_id == id => (std::sync::Arc::new(r), true),
+                        let file = blocking(move || st2.health.store.load(&cid, now_ms()))
+                            .await
+                            .map_err(to_backend)?;
+                        match file.last_check {
+                            Some(r) if r.run_id == id => (Arc::new(r), true, file.ignored),
                             _ => {
                                 return Err(BackendError::not_found(
                                     "This check was replaced by a newer one; call health_check without runId",
@@ -341,19 +343,19 @@ impl AppBackend {
                         let trigger = Trigger::Mcp {
                             client: self.author(&session).client,
                         };
-                        st.health
+                        let (run, reused) = st
+                            .health
                             .clone()
                             .latest_or_run(&st, &connection_id, trigger, max_age_ms)
                             .await
-                            .map_err(to_backend)?
+                            .map_err(to_backend)?;
+                        let ignored =
+                            blocking(move || Ok(st2.health.store.load(&cid, now_ms())?.ignored))
+                                .await
+                                .map_err(to_backend)?;
+                        (run, reused, ignored)
                     }
                 };
-                let ignored = st
-                    .health
-                    .store
-                    .load(&connection_id, now_ms())
-                    .map_err(to_backend)?
-                    .ignored;
                 Ok(mh::HealthOutput::Run(map_run(&run, reused, |k| {
                     ignored.iter().any(|i| i.key == k)
                 })))
@@ -370,6 +372,10 @@ impl AppBackend {
                         "relatedRuleId {r} is not a health_check rule"
                     )));
                 }
+                // Заголовок из одних управляющих символов после очистки пуст — как пустой заголовок.
+                if sanitize(&note.title, MAX_TITLE_CHARS).is_empty() {
+                    return Err(BackendError::invalid_argument("title must not be empty"));
+                }
                 self.target_exists(&connection_id, &note.target).await?;
                 let new = NewAnnotation {
                     target: to_target(&note.target),
@@ -381,8 +387,9 @@ impl AppBackend {
                 };
                 let id = connection_id.clone();
                 let st2 = st.clone();
-                let r = crate::commands::blocking(move || {
-                    st2.health.store.annotate(&id, new, now_ms())
+                let r = blocking(move || {
+                    st2.health
+                        .write(&id, generation, |s| s.annotate(&id, new, now_ms()))
                 })
                 .await
                 .map_err(to_backend)?;
@@ -442,10 +449,10 @@ impl AppBackend {
                 let author = self.author(&session);
                 let id = connection_id.clone();
                 let st2 = st.clone();
-                let r = crate::commands::blocking(move || {
-                    st2.health
-                        .store
-                        .remove_own(&id, &annotation_id, &author, now_ms())
+                let r = blocking(move || {
+                    st2.health.write(&id, generation, |s| {
+                        s.remove_own(&id, &annotation_id, &author, now_ms())
+                    })
                 })
                 .await
                 .map_err(to_backend)?;
@@ -483,13 +490,25 @@ fn to_target(t: &mh::Target) -> Target {
         mh::TargetKind::Topic => TargetKind::Topic,
         mh::TargetKind::Group => TargetKind::Group,
     };
+    // Имя сохраняется ровно таким, каким его проверил `target_exists`: id группы может
+    // начинаться и кончаться пробелом, поэтому топик и группа не обрезаются; брокер — его
+    // числовой id в каноническом виде.
     Target {
         kind,
         name: match kind {
             TargetKind::Cluster => None,
-            _ => t.name.as_ref().map(|n| n.trim().to_string()),
+            TargetKind::Broker => t.name.as_deref().map(|n| match broker_id(n) {
+                Some(id) => id.to_string(),
+                None => n.trim().to_string(),
+            }),
+            TargetKind::Topic | TargetKind::Group => t.name.clone(),
         },
     }
+}
+
+/// Числовой id брокера из `target.name`.
+fn broker_id(name: &str) -> Option<i32> {
+    name.trim().parse().ok()
 }
 
 fn from_target(t: &Target) -> mh::Target {
@@ -942,6 +961,51 @@ mod tests {
         assert_eq!(remove(&other).await.unwrap_err().code, "not_allowed");
         assert_eq!(remove(&claude).await.unwrap(), mh::HealthOutput::Removed);
         assert_eq!(remove(&claude).await.unwrap_err().code, "not_found");
+    }
+
+    #[tokio::test]
+    async fn title_of_control_characters_is_rejected_before_writing() {
+        let (d, b) = backend();
+        let claude = view("s1", Some("claude-ai"));
+        let _ = b.approvals.access(&claude, 0);
+        let e = annotate(&b, &claude, "\u{1}\u{2}").await.unwrap_err();
+        assert_eq!(e.code, "invalid_argument", "{e:?}");
+        assert_eq!(e.message, "title must not be empty");
+        assert!(!d.path().join("health").join("open.json").exists());
+        let f = b.state.health.store.load("open", now_ms()).unwrap();
+        assert!(f.annotations.is_empty());
+    }
+
+    #[test]
+    fn target_name_is_stored_as_it_was_checked() {
+        let target = |kind, name: &str| {
+            to_target(&mh::Target {
+                kind,
+                name: Some(name.into()),
+            })
+            .name
+        };
+        // Id группы и имя топика могут начинаться и кончаться пробелом.
+        assert_eq!(
+            target(mh::TargetKind::Group, " g 1 ").as_deref(),
+            Some(" g 1 ")
+        );
+        assert_eq!(
+            target(mh::TargetKind::Topic, "orders ").as_deref(),
+            Some("orders ")
+        );
+        // Брокер — канонический числовой id, как у находок.
+        for raw in [" 1 ", "01", "+1"] {
+            assert_eq!(target(mh::TargetKind::Broker, raw).as_deref(), Some("1"));
+        }
+        assert_eq!(
+            to_target(&mh::Target {
+                kind: mh::TargetKind::Cluster,
+                name: Some("x".into())
+            })
+            .name,
+            None
+        );
     }
 
     #[tokio::test]

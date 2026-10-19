@@ -41,6 +41,8 @@ struct Fake {
     check_delay: Mutex<Duration>,
     /// Находки с длинными пояснениями (предел 100 КБ).
     big_findings: AtomicBool,
+    /// Сколько длинных замечаний отдаёт `list_annotations` (0 — одно короткое).
+    many_notes: AtomicUsize,
 }
 
 /// Считает одновременные операции чтения на любом выходе из `read`.
@@ -83,6 +85,7 @@ impl Fake {
             pro: AtomicBool::new(true),
             check_delay: Mutex::new(Duration::ZERO),
             big_findings: AtomicBool::new(false),
+            many_notes: AtomicUsize::new(0),
         })
     }
 }
@@ -148,6 +151,25 @@ fn partition(id: i32) -> Partition {
         message_count: Some(100),
         under_replicated: false,
         error: None,
+    }
+}
+
+/// Замечание с текстом в 2000 символов; `i` — и номер, и время обновления.
+fn long_note(i: i64) -> AnnotationView {
+    AnnotationView {
+        id: format!("n{i}"),
+        target: Target {
+            kind: TargetKind::Topic,
+            name: Some("orders".into()),
+        },
+        severity: Severity::Warning,
+        title: format!("Note {i}"),
+        body: "x".repeat(2000),
+        related_rule_id: None,
+        client: Some("claude-ai".into()),
+        status: "open".into(),
+        created_at_ms: i,
+        updated_at_ms: i,
     }
 }
 
@@ -404,6 +426,13 @@ impl Backend for Fake {
                     })
                 }
                 HealthOp::ListAnnotations { .. } => {
+                    let many = self.many_notes.load(Ordering::SeqCst);
+                    if many > 0 {
+                        // От старых к новым: без сортировки в ответ попали бы самые старые.
+                        return Ok(HealthOutput::Annotations(
+                            (0..many).map(|i| long_note(i as i64)).collect(),
+                        ));
+                    }
                     Ok(HealthOutput::Annotations(vec![AnnotationView {
                         id: "n1".into(),
                         target: Target {
@@ -1369,4 +1398,46 @@ async fn annotations_are_listed_and_removed() {
     )
     .await);
     assert!(msg.starts_with("not_allowed"), "{msg}");
+}
+
+#[tokio::test]
+async fn long_annotation_list_is_cut_to_the_newest() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.many_notes.store(80, Ordering::SeqCst);
+    let e = env(fake).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(&c, "list_annotations", json!({"connectionId": "c1"})).await);
+    assert!(serde_json::to_vec(&v).unwrap().len() <= 100 * 1024);
+    assert_eq!(v["truncated"], true);
+    let hint = v["hint"].as_str().unwrap();
+    assert!(hint.contains("100 KB") && hint.contains("most recently updated"));
+    assert!(!hint.contains("offset"), "{hint}");
+    let ids: Vec<&str> = v["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["id"].as_str().unwrap())
+        .collect();
+    assert!(!ids.is_empty() && ids.len() < 80, "{}", ids.len());
+    // Остались самые новые, от новых к старым.
+    let expected: Vec<String> = (0..80)
+        .rev()
+        .take(ids.len())
+        .map(|i| format!("n{i}"))
+        .collect();
+    assert_eq!(ids, expected);
+}
+
+#[tokio::test]
+async fn short_annotation_list_is_not_marked_truncated() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.many_notes.store(3, Ordering::SeqCst);
+    let e = env(fake).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(&c, "list_annotations", json!({"connectionId": "c1"})).await);
+    assert_eq!(v["truncated"], false);
+    assert!(v.get("hint").is_none(), "{v}");
+    // Новые вперёд.
+    assert_eq!(v["items"][0]["id"], "n2");
+    assert_eq!(v["items"][2]["id"], "n0");
 }

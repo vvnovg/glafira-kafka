@@ -12,7 +12,8 @@ use super::collect::{LIMITS, Limits, Source, collect};
 use super::kafka_source::KafkaSource;
 use super::rules;
 use super::snapshot::PreviousLag;
-use super::store::{CheckRun, HealthStore, Scope, Trigger};
+use super::store::{CheckRun, HealthStore, Scope, Trigger, connection_not_found};
+use crate::commands::blocking;
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::state::AppState;
 use crate::storage::connections::Environment;
@@ -56,6 +57,34 @@ impl HealthService {
         self.store.delete_connection(connection_id)
     }
 
+    /// Поколение данных подключения: читается до проверки существования подключения, чтобы
+    /// `write` отказал, если подключение удалили в промежутке.
+    pub fn generation(&self, connection_id: &str) -> u64 {
+        self.generations
+            .lock_safe()
+            .get(connection_id)
+            .copied()
+            .unwrap_or(0)
+    }
+
+    /// Единственный путь записи в `health/<id>.json`: под тем же замком, что и `forget`, и только
+    /// если подключение не удаляли с момента чтения `generation` — иначе файл удалённого
+    /// подключения появился бы заново.
+    pub fn write<T>(
+        &self,
+        connection_id: &str,
+        generation: u64,
+        f: impl FnOnce(&HealthStore) -> AppResult<T>,
+    ) -> AppResult<T> {
+        let generations = self.generations.lock_safe();
+        if generations.get(connection_id).copied().unwrap_or(0) != generation {
+            return Err(connection_not_found(connection_id));
+        }
+        let out = f(&self.store);
+        drop(generations);
+        out
+    }
+
     /// Состояние подключения изменилось (проверка, скрытие, замечания).
     pub fn changed(&self, connection_id: &str) {
         let f = self.notify.read_safe().clone();
@@ -86,7 +115,9 @@ impl HealthService {
         max_age_ms: i64,
     ) -> AppResult<(Arc<CheckRun>, bool)> {
         let now = now_ms();
-        if let Some(last) = self.store.load(connection_id, now)?.last_check
+        let (this, id) = (self.clone(), connection_id.to_string());
+        let last = blocking(move || Ok(this.store.load(&id, now)?.last_check)).await?;
+        if let Some(last) = last
             && now - last.started_at_ms < max_age_ms
         {
             return Ok((Arc::new(last), true));
@@ -170,29 +201,11 @@ impl HealthService {
                 .filter_map(|g| g.total_lag.map(|l| (g.group_id.clone(), l)))
                 .collect::<BTreeMap<_, _>>(),
         };
-        // Сохранение — под тем же замком, что и `forget`: подключение, удалённое за время проверки,
-        // не получит обратно свой файл.
-        let generations = self.generations.lock_safe();
-        if generations.get(connection_id).copied().unwrap_or(0) != generation {
-            return Err(app_err!(
-                ErrorCode::NotFound,
-                "errors.connections.notFound",
-                "Connection {{id}} not found",
-                id = connection_id
-            ));
-        }
-        self.store
-            .save_check(connection_id, run.clone(), now_ms())?;
-        drop(generations);
+        // Подключение, удалённое за время проверки, не получит обратно свой файл.
+        self.write(connection_id, generation, |s| {
+            s.save_check(connection_id, run.clone(), now_ms())
+        })?;
         Ok(run)
-    }
-
-    fn generation(&self, connection_id: &str) -> u64 {
-        self.generations
-            .lock_safe()
-            .get(connection_id)
-            .copied()
-            .unwrap_or(0)
     }
 }
 
@@ -407,6 +420,40 @@ mod tests {
             .unwrap();
         assert!(file.exists());
         assert!(svc.store.load("c1", now_ms()).unwrap().last_check.is_some());
+    }
+
+    #[test]
+    fn write_after_forget_is_refused_and_leaves_no_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = HealthService::open(dir.path());
+        let file = dir.path().join("health").join("c1.json");
+        let ignore = |s: &HealthStore| s.set_ignored("c1", "k", true, now_ms());
+
+        // Текущее поколение: запись выполняется.
+        let generation = svc.generation("c1");
+        svc.write("c1", generation, ignore).unwrap();
+        assert!(file.exists());
+
+        // Подключение удалено после чтения поколения: замыкание не вызывается, файла нет.
+        svc.forget("c1").unwrap();
+        assert!(!file.exists());
+        let called = std::cell::Cell::new(false);
+        let err = svc
+            .write("c1", generation, |s| {
+                called.set(true);
+                ignore(s)
+            })
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::NotFound);
+        assert_eq!(err.key, "errors.connections.notFound");
+        assert!(!called.get());
+        assert!(!file.exists(), "запись удалённого подключения создала файл");
+
+        // Поколение, прочитанное после удаления, пишет как обычно.
+        let fresh = svc.generation("c1");
+        assert_ne!(fresh, generation);
+        svc.write("c1", fresh, ignore).unwrap();
+        assert!(svc.store.load("c1", now_ms()).unwrap().is_ignored("k"));
     }
 
     #[tokio::test]

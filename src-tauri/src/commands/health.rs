@@ -7,7 +7,7 @@ use tauri::State;
 use super::blocking;
 use crate::error::AppResult;
 use crate::health::service::now_ms;
-use crate::health::store::{Annotation, AnnotationStatus, CheckRun, Trigger};
+use crate::health::store::{Annotation, AnnotationStatus, CheckRun, HealthStore, Trigger};
 use crate::state::AppState;
 
 /// Состояние подключения для интерфейса: последняя проверка, скрытые находки, замечания LLM.
@@ -29,16 +29,20 @@ fn view(st: &AppState, connection_id: &str) -> AppResult<HealthView> {
     })
 }
 
-/// Изменение файла подключения на blocking-потоке, затем событие и свежее состояние.
+/// Изменение файла подключения на blocking-потоке, затем событие и свежее состояние. Запись идёт
+/// через `HealthService::write`: поколение читается до проверки подключения, и подключение,
+/// удалённое в промежутке, файла не получит.
 async fn change(
     st: &AppState,
     connection_id: String,
-    op: impl FnOnce(&AppState, &str) -> AppResult<()> + Send + 'static,
+    op: impl FnOnce(&HealthStore, &str) -> AppResult<()> + Send + 'static,
 ) -> AppResult<HealthView> {
     let st = st.clone();
     blocking(move || {
+        let generation = st.health.generation(&connection_id);
         st.profile(&connection_id)?;
-        op(&st, &connection_id)?;
+        st.health
+            .write(&connection_id, generation, |s| op(s, &connection_id))?;
         st.health.changed(&connection_id);
         view(&st, &connection_id)
     })
@@ -74,8 +78,8 @@ pub async fn set_finding_ignored(
     key: String,
     ignored: bool,
 ) -> AppResult<HealthView> {
-    change(&state, connection_id, move |st, id| {
-        st.health.store.set_ignored(id, &key, ignored, now_ms())
+    change(&state, connection_id, move |s, id| {
+        s.set_ignored(id, &key, ignored, now_ms())
     })
     .await
 }
@@ -87,10 +91,8 @@ pub async fn set_annotation_status(
     annotation_id: String,
     status: AnnotationStatus,
 ) -> AppResult<HealthView> {
-    change(&state, connection_id, move |st, id| {
-        st.health
-            .store
-            .set_status(id, &annotation_id, status, now_ms())
+    change(&state, connection_id, move |s, id| {
+        s.set_status(id, &annotation_id, status, now_ms())
     })
     .await
 }
@@ -101,10 +103,8 @@ pub async fn delete_annotation(
     connection_id: String,
     annotation_id: String,
 ) -> AppResult<HealthView> {
-    change(&state, connection_id, move |st, id| {
-        st.health
-            .store
-            .delete_annotation(id, &annotation_id, now_ms())
+    change(&state, connection_id, move |s, id| {
+        s.delete_annotation(id, &annotation_id, now_ms())
     })
     .await
 }
@@ -114,11 +114,8 @@ pub async fn delete_all_annotations(
     state: State<'_, AppState>,
     connection_id: String,
 ) -> AppResult<HealthView> {
-    change(&state, connection_id, |st, id| {
-        st.health
-            .store
-            .delete_all_annotations(id, now_ms())
-            .map(|_| ())
+    change(&state, connection_id, |s, id| {
+        s.delete_all_annotations(id, now_ms()).map(|_| ())
     })
     .await
 }
@@ -150,8 +147,8 @@ mod tests {
             assert_eq!(id, "c1");
             n2.fetch_add(1, Ordering::SeqCst);
         }));
-        let v = change(&st, "c1".into(), |st, id| {
-            st.health.store.set_ignored(id, "k", true, now_ms())
+        let v = change(&st, "c1".into(), |s, id| {
+            s.set_ignored(id, "k", true, now_ms())
         })
         .await
         .unwrap();
@@ -178,15 +175,35 @@ mod tests {
         else {
             panic!()
         };
-        let v = change(&st, "c1".into(), move |st, id| {
-            st.health
-                .store
-                .set_status(id, &aid, AnnotationStatus::Resolved, now_ms())
+        let v = change(&st, "c1".into(), move |s, id| {
+            s.set_status(id, &aid, AnnotationStatus::Resolved, now_ms())
         })
         .await
         .unwrap();
         assert_eq!(v.annotations[0].status, AnnotationStatus::Resolved);
         assert_eq!(n.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn deleted_connection_gets_no_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let st = state(dir.path());
+        change(&st, "c1".into(), |s, id| {
+            s.set_ignored(id, "k", true, now_ms())
+        })
+        .await
+        .unwrap();
+        let file = dir.path().join("health").join("c1.json");
+        assert!(file.exists());
+        st.delete_connection_full("c1").unwrap();
+        assert!(!file.exists());
+        let e = change(&st, "c1".into(), |s, id| {
+            s.set_ignored(id, "k", true, now_ms())
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(e.code, crate::error::ErrorCode::NotFound);
+        assert!(!file.exists(), "запись удалённого подключения создала файл");
     }
 
     #[tokio::test]

@@ -29,6 +29,24 @@ fn num(f: &Finding, name: &str) -> String {
         .unwrap_or_default()
 }
 
+/// `broker.configDrift`: «1=3, 2=6».
+fn drift_values(f: &Finding) -> String {
+    match f.params.get("values") {
+        Some(Value::Array(items)) => items
+            .iter()
+            .map(|v| {
+                format!(
+                    "{}={}",
+                    v.get("brokerId").map(Value::to_string).unwrap_or_default(),
+                    v.get("value").and_then(Value::as_str).unwrap_or("")
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", "),
+        _ => String::new(),
+    }
+}
+
 /// Заголовок и пояснение находки.
 pub fn english(f: &Finding) -> (String, String) {
     let name = f.target.name.as_deref().unwrap_or("");
@@ -72,6 +90,73 @@ pub fn english(f: &Finding) -> (String, String) {
                 "{} partition(s) are led by a replica other than the first (preferred) one, e.g. {}. Usually left after a broker restart; auto.leader.rebalance.enable or a preferred leader election fixes it.",
                 num(f, "count"),
                 list(f.params.get("examples"))
+            ),
+        ),
+        "topic.replicationFactorOne" => (
+            format!("Topic {name} has replication factor 1"),
+            "Every partition has a single replica: losing that broker loses the data and makes the partitions unavailable.".into(),
+        ),
+        "topic.minIsrUnreachable" => (
+            format!("Topic {name}: min.insync.replicas is above the replication factor"),
+            format!(
+                "min.insync.replicas = {} ({}) but the replication factor is {}: producers with acks=all can never write.",
+                num(f, "minIsr"),
+                num(f, "source"),
+                num(f, "replicationFactor")
+            ),
+        ),
+        "topic.minIsrEqualsRf" => (
+            format!("Topic {name}: min.insync.replicas equals the replication factor"),
+            format!(
+                "min.insync.replicas = {} ({}) with replication factor {}: one replica down stops writes with acks=all.",
+                num(f, "minIsr"),
+                num(f, "source"),
+                num(f, "replicationFactor")
+            ),
+        ),
+        "topic.minIsrOne" => (
+            format!("Topic {name}: min.insync.replicas is 1"),
+            format!(
+                "min.insync.replicas = 1 ({}) with replication factor {}: acks=all writes are acknowledged by a single replica, so a broker failure can lose acknowledged data.",
+                num(f, "source"),
+                num(f, "replicationFactor")
+            ),
+        ),
+        "topic.uncleanElection" => (
+            format!("Topic {name} allows unclean leader election"),
+            format!(
+                "unclean.leader.election.enable = true ({}): an out-of-sync replica can become leader and committed messages can be lost.",
+                num(f, "source")
+            ),
+        ),
+        "broker.autoCreateTopics" => (
+            "Brokers auto-create topics".into(),
+            format!(
+                "auto.create.topics.enable = true on broker {}: a typo in a topic name creates a new topic with default settings.",
+                num(f, "brokerId")
+            ),
+        ),
+        "broker.defaultReplicationFactorOne" => (
+            "Default replication factor is 1".into(),
+            format!(
+                "default.replication.factor = 1 on broker {} in a cluster of {} brokers: topics created without an explicit factor have no replicas.",
+                num(f, "brokerId"),
+                num(f, "brokers")
+            ),
+        ),
+        "broker.defaultMinIsrOne" => (
+            "Default min.insync.replicas is 1".into(),
+            format!(
+                "min.insync.replicas = 1 on broker {} in a cluster of {} brokers: topics without their own value acknowledge acks=all writes with one replica.",
+                num(f, "brokerId"),
+                num(f, "brokers")
+            ),
+        ),
+        "broker.configDrift" => (
+            format!("{} differs between brokers", num(f, "config")),
+            format!(
+                "Values by broker: {}. Brokers with different settings behave differently after a leader moves.",
+                drift_values(f)
             ),
         ),
         other => (other.to_string(), String::new()),

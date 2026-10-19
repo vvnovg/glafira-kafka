@@ -1,7 +1,9 @@
 //! Каталог правил и их строгость по окружению (спец. G2 §4). Правила — чистые функции над
 //! `ClusterSnapshot`: сеть и файлы здесь не трогаются.
 
+mod broker_configs;
 mod brokers;
+mod topics;
 
 use serde_json::Value;
 
@@ -111,6 +113,8 @@ impl Findings {
 pub fn evaluate(s: &ClusterSnapshot, env: Environment) -> Vec<Finding> {
     let mut out = Findings::new(env);
     brokers::check(s, &mut out);
+    topics::check(s, &mut out);
+    broker_configs::check(s, &mut out);
     out.into_sorted()
 }
 

@@ -163,8 +163,6 @@ pub trait Backend: Send + Sync + 'static {
         &self,
         op: crate::health::HealthOp,
     ) -> BoxFuture<'_, Result<crate::health::HealthOutput, BackendError>>;
-    /// Лицензия Pro активна (замечания LLM).
-    fn pro_active(&self) -> bool;
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

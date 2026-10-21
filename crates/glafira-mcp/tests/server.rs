@@ -37,7 +37,6 @@ struct Fake {
     peak: AtomicUsize,
     /// Операции проверки и замечаний, которые дошли до Backend.
     health_ops: Mutex<Vec<HealthOp>>,
-    pro: AtomicBool,
     check_delay: Mutex<Duration>,
     /// Находки с длинными пояснениями (предел 100 КБ).
     big_findings: AtomicBool,
@@ -82,7 +81,6 @@ impl Fake {
             active: AtomicUsize::new(0),
             peak: AtomicUsize::new(0),
             health_ops: Mutex::new(Vec::new()),
-            pro: AtomicBool::new(true),
             check_delay: Mutex::new(Duration::ZERO),
             big_findings: AtomicBool::new(false),
             many_notes: AtomicUsize::new(0),
@@ -461,10 +459,6 @@ impl Backend for Fake {
                 }
             }
         })
-    }
-
-    fn pro_active(&self) -> bool {
-        self.pro.load(Ordering::SeqCst)
     }
 }
 
@@ -1323,27 +1317,24 @@ fn note(target: Value, title: &str) -> Value {
 }
 
 #[tokio::test]
-async fn annotations_require_pro_but_check_is_free() {
+async fn annotations_need_no_license() {
     let fake = Fake::new(SessionAccess::Approved);
-    fake.pro.store(false, Ordering::SeqCst);
     let e = env(fake.clone()).await;
     let c = client(&e.ep).await;
-    for (tool, args) in [
-        (
-            "annotate",
-            note(json!({"kind": "topic", "name": "orders"}), "t"),
-        ),
-        ("list_annotations", json!({"connectionId": "c1"})),
-        (
-            "remove_annotation",
-            json!({"connectionId": "c1", "annotationId": "n1"}),
-        ),
-    ] {
-        let msg = err(&call(&c, tool, args).await);
-        assert!(msg.starts_with("pro_required"), "{tool}: {msg}");
-    }
-    assert!(fake.health_ops.lock().unwrap().is_empty());
-    ok(call(&c, "health_check", json!({"connectionId": "c1"})).await);
+    ok(call(
+        &c,
+        "annotate",
+        note(json!({"kind": "topic", "name": "orders"}), "t"),
+    )
+    .await);
+    ok(call(&c, "list_annotations", json!({"connectionId": "c1"})).await);
+    ok(call(
+        &c,
+        "remove_annotation",
+        json!({"connectionId": "c1", "annotationId": "n1"}),
+    )
+    .await);
+    assert_eq!(fake.health_ops.lock().unwrap().len(), 3);
 }
 
 #[tokio::test]

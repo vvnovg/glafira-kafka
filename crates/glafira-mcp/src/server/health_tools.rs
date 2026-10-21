@@ -19,8 +19,6 @@ pub const MAX_AGE_SECONDS_MAX: u32 = 3600;
 pub const FINDINGS_LIMIT_DEFAULT: u32 = 100;
 pub const FINDINGS_LIMIT_MAX: u32 = 200;
 
-const PRO_REQUIRED: &str = "Annotations require Glafira Pro; report findings in the chat instead";
-
 /// У `list_annotations` нет страниц: при обрезке остаются самые свежие, остальное — сужением по status.
 const NOTES_TRUNCATED_HINT: &str = "The response was truncated to 100 KB: only the most recently updated notes are shown; narrow with status";
 
@@ -143,14 +141,6 @@ fn to_value<T: Serialize>(v: &T) -> Result<Value, BackendError> {
 }
 
 impl GatewayServer {
-    fn require_pro(&self) -> Result<(), BackendError> {
-        if self.shared.backend.pro_active() {
-            Ok(())
-        } else {
-            Err(BackendError::new("pro_required", PRO_REQUIRED))
-        }
-    }
-
     async fn check(&self, p: &HealthCheckParams) -> Result<Value, BackendError> {
         let max_age = p.max_age_seconds.unwrap_or(MAX_AGE_SECONDS_DEFAULT);
         if max_age > MAX_AGE_SECONDS_MAX {
@@ -246,7 +236,7 @@ impl GatewayServer {
     }
 
     #[tool(
-        description = "Leave a note about a cluster, broker, topic or consumer group in Glafira: the user sees it next to the object, with your client name. Use it for conclusions that add to health_check findings (link them with relatedRuleId) — do not repeat findings. A note with the same target and title replaces your previous one. Notes expire after 7 days; at most 200 open notes per connection. Plain text only. Requires Glafira Pro. Does not change the cluster.",
+        description = "Leave a note about a cluster, broker, topic or consumer group in Glafira: the user sees it next to the object, with your client name. Use it for conclusions that add to health_check findings (link them with relatedRuleId) — do not repeat findings. A note with the same target and title replaces your previous one. Notes expire after 7 days; at most 200 open notes per connection. Plain text only. Does not change the cluster.",
         annotations(
             read_only_hint = false,
             destructive_hint = false,
@@ -268,7 +258,6 @@ impl GatewayServer {
         });
         Ok(self
             .call(&ctx, "annotate", args, Some(&p.connection_id), async {
-                self.require_pro()?;
                 p.target.check().map_err(BackendError::invalid_argument)?;
                 if p.title.trim().is_empty() {
                     return Err(BackendError::invalid_argument("title must not be empty"));
@@ -296,7 +285,7 @@ impl GatewayServer {
     }
 
     #[tool(
-        description = "List notes left in Glafira for a connection by any client, with their status: open, resolved or dismissed (closed by the user). Use it to see what the user already handled before adding notes. Requires Glafira Pro.",
+        description = "List notes left in Glafira for a connection by any client, with their status: open, resolved or dismissed (closed by the user). Use it to see what the user already handled before adding notes.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,
@@ -315,7 +304,6 @@ impl GatewayServer {
                 args(&p),
                 Some(&p.connection_id),
                 async {
-                    self.require_pro()?;
                     let op = HealthOp::ListAnnotations {
                         connection_id: p.connection_id.clone(),
                         status: p.status.unwrap_or_default(),
@@ -342,7 +330,7 @@ impl GatewayServer {
     }
 
     #[tool(
-        description = "Remove one of your own notes from Glafira (notes of other clients cannot be removed). Requires Glafira Pro.",
+        description = "Remove one of your own notes from Glafira (notes of other clients cannot be removed).",
         annotations(
             read_only_hint = false,
             destructive_hint = false,
@@ -362,7 +350,6 @@ impl GatewayServer {
                 args(&p),
                 Some(&p.connection_id),
                 async {
-                    self.require_pro()?;
                     let op = HealthOp::RemoveAnnotation {
                         connection_id: p.connection_id.clone(),
                         session: self.identify(None),

@@ -57,4 +57,4 @@ L’app n’envoie rien d’elle-même. Joignez vous-même l’archive à votre 
 
 ## Soutenir le projet {#support}
 
-Glafira est gratuite et open source sous Apache License 2.0. Les dons font vivre le projet. [[ui:support.title]] en bas du panneau de gauche, sur l’écran [[ui:sidebar.about]] et, sous macOS, dans le menu « Aide » ouvre la page de soutien dans le navigateur : https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md
+Glafira est gratuite et open source sous licence Apache 2.0. Les dons font vivre le projet. [[ui:support.title]] en bas du panneau de gauche, sur l’écran [[ui:sidebar.about]] et, sous macOS, dans le menu « Aide » ouvre la page de soutien dans le navigateur : https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md

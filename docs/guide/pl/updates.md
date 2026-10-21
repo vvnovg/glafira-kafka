@@ -57,4 +57,4 @@ Aplikacja sama niczego nie wysyła. Archiwum należy samodzielnie dołączyć do
 
 ## Wesprzyj projekt {#support}
 
-Glafira jest bezpłatna, a jej kod źródłowy jest otwarty na licencji Apache License 2.0. Darowizny pozwalają ją rozwijać. Pozycja [[ui:support.title]] u dołu lewego panelu, na ekranie [[ui:sidebar.about]] oraz, w systemie macOS, w menu Pomoc otwiera stronę wsparcia w przeglądarce: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md
+Glafira jest bezpłatna, a jej kod źródłowy jest otwarty na licencji Apache 2.0. Darowizny pozwalają ją rozwijać. Pozycja [[ui:support.title]] u dołu lewego panelu, na ekranie [[ui:sidebar.about]] oraz, w systemie macOS, w menu Pomoc otwiera stronę wsparcia w przeglądarce: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md

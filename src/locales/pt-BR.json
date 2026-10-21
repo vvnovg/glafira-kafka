@@ -7,8 +7,6 @@
     "close": "Fechar",
     "loading": "Carregando…",
     "details": "Detalhes",
-    "openLicense": "Abrir “Licença”",
-    "proHint": "Disponível no Pro — ative uma licença na tela “Licença”",
     "readOnly": "Somente leitura",
     "confirm": {
       "typeObject": "Para confirmar, digite <code>{{name}}</code> ({{label}})",
@@ -129,16 +127,6 @@
       "configDuplicate": "O parâmetro “{{name}}” foi alterado duas vezes",
       "alterConfigFailed": "Não foi possível alterar a configuração do tópico",
       "noOffset": "O broker não retornou o offset da partição"
-    },
-    "license": {
-      "malformed": "Chave inválida: a chave está corrompida",
-      "badSignature": "Chave inválida: não foi possível verificar a assinatura da chave — a chave não foi emitida por nós ou foi modificada",
-      "unsupportedVersion": "Chave inválida: uma chave da versão {{version}} exige uma versão mais recente do aplicativo",
-      "managed": "A licença é gerenciada pela sua organização (política corporativa) e não pode ser alterada",
-      "empty": "Chave inválida: a chave está vazia",
-      "keyExpired": "A chave expirou em {{date}}",
-      "proExpired": "A licença Pro expirou em {{date}} — este recurso exige o Pro",
-      "proRequired": "Este recurso exige o Pro — ative uma licença na tela “Licença”"
     },
     "policy": {
       "invalidBool": "{{key}}: valor booleano inválido {{value}}",
@@ -371,7 +359,6 @@
     "groups": "Consumer groups",
     "producer": "Producer",
     "consumer": "Sessão de consumer",
-    "license": "Licença: {{tier}}",
     "help": "Ajuda",
     "about": "Sobre",
     "filter": "Filtrar conexões",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "Configurações",
-    "license": "Licença",
     "about": "Sobre",
     "help": "Ajuda",
     "connection": "Conexão: {{name}}",
@@ -481,7 +467,6 @@
       "folder": "Pasta",
       "folderRoot": "(raiz)",
       "environment": "Ambiente",
-      "prodPro": "prod (Pro)",
       "llmAccess": "Acesso para LLM (somente metadados)",
       "color": "Cor",
       "bootstrap": "Servidores bootstrap",
@@ -938,7 +923,6 @@
   "consumer": {
     "warn": "A sessão entra no grupo e afeta o cluster: os demais membros do grupo passarão por um rebalanceamento, e os commits alteram os offsets do grupo.",
     "joinLabel": "Entrada no grupo",
-    "proOnly": "As sessões de consumer estão disponíveis no Pro.",
     "readOnlyBlocked": "As sessões de consumer não estão disponíveis para conexões somente leitura: entrar em um grupo altera o estado dele.",
     "disconnect": "Desconectar",
     "form": {
@@ -998,52 +982,12 @@
       "logError": "{{time}} — erro de rebalanceamento: {{message}}"
     }
   },
-  "license": {
-    "title": "Licença",
-    "tier": "Plano",
-    "licensee": "Titular",
-    "kind": "Tipo",
-    "kindPersonal": "pessoal",
-    "kindOrganization": "organização",
-    "expires": "Válida até",
-    "perpetual": "perpétua",
-    "expiringUnknown": "A licença expira em breve ({{date}}).",
-    "expiringToday": "A licença expira hoje ({{date}}).",
-    "expiring_one": "A licença expira em {{count}} dia ({{date}}).",
-    "expiring_many": "A licença expira em {{count}} de dias ({{date}}).",
-    "expiring_other": "A licença expira em {{count}} dias ({{date}}).",
-    "expired": "A licença expirou em {{date}}: os recursos Pro estão desativados, seus dados foram mantidos.",
-    "managed": "A licença é gerenciada pela sua organização.",
-    "keyLabel": "Chave de licença",
-    "activate": "Ativar",
-    "removeGroupAria": "Confirmar a remoção da chave",
-    "removeQuestion": "Remover a chave? Os recursos Pro serão desativados.",
-    "removeYes": "Sim, remover",
-    "removeKey": "Remover chave",
-    "whatProGives": "O que o Pro inclui",
-    "proConsumer": "Sessões de consumer: ler como membro de um grupo, fazer commit de offsets, pausar partições.",
-    "proProd": "Modo prod: criar conexões e mudá-las para prod (qualquer alteração é confirmada digitando o nome da conexão).",
-    "policyTitle": "Política da organização",
-    "policySource": "Origem: {{source}}",
-    "notice": {
-      "expiringUnknown": "A licença Pro expira em breve.",
-      "expiringToday": "A licença Pro expira hoje.",
-      "expiring_one": "A licença Pro expira em {{count}} dia.",
-      "expiring_many": "A licença Pro expira em {{count}} de dias.",
-      "expiring_other": "A licença Pro expira em {{count}} dias.",
-      "expired": "A licença Pro expirou em {{date}}: os recursos Pro estão desativados.",
-      "more": "Detalhes",
-      "hideAria": "Dispensar notificação"
-    },
-    "proLlmNotes": "Notas de LLM: assistentes conectados por MCP deixam notas sobre o cluster, os tópicos e os grupos (a verificação do cluster em si está incluída no Free)."
-  },
   "about": {
-    "summary": "Glafira é um cliente desktop do Apache Kafka para testadores e desenvolvedores. Conexão a clusters via PLAINTEXT, SASL ou mTLS, navegação por tópicos e consumer groups, busca de mensagens, envio individual ou em lote a partir de um arquivo, redefinição de offsets e verificação do cluster. O Pro adiciona sessões de consumer, conexões prod e notas de LLM.",
+    "summary": "Glafira é um cliente desktop do Apache Kafka para testadores e desenvolvedores. Conexão a clusters via PLAINTEXT, SASL ou mTLS, navegação por tópicos e consumer groups, busca de mensagens, envio individual ou em lote a partir de um arquivo, redefinição de offsets e verificação do cluster. Também inclui sessões de consumer, conexões prod e notas de LLM.",
     "version": "Versão",
     "build": "Build",
     "system": "Sistema",
     "license": "Licença",
-    "tier": "Plano",
     "policy": "Política da organização",
     "policySet": "definida",
     "policyNone": "nenhuma",
@@ -1078,9 +1022,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_one": "{{count}} conexão prod ficará somente leitura: alterar conexões prod requer Pro",
-      "prodReadOnly_many": "{{count}} de conexões prod ficarão somente leitura: alterar conexões prod requer Pro",
-      "prodReadOnly_other": "{{count}} conexões prod ficarão somente leitura: alterar conexões prod requer Pro",
       "missingFiles_one": "Os arquivos de certificado de {{count}} conexão não foram encontrados neste computador — verifique os caminhos",
       "missingFiles_many": "Os arquivos de certificado de {{count}} de conexões não foram encontrados neste computador — verifique os caminhos",
       "missingFiles_other": "Os arquivos de certificado de {{count}} conexões não foram encontrados neste computador — verifique os caminhos"
@@ -1288,7 +1229,6 @@
     "deleteAllConfirm": "Excluir todas as notas de LLM desta conexão?",
     "closedNotes": "Fechadas ({{count}})",
     "noNotes": "Nenhuma nota de LLM.",
-    "proNotes": "Com o Glafira Pro, assistentes LLM podem deixar aqui notas sobre o cluster, os tópicos e os grupos.",
     "llmNotes": "Assistentes LLM conectados por MCP podem deixar aqui notas sobre o cluster, os tópicos e os grupos.",
     "status": {
       "resolved": "resolvida",
@@ -1323,7 +1263,7 @@
   "hints": {
     "label": "Dica: {{name}}",
     "connections": {
-      "environment": "Marca a conexão com uma cor. Nas conexões prod (Pro), qualquer alteração precisa ser confirmada digitando o nome da conexão.",
+      "environment": "Marca a conexão com uma cor. Nas conexões prod, qualquer alteração precisa ser confirmada digitando o nome da conexão.",
       "readOnly": "Bloqueia tudo o que altera o cluster: envio, redefinição de offsets, exclusão de tópicos e grupos, sessões de consumer.",
       "llmAccess": "Permite que um assistente LLM conectado via MCP leia os metadados deste cluster: brokers, tópicos, configurações, consumer groups. Mensagens e senhas nunca são compartilhadas.",
       "bootstrap": "Um ou mais <code>host:port</code>, separados por vírgula. O cliente encontra os demais brokers sozinho.",

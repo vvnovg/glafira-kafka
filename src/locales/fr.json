@@ -7,8 +7,6 @@
     "close": "Fermer",
     "loading": "Chargement…",
     "details": "Détails",
-    "openLicense": "Ouvrir « Licence »",
-    "proHint": "Disponible dans Pro — activez une licence dans l’écran « Licence »",
     "readOnly": "Lecture seule",
     "confirm": {
       "typeObject": "Pour confirmer, saisissez <code>{{name}}</code> ({{label}})",
@@ -129,16 +127,6 @@
       "configDuplicate": "Le paramètre « {{name}} » est modifié deux fois",
       "alterConfigFailed": "Impossible de modifier la configuration du topic",
       "noOffset": "Le broker n’a pas renvoyé l’offset de la partition"
-    },
-    "license": {
-      "malformed": "Clé non valide : la clé est corrompue",
-      "badSignature": "Clé non valide : la signature de la clé n’a pas pu être vérifiée — la clé n’a pas été émise par nous ou a été modifiée",
-      "unsupportedVersion": "Clé non valide : une clé de version {{version}} nécessite une version plus récente de l’application",
-      "managed": "La licence est gérée par votre organisation (politique d’entreprise) et ne peut pas être modifiée",
-      "empty": "Clé non valide : la clé est vide",
-      "keyExpired": "La clé a expiré le {{date}}",
-      "proExpired": "La licence Pro a expiré le {{date}} — cette fonctionnalité nécessite Pro",
-      "proRequired": "Cette fonctionnalité nécessite Pro — activez une licence dans l’écran « Licence »"
     },
     "policy": {
       "invalidBool": "{{key}} : booléen non valide {{value}}",
@@ -371,7 +359,6 @@
     "groups": "Consumer groups",
     "producer": "Producer",
     "consumer": "Session consumer",
-    "license": "Licence : {{tier}}",
     "help": "Aide",
     "about": "À propos",
     "filter": "Filtrer les connexions",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "Paramètres",
-    "license": "Licence",
     "about": "À propos",
     "help": "Aide",
     "connection": "Connexion : {{name}}",
@@ -481,7 +467,6 @@
       "folder": "Dossier",
       "folderRoot": "(racine)",
       "environment": "Environnement",
-      "prodPro": "prod (Pro)",
       "llmAccess": "Accès LLM (métadonnées uniquement)",
       "color": "Couleur",
       "bootstrap": "Serveurs bootstrap",
@@ -938,7 +923,6 @@
   "consumer": {
     "warn": "La session rejoint le groupe et agit sur le cluster : les autres membres du groupe subiront un rééquilibrage et les commits modifieront les offsets du groupe.",
     "joinLabel": "Entrée dans le groupe",
-    "proOnly": "Les sessions consumer sont disponibles dans Pro.",
     "readOnlyBlocked": "Les sessions consumer sont indisponibles pour les connexions en lecture seule : rejoindre un groupe modifie son état.",
     "disconnect": "Se déconnecter",
     "form": {
@@ -998,52 +982,12 @@
       "logError": "{{time}} — erreur de rééquilibrage : {{message}}"
     }
   },
-  "license": {
-    "title": "Licence",
-    "tier": "Offre",
-    "licensee": "Titulaire",
-    "kind": "Type",
-    "kindPersonal": "personnelle",
-    "kindOrganization": "organisation",
-    "expires": "Expiration",
-    "perpetual": "jamais",
-    "expiringUnknown": "La licence expire bientôt ({{date}}).",
-    "expiringToday": "La licence expire aujourd’hui ({{date}}).",
-    "expiring_one": "La licence expire dans {{count}} jour ({{date}}).",
-    "expiring_many": "La licence expire dans {{count}} de jours ({{date}}).",
-    "expiring_other": "La licence expire dans {{count}} jours ({{date}}).",
-    "expired": "La licence a expiré le {{date}} : les fonctionnalités Pro sont désactivées, vos données sont conservées.",
-    "managed": "La licence est gérée par votre organisation.",
-    "keyLabel": "Clé de licence",
-    "activate": "Activer",
-    "removeGroupAria": "Confirmer la suppression de la clé",
-    "removeQuestion": "Supprimer la clé ? Les fonctionnalités Pro seront désactivées.",
-    "removeYes": "Oui, supprimer",
-    "removeKey": "Supprimer la clé",
-    "whatProGives": "Ce qu’inclut Pro",
-    "proConsumer": "Sessions consumer : lecture en tant que membre d’un groupe, commit des offsets, mise en pause des partitions.",
-    "proProd": "Mode prod : création de connexions et passage en prod (toute modification est confirmée en saisissant le nom de la connexion).",
-    "policyTitle": "Politique de l’organisation",
-    "policySource": "Source : {{source}}",
-    "notice": {
-      "expiringUnknown": "La licence Pro expire bientôt.",
-      "expiringToday": "La licence Pro expire aujourd’hui.",
-      "expiring_one": "La licence Pro expire dans {{count}} jour.",
-      "expiring_many": "La licence Pro expire dans {{count}} de jours.",
-      "expiring_other": "La licence Pro expire dans {{count}} jours.",
-      "expired": "La licence Pro a expiré le {{date}} : les fonctionnalités Pro sont désactivées.",
-      "more": "Détails",
-      "hideAria": "Masquer la notification"
-    },
-    "proLlmNotes": "Remarques LLM : les assistants connectés par MCP laissent des remarques sur le cluster, les topics et les groupes (la vérification du cluster elle-même est incluse dans Free)."
-  },
   "about": {
-    "summary": "Glafira est un client de bureau Apache Kafka pour les testeurs et les développeurs. Connexion aux clusters via PLAINTEXT, SASL ou mTLS, consultation des topics et des consumer groups, recherche de messages, envoi unitaire ou par lots depuis un fichier, réinitialisation des offsets, vérification du cluster. Pro ajoute les sessions consumer, les connexions prod et les remarques LLM.",
+    "summary": "Glafira est un client de bureau Apache Kafka pour les testeurs et les développeurs. Connexion aux clusters via PLAINTEXT, SASL ou mTLS, consultation des topics et des consumer groups, recherche de messages, envoi unitaire ou par lots depuis un fichier, réinitialisation des offsets, vérification du cluster. Les sessions consumer, les connexions prod et les remarques LLM sont incluses.",
     "version": "Version",
     "build": "Build",
     "system": "Système",
     "license": "Licence",
-    "tier": "Offre",
     "policy": "Politique de l’organisation",
     "policySet": "définie",
     "policyNone": "aucune",
@@ -1078,9 +1022,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_one": "{{count}} connexion prod sera en lecture seule : la modification des connexions prod nécessite Pro",
-      "prodReadOnly_many": "{{count}} de connexions prod seront en lecture seule : la modification des connexions prod nécessite Pro",
-      "prodReadOnly_other": "{{count}} connexions prod seront en lecture seule : la modification des connexions prod nécessite Pro",
       "missingFiles_one": "Les fichiers de certificat de {{count}} connexion sont introuvables sur cet ordinateur — vérifiez les chemins",
       "missingFiles_many": "Les fichiers de certificat de {{count}} de connexions sont introuvables sur cet ordinateur — vérifiez les chemins",
       "missingFiles_other": "Les fichiers de certificat de {{count}} connexions sont introuvables sur cet ordinateur — vérifiez les chemins"
@@ -1288,7 +1229,6 @@
     "deleteAllConfirm": "Supprimer toutes les remarques LLM de cette connexion ?",
     "closedNotes": "Fermées ({{count}})",
     "noNotes": "Aucune remarque LLM.",
-    "proNotes": "Avec Glafira Pro, les assistants LLM peuvent laisser ici des remarques sur le cluster, les topics et les groupes.",
     "llmNotes": "Les assistants LLM connectés via MCP peuvent laisser ici des remarques sur le cluster, les topics et les groupes.",
     "status": {
       "resolved": "résolue",
@@ -1323,7 +1263,7 @@
   "hints": {
     "label": "Aide : {{name}}",
     "connections": {
-      "environment": "Marque la connexion d’une couleur. Pour les connexions prod (Pro), toute modification doit être confirmée en saisissant le nom de la connexion.",
+      "environment": "Marque la connexion d’une couleur. Pour les connexions prod, toute modification doit être confirmée en saisissant le nom de la connexion.",
       "readOnly": "Bloque tout ce qui modifie le cluster : envoi, réinitialisation des offsets, suppression de topics et de groupes, sessions consumer.",
       "llmAccess": "Permet à un assistant LLM connecté via MCP de lire les métadonnées de ce cluster : brokers, topics, configurations, consumer groups. Les messages et les mots de passe ne sont jamais partagés.",
       "bootstrap": "Un ou plusieurs <code>host:port</code>, séparés par des virgules. Le client trouve lui-même les autres brokers.",

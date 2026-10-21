@@ -7,8 +7,6 @@
     "close": "关闭",
     "loading": "加载中…",
     "details": "详细信息",
-    "openLicense": "打开“许可证”",
-    "proHint": "Pro 版功能，请在“许可证”页面激活许可证",
     "readOnly": "只读",
     "confirm": {
       "typeObject": "如需确认，请输入{{label}} <code>{{name}}</code>",
@@ -129,16 +127,6 @@
       "configDuplicate": "参数“{{name}}”被更改了两次",
       "alterConfigFailed": "更改主题配置失败",
       "noOffset": "Broker 未返回分区偏移量"
-    },
-    "license": {
-      "malformed": "密钥无效：密钥已损坏",
-      "badSignature": "密钥无效：无法验证密钥签名，密钥并非由我们签发或已被修改",
-      "unsupportedVersion": "密钥无效：版本 {{version}} 的密钥需要更新版本的应用",
-      "managed": "许可证由你的组织管理（企业策略），无法更改",
-      "empty": "密钥无效：密钥为空",
-      "keyExpired": "密钥已于 {{date}} 过期",
-      "proExpired": "Pro 许可证已于 {{date}} 过期，此功能需要 Pro",
-      "proRequired": "此功能需要 Pro，请在“许可证”页面激活许可证"
     },
     "policy": {
       "invalidBool": "{{key}}：布尔值 {{value}} 无效",
@@ -371,7 +359,6 @@
     "groups": "消费者组",
     "producer": "Producer",
     "consumer": "消费者会话",
-    "license": "许可证：{{tier}}",
     "help": "帮助",
     "about": "关于",
     "filter": "筛选连接",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "设置",
-    "license": "许可证",
     "about": "关于",
     "help": "帮助",
     "connection": "连接：{{name}}",
@@ -481,7 +467,6 @@
       "folder": "文件夹",
       "folderRoot": "（根目录）",
       "environment": "环境",
-      "prodPro": "prod (Pro)",
       "llmAccess": "LLM 访问（仅元数据）",
       "color": "颜色",
       "bootstrap": "Bootstrap 服务器",
@@ -934,7 +919,6 @@
   "consumer": {
     "warn": "会话会加入组并影响集群：组的其他成员将进行重平衡，提交会改变组的偏移量。",
     "joinLabel": "加入组",
-    "proOnly": "消费者会话为 Pro 功能。",
     "readOnlyBlocked": "只读连接无法使用消费者会话：加入组会改变其状态。",
     "disconnect": "断开连接",
     "form": {
@@ -994,48 +978,12 @@
       "logError": "{{time}} — 重平衡错误：{{message}}"
     }
   },
-  "license": {
-    "title": "许可证",
-    "tier": "套餐",
-    "licensee": "授权对象",
-    "kind": "类型",
-    "kindPersonal": "个人",
-    "kindOrganization": "组织",
-    "expires": "有效期至",
-    "perpetual": "永久",
-    "expiringUnknown": "许可证即将到期（{{date}}）。",
-    "expiringToday": "许可证今天到期（{{date}}）。",
-    "expiring_other": "许可证将在 {{count}} 天后到期（{{date}}）。",
-    "expired": "许可证已于 {{date}} 过期：Pro 功能已停用，你的数据仍会保留。",
-    "managed": "许可证由你的组织管理。",
-    "keyLabel": "许可证密钥",
-    "activate": "激活",
-    "removeGroupAria": "确认移除密钥",
-    "removeQuestion": "移除密钥？Pro 功能将被停用。",
-    "removeYes": "是，移除",
-    "removeKey": "移除密钥",
-    "whatProGives": "Pro 包含的功能",
-    "proConsumer": "消费者会话：以组成员身份读取、提交偏移量、暂停分区。",
-    "proProd": "生产模式：创建连接并将其切换为生产环境（任何更改都需输入连接名称确认）。",
-    "policyTitle": "组织策略",
-    "policySource": "来源：{{source}}",
-    "notice": {
-      "expiringUnknown": "Pro 许可证即将到期。",
-      "expiringToday": "Pro 许可证今天到期。",
-      "expiring_other": "Pro 许可证将在 {{count}} 天后到期。",
-      "expired": "Pro 许可证已于 {{date}} 过期：Pro 功能已停用。",
-      "more": "详细信息",
-      "hideAria": "关闭通知"
-    },
-    "proLlmNotes": "LLM 批注：通过 MCP 连接的助手可以留下关于集群、主题和消费者组的批注（集群检查本身包含在 Free 中）。"
-  },
   "about": {
-    "summary": "Glafira 是面向测试和开发人员的 Apache Kafka 桌面客户端。可通过 PLAINTEXT、SASL 或 mTLS 连接集群，浏览主题和消费者组，搜索消息，逐条发送或从文件批量发送消息，重置偏移量，以及进行集群检查。Pro 增加了消费者会话、生产环境连接和 LLM 批注。",
+    "summary": "Glafira 是面向测试和开发人员的 Apache Kafka 桌面客户端。可通过 PLAINTEXT、SASL 或 mTLS 连接集群，浏览主题和消费者组，搜索消息，逐条发送或从文件批量发送消息，重置偏移量，以及进行集群检查。还支持消费者会话、生产环境连接和 LLM 批注。",
     "version": "版本",
     "build": "Build",
     "system": "系统",
     "license": "许可证",
-    "tier": "套餐",
     "policy": "组织策略",
     "policySet": "已设置",
     "policyNone": "无",
@@ -1070,7 +1018,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_other": "{{count}} 个生产环境连接将为只读：更改生产环境连接需要 Pro",
       "missingFiles_other": "此计算机上找不到 {{count}} 个连接的证书文件，请检查路径"
     }
   },
@@ -1272,7 +1219,6 @@
     "deleteAllConfirm": "删除此连接的所有 LLM 批注？",
     "closedNotes": "已关闭（{{count}}）",
     "noNotes": "没有 LLM 批注。",
-    "proNotes": "使用 Glafira Pro 时，LLM 助手可以在这里留下关于集群、主题和组的批注。",
     "llmNotes": "通过 MCP 连接的 LLM 助手可以在这里留下关于集群、主题和组的批注。",
     "status": {
       "resolved": "已解决",
@@ -1307,7 +1253,7 @@
   "hints": {
     "label": "提示：{{name}}",
     "connections": {
-      "environment": "用颜色标记连接。生产环境连接（Pro）在任何更改前都要求输入连接名称。",
+      "environment": "用颜色标记连接。生产环境连接在任何更改前都要求输入连接名称。",
       "readOnly": "阻止所有会改变集群的操作：发送、重置偏移量、删除主题和组、消费者会话。",
       "llmAccess": "允许通过 MCP 连接的 LLM 助手读取此集群的元数据：Broker、主题、配置、消费者组。消息和密码绝不会被共享。",
       "bootstrap": "一个或多个 <code>host:port</code>，以逗号分隔。客户端会自动发现其他 Broker。",

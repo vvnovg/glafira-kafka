@@ -16,7 +16,7 @@
 - Плюралы: заполняются все формы языка (см. таблицу в README), даже если формы совпадают по тексту.
 
 ## Не переводится
-Kafka, Glafira, Pro, Free, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
+Kafka, Glafira, SASL, SSL, TLS, mTLS, PEM, PKCS#12, JKS, JCEKS, CSV, JSON, JSON Lines, librdkafka,
 DNS, TCP, ID, MCP, LLM, stdio, Claude Desktop, Claude Code, Cursor, Build (сборка: подпись в «О программе» и слово в тексте об обновлениях — «build», не «версия»/«компиляция»; в ja — ビルド, как в остальном словаре), Leader (лидер партиции; в ja и ko — リーダー и 리더); имена параметров Kafka (`cleanup.policy`, `retention.ms`, `acks`, `enable.idempotence`); значения acks (0, 1, all), стратегии earliest/latest, пресеты delete/compact/test;
 команды, пути, адреса (`docker compose -f dev/docker-compose.yml up -d`, `keytool …`, `localhost:9092`);
 название экрана «Producer» (как в ru); значения CreateTime / LogAppendTime, producer / uncompressed в compression.type.
@@ -282,7 +282,7 @@ to commit — 提交; committed offset — 已提交的偏移量; lag в про�
 point at (наведение) — 将指针悬停在…上; macOS menu Help — “帮助”菜单; Keychain — 钥匙串; Credential Manager — 凭据管理器;
 Secret Service — Secret Service; prod connection — 生产环境连接 (`prod` — только как значение окружения); prod mode — 生产模式; Beta build — Beta build; копия при пакетной отправке — 份 / 份序号 (не 副本);
 метки — вплотную к иероглифам, но если значение начинается или кончается латиницей или цифрой («Bootstrap 服务器», «Producer»,
-«Build», «prod (Pro)»), с этой стороны — пробел («在 [[ui:connections.form.bootstrap]]中»); если значение кончается или начинается
+«Build»), с этой стороны — пробел («在 [[ui:connections.form.bootstrap]]中»); если значение кончается или начинается
 пунктуацией («…», «（…）», «。», «：»), метка берётся в кавычки “[[ui:…]]” или рядом ставится полноширинная пунктуация («点击[[ui:connections.tls.pick]]，然后…»);
 read-only connection — 只读连接 (с меткой: «在[[ui:common.readOnly]]连接上»).
 Глава «LLM 助手（MCP）»: gateway — 网关; snippet — 片段; local socket — 本地套接字; named pipe — 命名管道; token — 令牌; indicator — 指示器; badge `LLM` — 标记; метки со скобками в значении (“LLM 助手（MCP）”, “LLM 访问（仅元数据）”) — всегда в кавычках “[[ui:…]]”.
@@ -324,8 +324,7 @@ interface — インターフェイス; prod — 本番 (prod connection — 本
 macOS: Applications — 「アプリケーション」, Terminal — 「ターミナル」, System Settings → Privacy & Security — 「システム設定」→「プライバシーとセキュリティ」,
 Open Anyway — 「このまま開く」, Help menu — 「ヘルプ」メニュー; Keychain — キーチェーン; Credential Manager — 資格情報マネージャー;
 SmartScreen «More info / Run anyway» — 「詳細情報」/「実行」; Secret Service — Secret Service;
-метки — вплотную к тексту (и к латинице, без пробела); если значение кончается или начинается пунктуацией («…», «（…）», «。», «：», «」»,
-«prod (Pro)»), метка берётся в 「[[ui:…]]」 или рядом ставится полноширинная пунктуация («[[ui:connections.form.timeout]]：…»);
+метки — вплотную к тексту (и к латинице, без пробела); если значение кончается или начинается пунктуацией («…», «（…）», «。», «：», «」»), метка берётся в 「[[ui:…]]」 или рядом ставится полноширинная пунктуация («[[ui:connections.form.timeout]]：…»);
 сообщения об ошибках в прозе — в 「」 («「[[ui:errors.kafka.timeout]]」は…»), фразы-значения с «。» в конце — в 「」 или в конце абзаца после «：»;
 значение, которое кончается на «：» ([[ui:about.dataDir]], [[ui:about.logDir]]) в начале пункта списка, отделяется от текста пробелом.
 Глава «LLMアシスタント（MCP）»: gateway — ゲートウェイ; snippet — スニペット; local socket — ローカルソケット; named pipe — 名前付きパイプ; token — トークン; indicator — インジケーター; badge `LLM` — バッジ; метки со скобками в значении (「LLMアシスタント（MCP）」, 「LLMアクセス（メタデータのみ）」) — всегда в 「[[ui:…]]」.

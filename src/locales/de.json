@@ -7,8 +7,6 @@
     "close": "Schließen",
     "loading": "Wird geladen…",
     "details": "Details",
-    "openLicense": "„Lizenz“ öffnen",
-    "proHint": "In Pro verfügbar — Lizenz im Bereich „Lizenz“ aktivieren",
     "readOnly": "Schreibgeschützt",
     "confirm": {
       "typeObject": "Zur Bestätigung {{label}} eingeben: <code>{{name}}</code>",
@@ -129,16 +127,6 @@
       "configDuplicate": "Parameter „{{name}}“ wird doppelt geändert",
       "alterConfigFailed": "Topic-Konfiguration konnte nicht geändert werden",
       "noOffset": "Der Broker hat den Offset der Partition nicht zurückgegeben"
-    },
-    "license": {
-      "malformed": "Ungültiger Schlüssel: der Schlüssel ist beschädigt",
-      "badSignature": "Ungültiger Schlüssel: die Signatur konnte nicht verifiziert werden — der Schlüssel wurde nicht von uns ausgestellt oder wurde verändert",
-      "unsupportedVersion": "Ungültiger Schlüssel: ein Schlüssel der Version {{version}} erfordert eine neuere App-Version",
-      "managed": "Die Lizenz wird von Ihrer Organisation verwaltet (Unternehmensrichtlinie) und kann nicht geändert werden",
-      "empty": "Ungültiger Schlüssel: der Schlüssel ist leer",
-      "keyExpired": "Der Schlüssel ist am {{date}} abgelaufen",
-      "proExpired": "Pro-Lizenz am {{date}} abgelaufen — diese Funktion erfordert Pro",
-      "proRequired": "Diese Funktion erfordert Pro — Lizenz im Bereich „Lizenz“ aktivieren"
     },
     "policy": {
       "invalidBool": "{{key}}: ungültiger boolescher Wert {{value}}",
@@ -371,7 +359,6 @@
     "groups": "Consumer Groups",
     "producer": "Producer",
     "consumer": "Consumer-Session",
-    "license": "Lizenz: {{tier}}",
     "help": "Hilfe",
     "about": "Über Glafira",
     "filter": "Verbindungen filtern",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "Einstellungen",
-    "license": "Lizenz",
     "about": "Über Glafira",
     "help": "Hilfe",
     "connection": "Verbindung: {{name}}",
@@ -481,7 +467,6 @@
       "folder": "Ordner",
       "folderRoot": "(Stammebene)",
       "environment": "Umgebung",
-      "prodPro": "prod (Pro)",
       "llmAccess": "LLM-Zugriff (nur Metadaten)",
       "color": "Farbe",
       "bootstrap": "Bootstrap-Server",
@@ -936,7 +921,6 @@
   "consumer": {
     "warn": "Die Session tritt der Gruppe bei und wirkt sich auf den Cluster aus: bei den anderen Gruppenmitgliedern findet ein Rebalance statt, und Commits ändern die Offsets der Gruppe.",
     "joinLabel": "Beitritt zur Gruppe",
-    "proOnly": "Consumer-Sessions sind in Pro verfügbar.",
     "readOnlyBlocked": "Consumer-Sessions sind für schreibgeschützte Verbindungen nicht verfügbar: der Beitritt zu einer Gruppe ändert deren Status.",
     "disconnect": "Trennen",
     "form": {
@@ -996,50 +980,12 @@
       "logError": "{{time}} — Rebalance-Fehler: {{message}}"
     }
   },
-  "license": {
-    "title": "Lizenz",
-    "tier": "Tarif",
-    "licensee": "Lizenznehmer",
-    "kind": "Typ",
-    "kindPersonal": "persönlich",
-    "kindOrganization": "Organisation",
-    "expires": "Gültig bis",
-    "perpetual": "unbefristet",
-    "expiringUnknown": "Die Lizenz läuft bald ab ({{date}}).",
-    "expiringToday": "Die Lizenz läuft heute ab ({{date}}).",
-    "expiring_one": "Die Lizenz läuft in {{count}} Tag ab ({{date}}).",
-    "expiring_other": "Die Lizenz läuft in {{count}} Tagen ab ({{date}}).",
-    "expired": "Die Lizenz ist am {{date}} abgelaufen: Pro-Funktionen sind deaktiviert, Ihre Daten bleiben erhalten.",
-    "managed": "Die Lizenz wird von Ihrer Organisation verwaltet.",
-    "keyLabel": "Lizenzschlüssel",
-    "activate": "Aktivieren",
-    "removeGroupAria": "Entfernen des Schlüssels bestätigen",
-    "removeQuestion": "Schlüssel entfernen? Pro-Funktionen werden deaktiviert.",
-    "removeYes": "Ja, entfernen",
-    "removeKey": "Schlüssel entfernen",
-    "whatProGives": "Was Pro bietet",
-    "proConsumer": "Consumer-Sessions: als Gruppenmitglied lesen, Offsets committen, Partitionen pausieren.",
-    "proProd": "Prod-Modus: Verbindungen anlegen und auf Prod umstellen (jede Änderung wird durch Eingabe des Verbindungsnamens bestätigt).",
-    "policyTitle": "Organisationsrichtlinie",
-    "policySource": "Quelle: {{source}}",
-    "notice": {
-      "expiringUnknown": "Die Pro-Lizenz läuft bald ab.",
-      "expiringToday": "Die Pro-Lizenz läuft heute ab.",
-      "expiring_one": "Die Pro-Lizenz läuft in {{count}} Tag ab.",
-      "expiring_other": "Die Pro-Lizenz läuft in {{count}} Tagen ab.",
-      "expired": "Die Pro-Lizenz ist am {{date}} abgelaufen: Pro-Funktionen sind deaktiviert.",
-      "more": "Details",
-      "hideAria": "Benachrichtigung schließen"
-    },
-    "proLlmNotes": "LLM-Anmerkungen: Über MCP verbundene Assistenten hinterlassen Anmerkungen zum Cluster, zu Topics und Gruppen (die Clusterprüfung selbst ist in Free enthalten)."
-  },
   "about": {
-    "summary": "Glafira ist ein Desktop-Client für Apache Kafka für Tester und Entwickler. Verbindung zu Clustern über PLAINTEXT, SASL oder mTLS, Topics und Consumer Groups anzeigen, Nachrichten suchen, einzeln oder als Stapel aus einer Datei senden, Offsets zurücksetzen, Cluster prüfen. Pro bietet zusätzlich Consumer-Sessions, Prod-Verbindungen und LLM-Anmerkungen.",
+    "summary": "Glafira ist ein Desktop-Client für Apache Kafka für Tester und Entwickler. Verbindung zu Clustern über PLAINTEXT, SASL oder mTLS, Topics und Consumer Groups anzeigen, Nachrichten suchen, einzeln oder als Stapel aus einer Datei senden, Offsets zurücksetzen, Cluster prüfen. Dazu kommen Consumer-Sessions, Prod-Verbindungen und LLM-Anmerkungen.",
     "version": "Version",
     "build": "Build",
     "system": "System",
     "license": "Lizenz",
-    "tier": "Tarif",
     "policy": "Organisationsrichtlinie",
     "policySet": "festgelegt",
     "policyNone": "keine",
@@ -1074,8 +1020,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_one": "{{count}} Prod-Verbindung wird schreibgeschützt: Änderungen an Prod-Verbindungen erfordern Pro",
-      "prodReadOnly_other": "{{count}} Prod-Verbindungen werden schreibgeschützt: Änderungen an Prod-Verbindungen erfordern Pro",
       "missingFiles_one": "Zertifikatsdateien von {{count}} Verbindung wurden auf diesem Computer nicht gefunden — prüfen Sie die Pfade",
       "missingFiles_other": "Zertifikatsdateien von {{count}} Verbindungen wurden auf diesem Computer nicht gefunden — prüfen Sie die Pfade"
     }
@@ -1280,7 +1224,6 @@
     "deleteAllConfirm": "Alle LLM-Anmerkungen dieser Verbindung löschen?",
     "closedNotes": "Geschlossen ({{count}})",
     "noNotes": "Keine LLM-Anmerkungen.",
-    "proNotes": "Mit Glafira Pro können LLM-Assistenten hier Anmerkungen zum Cluster, zu Topics und Consumer Groups hinterlassen.",
     "llmNotes": "Über MCP verbundene LLM-Assistenten können hier Anmerkungen zum Cluster, zu Topics und Consumer Groups hinterlassen.",
     "status": {
       "resolved": "erledigt",
@@ -1315,7 +1258,7 @@
   "hints": {
     "label": "Hinweis: {{name}}",
     "connections": {
-      "environment": "Markiert die Verbindung mit einer Farbe. Bei Prod-Verbindungen (Pro) muss vor jeder Änderung der Verbindungsname eingegeben werden.",
+      "environment": "Markiert die Verbindung mit einer Farbe. Bei Prod-Verbindungen muss vor jeder Änderung der Verbindungsname eingegeben werden.",
       "readOnly": "Sperrt alles, was den Cluster verändert: Senden, Zurücksetzen von Offsets, Löschen von Topics und Gruppen, Consumer-Sessions.",
       "llmAccess": "Erlaubt einem über MCP verbundenen LLM-Assistenten, die Metadaten dieses Clusters zu lesen: Broker, Topics, Konfigurationen, Consumer Groups. Nachrichten und Passwörter werden nie weitergegeben.",
       "bootstrap": "Ein oder mehrere <code>host:port</code>, durch Kommas getrennt. Die übrigen Broker findet der Client selbst.",

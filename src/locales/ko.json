@@ -7,8 +7,6 @@
     "close": "닫기",
     "loading": "불러오는 중…",
     "details": "세부 정보",
-    "openLicense": "'라이선스' 열기",
-    "proHint": "Pro에서 사용할 수 있습니다. '라이선스' 화면에서 라이선스를 활성화하세요",
     "readOnly": "읽기 전용",
     "confirm": {
       "typeObject": "확인하려면 다음을 입력하세요. {{label}}: <code>{{name}}</code>",
@@ -129,16 +127,6 @@
       "configDuplicate": "'{{name}}' 매개변수가 두 번 변경되었습니다",
       "alterConfigFailed": "토픽 구성을 변경하지 못했습니다",
       "noOffset": "브로커가 파티션 오프셋을 반환하지 않았습니다"
-    },
-    "license": {
-      "malformed": "잘못된 키: 키가 손상되었습니다",
-      "badSignature": "잘못된 키: 키 서명을 확인할 수 없습니다. 당사에서 발급한 키가 아니거나 수정된 키입니다",
-      "unsupportedVersion": "잘못된 키: 버전 {{version}} 키를 사용하려면 최신 버전의 앱이 필요합니다",
-      "managed": "라이선스는 조직(회사 정책)에서 관리하므로 변경할 수 없습니다",
-      "empty": "잘못된 키: 키가 비어 있습니다",
-      "keyExpired": "키가 {{date}}에 만료되었습니다",
-      "proExpired": "Pro 라이선스가 {{date}}에 만료되었습니다. 이 기능에는 Pro가 필요합니다",
-      "proRequired": "이 기능에는 Pro가 필요합니다. '라이선스' 화면에서 라이선스를 활성화하세요"
     },
     "policy": {
       "invalidBool": "{{key}}: 잘못된 부울 값 {{value}}",
@@ -371,7 +359,6 @@
     "groups": "컨슈머 그룹",
     "producer": "Producer",
     "consumer": "컨슈머 세션",
-    "license": "라이선스: {{tier}}",
     "help": "도움말",
     "about": "Glafira 정보",
     "filter": "연결 필터",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "설정",
-    "license": "라이선스",
     "about": "Glafira 정보",
     "help": "도움말",
     "connection": "연결: {{name}}",
@@ -481,7 +467,6 @@
       "folder": "폴더",
       "folderRoot": "(루트)",
       "environment": "환경",
-      "prodPro": "prod (Pro)",
       "llmAccess": "LLM 접근(메타데이터만)",
       "color": "색상",
       "bootstrap": "부트스트랩 서버",
@@ -934,7 +919,6 @@
   "consumer": {
     "warn": "세션은 그룹에 참여하여 클러스터에 영향을 줍니다. 다른 그룹 멤버가 리밸런싱되고, 커밋하면 그룹의 오프셋이 변경됩니다.",
     "joinLabel": "그룹 참여",
-    "proOnly": "컨슈머 세션은 Pro에서 사용할 수 있습니다.",
     "readOnlyBlocked": "읽기 전용 연결에서는 컨슈머 세션을 사용할 수 없습니다. 그룹에 참여하면 그룹 상태가 변경됩니다.",
     "disconnect": "연결 해제",
     "form": {
@@ -994,48 +978,12 @@
       "logError": "{{time}} — 리밸런싱 오류: {{message}}"
     }
   },
-  "license": {
-    "title": "라이선스",
-    "tier": "플랜",
-    "licensee": "라이선스 소유자",
-    "kind": "유형",
-    "kindPersonal": "개인",
-    "kindOrganization": "조직",
-    "expires": "유효 기간",
-    "perpetual": "영구",
-    "expiringUnknown": "라이선스가 곧 만료됩니다({{date}}).",
-    "expiringToday": "라이선스가 오늘 만료됩니다({{date}}).",
-    "expiring_other": "라이선스가 {{count}}일 후에 만료됩니다({{date}}).",
-    "expired": "라이선스가 {{date}}에 만료되었습니다. Pro 기능이 비활성화되었으며 데이터는 유지됩니다.",
-    "managed": "라이선스는 조직에서 관리합니다.",
-    "keyLabel": "라이선스 키",
-    "activate": "활성화",
-    "removeGroupAria": "키 제거 확인",
-    "removeQuestion": "키를 제거하시겠습니까? Pro 기능이 비활성화됩니다.",
-    "removeYes": "예, 제거",
-    "removeKey": "키 제거",
-    "whatProGives": "Pro에 포함된 기능",
-    "proConsumer": "컨슈머 세션: 그룹 멤버로 읽기, 오프셋 커밋, 파티션 일시 중지.",
-    "proProd": "운영 환경 모드: 연결을 만들고 prod로 전환합니다(모든 변경은 연결 이름을 입력하여 확인).",
-    "policyTitle": "조직 정책",
-    "policySource": "소스: {{source}}",
-    "notice": {
-      "expiringUnknown": "Pro 라이선스가 곧 만료됩니다.",
-      "expiringToday": "Pro 라이선스가 오늘 만료됩니다.",
-      "expiring_other": "Pro 라이선스가 {{count}}일 후에 만료됩니다.",
-      "expired": "Pro 라이선스가 {{date}}에 만료되었습니다. Pro 기능이 비활성화되었습니다.",
-      "more": "세부 정보",
-      "hideAria": "알림 닫기"
-    },
-    "proLlmNotes": "LLM 메모: MCP로 연결된 어시스턴트가 클러스터, 토픽, 그룹에 대한 메모를 남깁니다(클러스터 점검 자체는 Free에 포함)."
-  },
   "about": {
-    "summary": "Glafira는 테스터와 개발자를 위한 Apache Kafka 데스크톱 클라이언트입니다. PLAINTEXT, SASL 또는 mTLS로 클러스터에 연결하고, 토픽과 컨슈머 그룹을 살펴보고, 메시지를 검색하고, 메시지를 하나씩 또는 파일에서 일괄로 보내고, 오프셋을 재설정하고, 클러스터를 점검할 수 있습니다. Pro에서는 컨슈머 세션, 운영 환경 연결, LLM 메모가 추가됩니다.",
+    "summary": "Glafira는 테스터와 개발자를 위한 Apache Kafka 데스크톱 클라이언트입니다. PLAINTEXT, SASL 또는 mTLS로 클러스터에 연결하고, 토픽과 컨슈머 그룹을 살펴보고, 메시지를 검색하고, 메시지를 하나씩 또는 파일에서 일괄로 보내고, 오프셋을 재설정하고, 클러스터를 점검할 수 있습니다. 컨슈머 세션, 운영 환경 연결, LLM 메모도 사용할 수 있습니다.",
     "version": "버전",
     "build": "Build",
     "system": "시스템",
     "license": "라이선스",
-    "tier": "플랜",
     "policy": "조직 정책",
     "policySet": "설정됨",
     "policyNone": "없음",
@@ -1070,7 +1018,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_other": "운영 환경 연결 {{count}}개가 읽기 전용이 됩니다: 운영 환경 연결을 변경하려면 Pro가 필요합니다",
       "missingFiles_other": "연결 {{count}}개의 인증서 파일을 이 컴퓨터에서 찾을 수 없습니다. 경로를 확인하세요"
     }
   },
@@ -1272,7 +1219,6 @@
     "deleteAllConfirm": "이 연결의 LLM 메모를 모두 삭제하시겠습니까?",
     "closedNotes": "닫힘({{count}})",
     "noNotes": "LLM 메모가 없습니다.",
-    "proNotes": "Glafira Pro를 사용하면 LLM 어시스턴트가 클러스터, 토픽, 그룹에 대한 메모를 여기에 남길 수 있습니다.",
     "llmNotes": "MCP로 연결된 LLM 어시스턴트가 클러스터, 토픽, 그룹에 대한 메모를 여기에 남길 수 있습니다.",
     "status": {
       "resolved": "해결됨",
@@ -1307,7 +1253,7 @@
   "hints": {
     "label": "도움말: {{name}}",
     "connections": {
-      "environment": "연결을 색상으로 표시합니다. 운영 환경 연결(Pro)은 변경하기 전에 연결 이름을 입력하도록 요구합니다.",
+      "environment": "연결을 색상으로 표시합니다. 운영 환경 연결은 변경하기 전에 연결 이름을 입력하도록 요구합니다.",
       "readOnly": "클러스터를 변경하는 모든 작업을 차단합니다: 전송, 오프셋 재설정, 토픽 및 그룹 삭제, 컨슈머 세션.",
       "llmAccess": "MCP로 연결된 LLM 어시스턴트가 이 클러스터의 메타데이터를 읽을 수 있습니다: 브로커, 토픽, 구성, 컨슈머 그룹. 메시지와 비밀번호는 절대 공유되지 않습니다.",
       "bootstrap": "하나 이상의 <code>host:port</code>를 쉼표로 구분하여 입력합니다. 클라이언트가 나머지 브로커를 자동으로 찾습니다.",

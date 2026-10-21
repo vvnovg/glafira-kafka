@@ -7,8 +7,6 @@
     "close": "Close",
     "loading": "Loading…",
     "details": "Details",
-    "openLicense": "Open “License”",
-    "proHint": "Available in Pro — activate a license on the “License” screen",
     "readOnly": "Read-only",
     "confirm": {
       "typeObject": "To confirm, type the {{label}} <code>{{name}}</code>",
@@ -129,16 +127,6 @@
       "configDuplicate": "Parameter “{{name}}” is changed twice",
       "alterConfigFailed": "Failed to change the topic configuration",
       "noOffset": "The broker did not return the partition offset"
-    },
-    "license": {
-      "malformed": "Invalid key: the key is corrupted",
-      "badSignature": "Invalid key: the key signature could not be verified — the key was not issued by us or was modified",
-      "unsupportedVersion": "Invalid key: a version {{version}} key requires a newer version of the app",
-      "managed": "The license is managed by your organization (corporate policy) and cannot be changed",
-      "empty": "Invalid key: the key is empty",
-      "keyExpired": "The key expired on {{date}}",
-      "proExpired": "Pro license expired on {{date}} — this feature requires Pro",
-      "proRequired": "This feature requires Pro — activate a license on the “License” screen"
     },
     "policy": {
       "invalidBool": "{{key}}: invalid boolean {{value}}",
@@ -371,7 +359,6 @@
     "groups": "Consumer groups",
     "producer": "Producer",
     "consumer": "Consumer session",
-    "license": "License: {{tier}}",
     "help": "Help",
     "about": "About",
     "filter": "Filter connections",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "Settings",
-    "license": "License",
     "about": "About",
     "help": "Help",
     "connection": "Connection: {{name}}",
@@ -481,7 +467,6 @@
       "folder": "Folder",
       "folderRoot": "(root)",
       "environment": "Environment",
-      "prodPro": "prod (Pro)",
       "llmAccess": "LLM access (metadata only)",
       "color": "Color",
       "bootstrap": "Bootstrap servers",
@@ -936,7 +921,6 @@
   "consumer": {
     "warn": "The session joins the group and affects the cluster: other group members will rebalance, and commits change the group's offsets.",
     "joinLabel": "Joining the group",
-    "proOnly": "Consumer sessions are available in Pro.",
     "readOnlyBlocked": "Consumer sessions are unavailable for read-only connections: joining a group changes its state.",
     "disconnect": "Disconnect",
     "form": {
@@ -996,50 +980,12 @@
       "logError": "{{time}} — rebalance error: {{message}}"
     }
   },
-  "license": {
-    "title": "License",
-    "tier": "Plan",
-    "licensee": "Licensee",
-    "kind": "Type",
-    "kindPersonal": "personal",
-    "kindOrganization": "organization",
-    "expires": "Valid until",
-    "perpetual": "perpetual",
-    "expiringUnknown": "The license expires soon ({{date}}).",
-    "expiringToday": "The license expires today ({{date}}).",
-    "expiring_one": "The license expires in {{count}} day ({{date}}).",
-    "expiring_other": "The license expires in {{count}} days ({{date}}).",
-    "expired": "The license expired on {{date}}: Pro features are disabled, your data is kept.",
-    "managed": "The license is managed by your organization.",
-    "keyLabel": "License key",
-    "activate": "Activate",
-    "removeGroupAria": "Confirm key removal",
-    "removeQuestion": "Remove the key? Pro features will be disabled.",
-    "removeYes": "Yes, remove",
-    "removeKey": "Remove key",
-    "whatProGives": "What Pro includes",
-    "proConsumer": "Consumer sessions: read as a group member, commit offsets, pause partitions.",
-    "proProd": "Prod mode: create connections and switch them to prod (any change is confirmed by typing the connection name).",
-    "policyTitle": "Organization policy",
-    "policySource": "Source: {{source}}",
-    "notice": {
-      "expiringUnknown": "The Pro license expires soon.",
-      "expiringToday": "The Pro license expires today.",
-      "expiring_one": "The Pro license expires in {{count}} day.",
-      "expiring_other": "The Pro license expires in {{count}} days.",
-      "expired": "The Pro license expired on {{date}}: Pro features are disabled.",
-      "more": "Details",
-      "hideAria": "Dismiss notification"
-    },
-    "proLlmNotes": "LLM notes: assistants connected over MCP leave notes about the cluster, topics and groups (the cluster check itself is in Free)."
-  },
   "about": {
-    "summary": "Glafira is a desktop Apache Kafka client for testers and developers. Connect to clusters over PLAINTEXT, SASL or mTLS, browse topics and consumer groups, search messages, send them one at a time or in batches from a file, reset offsets, and run cluster checks. Pro adds consumer sessions, prod connections, and LLM notes.",
+    "summary": "Glafira is a desktop Apache Kafka client for testers and developers. Connect to clusters over PLAINTEXT, SASL or mTLS, browse topics and consumer groups, search messages, send them one at a time or in batches from a file, reset offsets, and run cluster checks. Consumer sessions, prod connections and LLM notes are included.",
     "version": "Version",
     "build": "Build",
     "system": "System",
     "license": "License",
-    "tier": "Plan",
     "policy": "Organization policy",
     "policySet": "set",
     "policyNone": "none",
@@ -1074,8 +1020,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_one": "{{count}} prod connection will be read-only: changing prod connections requires Pro",
-      "prodReadOnly_other": "{{count}} prod connections will be read-only: changing prod connections requires Pro",
       "missingFiles_one": "Certificate files of {{count}} connection are not found on this computer — check the paths",
       "missingFiles_other": "Certificate files of {{count}} connections are not found on this computer — check the paths"
     }
@@ -1280,7 +1224,6 @@
     "deleteAllConfirm": "Delete all LLM notes of this connection?",
     "closedNotes": "Closed ({{count}})",
     "noNotes": "No LLM notes.",
-    "proNotes": "With Glafira Pro, LLM assistants can leave notes here about the cluster, topics and groups.",
     "llmNotes": "LLM assistants connected over MCP can leave notes here about the cluster, topics and groups.",
     "status": {
       "resolved": "resolved",
@@ -1315,7 +1258,7 @@
   "hints": {
     "label": "Hint: {{name}}",
     "connections": {
-      "environment": "Marks the connection with a color. prod connections (Pro) ask you to type the connection name before any change.",
+      "environment": "Marks the connection with a color. prod connections ask you to type the connection name before any change.",
       "readOnly": "Blocks everything that changes the cluster: sending, offset resets, deleting topics and groups, consumer sessions.",
       "llmAccess": "Lets an LLM assistant connected over MCP read this cluster's metadata: brokers, topics, configs, consumer groups. Messages and passwords are never shared.",
       "bootstrap": "One or more <code>host:port</code>, comma-separated. The client discovers the other brokers by itself.",

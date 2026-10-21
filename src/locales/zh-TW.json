@@ -7,8 +7,6 @@
     "close": "關閉",
     "loading": "載入中…",
     "details": "詳細資訊",
-    "openLicense": "開啟「授權」",
-    "proHint": "Pro 版功能，請在「授權」畫面啟用授權",
     "readOnly": "唯讀",
     "confirm": {
       "typeObject": "若要確認，請輸入{{label}} <code>{{name}}</code>",
@@ -129,16 +127,6 @@
       "configDuplicate": "參數「{{name}}」被變更了兩次",
       "alterConfigFailed": "無法變更主題設定",
       "noOffset": "Broker 未傳回分區偏移量"
-    },
-    "license": {
-      "malformed": "金鑰無效：金鑰已損毀",
-      "badSignature": "金鑰無效：無法驗證金鑰簽章，金鑰並非由我們核發或已遭修改",
-      "unsupportedVersion": "金鑰無效：版本 {{version}} 的金鑰需要較新版本的應用程式",
-      "managed": "授權由你的組織管理（企業原則），無法變更",
-      "empty": "金鑰無效：金鑰為空",
-      "keyExpired": "金鑰已於 {{date}} 到期",
-      "proExpired": "Pro 授權已於 {{date}} 到期，此功能需要 Pro",
-      "proRequired": "此功能需要 Pro，請在「授權」畫面啟用授權"
     },
     "policy": {
       "invalidBool": "{{key}}：布林值 {{value}} 無效",
@@ -371,7 +359,6 @@
     "groups": "消費者群組",
     "producer": "Producer",
     "consumer": "消費者工作階段",
-    "license": "授權：{{tier}}",
     "help": "說明",
     "about": "關於",
     "filter": "篩選連線",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "設定",
-    "license": "授權",
     "about": "關於",
     "help": "說明",
     "connection": "連線：{{name}}",
@@ -481,7 +467,6 @@
       "folder": "資料夾",
       "folderRoot": "（根目錄）",
       "environment": "環境",
-      "prodPro": "prod (Pro)",
       "llmAccess": "LLM 存取（僅中繼資料）",
       "color": "顏色",
       "bootstrap": "Bootstrap 伺服器",
@@ -934,7 +919,6 @@
   "consumer": {
     "warn": "工作階段會加入群組並影響叢集：群組的其他成員將重新平衡，提交則會改變群組的偏移量。",
     "joinLabel": "加入群組",
-    "proOnly": "消費者工作階段為 Pro 功能。",
     "readOnlyBlocked": "唯讀連線無法使用消費者工作階段：加入群組會改變其狀態。",
     "disconnect": "中斷連線",
     "form": {
@@ -994,48 +978,12 @@
       "logError": "{{time}} — 重新平衡錯誤：{{message}}"
     }
   },
-  "license": {
-    "title": "授權",
-    "tier": "方案",
-    "licensee": "授權對象",
-    "kind": "類型",
-    "kindPersonal": "個人",
-    "kindOrganization": "組織",
-    "expires": "有效期限",
-    "perpetual": "永久",
-    "expiringUnknown": "授權即將到期（{{date}}）。",
-    "expiringToday": "授權今天到期（{{date}}）。",
-    "expiring_other": "授權將在 {{count}} 天後到期（{{date}}）。",
-    "expired": "授權已於 {{date}} 到期：Pro 功能已停用，你的資料仍會保留。",
-    "managed": "授權由你的組織管理。",
-    "keyLabel": "授權金鑰",
-    "activate": "啟用",
-    "removeGroupAria": "確認移除金鑰",
-    "removeQuestion": "要移除金鑰嗎？Pro 功能將會停用。",
-    "removeYes": "是，移除",
-    "removeKey": "移除金鑰",
-    "whatProGives": "Pro 包含的功能",
-    "proConsumer": "消費者工作階段：以群組成員身分讀取、提交偏移量、暫停分區。",
-    "proProd": "正式環境模式：建立連線並切換為正式環境（任何變更都須輸入連線名稱確認）。",
-    "policyTitle": "組織原則",
-    "policySource": "來源：{{source}}",
-    "notice": {
-      "expiringUnknown": "Pro 授權即將到期。",
-      "expiringToday": "Pro 授權今天到期。",
-      "expiring_other": "Pro 授權將在 {{count}} 天後到期。",
-      "expired": "Pro 授權已於 {{date}} 到期：Pro 功能已停用。",
-      "more": "詳細資訊",
-      "hideAria": "關閉通知"
-    },
-    "proLlmNotes": "LLM 註記：透過 MCP 連線的助理可以留下關於叢集、主題和消費者群組的註記（叢集檢查本身包含在 Free 中）。"
-  },
   "about": {
-    "summary": "Glafira 是專為測試人員和開發人員打造的 Apache Kafka 桌面用戶端。可透過 PLAINTEXT、SASL 或 mTLS 連線到叢集，瀏覽主題和消費者群組，搜尋訊息，逐則傳送或從檔案批次傳送訊息，重設偏移量，以及進行叢集檢查。Pro 另提供消費者工作階段、正式環境連線和 LLM 註記。",
+    "summary": "Glafira 是專為測試人員和開發人員打造的 Apache Kafka 桌面用戶端。可透過 PLAINTEXT、SASL 或 mTLS 連線到叢集，瀏覽主題和消費者群組，搜尋訊息，逐則傳送或從檔案批次傳送訊息，重設偏移量，以及進行叢集檢查。也提供消費者工作階段、正式環境連線和 LLM 註記。",
     "version": "版本",
     "build": "Build",
     "system": "系統",
     "license": "授權",
-    "tier": "方案",
     "policy": "組織原則",
     "policySet": "已設定",
     "policyNone": "無",
@@ -1070,7 +1018,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_other": "{{count}} 個正式環境連線將為唯讀：變更正式環境連線需要 Pro",
       "missingFiles_other": "在這部電腦上找不到 {{count}} 個連線的憑證檔案，請檢查路徑"
     }
   },
@@ -1272,7 +1219,6 @@
     "deleteAllConfirm": "要刪除此連線的所有 LLM 註記嗎？",
     "closedNotes": "已關閉（{{count}}）",
     "noNotes": "沒有 LLM 註記。",
-    "proNotes": "使用 Glafira Pro 時，LLM 助理可以在這裡留下關於叢集、主題和群組的註記。",
     "llmNotes": "透過 MCP 連線的 LLM 助理可以在這裡留下關於叢集、主題和群組的註記。",
     "status": {
       "resolved": "已解決",
@@ -1307,7 +1253,7 @@
   "hints": {
     "label": "提示：{{name}}",
     "connections": {
-      "environment": "以顏色標示連線。正式環境連線（Pro）在任何變更前都會要求輸入連線名稱。",
+      "environment": "以顏色標示連線。正式環境連線在任何變更前都會要求輸入連線名稱。",
       "readOnly": "封鎖所有會改變叢集的操作：傳送、重設偏移量、刪除主題和群組、消費者工作階段。",
       "llmAccess": "允許透過 MCP 連線的 LLM 助理讀取此叢集的中繼資料：Broker、主題、設定、消費者群組。訊息和密碼絕不會被分享。",
       "bootstrap": "一個或多個 <code>host:port</code>，以逗號分隔。用戶端會自動找到其他 Broker。",

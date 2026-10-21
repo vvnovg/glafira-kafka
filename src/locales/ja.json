@@ -7,8 +7,6 @@
     "close": "閉じる",
     "loading": "読み込み中…",
     "details": "詳細",
-    "openLicense": "「ライセンス」を開く",
-    "proHint": "Proで利用できます。「ライセンス」画面でライセンスを有効にしてください",
     "readOnly": "読み取り専用",
     "confirm": {
       "typeObject": "確認のため、{{label}}<code>{{name}}</code>を入力してください",
@@ -129,16 +127,6 @@
       "configDuplicate": "パラメーター「{{name}}」が二重に変更されています",
       "alterConfigFailed": "トピックの設定を変更できませんでした",
       "noOffset": "ブローカーがパーティションのオフセットを返しませんでした"
-    },
-    "license": {
-      "malformed": "無効なキーです。キーが破損しています",
-      "badSignature": "無効なキーです。キーの署名を検証できませんでした。弊社が発行したキーではないか、改変されています",
-      "unsupportedVersion": "無効なキーです。バージョン{{version}}のキーには、より新しいバージョンのアプリが必要です",
-      "managed": "ライセンスは組織によって管理されている（企業ポリシー）ため、変更できません",
-      "empty": "無効なキーです。キーが空です",
-      "keyExpired": "キーの有効期限は{{date}}に切れました",
-      "proExpired": "Proライセンスの有効期限は{{date}}に切れました。この機能にはProが必要です",
-      "proRequired": "この機能にはProが必要です。「ライセンス」画面でライセンスを有効にしてください"
     },
     "policy": {
       "invalidBool": "{{key}}：ブール値{{value}}が無効です",
@@ -371,7 +359,6 @@
     "groups": "コンシューマーグループ",
     "producer": "Producer",
     "consumer": "コンシューマーセッション",
-    "license": "ライセンス：{{tier}}",
     "help": "ヘルプ",
     "about": "Glafiraについて",
     "filter": "接続を絞り込む",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "設定",
-    "license": "ライセンス",
     "about": "Glafiraについて",
     "help": "ヘルプ",
     "connection": "接続：{{name}}",
@@ -481,7 +467,6 @@
       "folder": "フォルダー",
       "folderRoot": "（ルート）",
       "environment": "環境",
-      "prodPro": "prod (Pro)",
       "llmAccess": "LLMアクセス（メタデータのみ）",
       "color": "色",
       "bootstrap": "ブートストラップサーバー",
@@ -934,7 +919,6 @@
   "consumer": {
     "warn": "セッションはグループに参加し、クラスターに影響します。グループの他のメンバーはリバランスされ、コミットするとグループのオフセットが変わります。",
     "joinLabel": "グループへの参加",
-    "proOnly": "コンシューマーセッションはProで利用できます。",
     "readOnlyBlocked": "読み取り専用の接続ではコンシューマーセッションを利用できません。グループに参加するとグループの状態が変わります。",
     "disconnect": "切断",
     "form": {
@@ -994,48 +978,12 @@
       "logError": "{{time}} — リバランスのエラー：{{message}}"
     }
   },
-  "license": {
-    "title": "ライセンス",
-    "tier": "プラン",
-    "licensee": "ライセンス先",
-    "kind": "種類",
-    "kindPersonal": "個人",
-    "kindOrganization": "組織",
-    "expires": "有効期限",
-    "perpetual": "無期限",
-    "expiringUnknown": "ライセンスの有効期限がまもなく切れます（{{date}}）。",
-    "expiringToday": "ライセンスの有効期限は今日までです（{{date}}）。",
-    "expiring_other": "ライセンスの有効期限はあと{{count}}日で切れます（{{date}}）。",
-    "expired": "ライセンスの有効期限は{{date}}に切れました。Pro機能は無効になっていますが、データは保持されています。",
-    "managed": "ライセンスは組織によって管理されています。",
-    "keyLabel": "ライセンスキー",
-    "activate": "有効にする",
-    "removeGroupAria": "キーの削除を確認",
-    "removeQuestion": "キーを削除しますか？Pro機能は無効になります。",
-    "removeYes": "削除する",
-    "removeKey": "キーを削除",
-    "whatProGives": "Proに含まれる機能",
-    "proConsumer": "コンシューマーセッション：グループのメンバーとしての読み取り、オフセットのコミット、パーティションの一時停止。",
-    "proProd": "本番モード：接続を作成して本番に切り替えられます（変更のたびに接続名の入力で確認します）。",
-    "policyTitle": "組織のポリシー",
-    "policySource": "ソース：{{source}}",
-    "notice": {
-      "expiringUnknown": "Proライセンスの有効期限がまもなく切れます。",
-      "expiringToday": "Proライセンスの有効期限は今日までです。",
-      "expiring_other": "Proライセンスの有効期限はあと{{count}}日で切れます。",
-      "expired": "Proライセンスの有効期限は{{date}}に切れました。Pro機能は無効になっています。",
-      "more": "詳細",
-      "hideAria": "通知を閉じる"
-    },
-    "proLlmNotes": "LLMの注記：MCPで接続したアシスタントが、クラスター、トピック、グループについての注記を残せます（クラスターのチェック自体はFreeに含まれます）。"
-  },
   "about": {
-    "summary": "Glafiraは、テスターと開発者のためのApache Kafkaデスクトップクライアントです。PLAINTEXT、SASL、mTLSでクラスターに接続し、トピックやコンシューマーグループの閲覧、メッセージの検索、メッセージの個別送信やファイルからの一括送信、オフセットのリセット、クラスターのチェックを行えます。Proではコンシューマーセッション、本番接続、LLMの注記を利用できます。",
+    "summary": "Glafiraは、テスターと開発者のためのApache Kafkaデスクトップクライアントです。PLAINTEXT、SASL、mTLSでクラスターに接続し、トピックやコンシューマーグループの閲覧、メッセージの検索、メッセージの個別送信やファイルからの一括送信、オフセットのリセット、クラスターのチェックを行えます。コンシューマーセッション、本番接続、LLMの注記も利用できます。",
     "version": "バージョン",
     "build": "ビルド",
     "system": "システム",
     "license": "ライセンス",
-    "tier": "プラン",
     "policy": "組織のポリシー",
     "policySet": "設定済み",
     "policyNone": "なし",
@@ -1070,7 +1018,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_other": "{{count}}件の本番接続は読み取り専用になります。本番接続の変更にはProが必要です",
       "missingFiles_other": "{{count}}件の接続の証明書ファイルがこのコンピューターに見つかりません。パスを確認してください"
     }
   },
@@ -1272,7 +1219,6 @@
     "deleteAllConfirm": "この接続のLLMの注記をすべて削除しますか？",
     "closedNotes": "クローズ済み（{{count}}）",
     "noNotes": "LLMの注記はありません。",
-    "proNotes": "Glafira Proでは、LLMアシスタントがクラスター、トピック、グループについての注記をここに残せます。",
     "llmNotes": "MCPで接続されたLLMアシスタントは、クラスター、トピック、グループについての注記をここに残せます。",
     "status": {
       "resolved": "解決済み",
@@ -1307,7 +1253,7 @@
   "hints": {
     "label": "ヒント：{{name}}",
     "connections": {
-      "environment": "接続を色で区別します。本番接続（Pro）では、変更のたびに接続名の入力を求められます。",
+      "environment": "接続を色で区別します。本番接続では、変更のたびに接続名の入力を求められます。",
       "readOnly": "クラスターを変更する操作をすべてブロックします：送信、オフセットのリセット、トピックとグループの削除、コンシューマーセッション。",
       "llmAccess": "MCP経由で接続したLLMアシスタントが、このクラスターのメタデータを読み取れるようにします：ブローカー、トピック、設定、コンシューマーグループ。メッセージとパスワードが共有されることはありません。",
       "bootstrap": "1つ以上の<code>host:port</code>をカンマ区切りで指定します。他のブローカーはクライアントが自動的に検出します。",

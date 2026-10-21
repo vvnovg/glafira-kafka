@@ -7,8 +7,6 @@
     "close": "Chiudi",
     "loading": "Caricamento…",
     "details": "Dettagli",
-    "openLicense": "Apri “Licenza”",
-    "proHint": "Disponibile in Pro — attiva una licenza nella schermata “Licenza”",
     "readOnly": "Sola lettura",
     "confirm": {
       "typeObject": "Per confermare, digita <code>{{name}}</code> ({{label}})",
@@ -129,16 +127,6 @@
       "configDuplicate": "Il parametro “{{name}}” viene modificato due volte",
       "alterConfigFailed": "Impossibile modificare la configurazione del topic",
       "noOffset": "Il broker non ha restituito l’offset della partizione"
-    },
-    "license": {
-      "malformed": "Chiave non valida: la chiave è danneggiata",
-      "badSignature": "Chiave non valida: impossibile verificare la firma della chiave — la chiave non è stata emessa da noi o è stata modificata",
-      "unsupportedVersion": "Chiave non valida: una chiave della versione {{version}} richiede una versione più recente dell’app",
-      "managed": "La licenza è gestita dalla tua organizzazione (policy aziendale) e non può essere modificata",
-      "empty": "Chiave non valida: la chiave è vuota",
-      "keyExpired": "La chiave è scaduta il {{date}}",
-      "proExpired": "La licenza Pro è scaduta il {{date}} — questa funzione richiede Pro",
-      "proRequired": "Questa funzione richiede Pro — attiva una licenza nella schermata “Licenza”"
     },
     "policy": {
       "invalidBool": "{{key}}: valore booleano non valido {{value}}",
@@ -371,7 +359,6 @@
     "groups": "Consumer group",
     "producer": "Producer",
     "consumer": "Sessione consumer",
-    "license": "Licenza: {{tier}}",
     "help": "Aiuto",
     "about": "Informazioni",
     "filter": "Filtra connessioni",
@@ -394,7 +381,6 @@
   },
   "tabs": {
     "settings": "Impostazioni",
-    "license": "Licenza",
     "about": "Informazioni",
     "help": "Aiuto",
     "connection": "Connessione: {{name}}",
@@ -481,7 +467,6 @@
       "folder": "Cartella",
       "folderRoot": "(radice)",
       "environment": "Ambiente",
-      "prodPro": "prod (Pro)",
       "llmAccess": "Accesso LLM (solo metadati)",
       "color": "Colore",
       "bootstrap": "Server bootstrap",
@@ -938,7 +923,6 @@
   "consumer": {
     "warn": "La sessione si unisce al gruppo e influisce sul cluster: gli altri membri del gruppo eseguiranno un ribilanciamento e i commit modificano gli offset del gruppo.",
     "joinLabel": "Ingresso nel gruppo",
-    "proOnly": "Le sessioni consumer sono disponibili in Pro.",
     "readOnlyBlocked": "Le sessioni consumer non sono disponibili per le connessioni in sola lettura: unirsi a un gruppo ne modifica lo stato.",
     "disconnect": "Disconnetti",
     "form": {
@@ -998,52 +982,12 @@
       "logError": "{{time}} — errore di ribilanciamento: {{message}}"
     }
   },
-  "license": {
-    "title": "Licenza",
-    "tier": "Piano",
-    "licensee": "Intestatario",
-    "kind": "Tipo",
-    "kindPersonal": "personale",
-    "kindOrganization": "organizzazione",
-    "expires": "Valida fino al",
-    "perpetual": "perpetua",
-    "expiringUnknown": "La licenza scade a breve ({{date}}).",
-    "expiringToday": "La licenza scade oggi ({{date}}).",
-    "expiring_one": "La licenza scade tra {{count}} giorno ({{date}}).",
-    "expiring_many": "La licenza scade tra {{count}} di giorni ({{date}}).",
-    "expiring_other": "La licenza scade tra {{count}} giorni ({{date}}).",
-    "expired": "La licenza è scaduta il {{date}}: le funzioni Pro sono disattivate, i tuoi dati vengono conservati.",
-    "managed": "La licenza è gestita dalla tua organizzazione.",
-    "keyLabel": "Chiave di licenza",
-    "activate": "Attiva",
-    "removeGroupAria": "Conferma la rimozione della chiave",
-    "removeQuestion": "Rimuovere la chiave? Le funzioni Pro verranno disattivate.",
-    "removeYes": "Sì, rimuovi",
-    "removeKey": "Rimuovi chiave",
-    "whatProGives": "Cosa include Pro",
-    "proConsumer": "Sessioni consumer: lettura come membro di un gruppo, commit degli offset, pausa delle partizioni.",
-    "proProd": "Modalità prod: creazione di connessioni e passaggio a prod (ogni modifica va confermata digitando il nome della connessione).",
-    "policyTitle": "Policy dell’organizzazione",
-    "policySource": "Origine: {{source}}",
-    "notice": {
-      "expiringUnknown": "La licenza Pro scade a breve.",
-      "expiringToday": "La licenza Pro scade oggi.",
-      "expiring_one": "La licenza Pro scade tra {{count}} giorno.",
-      "expiring_many": "La licenza Pro scade tra {{count}} di giorni.",
-      "expiring_other": "La licenza Pro scade tra {{count}} giorni.",
-      "expired": "La licenza Pro è scaduta il {{date}}: le funzioni Pro sono disattivate.",
-      "more": "Dettagli",
-      "hideAria": "Chiudi notifica"
-    },
-    "proLlmNotes": "Note LLM: gli assistenti collegati tramite MCP lasciano note su cluster, topic e gruppi (il controllo del cluster in sé è incluso in Free)."
-  },
   "about": {
-    "summary": "Glafira è un client desktop per Apache Kafka pensato per tester e sviluppatori. Connessione ai cluster tramite PLAINTEXT, SASL o mTLS, consultazione di topic e consumer group, ricerca dei messaggi, invio singolo o in batch da file, reimpostazione degli offset, controllo del cluster. Pro aggiunge le sessioni consumer, le connessioni prod e le note LLM.",
+    "summary": "Glafira è un client desktop per Apache Kafka pensato per tester e sviluppatori. Connessione ai cluster tramite PLAINTEXT, SASL o mTLS, consultazione di topic e consumer group, ricerca dei messaggi, invio singolo o in batch da file, reimpostazione degli offset, controllo del cluster. Comprende anche le sessioni consumer, le connessioni prod e le note LLM.",
     "version": "Versione",
     "build": "Build",
     "system": "Sistema",
     "license": "Licenza",
-    "tier": "Piano",
     "policy": "Policy dell’organizzazione",
     "policySet": "impostata",
     "policyNone": "nessuna",
@@ -1078,9 +1022,6 @@
   },
   "warnings": {
     "import": {
-      "prodReadOnly_one": "{{count}} connessione prod sarà in sola lettura: per modificare le connessioni prod serve Pro",
-      "prodReadOnly_many": "{{count}} di connessioni prod saranno in sola lettura: per modificare le connessioni prod serve Pro",
-      "prodReadOnly_other": "{{count}} connessioni prod saranno in sola lettura: per modificare le connessioni prod serve Pro",
       "missingFiles_one": "I file dei certificati di {{count}} connessione non sono stati trovati su questo computer — controlla i percorsi",
       "missingFiles_many": "I file dei certificati di {{count}} di connessioni non sono stati trovati su questo computer — controlla i percorsi",
       "missingFiles_other": "I file dei certificati di {{count}} connessioni non sono stati trovati su questo computer — controlla i percorsi"
@@ -1288,7 +1229,6 @@
     "deleteAllConfirm": "Eliminare tutte le note LLM di questa connessione?",
     "closedNotes": "Chiuse ({{count}})",
     "noNotes": "Nessuna nota LLM.",
-    "proNotes": "Con Glafira Pro gli assistenti LLM possono lasciare qui note su cluster, topic e gruppi.",
     "llmNotes": "Gli assistenti LLM collegati via MCP possono lasciare qui note su cluster, topic e gruppi.",
     "status": {
       "resolved": "risolta",
@@ -1323,7 +1263,7 @@
   "hints": {
     "label": "Suggerimento: {{name}}",
     "connections": {
-      "environment": "Contrassegna la connessione con un colore. Per le connessioni prod (Pro) qualsiasi modifica va confermata digitando il nome della connessione.",
+      "environment": "Contrassegna la connessione con un colore. Per le connessioni prod qualsiasi modifica va confermata digitando il nome della connessione.",
       "readOnly": "Blocca tutto ciò che modifica il cluster: invio, reimpostazione degli offset, eliminazione di topic e gruppi, sessioni consumer.",
       "llmAccess": "Consente a un assistente LLM collegato tramite MCP di leggere i metadati di questo cluster: broker, topic, configurazioni, consumer group. Messaggi e password non vengono mai condivisi.",
       "bootstrap": "Uno o più <code>host:port</code>, separati da virgole. Gli altri broker il client li trova da solo.",

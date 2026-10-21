@@ -120,7 +120,17 @@ mod tests {
             info_json.contains("\"version\": \"0.2.0\"")
                 && info_json.contains("\"managed\": false")
         );
-        assert!(!info_json.contains("license"));
+        assert!(!info_json.to_lowercase().contains("license"));
+        for i in 0..zip.len() {
+            let mut entry = zip.by_index(i).unwrap();
+            let mut text = String::new();
+            entry.read_to_string(&mut text).unwrap();
+            assert!(
+                !text.to_lowercase().contains("password"),
+                "{}",
+                entry.name().unwrap()
+            );
+        }
     }
 
     #[test]

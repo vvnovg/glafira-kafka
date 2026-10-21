@@ -550,6 +550,9 @@ async fn exposes_exactly_the_tools() {
     let instructions = info.instructions.as_deref().unwrap();
     assert!(instructions.contains("read-only gateway"));
     assert!(instructions.contains("start with health_check"));
+    // С 0.3.0 платного тарифа нет: ни инструкции, ни описания инструментов не упоминают Pro.
+    assert!(!glafira_mcp::server::INSTRUCTIONS.contains("Pro"));
+    assert!(!instructions.contains("Pro"));
     let mut tools = c.list_all_tools().await.unwrap();
     tools.sort_by(|a, b| a.name.cmp(&b.name));
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
@@ -589,6 +592,11 @@ async fn exposes_exactly_the_tools() {
         }
         assert!(
             t.description.as_deref().is_some_and(|d| d.len() > 30),
+            "{}",
+            t.name
+        );
+        assert!(
+            !t.description.as_deref().unwrap_or_default().contains("Pro"),
             "{}",
             t.name
         );

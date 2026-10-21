@@ -140,6 +140,16 @@ mod tests {
     use crate::storage::connections::sample_profile;
 
     #[test]
+    fn startup_removes_legacy_license_file() {
+        // license.json версий 0.2.x удаляется при запуске: ключи больше не используются.
+        let dir = tempfile::tempdir().unwrap();
+        let license = dir.path().join("license.json");
+        std::fs::write(&license, r#"{"token":"a.b"}"#).unwrap();
+        AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+        assert!(!license.exists());
+    }
+
+    #[test]
     fn handles_for_unknown_connection_is_not_found() {
         let dir = tempfile::tempdir().unwrap();
         let state = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();

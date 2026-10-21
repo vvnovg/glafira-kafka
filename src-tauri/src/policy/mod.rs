@@ -349,9 +349,30 @@ mod tests {
         );
         assert!(p.status.managed);
         assert!(p.status.updates_enabled);
+        assert!(p.status.mcp_enabled);
         assert!(p.status.errors.is_empty());
         let json = serde_json::to_string(&p.status).unwrap();
         assert!(!json.contains("secret.key"));
         assert!(!json.to_lowercase().contains("license"));
+
+        // Значение другого типа тоже не ошибка и не мешает соседним ключам.
+        let p = resolve(
+            "src",
+            values(&[
+                ("licenseKey", PolicyValue::Int(1)),
+                (
+                    "updateUrl",
+                    PolicyValue::Str("https://mirror.corp/latest.json".into()),
+                ),
+                ("language", PolicyValue::Str("de".into())),
+            ]),
+        );
+        assert!(p.status.errors.is_empty());
+        assert!(p.status.updates_enabled);
+        assert_eq!(
+            p.status.update_url.as_deref(),
+            Some("https://mirror.corp/latest.json")
+        );
+        assert_eq!(p.status.language.as_deref(), Some("de"));
     }
 }

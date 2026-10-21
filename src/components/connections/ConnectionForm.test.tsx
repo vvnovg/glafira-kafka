@@ -103,6 +103,24 @@ describe("ConnectionForm", () => {
     expect(screen.getByLabelText("Только чтение")).toBeChecked();
   });
 
+  it("prod: «Только чтение» включён по умолчанию, доступен и снимается без ключа", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={newProfile()} tabId="t" />);
+    await user.selectOptions(screen.getByLabelText("Окружение"), "prod");
+    const readOnly = screen.getByLabelText("Только чтение");
+    expect(readOnly).toBeChecked();
+    expect(readOnly).toBeEnabled();
+    await user.click(readOnly);
+    expect(readOnly).not.toBeChecked();
+  });
+
+  it("существующий prod-профиль: «Только чтение» и опция prod не заблокированы", () => {
+    const initial = { ...newProfile(), id: "p", name: "p", environment: "prod" as const, readOnly: true };
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    expect(screen.getByLabelText("Только чтение")).toBeEnabled();
+    expect(screen.getByRole("option", { name: "prod" })).toBeEnabled();
+  });
+
   it("флажок «Доступ для LLM» сохраняется в профиле", async () => {
     vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "n", name: "m", llmAccess: "metadata" });
     const user = userEvent.setup();

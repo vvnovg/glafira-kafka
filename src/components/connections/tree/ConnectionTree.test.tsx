@@ -86,6 +86,13 @@ describe("ConnectionTree", () => {
     expect(screen.getAllByRole("button", { name: "Топики" })).toHaveLength(2);
   });
 
+  it("кнопка «Consumer-сессия» подключения доступна без ключа", async () => {
+    vi.mocked(api.listConnections).mockResolvedValue([CONNS[1]]);
+    renderWithClient(<ConnectionTree />);
+    await screen.findByText("local");
+    expect(screen.getByRole("button", { name: /Consumer-сессия/ })).toBeEnabled();
+  });
+
   it("сворачивание папки сохраняется между перерисовками", async () => {
     const user = userEvent.setup();
     const first = renderWithClient(<ConnectionTree />);

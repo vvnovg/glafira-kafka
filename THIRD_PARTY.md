@@ -14,7 +14,7 @@ because they are compiled from source by the Rust `-sys` crates and are invisibl
 | zstd | BSD-3-Clause | https://github.com/facebook/zstd | rdkafka-sys, feature zstd |
 | zlib | Zlib | https://zlib.net/ | rdkafka-sys, feature libz-static |
 | OpenSSL 3 | Apache-2.0 | https://www.openssl.org/ | openssl-src, feature ssl-vendored |
-| librdkafka bundled components | MIT, BSD-3-Clause, Zlib, CC0-1.0, ISC, public domain | https://github.com/confluentinc/librdkafka/blob/master/LICENSES.txt | cJSON, snappy, tinycthread, nanopb, crc32c, queue.h, regexp, murmur2, fnv1a, HdrHistogram, pycrc, wingetopt, OpenTelemetry proto — see LICENSES.txt |
+| librdkafka bundled components | MIT, BSD-3-Clause, Zlib, Apache-2.0, public domain | https://github.com/confluentinc/librdkafka/blob/v2.12.1/LICENSES.txt | cJSON, snappy, tinycthread, nanopb, crc32c, queue.h, regexp, murmur2, fnv1a, HdrHistogram, pycrc, OpenTelemetry proto — see LICENSES.txt |
 
 ## Rust crates (555)
 

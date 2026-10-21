@@ -15,9 +15,9 @@ export const C_LIBRARIES = [
   { name: "OpenSSL 3", license: "Apache-2.0", url: "https://www.openssl.org/", note: "openssl-src, feature ssl-vendored" },
   {
     name: "librdkafka bundled components",
-    license: "MIT, BSD-3-Clause, Zlib, CC0-1.0, ISC, public domain",
-    url: "https://github.com/confluentinc/librdkafka/blob/master/LICENSES.txt",
-    note: "cJSON, snappy, tinycthread, nanopb, crc32c, queue.h, regexp, murmur2, fnv1a, HdrHistogram, pycrc, wingetopt, OpenTelemetry proto — see LICENSES.txt",
+    license: "MIT, BSD-3-Clause, Zlib, Apache-2.0, public domain",
+    url: "https://github.com/confluentinc/librdkafka/blob/v2.12.1/LICENSES.txt",
+    note: "cJSON, snappy, tinycthread, nanopb, crc32c, queue.h, regexp, murmur2, fnv1a, HdrHistogram, pycrc, OpenTelemetry proto — see LICENSES.txt",
   },
 ];
 

@@ -11,27 +11,42 @@ const metadata = {
     pkg("c", "gamma", "0.1.0", { license: null, license_file: "LICENSE.txt" }),
     pkg("d", "devonly", "9.9.9"),
     pkg("e", "unused", "0.0.1"),
+    pkg("f", "serde_json", "1.0.0"),
+    pkg("g", "serde-untagged", "0.1.0"),
+    pkg("h", "Inflector", "0.11.0"),
   ],
   resolve: {
     root: "app",
     nodes: [
-      { id: "app", deps: [{ pkg: "a", dep_kinds: [{ kind: null }] }, { pkg: "b", dep_kinds: [{ kind: "build" }] }, { pkg: "d", dep_kinds: [{ kind: "dev" }] }] },
+      { id: "app", deps: [{ pkg: "a", dep_kinds: [{ kind: null }] }, { pkg: "b", dep_kinds: [{ kind: "build" }] }, { pkg: "d", dep_kinds: [{ kind: "dev" }] }, { pkg: "f", dep_kinds: [{ kind: null }] }, { pkg: "g", dep_kinds: [{ kind: null }] }, { pkg: "h", dep_kinds: [{ kind: null }] }] },
       { id: "a", deps: [{ pkg: "c", dep_kinds: [{ kind: null }] }] },
       { id: "b", deps: [] },
       { id: "c", deps: [] },
       { id: "d", deps: [{ pkg: "e", dep_kinds: [{ kind: null }] }] },
       { id: "e", deps: [] },
+      { id: "f", deps: [] },
+      { id: "g", deps: [] },
+      { id: "h", deps: [] },
     ],
   },
 };
 
-test("rustRows: обычные и build-зависимости от корня, без dev, без локальных крейтов, по алфавиту", () => {
+test("rustRows: обычные и build-зависимости от корня, без dev, без локальных крейтов", () => {
   const rows = rustRows(metadata);
   assert.deepEqual(
-    rows.map((r) => `${r.name} ${r.version} ${r.license}`),
+    rows.filter((r) => ["alpha", "beta", "gamma"].includes(r.name)).map((r) => `${r.name} ${r.version} ${r.license}`),
     ["alpha 1.0.0 MIT", "beta 2.0.0 MIT OR Apache-2.0", "gamma 0.1.0 see LICENSE.txt in the crate"],
   );
-  assert.equal(rows[0].url, "https://example.org/alpha");
+  assert.equal(rows.find((r) => r.name === "alpha").url, "https://example.org/alpha");
+  assert.ok(!rows.some((r) => ["kafka-explorer", "devonly", "unused"].includes(r.name)));
+});
+
+test("rustRows: порядок по кодовым точкам, а не по локали («-» раньше «_», заглавные раньше строчных)", () => {
+  // localeCompare дал бы alpha, beta, gamma, Inflector, serde_json, serde-untagged.
+  assert.deepEqual(
+    rustRows(metadata).map((r) => r.name),
+    ["Inflector", "alpha", "beta", "gamma", "serde-untagged", "serde_json"],
+  );
 });
 
 test("npmRows: группы по лицензии разворачиваются в строки по версиям", () => {

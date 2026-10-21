@@ -14,7 +14,7 @@
 ## Логи и «О программе»
 3. Внизу дерева — «О программе». Видны версия `0.2.0`, сборка (короткий хэш коммита), система, «Политика организации: нет»,
    пути «Данные» и «Логи».
-4. `tail ~/Library/Logs/io.github.vvnovg.glafira.kafka/app.log` — строки `запуск`, `политика`; паролей и ключей в логе нет
+4. `tail ~/Library/Logs/io.github.vvnovg.glafira.kafka/app.log` — строки `starting`, `policy`; паролей и ключей в логе нет
    (`grep -iE "password|PRIVATE KEY|admin-secret|keypass" ~/Library/Logs/io.github.vvnovg.glafira.kafka/app.log` — пусто).
 5. «Собрать диагностику» → сохранить zip → «Архив сохранён: …». В архиве `info.json`, `connections.json`, `logs/app.log`; паролей нет.
    Повторно «Собрать диагностику» и нажать «Отмена» в диалоге — ничего не происходит, прошлое сообщение остаётся.

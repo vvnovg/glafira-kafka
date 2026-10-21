@@ -5,6 +5,7 @@
 Каталог данных — строка «Данные:» в «О программе».
 Подготовка: топик для п. 2 и 5 —
 `docker exec ke-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic smoke-g2 --partitions 1 --replication-factor 1`
+и наполнить его сообщениями: `seq 1 3 | docker exec -i ke-kafka kafka-console-producer --bootstrap-server localhost:9092 --topic smoke-g2`
 (как в «Подготовке» `docs/smoke/g2.md`; если топик уже есть — пропустить).
 
 1. **Старый ключ.** Закрыть приложение, положить в каталог данных файл `license.json` с любым содержимым (`echo '{"token":"a.b"}' > …/license.json`),

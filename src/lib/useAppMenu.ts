@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Menu, MenuItem, PredefinedMenuItem, Submenu } from "@tauri-apps/api/menu";
 import { i18n } from "../i18n";
+import { openSupport } from "./links";
 import { useDiagnosticsRequest } from "../state/diagnosticsRequest";
 import { useWorkspace } from "../state/workspace";
 
@@ -25,7 +26,8 @@ interface BuiltMenu {
 }
 
 /**
- * Меню приложения: стандартные подменю Tauri + Help с пунктами Glafira (подписи — из словаря текущего языка).
+ * Меню приложения: стандартные подменю Tauri + Help с пунктами Glafira (подписи — из словаря текущего языка),
+ * включая «Поддержать проект» (на Windows и Linux строки меню нет: там этот пункт — внизу левой панели и в «О программе»).
  * Подменю не регистрируется как меню справки NSApp: иначе macOS добавляет в него системный поиск,
  * который ищет по пунктам меню и справке macOS, а не по нашему руководству.
  */
@@ -49,6 +51,7 @@ async function buildAppMenu(): Promise<BuiltMenu> {
       action: () => open({ kind: "help", chapter: "troubleshooting" }),
     }),
     await PredefinedMenuItem.new({ item: "Separator" }),
+    await MenuItem.new({ id: id("support"), text: t("support.title"), action: openSupport }),
     await MenuItem.new({ id: id("about"), text: t("menu.about"), action: () => open({ kind: "about" }) }),
     await MenuItem.new({
       id: id("diagnostics"),

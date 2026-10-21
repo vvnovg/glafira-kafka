@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useWorkspace } from "../state/workspace";
+import { openSupport } from "../lib/links";
 import { ConnectionTree } from "./connections/tree/ConnectionTree";
 import { McpIndicator } from "./mcp/McpIndicator";
 
@@ -14,6 +15,9 @@ export function Sidebar() {
         <McpIndicator />
         <button type="button" className="link" onClick={() => open({ kind: "settings" })}>
           {t("sidebar.settings")}
+        </button>
+        <button type="button" className="link" onClick={openSupport}>
+          {t("support.title")}
         </button>
         <button type="button" className="link" onClick={() => open({ kind: "help" })}>
           {t("sidebar.help")}

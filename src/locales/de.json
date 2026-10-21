@@ -1038,6 +1038,7 @@
     "version": "Version",
     "build": "Build",
     "system": "System",
+    "license": "Lizenz",
     "tier": "Tarif",
     "policy": "Organisationsrichtlinie",
     "policySet": "festgelegt",
@@ -1066,6 +1067,10 @@
       "more": "Details",
       "hideAria": "Benachrichtigung schließen"
     }
+  },
+  "support": {
+    "title": "Projekt unterstützen",
+    "hint": "Glafira ist kostenlos und quelloffen; Spenden halten das Projekt am Leben."
   },
   "warnings": {
     "import": {

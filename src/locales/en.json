@@ -1038,6 +1038,7 @@
     "version": "Version",
     "build": "Build",
     "system": "System",
+    "license": "License",
     "tier": "Plan",
     "policy": "Organization policy",
     "policySet": "set",
@@ -1066,6 +1067,10 @@
       "more": "Details",
       "hideAria": "Dismiss notification"
     }
+  },
+  "support": {
+    "title": "Support the project",
+    "hint": "Glafira is free and open source; donations keep it going."
   },
   "warnings": {
     "import": {

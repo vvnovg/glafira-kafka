@@ -1034,6 +1034,7 @@
     "version": "版本",
     "build": "Build",
     "system": "系統",
+    "license": "授權",
     "tier": "方案",
     "policy": "組織原則",
     "policySet": "已設定",
@@ -1062,6 +1063,10 @@
       "more": "詳細資訊",
       "hideAria": "關閉通知"
     }
+  },
+  "support": {
+    "title": "支持本專案",
+    "hint": "Glafira 免費且開源，捐助讓它持續發展。"
   },
   "warnings": {
     "import": {

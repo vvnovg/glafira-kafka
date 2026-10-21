@@ -1034,6 +1034,7 @@
     "version": "버전",
     "build": "Build",
     "system": "시스템",
+    "license": "라이선스",
     "tier": "플랜",
     "policy": "조직 정책",
     "policySet": "설정됨",
@@ -1062,6 +1063,10 @@
       "more": "세부 정보",
       "hideAria": "알림 닫기"
     }
+  },
+  "support": {
+    "title": "프로젝트 후원",
+    "hint": "Glafira는 무료 오픈 소스입니다. 후원이 개발을 이어가게 합니다."
   },
   "warnings": {
     "import": {

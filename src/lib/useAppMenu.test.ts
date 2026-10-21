@@ -94,7 +94,11 @@ vi.mock("@tauri-apps/api/menu", () => {
   return { Menu, Submenu, MenuItem, PredefinedMenuItem };
 });
 
+vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
+
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { i18n } from "../i18n";
+import { SUPPORT_URL } from "./links";
 import { useDiagnosticsRequest } from "../state/diagnosticsRequest";
 import { useWorkspace } from "../state/workspace";
 import { useAppMenu } from "./useAppMenu";
@@ -143,7 +147,7 @@ describe("useAppMenu", () => {
     renderHook(() => useAppMenu());
     await waitFor(() => expect(helpSubmenu()).toBeDefined());
     expect(helpSubmenu()?.opts.text).toBe("Справка");
-    expect(labels()).toEqual(["Руководство Glafira", "Решение проблем", "—", "О программе", "Собрать диагностику…"]);
+    expect(labels()).toEqual(["Руководство Glafira", "Решение проблем", "—", "Поддержать проект", "О программе", "Собрать диагностику…"]);
     // Стандартное пустое Help из меню по умолчанию заменено нашим; остальные подменю на месте.
     expect(h.appMenu?.items.some((i) => i.opts.id === "__tauri_help_menu__")).toBe(false);
     expect(h.appMenu?.items.some((i) => i.opts.id === "__tauri_window_menu__")).toBe(true);
@@ -158,7 +162,7 @@ describe("useAppMenu", () => {
     await waitFor(() => expect(helpSubmenu()?.opts.text).toBe("Справка"));
     await act(() => i18n.changeLanguage("en"));
     await waitFor(() => expect(helpSubmenu()?.opts.text).toBe("Help"));
-    expect(labels()).toEqual(["Glafira Guide", "Troubleshooting", "—", "About Glafira", "Collect Diagnostics…"]);
+    expect(labels()).toEqual(["Glafira Guide", "Troubleshooting", "—", "Support the project", "About Glafira", "Collect Diagnostics…"]);
     // Прежнее меню освобождено.
     expect(h.menus[0].closed).toBe(true);
   });
@@ -177,6 +181,9 @@ describe("useAppMenu", () => {
     click("about");
     expect(useWorkspace.getState().activeId).toBe("about");
     expect(useDiagnosticsRequest.getState().pending).toBe(false);
+
+    click("support");
+    expect(openUrl).toHaveBeenCalledWith(SUPPORT_URL);
 
     useWorkspace.setState({ tabs: [], activeId: null });
     click("diagnostics");

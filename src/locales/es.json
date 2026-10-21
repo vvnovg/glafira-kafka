@@ -1042,6 +1042,7 @@
     "version": "Versión",
     "build": "Build",
     "system": "Sistema",
+    "license": "Licencia",
     "tier": "Plan",
     "policy": "Política de la organización",
     "policySet": "establecida",
@@ -1070,6 +1071,10 @@
       "more": "Detalles",
       "hideAria": "Cerrar notificación"
     }
+  },
+  "support": {
+    "title": "Apoyar el proyecto",
+    "hint": "Glafira es gratuita y de código abierto; las donaciones la mantienen viva."
   },
   "warnings": {
     "import": {

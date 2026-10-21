@@ -19,7 +19,9 @@
 
 ## Каждый релиз
 1. Версия в `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`; раздел в `CHANGELOG.md`.
-2. `node scripts/third-party.mjs` → обновлённый `THIRD_PARTY.md` (лицензии зависимостей), закоммитить.
+2. `cargo update -w --offline --manifest-path src-tauri/Cargo.toml` — новая версия попадает в `Cargo.lock`
+   (без этого `cargo metadata --locked` в скрипте ниже падает), затем `node scripts/third-party.mjs` →
+   обновлённый `THIRD_PARTY.md` (лицензии зависимостей); закоммитить.
 3. `node scripts/check-release.mjs vX.Y.Z` → «можно выпускать».
 4. `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow `release`. Релиз создаётся черновиком со всеми ассетами
    и публикуется атомарно (`--draft=false --latest`); updater читает `releases/latest/download/latest.json`

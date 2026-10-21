@@ -39,7 +39,7 @@
 
 - [[ui:groups.details.autoRefresh]]：[[ui:groups.details.refreshOff]]、[[ui:groups.details.refresh5]]、[[ui:groups.details.refresh10]]のいずれか。
 - [[ui:groups.details.refresh]]：すぐに再読み込みします。
-- [[ui:groups.details.join]]：このグループで[コンシューマーセッション](consumer-sessions.md)を開始します。セッションのフォームには、グループIDと、グループがコミットを持つトピックが入力されます。Proが必要で、[[ui:common.readOnly]]の接続ではボタンが無効になります。ボタンにポインターを合わせると理由が表示されます。
+- [[ui:groups.details.join]]：このグループで[コンシューマーセッション](consumer-sessions.md)を開始します。セッションのフォームには、グループIDと、グループがコミットを持つトピックが入力されます。[[ui:common.readOnly]]の接続ではボタンが無効になります。ボタンにポインターを合わせると理由が表示されます。
 
 [[ui:groups.details.partitions]]には、グループがコミットを持つパーティションと、メンバーに割り当てられたパーティションが一覧表示されます。グループのラグの合計はテーブルの上に表示されます。列は、[[ui:groups.details.colTopic]]、[[ui:groups.details.colPartition]]、`Committed`（コミット済みオフセット）、`Log end`（パーティションの末尾のオフセット）、[[ui:groups.details.colLag]]、[[ui:groups.details.colMember]]（パーティションを読み取るメンバーのクライアントID）です。
 

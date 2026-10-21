@@ -74,7 +74,7 @@
 
 - [[ui:topics.details.refresh]]：重新加载主题数据。
 - [[ui:topics.details.produce]]：以此主题打开 [[ui:sidebar.producer]]。参见 [Producer](producer.md)。
-- [[ui:topics.details.consume]]：为此主题启动消费者会话。此功能需要 Pro。参见[消费者会话](consumer-sessions.md)。
+- [[ui:topics.details.consume]]：为此主题启动消费者会话。参见[消费者会话](consumer-sessions.md)。
 
 在[[ui:common.readOnly]]连接上，这两个按钮均被禁用。
 

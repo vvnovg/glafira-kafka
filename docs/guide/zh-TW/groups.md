@@ -39,7 +39,7 @@
 
 - [[ui:groups.details.autoRefresh]]：[[ui:groups.details.refreshOff]]、[[ui:groups.details.refresh5]]或[[ui:groups.details.refresh10]]。
 - [[ui:groups.details.refresh]]：立即重新載入。
-- [[ui:groups.details.join]]：在這個群組中啟動[消費者工作階段](consumer-sessions.md)。工作階段表單會填入群組 ID 和群組有提交的主題。此功能需要 Pro，且在[[ui:common.readOnly]]連線上按鈕會停用；將指標停在按鈕上即可查看原因。
+- [[ui:groups.details.join]]：在這個群組中啟動[消費者工作階段](consumer-sessions.md)。工作階段表單會填入群組 ID 和群組有提交的主題。在[[ui:common.readOnly]]連線上按鈕會停用；將指標停在按鈕上即可查看原因。
 
 [[ui:groups.details.partitions]]會列出群組有提交的分區，以及分配給其成員的分區。群組的總延遲顯示在表格上方。欄位包括[[ui:groups.details.colTopic]]、[[ui:groups.details.colPartition]]、`Committed`（已提交的偏移量）、`Log end`（分區的結尾偏移量）、[[ui:groups.details.colLag]]和[[ui:groups.details.colMember]]（讀取該分區的成員的用戶端 ID）。
 

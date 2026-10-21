@@ -74,7 +74,7 @@ Karta topiku pokazuje liczbę partycji, współczynnik replikacji i przybliżon�
 
 - [[ui:topics.details.refresh]] — ponownie wczytuje dane topiku.
 - [[ui:topics.details.produce]] — otwiera ekran [[ui:sidebar.producer]] z tym topikiem. Zob. [Producer](producer.md).
-- [[ui:topics.details.consume]] — uruchamia sesję konsumenta dla tego topiku. Wymaga Pro. Zob. [Sesje konsumenta](consumer-sessions.md).
+- [[ui:topics.details.consume]] — uruchamia sesję konsumenta dla tego topiku. Zob. [Sesje konsumenta](consumer-sessions.md).
 
 W połączeniach z włączoną opcją [[ui:common.readOnly]] oba przyciski są nieaktywne.
 

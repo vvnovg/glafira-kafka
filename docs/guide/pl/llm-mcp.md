@@ -63,7 +63,7 @@ Aby całkowicie wyłączyć MCP, należy odznaczyć opcję [[ui:settings.mcp.ena
 
 ## Sprawdzanie klastra i notatki {#health}
 
-Asystent może uruchomić wbudowane sprawdzenie klastra Glafira (narzędzie `health_check`) i opierać się na jego ustaleniach. Z Glafira Pro może też zostawiać notatki o obiektach: pojawiają się na karcie [[ui:sidebar.findings]] i na ekranach topików i grup, a klaster się nie zmienia. Zob. [Sprawdzanie klastra i notatki](health-check.md#with-llm).
+Asystent może uruchomić wbudowane sprawdzenie klastra Glafira (narzędzie `health_check`) i opierać się na jego ustaleniach. Może też zostawiać notatki o obiektach: pojawiają się na karcie [[ui:sidebar.findings]] i na ekranach topików i grup, a klaster się nie zmienia. Zob. [Sprawdzanie klastra i notatki](health-check.md#with-llm).
 
 ## Gdy nie działa {#troubleshooting}
 

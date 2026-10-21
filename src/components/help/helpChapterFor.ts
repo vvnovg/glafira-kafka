@@ -20,7 +20,7 @@ export function helpChapterFor(tab: TabSpec | null): ChapterId {
     case "findings":
       return "health-check";
     case "about":
-      return "license-updates";
+      return "updates";
     default:
       return "getting-started";
   }

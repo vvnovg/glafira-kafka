@@ -1,6 +1,6 @@
 # Controllo del cluster e note
 
-Glafira controlla un cluster con un insieme di regole integrate e mostra i problemi trovati accanto agli oggetti: nell’albero delle connessioni, negli elenchi di topic e gruppi e nelle schermate di un topic o di un gruppo. Con Glafira Pro un assistente LLM può aggiungere a questi rilievi le proprie note. Il controllo legge soltanto il cluster e non vi cambia nulla.
+Glafira controlla un cluster con un insieme di regole integrate e mostra i problemi trovati accanto agli oggetti: nell’albero delle connessioni, negli elenchi di topic e gruppi e nelle schermate di un topic o di un gruppo. Un assistente LLM può aggiungere a questi rilievi le proprie note. Il controllo legge soltanto il cluster e non vi cambia nulla.
 
 ## Avviare un controllo {#run}
 
@@ -31,13 +31,11 @@ Se un rilievo è previsto per un oggetto specifico, per esempio un topic di test
 
 ## Note LLM {#notes}
 
-Con Glafira Pro un assistente LLM collegato tramite MCP (vedi [Assistenti LLM (MCP)](llm-mcp.md#how-it-works)) può lasciare una nota sul cluster, su un broker, un topic o un gruppo. Le note compaiono in [[ui:health.notes]] e nelle schermate degli oggetti, firmate con il nome del client. Il testo è mostrato così com’è, senza formattazione né link.
+Un assistente LLM collegato tramite MCP (vedi [Assistenti LLM (MCP)](llm-mcp.md#how-it-works)) può lasciare una nota sul cluster, su un broker, un topic o un gruppo. Le note compaiono in [[ui:health.notes]] e nelle schermate degli oggetti, firmate con il nome del client. Il testo è mostrato così com’è, senza formattazione né link.
 
 - [[ui:health.resolve]] e [[ui:health.dismiss]] chiudono una nota; quelle chiuse restano in una sezione compressa.
 - [[ui:common.delete]] elimina una nota e [[ui:health.deleteAll]] elimina tutte le note della connessione.
 - Una nota viene eliminata automaticamente 7 giorni dopo la creazione. Una connessione può avere al massimo 200 note aperte.
-
-Senza Pro un assistente può comunque avviare il controllo e leggere i rilievi, ma non può lasciare note.
 
 ## Con un assistente LLM {#with-llm}
 

@@ -1,6 +1,6 @@
 # Sprawdzanie klastra i notatki
 
-Glafira sprawdza klaster zestawem wbudowanych reguł i pokazuje znalezione problemy obok obiektów: w drzewie połączeń, na listach topików i grup oraz na ekranach topiku i grupy. Z Glafira Pro asystent LLM może uzupełnić te ustalenia własnymi notatkami. Sprawdzenie tylko odczytuje klaster i niczego w nim nie zmienia.
+Glafira sprawdza klaster zestawem wbudowanych reguł i pokazuje znalezione problemy obok obiektów: w drzewie połączeń, na listach topików i grup oraz na ekranach topiku i grupy. Asystent LLM może uzupełnić te ustalenia własnymi notatkami. Sprawdzenie tylko odczytuje klaster i niczego w nim nie zmienia.
 
 ## Uruchamianie sprawdzenia {#run}
 
@@ -31,13 +31,11 @@ Jeśli ustalenie jest oczekiwane dla konkretnego obiektu, na przykład testowego
 
 ## Notatki LLM {#notes}
 
-Z Glafira Pro asystent LLM połączony przez MCP (zob. [Asystenci LLM (MCP)](llm-mcp.md#how-it-works)) może zostawić notatkę o klastrze, brokerze, topiku lub grupie. Notatki pojawiają się w sekcji [[ui:health.notes]] i na ekranach obiektów, podpisane nazwą klienta. Tekst jest pokazywany bez zmian, bez formatowania i linków.
+Asystent LLM połączony przez MCP (zob. [Asystenci LLM (MCP)](llm-mcp.md#how-it-works)) może zostawić notatkę o klastrze, brokerze, topiku lub grupie. Notatki pojawiają się w sekcji [[ui:health.notes]] i na ekranach obiektów, podpisane nazwą klienta. Tekst jest pokazywany bez zmian, bez formatowania i linków.
 
 - [[ui:health.resolve]] i [[ui:health.dismiss]] zamykają notatkę; zamknięte są przechowywane w zwiniętej sekcji.
 - [[ui:common.delete]] usuwa notatkę, a [[ui:health.deleteAll]] usuwa wszystkie notatki połączenia.
 - Notatka jest usuwana automatycznie 7 dni po utworzeniu. Połączenie może mieć najwyżej 200 otwartych notatek.
-
-Bez Pro asystent może uruchamiać sprawdzenie i czytać ustalenia, ale nie może zostawiać notatek.
 
 ## Razem z asystentem LLM {#with-llm}
 

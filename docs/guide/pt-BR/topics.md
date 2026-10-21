@@ -74,7 +74,7 @@ A aba do tópico mostra o número de partições, o fator de replicação e a co
 
 - [[ui:topics.details.refresh]] — recarrega os dados do tópico.
 - [[ui:topics.details.produce]] — abre a tela [[ui:sidebar.producer]] com este tópico. Consulte [Producer](producer.md).
-- [[ui:topics.details.consume]] — inicia uma sessão de consumer para este tópico. Exige o Pro. Consulte [Sessões de consumer](consumer-sessions.md).
+- [[ui:topics.details.consume]] — inicia uma sessão de consumer para este tópico. Consulte [Sessões de consumer](consumer-sessions.md).
 
 Nas conexões com a opção [[ui:common.readOnly]] ativada, os dois botões ficam desativados.
 

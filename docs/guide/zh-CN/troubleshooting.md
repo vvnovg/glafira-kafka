@@ -77,9 +77,8 @@ TLS 或 SASL 问题也可能表现为超时。应用会尝试找出真正的原�
 
 如果按钮被隐藏或禁用，或者操作被拒绝，请检查以下原因：
 
-- 连接为只读。只读连接的名称旁带有锁形图标。会更改集群的按钮会被隐藏或禁用。如果此类请求仍到达了应用内核，例如在页面打开期间开启了该模式，错误会提示连接为只读。如需进行更改，请打开该连接，取消选中[[ui:common.readOnly]]并保存。在 Free 中，生产环境连接无法取消选中该复选框。参见[只读](connections.md#read-only)。
+- 连接为只读。只读连接的名称旁带有锁形图标。会更改集群的按钮会被隐藏或禁用。如果此类请求仍到达了应用内核，例如在页面打开期间开启了该模式，错误会提示连接为只读。如需进行更改，请打开该连接，取消选中[[ui:common.readOnly]]并保存。参见[只读](connections.md#read-only)。
 - 连接为 prod。更改时会要求输入连接名称，名称一致之前不会执行操作。参见[环境与 prod](connections.md#environments)。
-- 该功能需要 Pro。错误会显示[[ui:errors.license.proRequired]]；如果许可证已过期，则会给出到期日期。参见 [Free 和 Pro](license-updates.md#free-and-pro)。
 - 消费者组有活动成员。只有在组中没有成员时，才能重置偏移量或删除组。参见[重置偏移量](groups.md#reset-offsets)。
 - 该设置由你的组织管理。策略可以设置界面语言、许可证密钥和更新检查，这些都无法在应用中更改。参见[由组织设置的选项](getting-started.md#managed-settings)。
 - Kafka 以[[ui:errors.kafka.notAuthorized]]拒绝了操作。这是集群中的权限问题，与 Glafira 设置无关。参见 [SASL 错误](troubleshooting.md#sasl-errors)。
@@ -94,13 +93,13 @@ TLS 或 SASL 问题也可能表现为超时。应用会尝试找出真正的原�
 
 当前文件为 `app.log`。达到 5 MB 时，它会被重命名为 `app.1.log`，更早的文件依次变为 `app.2.log`，以此类推。应用最多保留五个文件，并删除最旧的文件。
 
-日志中不会写入密码，但会写入 Broker 地址和 Kafka 错误文本。无需手动收集这些文件：诊断归档中已包含它们，参见[诊断归档](license-updates.md#diagnostics)。
+日志中不会写入密码，但会写入 Broker 地址和 Kafka 错误文本。无需手动收集这些文件：诊断归档中已包含它们，参见[诊断归档](updates.md#diagnostics)。
 
 ## 联系技术支持 {#support}
 
 联系技术支持之前，请先运行[[ui:connections.form.test]]，并记下哪个步骤失败。然后将请求发送给为你提供 Glafira 支持的人员，例如你的管理员。请附上：
 
-- 诊断归档，参见[诊断归档](license-updates.md#diagnostics)。其中包含版本、build、日志以及不含密码的连接配置；
+- 诊断归档，参见[诊断归档](updates.md#diagnostics)。其中包含版本、build、日志以及不含密码的连接配置；
 - 你执行了哪些操作、预期结果是什么、实际发生了什么，请逐步说明；
 - 完整的错误文本以及[[ui:common.details]]中的内容。这些文本可以选中并复制；
 - 如果问题出在界面上，请附上截图；

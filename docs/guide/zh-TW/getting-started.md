@@ -74,7 +74,7 @@ Glafira 會將密碼儲存在 Secret Service 中（例如 GNOME Keyring 或 KWal
 
 儲存後會開啟叢集概觀。面板中每個連線下方都有[[ui:sidebar.cluster]]、[[ui:sidebar.topics]]、[[ui:sidebar.groups]]、[[ui:sidebar.producer]] 和[[ui:sidebar.consumer]]的連結。所有連線設定的詳細說明請參閱[連線](connections.md#create)。
 
-面板底部有[[ui:sidebar.settings]]、[[ui:tabs.license]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的連結。欄位旁的 `?` 符號會顯示該欄位的簡短提示。在視窗任何位置按 `F1`，即可開啟目前畫面對應的指南章節。在 macOS 上，也可以從「輔助說明」選單開啟指南。
+面板底部有[[ui:sidebar.settings]]、[[ui:support.title]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的連結。欄位旁的 `?` 符號會顯示該欄位的簡短提示。在視窗任何位置按 `F1`，即可開啟目前畫面對應的指南章節。在 macOS 上，也可以從「輔助說明」選單開啟指南。
 
 如果你用過 Kafka Explorer（本應用程式的舊名稱），Glafira 會在第一次啟動時複製它的連線、範本、傳送歷程記錄和授權，密碼也會從系統金鑰儲存區一併複製。已經存在的項目不會被覆寫，舊資料也不會被刪除。macOS 可能會詢問一次是否允許存取舊的鑰匙圈項目。
 
@@ -112,7 +112,6 @@ docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
 在公司中，管理員可以透過原則為所有使用者設定某些選項，這些選項無法在應用程式中變更。原則可以：
 
 - 設定介面語言：此時[[ui:sidebar.settings]]中的語言清單無法使用，並註明語言由你的組織設定；
-- 用組織授權金鑰啟用 Pro：此時[[ui:tabs.license]]畫面會顯示授權由你的組織管理；
 - 關閉更新檢查，或將它指向內部鏡像站。
 
-若要查看是否套用了原則，請開啟[[ui:sidebar.about]]，查看[[ui:about.policy]]。如果原則有錯誤，會顯示在那裡以及[[ui:tabs.license]]畫面上。有關原則的問題，請洽詢你的管理員。授權和更新的說明請參閱[授權與更新](license-updates.md)。
+若要查看是否套用了原則，請開啟[[ui:sidebar.about]]，查看[[ui:about.policy]]。如果原則有錯誤，會顯示在那裡。有關原則的問題，請洽詢你的管理員。更新的說明請參閱[更新與診斷](updates.md)。

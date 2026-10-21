@@ -77,9 +77,8 @@ Se a rede for apenas lenta, aumente o valor de [[ui:connections.form.timeout]] n
 
 Se um botão estiver oculto ou desativado, ou se uma ação for recusada, verifique estas causas:
 
-- A conexão é somente leitura. Um ícone de cadeado ao lado do nome dela a identifica. Os botões que alteram o cluster ficam ocultos ou desativados. Se uma solicitação desse tipo ainda assim chegar ao núcleo do aplicativo, por exemplo depois que o modo foi ativado com uma tela aberta, o erro informa que a conexão é somente leitura. Para fazer alterações, abra a conexão, desative a opção [[ui:common.readOnly]] e salve. No Free, essa caixa não pode ser desmarcada em uma conexão prod. Consulte [Somente leitura](connections.md#read-only).
+- A conexão é somente leitura. Um ícone de cadeado ao lado do nome dela a identifica. Os botões que alteram o cluster ficam ocultos ou desativados. Se uma solicitação desse tipo ainda assim chegar ao núcleo do aplicativo, por exemplo depois que o modo foi ativado com uma tela aberta, o erro informa que a conexão é somente leitura. Para fazer alterações, abra a conexão, desative a opção [[ui:common.readOnly]] e salve. Consulte [Somente leitura](connections.md#read-only).
 - A conexão é prod. As alterações pedem que você digite o nome da conexão. Até que o nome corresponda, a ação não é executada. Consulte [Ambientes e prod](connections.md#environments).
-- O recurso exige o Pro. O erro mostra o texto [[ui:errors.license.proRequired]] ou informa a data de término, se a licença tiver expirado. Consulte [Free e Pro](license-updates.md#free-and-pro).
 - O consumer group tem membros ativos. Só é possível redefinir os offsets e excluir um grupo quando ele não tem membros. Consulte [Redefinir offsets](groups.md#reset-offsets).
 - A configuração é gerenciada pela sua organização. Uma política pode definir o idioma da interface, a chave de licença e a verificação de atualizações, e esses itens não podem ser alterados no aplicativo. Consulte [Configurações definidas pela sua organização](getting-started.md#managed-settings).
 - O Kafka recusou a operação com a mensagem [[ui:errors.kafka.notAuthorized]]. É uma questão de permissões no cluster, não de configurações do Glafira. Consulte [Erros de SASL](troubleshooting.md#sasl-errors).
@@ -94,13 +93,13 @@ O aplicativo grava um log do próprio funcionamento e dos erros do cliente Kafka
 
 O arquivo atual é `app.log`. Quando ele chega a 5 MB, é renomeado para `app.1.log`, e os arquivos mais antigos passam para `app.2.log` e assim por diante. O aplicativo mantém até cinco arquivos e exclui o mais antigo.
 
-As senhas não são gravadas nos logs. Os endereços dos brokers e os textos dos erros do Kafka são gravados. Não é preciso reunir os arquivos manualmente: o arquivo de diagnóstico os inclui, consulte [Arquivo de diagnóstico](license-updates.md#diagnostics).
+As senhas não são gravadas nos logs. Os endereços dos brokers e os textos dos erros do Kafka são gravados. Não é preciso reunir os arquivos manualmente: o arquivo de diagnóstico os inclui, consulte [Arquivo de diagnóstico](updates.md#diagnostics).
 
 ## Falar com o suporte {#support}
 
 Antes de falar com o suporte, execute [[ui:connections.form.test]] e anote qual etapa falha. Depois, envie a solicitação a quem dá suporte ao Glafira para você, por exemplo os administradores. Inclua:
 
-- o arquivo de diagnóstico, consulte [Arquivo de diagnóstico](license-updates.md#diagnostics). Ele contém a versão, o build, os logs e os perfis de conexão sem senhas;
+- o arquivo de diagnóstico, consulte [Arquivo de diagnóstico](updates.md#diagnostics). Ele contém a versão, o build, os logs e os perfis de conexão sem senhas;
 - o que você fez, o que esperava e o que aconteceu, passo a passo;
 - o texto completo do erro, junto com o conteúdo de [[ui:common.details]]. É possível selecionar e copiar esse texto;
 - uma captura de tela, se o problema estiver na interface;

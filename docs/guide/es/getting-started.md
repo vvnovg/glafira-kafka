@@ -74,7 +74,7 @@ Mientras no hay conexiones, el panel muestra una breve indicación y el área de
 
 Al guardar, se abre el resumen del clúster. Bajo cada conexión del panel hay enlaces a [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] y [[ui:sidebar.consumer]]. Todos los ajustes de conexión se describen en [Conexiones](connections.md#create).
 
-En la parte inferior del panel hay enlaces a [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] y [[ui:sidebar.about]]. El signo `?` junto a un campo muestra una breve ayuda sobre él. Pulsa `F1` en cualquier parte de la ventana para abrir el capítulo de la guía sobre la pantalla actual. En macOS, la guía también está en el menú Ayuda.
+En la parte inferior del panel hay enlaces a [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] y [[ui:sidebar.about]]. El signo `?` junto a un campo muestra una breve ayuda sobre él. Pulsa `F1` en cualquier parte de la ventana para abrir el capítulo de la guía sobre la pantalla actual. En macOS, la guía también está en el menú Ayuda.
 
 Si usabas Kafka Explorer (el nombre anterior de la app), Glafira copia en el primer inicio sus conexiones, plantillas, historial de envíos y licencia. Las contraseñas también se copian del almacén de secretos del sistema. No se sobrescribe nada que ya exista y los datos antiguos no se eliminan. macOS puede pedir una vez acceso a los elementos antiguos del Llavero.
 
@@ -112,7 +112,6 @@ El cambio se aplica al instante, también a esta guía y al menú de macOS. La o
 En una empresa, los administradores pueden fijar algunas opciones para todos los usuarios mediante una política. Estas opciones no se pueden cambiar en la app. Una política puede:
 
 - fijar el idioma de la interfaz: la lista de idiomas en [[ui:sidebar.settings]] queda entonces deshabilitada, con una nota de que el idioma lo ha establecido tu organización;
-- activar Pro con una clave de licencia de la organización: la pantalla [[ui:tabs.license]] indica entonces que la licencia la gestiona tu organización;
 - desactivar la búsqueda de actualizaciones o dirigirla a una réplica interna.
 
-Para saber si se aplica una política, abre [[ui:sidebar.about]] y consulta [[ui:about.policy]]. Si la política tiene un error, se muestra ahí y en la pantalla [[ui:tabs.license]]. Para dudas sobre la política, contacta con tus administradores. Las licencias y las actualizaciones se describen en [Licencia y actualizaciones](license-updates.md).
+Para saber si se aplica una política, abre [[ui:sidebar.about]] y consulta [[ui:about.policy]]. Si la política tiene un error, se muestra ahí. Para dudas sobre la política, contacta con tus administradores. Las actualizaciones se describen en [Actualizaciones y diagnóstico](updates.md).

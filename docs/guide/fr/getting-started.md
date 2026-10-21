@@ -74,7 +74,7 @@ Tant qu’il n’y a aucune connexion, le panneau affiche une courte aide et la 
 
 Après l’enregistrement, l’aperçu du cluster s’ouvre. Sous chaque connexion du panneau figurent les liens [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] et [[ui:sidebar.consumer]]. Tous les paramètres de connexion sont détaillés dans [Connexions](connections.md#create).
 
-En bas du panneau se trouvent les liens [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] et [[ui:sidebar.about]]. Le signe `?` à côté d’un champ affiche une courte aide à son sujet. Appuyez sur `F1` n’importe où dans la fenêtre pour ouvrir le chapitre du guide consacré à l’écran actuel. Sur macOS, le guide est aussi accessible depuis le menu « Aide ».
+En bas du panneau se trouvent les liens [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] et [[ui:sidebar.about]]. Le signe `?` à côté d’un champ affiche une courte aide à son sujet. Appuyez sur `F1` n’importe où dans la fenêtre pour ouvrir le chapitre du guide consacré à l’écran actuel. Sur macOS, le guide est aussi accessible depuis le menu « Aide ».
 
 Si vous utilisiez Kafka Explorer (l’ancien nom de l’app), Glafira copie au premier lancement ses connexions, modèles, historique d’envoi et licence. Les mots de passe sont eux aussi copiés depuis le trousseau du système. Rien de ce qui existe déjà n’est écrasé, et les anciennes données ne sont pas supprimées. macOS peut demander une fois l’accès aux anciens éléments du trousseau.
 
@@ -112,7 +112,6 @@ Le changement s’applique immédiatement, y compris à ce guide et au menu macO
 En entreprise, les administrateurs peuvent définir certaines options pour tous les utilisateurs au moyen d’une politique. Ces options ne peuvent pas être modifiées dans l’app. Une politique peut :
 
 - fixer la langue de l’interface — la liste des langues dans [[ui:sidebar.settings]] est alors indisponible, avec une mention indiquant que la langue est définie par votre organisation ;
-- activer Pro avec une clé de licence d’organisation — l’écran [[ui:tabs.license]] indique alors que la licence est gérée par votre organisation ;
 - désactiver la recherche de mises à jour ou la rediriger vers un miroir interne.
 
-Pour savoir si une politique s’applique, ouvrez [[ui:sidebar.about]] et consultez [[ui:about.policy]]. Si la politique contient une erreur, celle-ci est affichée à cet endroit et sur l’écran [[ui:tabs.license]]. Pour toute question sur la politique, contactez vos administrateurs. Les licences et les mises à jour sont décrites dans [Licence et mises à jour](license-updates.md).
+Pour savoir si une politique s’applique, ouvrez [[ui:sidebar.about]] et consultez [[ui:about.policy]]. Si la politique contient une erreur, celle-ci est affichée à cet endroit. Pour toute question sur la politique, contactez vos administrateurs. Les mises à jour sont décrites dans [Mises à jour et diagnostic](updates.md).

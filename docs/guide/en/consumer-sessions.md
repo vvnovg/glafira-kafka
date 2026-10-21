@@ -1,14 +1,12 @@
 # Consumer sessions
 
-A consumer session reads topics as a real member of a consumer group. Consumer sessions are a Pro feature.
+A consumer session reads topics as a real member of a consumer group.
 
 ## What a session is {#what-is}
 
 [Browsing](browse.md) reads messages without joining a group and changes nothing in the cluster. A session is different: it joins a group with the given `group.id`, gets partitions from Kafka and can commit offsets. Use it to read what a group would read, to move the offsets of a group by committing, or to watch how a group rebalances.
 
 A session affects the cluster. When it joins or leaves, Kafka redistributes the partitions of the group, and the other members go through a rebalance. Commits change the offsets of the group, which its applications will use.
-
-In Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] and [[ui:groups.details.join]] are disabled and marked with a lock and `Pro`. If a session tab opens without an active Pro license, it shows [[ui:consumer.proOnly]] and the link [[ui:common.openLicense]]. See [Activate a key](license-updates.md#activate).
 
 Sessions are not available on [[ui:common.readOnly]] connections: the tab shows [[ui:consumer.readOnlyBlocked]]. If a connection becomes read-only while a session runs, the session leaves the group.
 
@@ -81,7 +79,6 @@ The log keeps the last 200 entries. Before the first rebalance, it shows [[ui:co
 
 ## Limits {#limits}
 
-- Sessions need Pro. If Pro stops being active while a session runs, the session keeps reading, but commits, pauses and resumes are refused, and a new session cannot be started.
 - Sessions are not available on [[ui:common.readOnly]] connections.
 - A session cannot start from a chosen offset. To set the start, reset the offsets of the group first: see [Reset offsets](groups.md#reset-offsets). The reset needs a group without members, so disconnect sessions of this group before resetting.
 - The table keeps at most 100000 messages. Older messages are removed, but they still count as read.

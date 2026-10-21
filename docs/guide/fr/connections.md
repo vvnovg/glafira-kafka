@@ -36,7 +36,7 @@ Le [[ui:connections.form.protocol]] doit correspondre au listener du broker auqu
 - `SASL_PLAINTEXT` — authentification par nom d’utilisateur et mot de passe, sans chiffrement.
 - `SASL_SSL` — authentification par nom d’utilisateur et mot de passe via TLS.
 
-Lorsque vous changez de protocole, le formulaire n’affiche que les champs nécessaires à ce protocole. Tous les protocoles, mTLS compris, sont disponibles dans Free.
+Lorsque vous changez de protocole, le formulaire n’affiche que les champs nécessaires à ce protocole.
 
 ## SASL {#sasl}
 
@@ -106,8 +106,6 @@ Si l’app ne peut pas accéder au trousseau, une erreur s’affiche à l’enre
 
 `prod` ajoute une protection. Toute modification sur une connexion prod, comme créer un topic, envoyer un message, réinitialiser des offsets ou lancer une session consumer, vous demande de saisir le nom de la connexion. La suppression et la purge demandent le nom de l’objet sur n’importe quelle connexion (la suppression de plusieurs topics demande leur nombre), et en prod vous saisissez les deux. Ces confirmations s’affichent dans la fenêtre de l’app.
 
-La création de connexions prod et le passage d’une connexion en prod nécessitent Pro. Dans Free, cette option s’affiche sous la forme [[ui:connections.form.prodPro]] et ne peut pas être sélectionnée. Les connexions prod créées auparavant continuent de fonctionner dans Free, avec les mêmes confirmations.
-
 Une nouvelle connexion prod est d’abord en [[ui:common.readOnly]]. Décochez la case si vous devez apporter des modifications.
 
 ## Lecture seule {#read-only}
@@ -115,8 +113,6 @@ Une nouvelle connexion prod est d’abord en [[ui:common.readOnly]]. Décochez l
 Le mode [[ui:common.readOnly]] bloque tout ce qui modifie le cluster : création, modification, purge et suppression de topics, envoi de messages, réinitialisation d’offsets, suppression de groupes et lancement de sessions consumer. Les boutons de ces actions sont masqués ou désactivés, et le cœur de l’app refuse lui aussi ces opérations. Le parcours des messages et la lecture restent disponibles. Une icône de cadenas à côté du nom dans le panneau signale les connexions en lecture seule.
 
 Utilisez ce mode lorsque vous avez seulement besoin de consulter les données, en particulier sur des clusters partagés. La lecture seule est une protection propre à l’app : elle ne remplace pas les droits d’accès (ACL) de Kafka.
-
-Dans Free, la case ne peut pas être décochée sur une connexion prod en lecture seule : lever cette protection nécessite Pro.
 
 ## Dossiers {#folders}
 
@@ -160,4 +156,4 @@ Comment l’app fait correspondre le fichier à vos connexions :
 - Si une nouvelle connexion porte le même nom qu’une autre dans le même dossier, un numéro est ajouté, par exemple `kafka-dev (2)`.
 - Les connexions que cette version de Glafira ne prend pas en charge, ou dont les propriétés supplémentaires contiennent des secrets, sont ignorées.
 
-L’aperçu signale aussi les fichiers de certificats introuvables sur cet ordinateur et les connexions prod qui passeront en lecture seule parce que Pro n’est pas actif. Les mots de passe ne figurent pas dans le fichier : après l’import, le panneau indique combien de connexions en ont besoin. Ouvrez chacune de ces connexions, saisissez les mots de passe et enregistrez.
+L’aperçu signale aussi les fichiers de certificats introuvables sur cet ordinateur. Les mots de passe ne figurent pas dans le fichier : après l’import, le panneau indique combien de connexions en ont besoin. Ouvrez chacune de ces connexions, saisissez les mots de passe et enregistrez.

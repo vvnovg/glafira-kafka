@@ -74,7 +74,7 @@
 
 - [[ui:topics.details.refresh]]：重新載入主題資料。
 - [[ui:topics.details.produce]]：以這個主題開啟 [[ui:sidebar.producer]]。請參閱 [Producer](producer.md)。
-- [[ui:topics.details.consume]]：為這個主題啟動消費者工作階段。此功能需要 Pro。請參閱[消費者工作階段](consumer-sessions.md)。
+- [[ui:topics.details.consume]]：為這個主題啟動消費者工作階段。請參閱[消費者工作階段](consumer-sessions.md)。
 
 在[[ui:common.readOnly]]連線上，這兩個按鈕會停用。
 

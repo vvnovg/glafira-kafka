@@ -1,6 +1,6 @@
 # Clusterprüfung und Anmerkungen
 
-Glafira prüft einen Cluster mit integrierten Regeln und zeigt die gefundenen Probleme direkt bei den Objekten: im Verbindungsbaum, in den Listen der Topics und Consumer Groups und auf den Bildschirmen von Topics und Gruppen. Mit Glafira Pro kann ein LLM-Assistent diese Befunde um eigene Anmerkungen ergänzen. Die Prüfung liest den Cluster nur und ändert nichts daran.
+Glafira prüft einen Cluster mit integrierten Regeln und zeigt die gefundenen Probleme direkt bei den Objekten: im Verbindungsbaum, in den Listen der Topics und Consumer Groups und auf den Bildschirmen von Topics und Gruppen. Ein LLM-Assistent kann diese Befunde um eigene Anmerkungen ergänzen. Die Prüfung liest den Cluster nur und ändert nichts daran.
 
 ## Prüfung starten {#run}
 
@@ -31,13 +31,11 @@ Ist ein Befund für ein bestimmtes Objekt zu erwarten, etwa ein Test-Topic mit R
 
 ## LLM-Anmerkungen {#notes}
 
-Mit Glafira Pro kann ein über MCP verbundener LLM-Assistent (siehe [LLM-Assistenten (MCP)](llm-mcp.md#how-it-works)) eine Anmerkung zum Cluster, zu einem Broker, einem Topic oder einer Gruppe hinterlassen. Anmerkungen erscheinen unter [[ui:health.notes]] und auf den Bildschirmen der Objekte, versehen mit dem Namen des Clients. Der Text wird unverändert angezeigt, ohne Formatierung und ohne Links.
+Ein über MCP verbundener LLM-Assistent (siehe [LLM-Assistenten (MCP)](llm-mcp.md#how-it-works)) kann eine Anmerkung zum Cluster, zu einem Broker, einem Topic oder einer Gruppe hinterlassen. Anmerkungen erscheinen unter [[ui:health.notes]] und auf den Bildschirmen der Objekte, versehen mit dem Namen des Clients. Der Text wird unverändert angezeigt, ohne Formatierung und ohne Links.
 
 - [[ui:health.resolve]] und [[ui:health.dismiss]] schließen eine Anmerkung; geschlossene bleiben in einem eingeklappten Abschnitt.
 - [[ui:common.delete]] entfernt eine Anmerkung, [[ui:health.deleteAll]] entfernt alle Anmerkungen der Verbindung.
 - Eine Anmerkung wird 7 Tage nach dem Erstellen automatisch entfernt. Eine Verbindung kann höchstens 200 offene Anmerkungen haben.
-
-Ohne Pro kann ein Assistent die Prüfung trotzdem ausführen und die Befunde lesen, aber keine Anmerkungen hinterlassen.
 
 ## Mit einem LLM-Assistenten {#with-llm}
 

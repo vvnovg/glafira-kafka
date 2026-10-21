@@ -63,7 +63,7 @@ Pour désactiver complètement MCP, décochez [[ui:settings.mcp.enable]] : les 
 
 ## Vérification du cluster et remarques {#health}
 
-L’assistant peut lancer la vérification intégrée du cluster de Glafira (outil `health_check`) et s’appuyer sur ses constats. Avec Glafira Pro, il peut aussi laisser des remarques sur les objets : elles apparaissent dans l’onglet [[ui:sidebar.findings]] et sur les écrans des topics et des groupes, sans que le cluster soit modifié. Voir [Vérification du cluster et remarques](health-check.md#with-llm).
+L’assistant peut lancer la vérification intégrée du cluster de Glafira (outil `health_check`) et s’appuyer sur ses constats. Il peut aussi laisser des remarques sur les objets : elles apparaissent dans l’onglet [[ui:sidebar.findings]] et sur les écrans des topics et des groupes, sans que le cluster soit modifié. Voir [Vérification du cluster et remarques](health-check.md#with-llm).
 
 ## En cas de problème {#troubleshooting}
 

@@ -74,7 +74,7 @@ La scheda del topic mostra il numero di partizioni, il fattore di replica e il n
 
 - [[ui:topics.details.refresh]] — ricarica i dati del topic.
 - [[ui:topics.details.produce]] — apre la schermata [[ui:sidebar.producer]] con questo topic. Vedi [Producer](producer.md).
-- [[ui:topics.details.consume]] — avvia una sessione consumer per questo topic. Richiede Pro. Vedi [Sessioni consumer](consumer-sessions.md).
+- [[ui:topics.details.consume]] — avvia una sessione consumer per questo topic. Vedi [Sessioni consumer](consumer-sessions.md).
 
 Sulle connessioni con l’opzione [[ui:common.readOnly]] attiva, entrambi i pulsanti sono disattivati.
 

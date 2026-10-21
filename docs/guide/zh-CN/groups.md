@@ -39,7 +39,7 @@
 
 - [[ui:groups.details.autoRefresh]]：[[ui:groups.details.refreshOff]]、[[ui:groups.details.refresh5]]或[[ui:groups.details.refresh10]]。
 - [[ui:groups.details.refresh]]：立即重新加载。
-- [[ui:groups.details.join]]：在该组中启动[消费者会话](consumer-sessions.md)。会话表单会填入组 ID 以及该组有提交的主题。此功能需要 Pro，并且在[[ui:common.readOnly]]连接上该按钮被禁用；将指针悬停在按钮上可查看原因。
+- [[ui:groups.details.join]]：在该组中启动[消费者会话](consumer-sessions.md)。会话表单会填入组 ID 以及该组有提交的主题。在[[ui:common.readOnly]]连接上该按钮被禁用；将指针悬停在按钮上可查看原因。
 
 [[ui:groups.details.partitions]]列出该组有提交的分区以及分配给其成员的分区。表格上方显示组的总延迟。列包括[[ui:groups.details.colTopic]]、[[ui:groups.details.colPartition]]、`Committed`（已提交的偏移量）、`Log end`（分区的结束偏移量）、[[ui:groups.details.colLag]]和[[ui:groups.details.colMember]]（读取该分区的成员的客户端 ID）。
 

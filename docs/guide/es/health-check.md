@@ -1,6 +1,6 @@
 # Comprobación del clúster y notas
 
-Glafira comprueba un clúster con un conjunto de reglas integradas y muestra los problemas encontrados junto a los objetos: en el árbol de conexiones, en las listas de topics y grupos y en las pantallas de un topic o un grupo. Con Glafira Pro, un asistente LLM puede completar estos hallazgos con sus propias notas. La comprobación solo lee el clúster y no cambia nada en él.
+Glafira comprueba un clúster con un conjunto de reglas integradas y muestra los problemas encontrados junto a los objetos: en el árbol de conexiones, en las listas de topics y grupos y en las pantallas de un topic o un grupo. Un asistente LLM puede completar estos hallazgos con sus propias notas. La comprobación solo lee el clúster y no cambia nada en él.
 
 ## Ejecutar una comprobación {#run}
 
@@ -31,13 +31,11 @@ Si un hallazgo es esperado para un objeto concreto, por ejemplo un topic de prue
 
 ## Notas LLM {#notes}
 
-Con Glafira Pro, un asistente LLM conectado por MCP (consulta [Asistentes LLM (MCP)](llm-mcp.md#how-it-works)) puede dejar una nota sobre el clúster, un broker, un topic o un grupo. Las notas aparecen en [[ui:health.notes]] y en las pantallas de los objetos, firmadas con el nombre del cliente. El texto se muestra tal cual, sin formato ni enlaces.
+Un asistente LLM conectado por MCP (consulta [Asistentes LLM (MCP)](llm-mcp.md#how-it-works)) puede dejar una nota sobre el clúster, un broker, un topic o un grupo. Las notas aparecen en [[ui:health.notes]] y en las pantallas de los objetos, firmadas con el nombre del cliente. El texto se muestra tal cual, sin formato ni enlaces.
 
 - [[ui:health.resolve]] y [[ui:health.dismiss]] cierran una nota; las cerradas se guardan en una sección plegada.
 - [[ui:common.delete]] elimina una nota y [[ui:health.deleteAll]] elimina todas las notas de la conexión.
 - Una nota se elimina automáticamente 7 días después de crearse. Una conexión puede tener como máximo 200 notas abiertas.
-
-Sin Pro, un asistente puede ejecutar la comprobación y leer los hallazgos, pero no puede dejar notas.
 
 ## Con un asistente LLM {#with-llm}
 

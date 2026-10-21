@@ -74,7 +74,7 @@ Enquanto não há conexões, o painel mostra uma dica curta, e a área de abas s
 
 Depois de salvar, abre-se a visão geral do cluster. Abaixo de cada conexão no painel há links para [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] e [[ui:sidebar.consumer]]. Todas as configurações de conexão estão descritas em [Conexões](connections.md#create).
 
-Na parte inferior do painel ficam os links [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] e [[ui:sidebar.about]]. O sinal `?` ao lado de um campo mostra uma dica curta sobre ele. Pressione `F1` em qualquer lugar da janela para abrir o capítulo do guia sobre a tela atual. No macOS, o guia também está no menu Ajuda.
+Na parte inferior do painel ficam os links [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] e [[ui:sidebar.about]]. O sinal `?` ao lado de um campo mostra uma dica curta sobre ele. Pressione `F1` em qualquer lugar da janela para abrir o capítulo do guia sobre a tela atual. No macOS, o guia também está no menu Ajuda.
 
 Se você usava o Kafka Explorer (o nome anterior do aplicativo), o Glafira copia na primeira execução as conexões, os modelos, o histórico de envios e a licença dele. As senhas também são copiadas do cofre de segredos do sistema. Nada do que já existe é sobrescrito, e os dados antigos não são excluídos. O macOS pode pedir uma vez acesso aos itens antigos das Chaves.
 
@@ -112,7 +112,6 @@ A mudança vale na hora, inclusive para este guia e para o menu do macOS. A opç
 Em uma empresa, os administradores podem definir algumas opções para todos os usuários por meio de uma política. Essas opções não podem ser alteradas no aplicativo. Uma política pode:
 
 - definir o idioma da interface — a lista de idiomas em [[ui:sidebar.settings]] fica indisponível, com um aviso de que o idioma foi definido pela sua organização;
-- ativar o Pro com uma chave de licença da organização — a tela [[ui:tabs.license]] informa que a licença é gerenciada pela sua organização;
 - desativar a verificação de atualizações ou direcioná-la para um espelho interno.
 
-Para saber se uma política está em vigor, abra [[ui:sidebar.about]] e veja o item [[ui:about.policy]]. Se a política tiver um erro, ele aparece ali e na tela [[ui:tabs.license]]. Para dúvidas sobre a política, fale com os administradores. Licenças e atualizações estão descritas em [Licença e atualizações](license-updates.md).
+Para saber se uma política está em vigor, abra [[ui:sidebar.about]] e veja o item [[ui:about.policy]]. Se a política tiver um erro, ele aparece ali. Para dúvidas sobre a política, fale com os administradores. As atualizações estão descritas em [Atualizações e diagnóstico](updates.md).

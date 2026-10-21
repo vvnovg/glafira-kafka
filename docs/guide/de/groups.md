@@ -39,7 +39,7 @@ Klicken Sie in der Liste auf eine Gruppe, um ihren Tab zu öffnen. Oben zeigt ei
 
 - [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] oder [[ui:groups.details.refresh10]].
 - [[ui:groups.details.refresh]] — sofort neu laden.
-- [[ui:groups.details.join]] — eine [Consumer-Session](consumer-sessions.md) in dieser Gruppe starten. Das Session-Formular übernimmt die Gruppen-ID und die Topics, für die die Gruppe Commits hat. Dafür ist Pro erforderlich, und bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] ist die Schaltfläche deaktiviert; zeigen Sie mit der Maus darauf, um den Grund zu sehen.
+- [[ui:groups.details.join]] — eine [Consumer-Session](consumer-sessions.md) in dieser Gruppe starten. Das Session-Formular übernimmt die Gruppen-ID und die Topics, für die die Gruppe Commits hat. Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] ist die Schaltfläche deaktiviert; zeigen Sie mit der Maus darauf, um den Grund zu sehen.
 
 [[ui:groups.details.partitions]] listet die Partitionen auf, für die die Gruppe Commits hat, sowie die ihren Mitgliedern zugewiesenen Partitionen. Der gesamte Lag der Gruppe steht über der Tabelle. Die Spalten sind [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (der committete Offset), `Log end` (der End-Offset der Partition), [[ui:groups.details.colLag]] und [[ui:groups.details.colMember]] (die Client-ID des Mitglieds, das die Partition liest).
 

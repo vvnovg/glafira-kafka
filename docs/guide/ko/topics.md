@@ -74,7 +74,7 @@
 
 - [[ui:topics.details.refresh]] — 토픽 데이터를 다시 불러옵니다.
 - [[ui:topics.details.produce]] — 이 토픽으로 [[ui:sidebar.producer]] 화면을 엽니다. [Producer](producer.md)를 참고하세요.
-- [[ui:topics.details.consume]] — 이 토픽에 대한 컨슈머 세션을 시작합니다. Pro가 필요합니다. [컨슈머 세션](consumer-sessions.md)을 참고하세요.
+- [[ui:topics.details.consume]] — 이 토픽에 대한 컨슈머 세션을 시작합니다. [컨슈머 세션](consumer-sessions.md)을 참고하세요.
 
 [[ui:common.readOnly]] 연결에서는 두 버튼이 모두 비활성화됩니다.
 

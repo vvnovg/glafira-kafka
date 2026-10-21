@@ -1,6 +1,6 @@
 # Cluster check and notes
 
-Glafira checks a cluster with a set of built-in rules and shows the problems it finds next to the objects: in the connection tree, in the topic and group lists, and on the topic and group screens. With Glafira Pro, an LLM assistant can add its own notes to these findings. The check only reads the cluster and changes nothing in it.
+Glafira checks a cluster with a set of built-in rules and shows the problems it finds next to the objects: in the connection tree, in the topic and group lists, and on the topic and group screens. An LLM assistant can add its own notes to these findings. The check only reads the cluster and changes nothing in it.
 
 ## Running a check {#run}
 
@@ -31,13 +31,11 @@ If a finding is expected for a specific object, for example a test topic with re
 
 ## LLM notes {#notes}
 
-With Glafira Pro, an LLM assistant connected over MCP (see [LLM assistants (MCP)](llm-mcp.md#how-it-works)) can leave a note about the cluster, a broker, a topic or a group. Notes appear in [[ui:health.notes]] and on the object screens, signed with the client name. The text is shown as is, without formatting or links.
+An LLM assistant connected over MCP (see [LLM assistants (MCP)](llm-mcp.md#how-it-works)) can leave a note about the cluster, a broker, a topic or a group. Notes appear in [[ui:health.notes]] and on the object screens, signed with the client name. The text is shown as is, without formatting or links.
 
 - [[ui:health.resolve]] and [[ui:health.dismiss]] close a note; closed notes are kept in a collapsed section.
 - [[ui:common.delete]] removes a note, and [[ui:health.deleteAll]] removes every note of the connection.
 - A note is removed automatically 7 days after it was created. A connection can have at most 200 open notes.
-
-Without Pro, an assistant can still run the check and read the findings, but it cannot leave notes.
 
 ## With an LLM assistant {#with-llm}
 

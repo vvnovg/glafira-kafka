@@ -74,7 +74,7 @@
 
 - [[ui:topics.details.refresh]]：トピックのデータを再読み込みします。
 - [[ui:topics.details.produce]]：このトピックで[[ui:sidebar.producer]]を開きます。[Producer](producer.md)を参照してください。
-- [[ui:topics.details.consume]]：このトピックでコンシューマーセッションを開始します。Proが必要です。[コンシューマーセッション](consumer-sessions.md)を参照してください。
+- [[ui:topics.details.consume]]：このトピックでコンシューマーセッションを開始します。[コンシューマーセッション](consumer-sessions.md)を参照してください。
 
 [[ui:common.readOnly]]の接続では、どちらのボタンも無効になります。
 

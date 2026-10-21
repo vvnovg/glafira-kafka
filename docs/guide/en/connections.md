@@ -36,7 +36,7 @@ The [[ui:connections.form.protocol]] must match the broker listener you connect 
 - `SASL_PLAINTEXT` — login with a username and password, without encryption.
 - `SASL_SSL` — login with a username and password over TLS.
 
-When you change the protocol, the form shows only the fields that the protocol needs. All protocols, including mTLS, are available in Free.
+When you change the protocol, the form shows only the fields that the protocol needs.
 
 ## SASL {#sasl}
 
@@ -106,8 +106,6 @@ If the app cannot access the secret store, an error is shown when you save. On L
 
 `prod` adds protection. Any change on a prod connection, such as creating a topic, sending a message, resetting offsets or starting a consumer session, asks you to type the connection name. Deleting and purging ask for the name of the object on any connection (deleting several topics asks for their count), and on prod you type both. These confirmations appear inside the app window.
 
-Creating prod connections and switching connections to prod need Pro. In Free, this option is shown as [[ui:connections.form.prodPro]] and cannot be selected. Prod connections created earlier keep working in Free, with the same confirmations.
-
 A new prod connection starts as [[ui:common.readOnly]]. Clear the box if you need to make changes.
 
 ## Read-only {#read-only}
@@ -115,8 +113,6 @@ A new prod connection starts as [[ui:common.readOnly]]. Clear the box if you nee
 [[ui:common.readOnly]] blocks everything that changes the cluster: creating, changing, purging and deleting topics, sending messages, resetting offsets, deleting groups and starting consumer sessions. The buttons for these actions are hidden or disabled, and the app core rejects such operations as well. Browsing and reading stay available. A lock icon next to the name in the panel marks read-only connections.
 
 Use this mode when you only need to look at the data, especially on shared clusters. Read-only is a protection inside the app: it does not replace access rights (ACLs) in Kafka.
-
-In Free, the box cannot be cleared on a read-only prod connection: lifting this protection needs Pro.
 
 ## Folders {#folders}
 
@@ -160,4 +156,4 @@ How the app matches the file with your connections:
 - If a new connection has the same name as another one in the same folder, a number is added, for example `kafka-dev (2)`.
 - Connections that this version of Glafira does not support, or that contain secrets in extra properties, are skipped.
 
-The preview also warns when certificate files are not found on this computer, and when prod connections will become read-only because Pro is not active. Passwords are not in the file, so after import the panel says how many connections need them. Open each of these connections, enter the passwords and save.
+The preview also warns when certificate files are not found on this computer. Passwords are not in the file, so after import the panel says how many connections need them. Open each of these connections, enter the passwords and save.

@@ -1,6 +1,6 @@
 # Verificação do cluster e notas
 
-O Glafira verifica um cluster com um conjunto de regras integradas e mostra os problemas encontrados ao lado dos objetos: na árvore de conexões, nas listas de tópicos e grupos e nas telas de um tópico ou grupo. Com o Glafira Pro, um assistente LLM pode complementar essas constatações com as próprias notas. A verificação apenas lê o cluster e não muda nada nele.
+O Glafira verifica um cluster com um conjunto de regras integradas e mostra os problemas encontrados ao lado dos objetos: na árvore de conexões, nas listas de tópicos e grupos e nas telas de um tópico ou grupo. Um assistente LLM pode complementar essas constatações com as próprias notas. A verificação apenas lê o cluster e não muda nada nele.
 
 ## Executar uma verificação {#run}
 
@@ -31,13 +31,11 @@ Se uma constatação é esperada para um objeto específico, por exemplo um tóp
 
 ## Notas de LLM {#notes}
 
-Com o Glafira Pro, um assistente LLM conectado por MCP (consulte [Assistentes LLM (MCP)](llm-mcp.md#how-it-works)) pode deixar uma nota sobre o cluster, um broker, um tópico ou um grupo. As notas aparecem em [[ui:health.notes]] e nas telas dos objetos, assinadas com o nome do cliente. O texto é mostrado como está, sem formatação nem links.
+Um assistente LLM conectado por MCP (consulte [Assistentes LLM (MCP)](llm-mcp.md#how-it-works)) pode deixar uma nota sobre o cluster, um broker, um tópico ou um grupo. As notas aparecem em [[ui:health.notes]] e nas telas dos objetos, assinadas com o nome do cliente. O texto é mostrado como está, sem formatação nem links.
 
 - [[ui:health.resolve]] e [[ui:health.dismiss]] fecham uma nota; as fechadas ficam em uma seção recolhida.
 - [[ui:common.delete]] exclui uma nota, e [[ui:health.deleteAll]] exclui todas as notas da conexão.
 - Uma nota é excluída automaticamente 7 dias depois de criada. Uma conexão pode ter no máximo 200 notas abertas.
-
-Sem o Pro, um assistente ainda pode executar a verificação e ler as constatações, mas não pode deixar notas.
 
 ## Com um assistente LLM {#with-llm}
 

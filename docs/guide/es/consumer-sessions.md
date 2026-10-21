@@ -1,14 +1,12 @@
 # Sesiones de consumer
 
-Una sesión de consumer lee topics como un miembro real de un consumer group. Las sesiones de consumer son una función de Pro.
+Una sesión de consumer lee topics como un miembro real de un consumer group.
 
 ## Qué es una sesión {#what-is}
 
 La [exploración](browse.md) lee mensajes sin unirse a ningún grupo y no cambia nada en el clúster. Una sesión es distinta: se une a un grupo con el `group.id` indicado, recibe particiones de Kafka y puede hacer commit de offsets. Úsala para leer lo que leería un grupo, para mover los offsets de un grupo mediante commits o para observar cómo se rebalancea un grupo.
 
 Una sesión afecta al clúster. Cuando se une o sale, Kafka redistribuye las particiones del grupo y los demás miembros pasan por un rebalanceo. Los commits cambian los offsets del grupo, que usarán sus aplicaciones.
-
-En Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] y [[ui:groups.details.join]] están deshabilitados y llevan un candado y `Pro`. Si se abre una pestaña de sesión sin una licencia Pro activa, muestra el aviso [[ui:consumer.proOnly]] y el enlace [[ui:common.openLicense]]. Consulta [Activar una clave](license-updates.md#activate).
 
 Las sesiones no están disponibles en las conexiones con la opción [[ui:common.readOnly]] activada: la pestaña muestra [[ui:consumer.readOnlyBlocked]]. Si una conexión pasa a solo lectura mientras se ejecuta una sesión, la sesión sale del grupo.
 
@@ -81,7 +79,6 @@ El registro conserva las últimas 200 entradas. Antes del primer rebalanceo, mue
 
 ## Limitaciones {#limits}
 
-- Las sesiones requieren Pro. Si Pro deja de estar activo mientras se ejecuta una sesión, la sesión sigue leyendo, pero se rechazan los commits, las pausas y las reanudaciones, y no se puede iniciar una sesión nueva.
 - Las sesiones no están disponibles en las conexiones con la opción [[ui:common.readOnly]] activada.
 - Una sesión no puede empezar desde un offset elegido. Para fijar el inicio, restablece antes los offsets del grupo: consulta [Restablecer offsets](groups.md#reset-offsets). El restablecimiento requiere un grupo sin miembros, así que desconecta las sesiones de este grupo antes de restablecer.
 - La tabla conserva como máximo 100000 mensajes. Los más antiguos se eliminan, pero siguen contando como leídos.

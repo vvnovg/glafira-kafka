@@ -74,7 +74,7 @@ Dopóki nie ma żadnych połączeń, panel wyświetla krótką podpowiedź, a ob
 
 Po zapisaniu otwiera się przegląd klastra. Pod każdym połączeniem w panelu znajdują się linki: [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] i [[ui:sidebar.consumer]]. Wszystkie ustawienia połączenia opisano w rozdziale [Połączenia](connections.md#create).
 
-Na dole panelu znajdują się linki: [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] i [[ui:sidebar.about]]. Znak `?` obok pola wyświetla krótką podpowiedź na jego temat. Klawisz `F1` w dowolnym miejscu okna otwiera rozdział podręcznika dotyczący bieżącego ekranu. W systemie macOS podręcznik jest dostępny także w menu Pomoc.
+Na dole panelu znajdują się linki: [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] i [[ui:sidebar.about]]. Znak `?` obok pola wyświetla krótką podpowiedź na jego temat. Klawisz `F1` w dowolnym miejscu okna otwiera rozdział podręcznika dotyczący bieżącego ekranu. W systemie macOS podręcznik jest dostępny także w menu Pomoc.
 
 Jeśli wcześniej używano Kafka Explorer (poprzedniej nazwy aplikacji), przy pierwszym uruchomieniu Glafira kopiuje jego połączenia, szablony, historię wysyłania i licencję. Hasła również są kopiowane z systemowego magazynu sekretów. Istniejące dane nie są nadpisywane, a stare dane nie są usuwane. macOS może jednorazowo poprosić o dostęp do starych elementów pęku kluczy.
 
@@ -112,7 +112,6 @@ Zmiana działa od razu, także w tym podręczniku i w menu macOS. Opcja [[ui:set
 W firmie administratorzy mogą za pomocą zasad ustawić niektóre opcje dla wszystkich użytkowników. Tych opcji nie można zmienić w aplikacji. Zasady mogą:
 
 - ustawić język interfejsu — lista języków na ekranie [[ui:sidebar.settings]] jest wtedy niedostępna, a obok widnieje informacja, że język ustawiła organizacja;
-- aktywować Pro kluczem licencji organizacji — ekran [[ui:tabs.license]] informuje wtedy, że licencją zarządza organizacja;
 - wyłączyć sprawdzanie aktualizacji lub skierować je do wewnętrznego serwera lustrzanego.
 
-Aby sprawdzić, czy obowiązują jakieś zasady, należy otworzyć ekran [[ui:sidebar.about]] i spojrzeć na pozycję [[ui:about.policy]]. Jeśli zasady zawierają błąd, jest on wyświetlany tam i na ekranie [[ui:tabs.license]]. W sprawie zasad należy kontaktować się z administratorami. Licencje i aktualizacje opisano w rozdziale [Licencja i aktualizacje](license-updates.md).
+Aby sprawdzić, czy obowiązują jakieś zasady, należy otworzyć ekran [[ui:sidebar.about]] i spojrzeć na pozycję [[ui:about.policy]]. Jeśli zasady zawierają błąd, jest on tam wyświetlany. W sprawie zasad należy kontaktować się z administratorami. Aktualizacje opisano w rozdziale [Aktualizacje i diagnostyka](updates.md).

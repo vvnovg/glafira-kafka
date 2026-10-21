@@ -39,7 +39,7 @@ Clique em um grupo na lista para abrir a aba dele. Na parte superior, um resumo 
 
 - [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] ou [[ui:groups.details.refresh10]].
 - [[ui:groups.details.refresh]] — recarrega na hora.
-- [[ui:groups.details.join]] — inicia uma [sessão de consumer](consumer-sessions.md) neste grupo. O formulário da sessão recebe o ID do grupo e os tópicos em que o grupo tem commits. Exige o Pro, e o botão fica desativado nas conexões com a opção [[ui:common.readOnly]] ativada; aponte para o botão para ver o motivo.
+- [[ui:groups.details.join]] — inicia uma [sessão de consumer](consumer-sessions.md) neste grupo. O formulário da sessão recebe o ID do grupo e os tópicos em que o grupo tem commits. O botão fica desativado nas conexões com a opção [[ui:common.readOnly]] ativada; aponte para o botão para ver o motivo.
 
 A seção [[ui:groups.details.partitions]] lista as partições em que o grupo tem commits e as partições atribuídas aos membros dele. O lag total do grupo aparece acima da tabela. As colunas são [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (o offset com commit), `Log end` (o offset final da partição), [[ui:groups.details.colLag]] e [[ui:groups.details.colMember]] (o client ID do membro que lê a partição).
 

@@ -74,7 +74,7 @@ Finché non ci sono connessioni, il pannello mostra un breve suggerimento e l’
 
 Dopo il salvataggio si apre la panoramica del cluster. Sotto ogni connessione del pannello ci sono i collegamenti [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] e [[ui:sidebar.consumer]]. Tutte le impostazioni della connessione sono descritte in [Connessioni](connections.md#create).
 
-In fondo al pannello ci sono i collegamenti [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] e [[ui:sidebar.about]]. Il simbolo `?` accanto a un campo mostra un breve suggerimento. Premi `F1` in qualsiasi punto della finestra per aprire il capitolo della guida relativo alla schermata corrente. Su macOS la guida si trova anche nel menu Aiuto.
+In fondo al pannello ci sono i collegamenti [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] e [[ui:sidebar.about]]. Il simbolo `?` accanto a un campo mostra un breve suggerimento. Premi `F1` in qualsiasi punto della finestra per aprire il capitolo della guida relativo alla schermata corrente. Su macOS la guida si trova anche nel menu Aiuto.
 
 Se usavi Kafka Explorer (il nome precedente dell’app), al primo avvio Glafira ne copia le connessioni, i modelli, la cronologia degli invii e la licenza. Anche le password vengono copiate dall’archivio dei segreti di sistema. Nulla di ciò che esiste già viene sovrascritto e i vecchi dati non vengono eliminati. macOS può chiedere una volta l’accesso ai vecchi elementi del Portachiavi.
 
@@ -112,7 +112,6 @@ La modifica si applica subito, anche a questa guida e al menu di macOS. [[ui:set
 In un’azienda gli amministratori possono impostare alcune opzioni per tutti gli utenti tramite una policy. Queste opzioni non si possono cambiare nell’app. Una policy può:
 
 - impostare la lingua dell’interfaccia — l’elenco delle lingue in [[ui:sidebar.settings]] non è allora disponibile e una nota indica che la lingua è impostata dalla tua organizzazione;
-- attivare Pro con una chiave di licenza dell’organizzazione — la schermata [[ui:tabs.license]] indica allora che la licenza è gestita dalla tua organizzazione;
 - disattivare la verifica degli aggiornamenti o indirizzarla a un mirror interno.
 
-Per sapere se è applicata una policy, apri [[ui:sidebar.about]] e guarda la voce [[ui:about.policy]]. Se la policy contiene un errore, questo compare lì e nella schermata [[ui:tabs.license]]. Per domande sulla policy, rivolgiti ai tuoi amministratori. Licenze e aggiornamenti sono descritti in [Licenza e aggiornamenti](license-updates.md).
+Per sapere se è applicata una policy, apri [[ui:sidebar.about]] e guarda la voce [[ui:about.policy]]. Se la policy contiene un errore, questo compare lì. Per domande sulla policy, rivolgiti ai tuoi amministratori. Gli aggiornamenti sono descritti in [Aggiornamenti e diagnostica](updates.md).

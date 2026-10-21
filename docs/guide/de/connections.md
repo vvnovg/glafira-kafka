@@ -36,7 +36,7 @@ Das [[ui:connections.form.protocol]] muss zum Listener des Brokers passen, mit d
 - `SASL_PLAINTEXT` — Anmeldung mit Benutzername und Passwort, ohne Verschlüsselung.
 - `SASL_SSL` — Anmeldung mit Benutzername und Passwort über TLS.
 
-Wenn Sie das Protokoll wechseln, zeigt das Formular nur die Felder, die dieses Protokoll braucht. Alle Protokolle, einschließlich mTLS, sind in Free verfügbar.
+Wenn Sie das Protokoll wechseln, zeigt das Formular nur die Felder, die dieses Protokoll braucht.
 
 ## SASL {#sasl}
 
@@ -106,8 +106,6 @@ Kann die App nicht auf den Schlüsselbund zugreifen, erscheint beim Speichern ei
 
 `prod` bietet zusätzlichen Schutz. Jede Änderung über eine Prod-Verbindung, etwa das Erstellen eines Topics, das Senden einer Nachricht, das Zurücksetzen von Offsets oder das Starten einer Consumer-Session, verlangt die Eingabe des Verbindungsnamens. Löschen und Leeren verlangen bei jeder Verbindung den Namen des Objekts (beim Löschen mehrerer Topics deren Anzahl), bei Prod geben Sie beides ein. Diese Bestätigungen erscheinen im App-Fenster.
 
-Prod-Verbindungen anzulegen und Verbindungen auf Prod umzustellen erfordert Pro. In Free wird diese Option als [[ui:connections.form.prodPro]] angezeigt und lässt sich nicht auswählen. Früher angelegte Prod-Verbindungen funktionieren in Free weiter, mit denselben Bestätigungen.
-
 Eine neue Prod-Verbindung ist zunächst [[ui:common.readOnly]]. Deaktivieren Sie das Kontrollkästchen, wenn Sie Änderungen vornehmen müssen.
 
 ## Schreibgeschützt {#read-only}
@@ -115,8 +113,6 @@ Eine neue Prod-Verbindung ist zunächst [[ui:common.readOnly]]. Deaktivieren Sie
 [[ui:common.readOnly]] sperrt alles, was den Cluster verändert: Erstellen, Ändern, Leeren und Löschen von Topics, Senden von Nachrichten, Zurücksetzen von Offsets, Löschen von Gruppen und Starten von Consumer-Sessions. Die Schaltflächen für diese Aktionen sind ausgeblendet oder deaktiviert, und auch der Kern der App lehnt solche Vorgänge ab. Durchsuchen und Lesen bleiben möglich. Ein Schloss-Symbol neben dem Namen im Bereich kennzeichnet schreibgeschützte Verbindungen.
 
 Verwenden Sie diesen Modus, wenn Sie Daten nur ansehen wollen, besonders auf gemeinsam genutzten Clustern. Der Schreibschutz ist ein Schutz innerhalb der App: Er ersetzt keine Zugriffsrechte (ACLs) in Kafka.
-
-In Free lässt sich das Kontrollkästchen bei einer schreibgeschützten Prod-Verbindung nicht deaktivieren: Diesen Schutz aufzuheben erfordert Pro.
 
 ## Ordner {#folders}
 
@@ -160,4 +156,4 @@ So ordnet die App die Datei Ihren Verbindungen zu:
 - Hat eine neue Verbindung denselben Namen wie eine andere im selben Ordner, wird eine Nummer angehängt, zum Beispiel `kafka-dev (2)`.
 - Verbindungen, die diese Version von Glafira nicht unterstützt oder die Geheimnisse in zusätzlichen Eigenschaften enthalten, werden übersprungen.
 
-Die Vorschau warnt außerdem, wenn Zertifikatsdateien auf diesem Computer nicht gefunden werden und wenn Prod-Verbindungen schreibgeschützt werden, weil Pro nicht aktiv ist. Passwörter sind nicht in der Datei, daher zeigt der Bereich nach dem Import an, wie viele Verbindungen Passwörter benötigen. Öffnen Sie jede dieser Verbindungen, geben Sie die Passwörter ein und speichern Sie.
+Die Vorschau warnt außerdem, wenn Zertifikatsdateien auf diesem Computer nicht gefunden werden. Passwörter sind nicht in der Datei, daher zeigt der Bereich nach dem Import an, wie viele Verbindungen Passwörter benötigen. Öffnen Sie jede dieser Verbindungen, geben Sie die Passwörter ein und speichern Sie.

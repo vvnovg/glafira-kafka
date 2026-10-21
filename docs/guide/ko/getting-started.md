@@ -74,7 +74,7 @@ Glafira는 비밀번호를 Secret Service(예: GNOME Keyring 또는 KWallet)에 
 
 저장하면 클러스터 개요가 열립니다. 패널의 각 연결 아래에는 [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]], [[ui:sidebar.consumer]] 링크가 있습니다. 모든 연결 설정에 대한 자세한 내용은 [연결](connections.md#create)을 참고하세요.
 
-패널 아래쪽에는 [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]], [[ui:sidebar.about]] 링크가 있습니다. 필드 옆의 `?` 표시는 해당 필드에 대한 짧은 도움말을 보여 줍니다. 창 어디에서나 `F1`을 누르면 현재 화면에 해당하는 가이드 장이 열립니다. macOS에서는 '도움말' 메뉴에서도 가이드를 열 수 있습니다.
+패널 아래쪽에는 [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]], [[ui:sidebar.about]] 링크가 있습니다. 필드 옆의 `?` 표시는 해당 필드에 대한 짧은 도움말을 보여 줍니다. 창 어디에서나 `F1`을 누르면 현재 화면에 해당하는 가이드 장이 열립니다. macOS에서는 '도움말' 메뉴에서도 가이드를 열 수 있습니다.
 
 Kafka Explorer(이 앱의 이전 이름)를 사용했다면 Glafira는 첫 실행 시 그 연결, 템플릿, 전송 기록, 라이선스를 복사합니다. 비밀번호도 시스템 보안 저장소에서 복사됩니다. 이미 있는 항목은 덮어쓰지 않으며 이전 데이터도 삭제하지 않습니다. macOS가 이전 키체인 항목에 대한 접근을 한 번 요청할 수 있습니다.
 
@@ -112,7 +112,6 @@ docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
 회사에서는 관리자가 정책을 통해 모든 사용자의 일부 옵션을 설정할 수 있습니다. 이러한 옵션은 앱에서 변경할 수 없습니다. 정책으로 할 수 있는 일은 다음과 같습니다:
 
 - 표시 언어 설정 — 이 경우 [[ui:sidebar.settings]]의 언어 목록을 사용할 수 없으며, 언어가 조직에서 설정되었다는 안내가 표시됩니다.
-- 조직 라이선스 키로 Pro 활성화 — 이 경우 [[ui:tabs.license]] 화면에 라이선스를 조직에서 관리한다고 표시됩니다.
 - 업데이트 확인을 끄거나 내부 미러로 지정.
 
-정책이 적용되는지 확인하려면 [[ui:sidebar.about]]를 열고 [[ui:about.policy]] 항목을 보세요. 정책에 오류가 있으면 그곳과 [[ui:tabs.license]] 화면에 표시됩니다. 정책에 관한 문의는 관리자에게 하세요. 라이선스와 업데이트는 [라이선스 및 업데이트](license-updates.md)에서 설명합니다.
+정책이 적용되는지 확인하려면 [[ui:sidebar.about]]를 열고 [[ui:about.policy]] 항목을 보세요. 정책에 오류가 있으면 그곳에 표시됩니다. 정책에 관한 문의는 관리자에게 하세요. 업데이트는 [업데이트 및 진단](updates.md)에서 설명합니다.

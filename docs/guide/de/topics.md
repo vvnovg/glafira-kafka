@@ -74,7 +74,7 @@ Der Tab eines Topics zeigt die Anzahl der Partitionen, den Replikationsfaktor un
 
 - [[ui:topics.details.refresh]] — die Daten des Topics neu laden.
 - [[ui:topics.details.produce]] — den [[ui:sidebar.producer]] mit diesem Topic öffnen. Siehe [Producer](producer.md).
-- [[ui:topics.details.consume]] — eine Consumer-Session für dieses Topic starten. Dafür ist Pro erforderlich. Siehe [Consumer-Sessions](consumer-sessions.md).
+- [[ui:topics.details.consume]] — eine Consumer-Session für dieses Topic starten. Siehe [Consumer-Sessions](consumer-sessions.md).
 
 Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] sind beide Schaltflächen deaktiviert.
 

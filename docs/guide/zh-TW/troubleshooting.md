@@ -77,9 +77,8 @@ TLS 或 SASL 問題可能看起來像逾時。應用程式會嘗試找出真正�
 
 如果按鈕隱藏或停用，或動作遭到拒絕，請檢查以下原因：
 
-- 連線為唯讀。名稱旁的鎖頭圖示表示唯讀。會變更叢集的按鈕會隱藏或停用。如果這類要求仍送到應用程式核心，例如在畫面開啟時開啟了唯讀模式，錯誤會說明連線為唯讀。若要進行變更，請開啟連線，取消勾選[[ui:common.readOnly]]並儲存。在 Free 中，正式環境連線無法取消勾選此核取方塊。請參閱[唯讀](connections.md#read-only)。
+- 連線為唯讀。名稱旁的鎖頭圖示表示唯讀。會變更叢集的按鈕會隱藏或停用。如果這類要求仍送到應用程式核心，例如在畫面開啟時開啟了唯讀模式，錯誤會說明連線為唯讀。若要進行變更，請開啟連線，取消勾選[[ui:common.readOnly]]並儲存。請參閱[唯讀](connections.md#read-only)。
 - 連線為正式環境。變更時會要求輸入連線名稱，名稱相符之前不會執行動作。請參閱[環境與正式環境](connections.md#environments)。
-- 功能需要 Pro。錯誤會顯示「[[ui:errors.license.proRequired]]」；如果授權已過期，則會顯示到期日。請參閱 [Free 與 Pro](license-updates.md#free-and-pro)。
 - 消費者群組有作用中的成員。只有群組沒有成員時，才能重設偏移量和刪除群組。請參閱[重設偏移量](groups.md#reset-offsets)。
 - 設定由你的組織管理。原則可以設定介面語言、授權金鑰和更新檢查，這些都無法在應用程式中變更。請參閱[由組織設定的選項](getting-started.md#managed-settings)。
 - Kafka 以「[[ui:errors.kafka.notAuthorized]]」拒絕操作。這是叢集中的權限問題，與 Glafira 設定無關。請參閱 [SASL 錯誤](troubleshooting.md#sasl-errors)。
@@ -94,13 +93,13 @@ TLS 或 SASL 問題可能看起來像逾時。應用程式會嘗試找出真正�
 
 目前的檔案是 `app.log`。檔案達到 5 MB 時，會重新命名為 `app.1.log`，較舊的檔案則依序改為 `app.2.log`，以此類推。應用程式最多保留五個檔案，並刪除最舊的檔案。
 
-日誌中不會寫入密碼，但會寫入 Broker 位址和 Kafka 錯誤的文字。你不需要手動收集這些檔案，診斷壓縮檔已包含它們，請參閱[診斷壓縮檔](license-updates.md#diagnostics)。
+日誌中不會寫入密碼，但會寫入 Broker 位址和 Kafka 錯誤的文字。你不需要手動收集這些檔案，診斷壓縮檔已包含它們，請參閱[診斷壓縮檔](updates.md#diagnostics)。
 
 ## 聯絡支援人員 {#support}
 
 聯絡支援人員之前，請先執行[[ui:connections.form.test]]，並記下哪個步驟失敗。然後將要求傳送給為你提供 Glafira 支援的人，例如你的管理員。請附上：
 
-- 診斷壓縮檔，請參閱[診斷壓縮檔](license-updates.md#diagnostics)。其中包含版本、build、日誌，以及不含密碼的連線設定檔；
+- 診斷壓縮檔，請參閱[診斷壓縮檔](updates.md#diagnostics)。其中包含版本、build、日誌，以及不含密碼的連線設定檔；
 - 你做了什麼、預期的結果和實際發生的情況，逐步說明；
 - 完整的錯誤文字，以及[[ui:common.details]]的內容。你可以選取並複製這些文字；
 - 如果問題出在介面上，請附上螢幕截圖；

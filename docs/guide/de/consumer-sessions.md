@@ -1,14 +1,12 @@
 # Consumer-Sessions
 
-Eine Consumer-Session liest Topics als echtes Mitglied einer Consumer Group. Consumer-Sessions sind eine Pro-Funktion.
+Eine Consumer-Session liest Topics als echtes Mitglied einer Consumer Group.
 
 ## Was eine Session ist {#what-is}
 
 Das [Durchsuchen](browse.md) liest Nachrichten, ohne einer Gruppe beizutreten, und ändert nichts im Cluster. Eine Session ist anders: Sie tritt einer Gruppe mit der angegebenen `group.id` bei, erhält Partitionen von Kafka und kann Offsets committen. Verwenden Sie sie, um zu lesen, was eine Gruppe lesen würde, um die Offsets einer Gruppe durch Committen zu verschieben oder um zu beobachten, wie eine Gruppe ein Rebalance durchläuft.
 
 Eine Session wirkt sich auf den Cluster aus. Wenn sie beitritt oder austritt, verteilt Kafka die Partitionen der Gruppe neu, und die übrigen Mitglieder durchlaufen ein Rebalance. Commits ändern die Offsets der Gruppe, die deren Anwendungen verwenden.
-
-In Free sind [[ui:sidebar.consumer]], [[ui:topics.details.consume]] und [[ui:groups.details.join]] deaktiviert und mit einem Schloss und `Pro` gekennzeichnet. Öffnet sich ein Session-Tab ohne aktive Pro-Lizenz, zeigt er [[ui:consumer.proOnly]] und den Link [[ui:common.openLicense]]. Siehe [Schlüssel aktivieren](license-updates.md#activate).
 
 Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] sind Sessions nicht verfügbar: Der Tab zeigt [[ui:consumer.readOnlyBlocked]]. Wird eine Verbindung schreibgeschützt, während eine Session läuft, verlässt die Session die Gruppe.
 
@@ -81,7 +79,6 @@ Das Protokoll behält die letzten 200 Einträge. Vor dem ersten Rebalance zeigt 
 
 ## Einschränkungen {#limits}
 
-- Sessions erfordern Pro. Ist Pro während einer laufenden Session nicht mehr aktiv, liest die Session weiter, aber Commits, Pausieren und Fortsetzen werden abgelehnt, und eine neue Session lässt sich nicht starten.
 - Bei Verbindungen mit aktivierter Option [[ui:common.readOnly]] sind Sessions nicht verfügbar.
 - Eine Session kann nicht ab einem gewählten Offset beginnen. Um den Start festzulegen, setzen Sie zuerst die Offsets der Gruppe zurück: siehe [Offsets zurücksetzen](groups.md#reset-offsets). Das Zurücksetzen erfordert eine Gruppe ohne Mitglieder, trennen Sie also vorher die Sessions dieser Gruppe.
 - Die Tabelle behält höchstens 100000 Nachrichten. Ältere Nachrichten werden entfernt, zählen aber weiterhin als gelesen.

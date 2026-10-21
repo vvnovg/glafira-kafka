@@ -39,7 +39,7 @@ Kliknięcie grupy na liście otwiera jej kartę. U góry podsumowanie pokazuje s
 
 - [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] lub [[ui:groups.details.refresh10]].
 - [[ui:groups.details.refresh]] — natychmiastowe ponowne wczytanie.
-- [[ui:groups.details.join]] — uruchamia [sesję konsumenta](consumer-sessions.md) w tej grupie. Formularz sesji otrzymuje ID grupy i topiki, dla których grupa ma zatwierdzone offsety. Wymaga Pro, a w połączeniach z włączoną opcją [[ui:common.readOnly]] przycisk jest nieaktywny; po najechaniu na przycisk widać przyczynę.
+- [[ui:groups.details.join]] — uruchamia [sesję konsumenta](consumer-sessions.md) w tej grupie. Formularz sesji otrzymuje ID grupy i topiki, dla których grupa ma zatwierdzone offsety. W połączeniach z włączoną opcją [[ui:common.readOnly]] przycisk jest nieaktywny; po najechaniu na przycisk widać przyczynę.
 
 Tabela [[ui:groups.details.partitions]] zawiera partycje, dla których grupa ma zatwierdzone offsety, oraz partycje przydzielone jej członkom. Łączny lag grupy jest wyświetlany nad tabelą. Kolumny to [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (zatwierdzony offset), `Log end` (końcowy offset partycji), [[ui:groups.details.colLag]] i [[ui:groups.details.colMember]] (client ID członka, który czyta partycję).
 

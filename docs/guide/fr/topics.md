@@ -74,7 +74,7 @@ L’onglet du topic affiche le nombre de partitions, le facteur de réplication 
 
 - [[ui:topics.details.refresh]] — recharge les données du topic.
 - [[ui:topics.details.produce]] — ouvre le [[ui:sidebar.producer]] avec ce topic. Voir [Producer](producer.md).
-- [[ui:topics.details.consume]] — lance une session consumer pour ce topic. Nécessite Pro. Voir [Sessions consumer](consumer-sessions.md).
+- [[ui:topics.details.consume]] — lance une session consumer pour ce topic. Voir [Sessions consumer](consumer-sessions.md).
 
 Sur les connexions en [[ui:common.readOnly]], ces deux boutons sont désactivés.
 

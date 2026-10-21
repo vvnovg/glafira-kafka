@@ -39,7 +39,7 @@
 
 - [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] 또는 [[ui:groups.details.refresh10]].
 - [[ui:groups.details.refresh]] — 지금 다시 불러옵니다.
-- [[ui:groups.details.join]] — 이 그룹에서 [컨슈머 세션](consumer-sessions.md)을 시작합니다. 세션 양식에 그룹 ID와 그룹이 커밋한 토픽이 채워집니다. Pro가 필요하며, [[ui:common.readOnly]] 연결에서는 버튼이 비활성화됩니다. 버튼에 포인터를 올리면 이유를 볼 수 있습니다.
+- [[ui:groups.details.join]] — 이 그룹에서 [컨슈머 세션](consumer-sessions.md)을 시작합니다. 세션 양식에 그룹 ID와 그룹이 커밋한 토픽이 채워집니다. [[ui:common.readOnly]] 연결에서는 버튼이 비활성화됩니다. 버튼에 포인터를 올리면 이유를 볼 수 있습니다.
 
 [[ui:groups.details.partitions]] 표에는 그룹이 커밋한 파티션과 멤버에게 할당된 파티션이 나열됩니다. 그룹의 전체 랙은 표 위에 표시됩니다. 열은 [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed`(커밋된 오프셋), `Log end`(파티션의 끝 오프셋), [[ui:groups.details.colLag]], [[ui:groups.details.colMember]](파티션을 읽는 멤버의 클라이언트 ID)입니다.
 

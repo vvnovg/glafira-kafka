@@ -1,14 +1,12 @@
 # Sessioni consumer
 
-Una sessione consumer legge i topic come un vero membro di un consumer group. Le sessioni consumer sono una funzione Pro.
+Una sessione consumer legge i topic come un vero membro di un consumer group.
 
 ## Che cos’è una sessione {#what-is}
 
 La [consultazione](browse.md) legge i messaggi senza entrare in un gruppo e non modifica nulla nel cluster. Una sessione è diversa: entra in un gruppo con il `group.id` indicato, riceve le partizioni da Kafka e può eseguire il commit degli offset. Usala per leggere ciò che leggerebbe un gruppo, per spostare gli offset di un gruppo con i commit o per osservare il ribilanciamento di un gruppo.
 
 Una sessione influisce sul cluster. Quando entra o esce, Kafka ridistribuisce le partizioni del gruppo e gli altri membri eseguono un ribilanciamento. I commit modificano gli offset del gruppo, che le sue applicazioni useranno.
-
-In Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] e [[ui:groups.details.join]] sono disattivati e contrassegnati da un lucchetto e da `Pro`. Se una scheda di sessione si apre senza una licenza Pro attiva, mostra [[ui:consumer.proOnly]] e il collegamento [[ui:common.openLicense]]. Vedi [Attivare una chiave](license-updates.md#activate).
 
 Le sessioni non sono disponibili sulle connessioni con l’opzione [[ui:common.readOnly]] attiva: la scheda mostra [[ui:consumer.readOnlyBlocked]]. Se una connessione passa in sola lettura mentre una sessione è in corso, la sessione esce dal gruppo.
 
@@ -81,7 +79,6 @@ Il registro conserva le ultime 200 voci. Prima del primo ribilanciamento mostra 
 
 ## Limiti {#limits}
 
-- Le sessioni richiedono Pro. Se Pro smette di essere attivo mentre una sessione è in corso, la sessione continua a leggere, ma commit, pause e riprese vengono rifiutati e non si può avviare una nuova sessione.
 - Le sessioni non sono disponibili sulle connessioni con l’opzione [[ui:common.readOnly]] attiva.
 - Una sessione non può iniziare da un offset scelto. Per impostare il punto di partenza, reimposta prima gli offset del gruppo: vedi [Reimpostare gli offset](groups.md#reset-offsets). La reimpostazione richiede un gruppo senza membri, quindi disconnetti le sessioni di questo gruppo prima di reimpostare.
 - La tabella conserva al massimo 100000 messaggi. I messaggi più vecchi vengono rimossi, ma contano comunque come letti.

@@ -1,14 +1,12 @@
 # Sesje konsumenta
 
-Sesja konsumenta czyta topiki jako rzeczywisty członek grupy konsumentów. Sesje konsumenta są funkcją Pro.
+Sesja konsumenta czyta topiki jako rzeczywisty członek grupy konsumentów.
 
 ## Czym jest sesja {#what-is}
 
 [Przeglądanie](browse.md) czyta wiadomości bez dołączania do grupy i niczego nie zmienia w klastrze. Sesja działa inaczej: dołącza do grupy o podanym `group.id`, otrzymuje partycje od Kafki i może zatwierdzać offsety. Służy do czytania tego, co czytałaby grupa, do przesuwania offsetów grupy przez zatwierdzanie lub do obserwowania rebalansu grupy.
 
 Sesja wpływa na klaster. Gdy dołącza lub odchodzi, Kafka rozdziela partycje grupy na nowo, a pozostali członkowie przechodzą rebalans. Zatwierdzenia zmieniają offsety grupy, z których będą korzystać jej aplikacje.
-
-W Free elementy [[ui:sidebar.consumer]], [[ui:topics.details.consume]] i [[ui:groups.details.join]] są nieaktywne i oznaczone kłódką oraz napisem `Pro`. Jeśli karta sesji otworzy się bez aktywnej licencji Pro, pokazuje komunikat [[ui:consumer.proOnly]] i link [[ui:common.openLicense]]. Zob. [Aktywacja klucza](license-updates.md#activate).
 
 Sesje nie są dostępne w połączeniach z włączoną opcją [[ui:common.readOnly]]: karta pokazuje komunikat [[ui:consumer.readOnlyBlocked]]. Jeśli połączenie stanie się tylko do odczytu w trakcie działania sesji, sesja opuszcza grupę.
 
@@ -81,7 +79,6 @@ Dziennik przechowuje ostatnie 200 wpisów. Przed pierwszym rebalansem pokazuje k
 
 ## Ograniczenia {#limits}
 
-- Sesje wymagają Pro. Jeśli Pro przestanie być aktywne w trakcie działania sesji, sesja nadal czyta, ale zatwierdzanie, wstrzymywanie i wznawianie są odrzucane, a nowej sesji nie można uruchomić.
 - Sesje nie są dostępne w połączeniach z włączoną opcją [[ui:common.readOnly]].
 - Sesji nie można uruchomić od wybranego offsetu. Aby ustawić początek, należy najpierw zresetować offsety grupy: zob. [Reset offsetów](groups.md#reset-offsets). Reset wymaga grupy bez członków, więc przed resetem trzeba rozłączyć sesje tej grupy.
 - Tabela przechowuje maksymalnie 100000 wiadomości. Starsze wiadomości są usuwane, ale nadal liczą się jako odczytane.

@@ -12,7 +12,7 @@ const cases: [TabSpec | null, string][] = [
   [{ kind: "group", connectionId: "c", groupId: "g" }, "groups"],
   [{ kind: "consumer", connectionId: "c", key: "k" }, "consumer-sessions"],
   [{ kind: "findings", connectionId: "c" }, "health-check"],
-  [{ kind: "about" }, "license-updates"],
+  [{ kind: "about" }, "updates"],
   [{ kind: "settings" }, "getting-started"],
   [{ kind: "help", chapter: "groups" }, "getting-started"],
   [null, "getting-started"],

@@ -63,7 +63,7 @@ To turn MCP off completely, clear [[ui:settings.mcp.enable]]: clients are discon
 
 ## Cluster check and notes {#health}
 
-The assistant can run Glafira's built-in cluster check (the `health_check` tool) and rely on its findings. With Glafira Pro it can also leave notes about objects: they appear on the [[ui:sidebar.findings]] tab and on the topic and group screens, and the cluster is not changed. See [Cluster check and notes](health-check.md#with-llm).
+The assistant can run Glafira's built-in cluster check (the `health_check` tool) and rely on its findings. It can also leave notes about objects: they appear on the [[ui:sidebar.findings]] tab and on the topic and group screens, and the cluster is not changed. See [Cluster check and notes](health-check.md#with-llm).
 
 ## If it does not work {#troubleshooting}
 

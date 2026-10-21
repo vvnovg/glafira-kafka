@@ -74,7 +74,7 @@
 
 - [[ui:topics.details.refresh]] — перезагрузить данные топика.
 - [[ui:topics.details.produce]] — открыть [[ui:sidebar.producer]] с этим топиком. См. [Producer](producer.md).
-- [[ui:topics.details.consume]] — запустить consumer-сессию для этого топика. Нужен Pro. См. [Consumer-сессии](consumer-sessions.md).
+- [[ui:topics.details.consume]] — запустить consumer-сессию для этого топика. См. [Consumer-сессии](consumer-sessions.md).
 
 На подключениях [[ui:common.readOnly]] обе кнопки недоступны.
 

@@ -74,7 +74,7 @@ Glafira 将密码保存在 Secret Service 中（例如 GNOME Keyring 或 KWallet
 
 保存后会打开集群概览。面板中每个连接下方都有指向[[ui:sidebar.cluster]]、[[ui:sidebar.topics]]、[[ui:sidebar.groups]]、[[ui:sidebar.producer]] 和[[ui:sidebar.consumer]]的链接。所有连接设置的详细说明见[连接](connections.md#create)。
 
-面板底部有[[ui:sidebar.settings]]、[[ui:tabs.license]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的链接。字段旁的 `?` 图标会显示该字段的简短提示。在窗口任意位置按 `F1`，可打开当前页面对应的指南章节。在 macOS 上，也可以通过“帮助”菜单打开指南。
+面板底部有[[ui:sidebar.settings]]、[[ui:support.title]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的链接。字段旁的 `?` 图标会显示该字段的简短提示。在窗口任意位置按 `F1`，可打开当前页面对应的指南章节。在 macOS 上，也可以通过“帮助”菜单打开指南。
 
 如果你用过 Kafka Explorer（本应用的旧名称），Glafira 会在首次启动时复制其中的连接、模板、发送历史记录和许可证，密码也会从系统密钥存储中一并复制。已有的内容不会被覆盖，旧数据也不会被删除。macOS 可能会询问一次是否允许访问旧的钥匙串项目。
 
@@ -112,7 +112,6 @@ docker run -d --name kafka -p 9092:9092 apache/kafka:3.9.0
 在公司中，管理员可以通过策略为所有用户设置某些选项，这些选项无法在应用中更改。策略可以：
 
 - 设置界面语言：此时[[ui:sidebar.settings]]中的语言列表不可用，并注明语言由你的组织设置；
-- 使用组织许可证密钥激活 Pro：此时[[ui:tabs.license]]页面会显示许可证由你的组织管理；
 - 关闭更新检查，或将其指向内部镜像。
 
-要查看是否应用了策略，请打开[[ui:sidebar.about]]页面，查看[[ui:about.policy]]。如果策略有错误，会显示在该处以及[[ui:tabs.license]]页面上。有关策略的问题，请联系你的管理员。许可证和更新的说明见[许可证与更新](license-updates.md)。
+要查看是否应用了策略，请打开[[ui:sidebar.about]]页面，查看[[ui:about.policy]]。如果策略有错误，会显示在该处。有关策略的问题，请联系你的管理员。更新的说明见[更新与诊断](updates.md)。

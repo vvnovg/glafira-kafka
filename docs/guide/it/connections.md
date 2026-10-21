@@ -36,7 +36,7 @@ Il protocollo scelto in [[ui:connections.form.protocol]] deve corrispondere al l
 - `SASL_PLAINTEXT` — accesso con nome utente e password, senza cifratura.
 - `SASL_SSL` — accesso con nome utente e password su TLS.
 
-Quando cambi protocollo, il modulo mostra solo i campi che servono a quel protocollo. Tutti i protocolli, mTLS compreso, sono disponibili in Free.
+Quando cambi protocollo, il modulo mostra solo i campi che servono a quel protocollo.
 
 ## SASL {#sasl}
 
@@ -106,8 +106,6 @@ Se l’app non riesce ad accedere all’archivio dei segreti, al salvataggio com
 
 `prod` aggiunge una protezione. Qualsiasi modifica su una connessione prod, come creare un topic, inviare un messaggio, reimpostare gli offset o avviare una sessione consumer, richiede di digitare il nome della connessione. L’eliminazione e lo svuotamento chiedono il nome dell’oggetto su qualsiasi connessione (l’eliminazione di più topic ne chiede il numero), e su prod vanno digitati entrambi. Queste conferme compaiono all’interno della finestra dell’app.
 
-Creare connessioni prod e passare connessioni a prod richiede Pro. In Free questa opzione compare come [[ui:connections.form.prodPro]] e non si può selezionare. Le connessioni prod create in precedenza continuano a funzionare in Free, con le stesse conferme.
-
 Una nuova connessione prod nasce con l’opzione [[ui:common.readOnly]] attiva. Deseleziona la casella se devi apportare modifiche.
 
 ## Sola lettura {#read-only}
@@ -115,8 +113,6 @@ Una nuova connessione prod nasce con l’opzione [[ui:common.readOnly]] attiva. 
 L’opzione [[ui:common.readOnly]] blocca tutto ciò che modifica il cluster: creazione, modifica, svuotamento ed eliminazione dei topic, invio di messaggi, reimpostazione degli offset, eliminazione dei gruppi e avvio di sessioni consumer. I pulsanti di queste azioni sono nascosti o disattivati, e anche il core dell’app rifiuta tali operazioni. La consultazione e la lettura restano disponibili. Un’icona a forma di lucchetto accanto al nome nel pannello contrassegna le connessioni in sola lettura.
 
 Usa questa modalità quando devi solo guardare i dati, soprattutto sui cluster condivisi. La sola lettura è una protezione interna all’app: non sostituisce i diritti di accesso (ACL) in Kafka.
-
-In Free, su una connessione prod in sola lettura la casella non si può deselezionare: per rimuovere questa protezione serve Pro.
 
 ## Cartelle {#folders}
 
@@ -160,4 +156,4 @@ Come l’app abbina il file alle tue connessioni:
 - Se una nuova connessione ha lo stesso nome di un’altra nella stessa cartella, viene aggiunto un numero, per esempio `kafka-dev (2)`.
 - Le connessioni che questa versione di Glafira non supporta, o che contengono segreti nelle proprietà aggiuntive, vengono saltate.
 
-L’anteprima avvisa anche quando i file dei certificati non si trovano su questo computer e quando le connessioni prod diventeranno di sola lettura perché Pro non è attivo. Le password non sono nel file, quindi dopo l’importazione il pannello indica quante connessioni ne hanno bisogno. Apri ciascuna di queste connessioni, inserisci le password e salva.
+L’anteprima avvisa anche quando i file dei certificati non si trovano su questo computer. Le password non sono nel file, quindi dopo l’importazione il pannello indica quante connessioni ne hanno bisogno. Apri ciascuna di queste connessioni, inserisci le password e salva.

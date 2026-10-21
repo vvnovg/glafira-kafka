@@ -74,7 +74,7 @@ Solange es keine Verbindungen gibt, zeigt der Bereich einen kurzen Hinweis, und 
 
 Nach dem Speichern öffnet sich die Cluster-Übersicht. Unter jeder Verbindung im Bereich gibt es Links zu [[ui:sidebar.cluster]], [[ui:sidebar.topics]], [[ui:sidebar.groups]], [[ui:sidebar.producer]] und [[ui:sidebar.consumer]]. Alle Verbindungseinstellungen sind unter [Verbindungen](connections.md#create) beschrieben.
 
-Unten im Bereich befinden sich Links zu [[ui:sidebar.settings]], [[ui:tabs.license]], [[ui:sidebar.help]] und [[ui:sidebar.about]]. Das Zeichen `?` neben einem Feld zeigt einen kurzen Hinweis dazu. Mit `F1` öffnen Sie an jeder Stelle des Fensters das Kapitel der Anleitung zum aktuellen Bildschirm. Unter macOS ist die Anleitung auch im Menü „Hilfe“ zu finden.
+Unten im Bereich befinden sich Links zu [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] und [[ui:sidebar.about]]. Das Zeichen `?` neben einem Feld zeigt einen kurzen Hinweis dazu. Mit `F1` öffnen Sie an jeder Stelle des Fensters das Kapitel der Anleitung zum aktuellen Bildschirm. Unter macOS ist die Anleitung auch im Menü „Hilfe“ zu finden.
 
 Wenn Sie Kafka Explorer (den früheren Namen der App) verwendet haben, übernimmt Glafira beim ersten Start dessen Verbindungen, Vorlagen, Sendeverlauf und Lizenz. Auch die Passwörter werden aus dem Schlüsselbund des Systems kopiert. Bereits Vorhandenes wird nicht überschrieben, und die alten Daten werden nicht gelöscht. macOS fragt möglicherweise einmal nach Zugriff auf die alten Schlüsselbundeinträge.
 
@@ -112,7 +112,6 @@ Die Änderung gilt sofort, auch für diese Anleitung und das macOS-Menü. [[ui:s
 In Unternehmen können Administratoren einige Optionen per Richtlinie für alle Benutzer festlegen. Diese Optionen lassen sich in der App nicht ändern. Eine Richtlinie kann:
 
 - die Sprache der Oberfläche festlegen — die Sprachliste unter [[ui:sidebar.settings]] ist dann nicht verfügbar, mit dem Vermerk, dass die Sprache von Ihrer Organisation festgelegt ist;
-- Pro mit einem Organisations-Lizenzschlüssel aktivieren — der Bildschirm [[ui:tabs.license]] zeigt dann an, dass die Lizenz von Ihrer Organisation verwaltet wird;
 - die Suche nach Updates abschalten oder auf einen internen Mirror umleiten.
 
-Ob eine Richtlinie gilt, sehen Sie unter [[ui:sidebar.about]] in der Zeile [[ui:about.policy]]. Enthält die Richtlinie einen Fehler, wird er dort und auf dem Bildschirm [[ui:tabs.license]] angezeigt. Bei Fragen zur Richtlinie wenden Sie sich an Ihre Administratoren. Lizenzen und Updates sind unter [Lizenz und Updates](license-updates.md) beschrieben.
+Ob eine Richtlinie gilt, sehen Sie unter [[ui:sidebar.about]] in der Zeile [[ui:about.policy]]. Enthält die Richtlinie einen Fehler, wird er dort angezeigt. Bei Fragen zur Richtlinie wenden Sie sich an Ihre Administratoren. Updates sind unter [Updates und Diagnose](updates.md) beschrieben.

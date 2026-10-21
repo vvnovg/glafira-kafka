@@ -74,7 +74,7 @@ The topic tab shows the number of partitions, the replication factor and the app
 
 - [[ui:topics.details.refresh]] — reload the topic data.
 - [[ui:topics.details.produce]] — open the [[ui:sidebar.producer]] with this topic. See [Producer](producer.md).
-- [[ui:topics.details.consume]] — start a consumer session for this topic. This needs Pro. See [Consumer sessions](consumer-sessions.md).
+- [[ui:topics.details.consume]] — start a consumer session for this topic. See [Consumer sessions](consumer-sessions.md).
 
 On [[ui:common.readOnly]] connections, both buttons are disabled.
 

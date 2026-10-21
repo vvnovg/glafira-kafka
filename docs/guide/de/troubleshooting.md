@@ -77,9 +77,8 @@ Ist das Netzwerk einfach langsam, erhöhen Sie [[ui:connections.form.timeout]] i
 
 Ist eine Schaltfläche ausgeblendet oder deaktiviert oder wird eine Aktion abgelehnt, prüfen Sie diese Ursachen:
 
-- Die Verbindung ist schreibgeschützt. Ein Schloss-Symbol neben ihrem Namen kennzeichnet sie. Schaltflächen, die den Cluster verändern, sind ausgeblendet oder deaktiviert. Erreicht eine solche Anfrage trotzdem den Kern der App, etwa nachdem der Modus bei geöffnetem Bildschirm aktiviert wurde, meldet der Fehler, dass die Verbindung schreibgeschützt ist. Um Änderungen vorzunehmen, öffnen Sie die Verbindung, deaktivieren [[ui:common.readOnly]] und speichern. In Free lässt sich dieses Kontrollkästchen bei einer Prod-Verbindung nicht deaktivieren. Siehe [Schreibgeschützt](connections.md#read-only).
+- Die Verbindung ist schreibgeschützt. Ein Schloss-Symbol neben ihrem Namen kennzeichnet sie. Schaltflächen, die den Cluster verändern, sind ausgeblendet oder deaktiviert. Erreicht eine solche Anfrage trotzdem den Kern der App, etwa nachdem der Modus bei geöffnetem Bildschirm aktiviert wurde, meldet der Fehler, dass die Verbindung schreibgeschützt ist. Um Änderungen vorzunehmen, öffnen Sie die Verbindung, deaktivieren [[ui:common.readOnly]] und speichern. Siehe [Schreibgeschützt](connections.md#read-only).
 - Es ist eine Prod-Verbindung. Änderungen verlangen die Eingabe des Verbindungsnamens. Solange der Name nicht übereinstimmt, wird die Aktion nicht ausgeführt. Siehe [Umgebungen und Prod](connections.md#environments).
-- Die Funktion erfordert Pro. Der Fehler lautet [[ui:errors.license.proRequired]] oder nennt das Enddatum, wenn die Lizenz abgelaufen ist. Siehe [Free und Pro](license-updates.md#free-and-pro).
 - Die Consumer Group hat aktive Mitglieder. Offsets lassen sich nur zurücksetzen und eine Gruppe nur löschen, wenn sie keine Mitglieder hat. Siehe [Offsets zurücksetzen](groups.md#reset-offsets).
 - Die Einstellung wird von Ihrer Organisation verwaltet. Eine Richtlinie kann die Sprache der Oberfläche, den Lizenzschlüssel und die Suche nach Updates festlegen; diese lassen sich in der App nicht ändern. Siehe [Von Ihrer Organisation festgelegte Einstellungen](getting-started.md#managed-settings).
 - Kafka hat den Vorgang mit [[ui:errors.kafka.notAuthorized]] abgelehnt. Das ist eine Frage der Rechte im Cluster, nicht der Einstellungen von Glafira. Siehe [SASL-Fehler](troubleshooting.md#sasl-errors).
@@ -94,13 +93,13 @@ Die App protokolliert ihre Arbeit und die Fehler des Kafka-Clients. Der genaue O
 
 Die aktuelle Datei ist `app.log`. Erreicht sie 5 MB, wird sie in `app.1.log` umbenannt, und ältere Dateien rücken zu `app.2.log` usw. auf. Die App behält bis zu fünf Dateien und löscht die älteste.
 
-Passwörter werden nicht protokolliert. Broker-Adressen und die Texte von Kafka-Fehlern werden protokolliert. Sie müssen die Dateien nicht von Hand sammeln: Das Diagnosearchiv enthält sie, siehe [Diagnosearchiv](license-updates.md#diagnostics).
+Passwörter werden nicht protokolliert. Broker-Adressen und die Texte von Kafka-Fehlern werden protokolliert. Sie müssen die Dateien nicht von Hand sammeln: Das Diagnosearchiv enthält sie, siehe [Diagnosearchiv](updates.md#diagnostics).
 
 ## Support kontaktieren {#support}
 
 Bevor Sie den Support kontaktieren, führen Sie [[ui:connections.form.test]] aus und notieren, welcher Schritt fehlschlägt. Senden Sie die Anfrage dann an die Stelle, die Glafira bei Ihnen betreut, etwa Ihre Administratoren. Fügen Sie Folgendes bei:
 
-- das Diagnosearchiv, siehe [Diagnosearchiv](license-updates.md#diagnostics). Es enthält Version, Build, Protokolle und Verbindungsprofile ohne Passwörter;
+- das Diagnosearchiv, siehe [Diagnosearchiv](updates.md#diagnostics). Es enthält Version, Build, Protokolle und Verbindungsprofile ohne Passwörter;
 - was Sie getan haben, was Sie erwartet haben und was passiert ist, Schritt für Schritt;
 - den vollständigen Fehlertext zusammen mit dem Inhalt von [[ui:common.details]]. Sie können diesen Text markieren und kopieren;
 - einen Screenshot, wenn das Problem in der Oberfläche liegt;

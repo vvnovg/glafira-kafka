@@ -1,14 +1,12 @@
 # Sessões de consumer
 
-Uma sessão de consumer lê tópicos como um membro real de um consumer group. As sessões de consumer são um recurso do Pro.
+Uma sessão de consumer lê tópicos como um membro real de um consumer group.
 
 ## O que é uma sessão {#what-is}
 
 A [navegação](browse.md) lê as mensagens sem entrar em um grupo e não altera nada no cluster. Uma sessão é diferente: ela entra em um grupo com o `group.id` indicado, recebe partições do Kafka e pode fazer commit de offsets. Use-a para ler o que um grupo leria, para mover os offsets de um grupo por meio de commits ou para observar como um grupo faz o rebalanceamento.
 
 Uma sessão afeta o cluster. Quando ela entra ou sai, o Kafka redistribui as partições do grupo, e os outros membros passam por um rebalanceamento. Os commits alteram os offsets do grupo, que os aplicativos dele vão usar.
-
-No Free, os itens [[ui:sidebar.consumer]], [[ui:topics.details.consume]] e [[ui:groups.details.join]] ficam desativados e marcados com um cadeado e `Pro`. Se uma aba de sessão for aberta sem uma licença Pro ativa, ela mostra [[ui:consumer.proOnly]] e o link [[ui:common.openLicense]]. Consulte [Ativar uma chave](license-updates.md#activate).
 
 As sessões não estão disponíveis nas conexões com a opção [[ui:common.readOnly]] ativada: a aba mostra [[ui:consumer.readOnlyBlocked]]. Se uma conexão passar a ser somente leitura durante uma sessão, a sessão sai do grupo.
 
@@ -81,7 +79,6 @@ O log mantém as últimas 200 entradas. Antes do primeiro rebalanceamento, ele m
 
 ## Limitações {#limits}
 
-- As sessões exigem o Pro. Se o Pro deixar de estar ativo durante uma sessão, a sessão continua lendo, mas os commits, as pausas e as retomadas são recusados, e não é possível iniciar uma nova sessão.
 - As sessões não estão disponíveis nas conexões com a opção [[ui:common.readOnly]] ativada.
 - Uma sessão não pode começar a partir de um offset escolhido. Para definir o início, redefina antes os offsets do grupo: consulte [Redefinir offsets](groups.md#reset-offsets). A redefinição exige um grupo sem membros, então desconecte as sessões desse grupo antes de redefinir.
 - A tabela mantém no máximo 100000 mensagens. As mensagens mais antigas são removidas, mas continuam contando como lidas.

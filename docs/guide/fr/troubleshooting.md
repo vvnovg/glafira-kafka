@@ -77,9 +77,8 @@ Si le réseau est simplement lent, augmentez [[ui:connections.form.timeout]] dan
 
 Si un bouton est masqué ou désactivé, ou si une action est refusée, vérifiez les causes suivantes :
 
-- La connexion est en lecture seule. Elle est signalée par une icône de cadenas à côté de son nom. Les boutons qui modifient le cluster sont masqués ou désactivés. Si une telle requête parvient malgré tout au cœur de l’app, par exemple après l’activation du mode alors qu’un écran était ouvert, l’erreur indique que la connexion est en lecture seule. Pour apporter des modifications, ouvrez la connexion, décochez [[ui:common.readOnly]] et enregistrez. Dans Free, cette case ne peut pas être décochée sur une connexion prod. Voir [Lecture seule](connections.md#read-only).
+- La connexion est en lecture seule. Elle est signalée par une icône de cadenas à côté de son nom. Les boutons qui modifient le cluster sont masqués ou désactivés. Si une telle requête parvient malgré tout au cœur de l’app, par exemple après l’activation du mode alors qu’un écran était ouvert, l’erreur indique que la connexion est en lecture seule. Pour apporter des modifications, ouvrez la connexion, décochez [[ui:common.readOnly]] et enregistrez. Voir [Lecture seule](connections.md#read-only).
 - La connexion est prod. Les modifications vous demandent de saisir le nom de la connexion. Tant que le nom ne correspond pas, l’action n’est pas effectuée. Voir [Environnements et prod](connections.md#environments).
-- La fonctionnalité nécessite Pro. L’erreur indique [[ui:errors.license.proRequired]], ou la date de fin si la licence a expiré. Voir [Free et Pro](license-updates.md#free-and-pro).
 - Le consumer group a des membres actifs. Les offsets ne peuvent être réinitialisés et un groupe ne peut être supprimé que s’il n’a aucun membre. Voir [Réinitialiser les offsets](groups.md#reset-offsets).
 - Le paramètre est géré par votre organisation. Une politique peut fixer la langue de l’interface, la clé de licence et la recherche de mises à jour, qui ne peuvent alors pas être modifiées dans l’app. Voir [Paramètres définis par votre organisation](getting-started.md#managed-settings).
 - Kafka a refusé l’opération avec [[ui:errors.kafka.notAuthorized]]. C’est une question de droits dans le cluster, pas de paramètres de Glafira. Voir [Erreurs SASL](troubleshooting.md#sasl-errors).
@@ -94,13 +93,13 @@ L’app écrit un journal de son fonctionnement et des erreurs du client Kafka. 
 
 Le fichier actuel est `app.log`. Lorsqu’il atteint 5 MB, il est renommé en `app.1.log`, et les fichiers plus anciens deviennent `app.2.log`, etc. L’app conserve jusqu’à cinq fichiers et supprime le plus ancien.
 
-Les mots de passe ne sont pas écrits dans les journaux. Les adresses des brokers et les textes des erreurs Kafka le sont. Inutile de rassembler les fichiers à la main : l’archive de diagnostic les inclut, voir [Archive de diagnostic](license-updates.md#diagnostics).
+Les mots de passe ne sont pas écrits dans les journaux. Les adresses des brokers et les textes des erreurs Kafka le sont. Inutile de rassembler les fichiers à la main : l’archive de diagnostic les inclut, voir [Archive de diagnostic](updates.md#diagnostics).
 
 ## Contacter l’assistance {#support}
 
 Avant de contacter l’assistance, lancez [[ui:connections.form.test]] et notez l’étape qui échoue. Envoyez ensuite la demande à la personne qui assure le support de Glafira pour vous, par exemple vos administrateurs. Joignez :
 
-- l’archive de diagnostic, voir [Archive de diagnostic](license-updates.md#diagnostics). Elle contient la version, le build, les journaux et les profils de connexion sans mots de passe ;
+- l’archive de diagnostic, voir [Archive de diagnostic](updates.md#diagnostics). Elle contient la version, le build, les journaux et les profils de connexion sans mots de passe ;
 - ce que vous avez fait, ce que vous attendiez et ce qui s’est passé, étape par étape ;
 - le texte complet de l’erreur, avec le contenu de [[ui:common.details]]. Vous pouvez sélectionner et copier ce texte ;
 - une capture d’écran, si le problème concerne l’interface ;

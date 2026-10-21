@@ -77,9 +77,8 @@ Jeśli sieć jest po prostu wolna, należy zwiększyć wartość w polu [[ui:con
 
 Jeśli przycisk jest ukryty lub nieaktywny albo działanie zostało odrzucone, należy sprawdzić następujące przyczyny:
 
-- Połączenie jest tylko do odczytu. Oznacza je ikona kłódki obok nazwy. Przyciski zmieniające klaster są ukryte lub nieaktywne. Jeśli takie żądanie mimo to dotrze do rdzenia aplikacji, na przykład po włączeniu trybu przy otwartym ekranie, błąd informuje, że połączenie jest tylko do odczytu. Aby wprowadzić zmiany, należy otworzyć połączenie, wyłączyć opcję [[ui:common.readOnly]] i zapisać. W Free w połączeniu prod tego pola nie można odznaczyć. Zob. [Tylko do odczytu](connections.md#read-only).
+- Połączenie jest tylko do odczytu. Oznacza je ikona kłódki obok nazwy. Przyciski zmieniające klaster są ukryte lub nieaktywne. Jeśli takie żądanie mimo to dotrze do rdzenia aplikacji, na przykład po włączeniu trybu przy otwartym ekranie, błąd informuje, że połączenie jest tylko do odczytu. Aby wprowadzić zmiany, należy otworzyć połączenie, wyłączyć opcję [[ui:common.readOnly]] i zapisać. Zob. [Tylko do odczytu](connections.md#read-only).
 - Połączenie jest typu prod. Zmiany wymagają wpisania nazwy połączenia. Dopóki nazwa się nie zgadza, działanie nie jest wykonywane. Zob. [Środowiska i prod](connections.md#environments).
-- Funkcja wymaga Pro. Błąd brzmi [[ui:errors.license.proRequired]] lub podaje datę wygaśnięcia, jeśli licencja wygasła. Zob. [Free i Pro](license-updates.md#free-and-pro).
 - Grupa konsumentów ma aktywnych członków. Offsety można zresetować, a grupę usunąć tylko wtedy, gdy nie ma członków. Zob. [Reset offsetów](groups.md#reset-offsets).
 - Ustawieniem zarządza organizacja. Zasady mogą ustawić język interfejsu, klucz licencyjny i sprawdzanie aktualizacji, a tych ustawień nie można zmienić w aplikacji. Zob. [Ustawienia określone przez organizację](getting-started.md#managed-settings).
 - Kafka odrzuciła operację z komunikatem [[ui:errors.kafka.notAuthorized]]. To kwestia uprawnień w klastrze, a nie ustawień Glafiry. Zob. [Błędy SASL](troubleshooting.md#sasl-errors).
@@ -94,13 +93,13 @@ Aplikacja zapisuje log swojej pracy i błędów klienta Kafki. Dokładny folder 
 
 Bieżący plik to `app.log`. Gdy osiągnie 5 MB, zostaje przemianowany na `app.1.log`, a starsze pliki przesuwają się do `app.2.log` i dalej. Aplikacja przechowuje do pięciu plików i usuwa najstarszy.
 
-Hasła nie są zapisywane w logach. Zapisywane są adresy brokerów i treści błędów Kafki. Nie trzeba zbierać plików ręcznie: archiwum diagnostyczne je zawiera, zob. [Archiwum diagnostyczne](license-updates.md#diagnostics).
+Hasła nie są zapisywane w logach. Zapisywane są adresy brokerów i treści błędów Kafki. Nie trzeba zbierać plików ręcznie: archiwum diagnostyczne je zawiera, zob. [Archiwum diagnostyczne](updates.md#diagnostics).
 
 ## Kontakt z pomocą techniczną {#support}
 
 Przed skontaktowaniem się z pomocą techniczną należy użyć przycisku [[ui:connections.form.test]] i zanotować, który krok się nie powiódł. Następnie trzeba wysłać zgłoszenie do osób, które zapewniają wsparcie dla Glafiry, na przykład do administratorów. Należy dołączyć:
 
-- archiwum diagnostyczne, zob. [Archiwum diagnostyczne](license-updates.md#diagnostics). Zawiera wersję, build, logi i profile połączeń bez haseł;
+- archiwum diagnostyczne, zob. [Archiwum diagnostyczne](updates.md#diagnostics). Zawiera wersję, build, logi i profile połączeń bez haseł;
 - opis krok po kroku: co zostało zrobione, czego oczekiwano i co się stało;
 - pełny tekst błędu wraz z zawartością sekcji [[ui:common.details]]. Ten tekst można zaznaczyć i skopiować;
 - zrzut ekranu, jeśli problem dotyczy interfejsu;

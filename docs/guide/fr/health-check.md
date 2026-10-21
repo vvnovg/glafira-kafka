@@ -1,6 +1,6 @@
 # Vérification du cluster et remarques
 
-Glafira vérifie un cluster à l’aide de règles intégrées et affiche les problèmes trouvés à côté des objets : dans l’arborescence des connexions, dans les listes de topics et de groupes et sur les écrans d’un topic ou d’un groupe. Avec Glafira Pro, un assistant LLM peut compléter ces constats par ses propres remarques. La vérification ne fait que lire le cluster et n’y change rien.
+Glafira vérifie un cluster à l’aide de règles intégrées et affiche les problèmes trouvés à côté des objets : dans l’arborescence des connexions, dans les listes de topics et de groupes et sur les écrans d’un topic ou d’un groupe. Un assistant LLM peut compléter ces constats par ses propres remarques. La vérification ne fait que lire le cluster et n’y change rien.
 
 ## Lancer une vérification {#run}
 
@@ -31,13 +31,11 @@ Si un constat est attendu pour un objet précis, par exemple un topic de test av
 
 ## Remarques LLM {#notes}
 
-Avec Glafira Pro, un assistant LLM connecté par MCP (voir [Assistants LLM (MCP)](llm-mcp.md#how-it-works)) peut laisser une remarque sur le cluster, un broker, un topic ou un groupe. Les remarques apparaissent dans [[ui:health.notes]] et sur les écrans des objets, signées du nom du client. Le texte est affiché tel quel, sans mise en forme ni liens.
+Un assistant LLM connecté par MCP (voir [Assistants LLM (MCP)](llm-mcp.md#how-it-works)) peut laisser une remarque sur le cluster, un broker, un topic ou un groupe. Les remarques apparaissent dans [[ui:health.notes]] et sur les écrans des objets, signées du nom du client. Le texte est affiché tel quel, sans mise en forme ni liens.
 
 - [[ui:health.resolve]] et [[ui:health.dismiss]] ferment une remarque ; les remarques fermées restent dans une section repliée.
 - [[ui:common.delete]] supprime une remarque, [[ui:health.deleteAll]] supprime toutes les remarques de la connexion.
 - Une remarque est supprimée automatiquement 7 jours après sa création. Une connexion peut avoir au plus 200 remarques ouvertes.
-
-Sans Pro, un assistant peut toujours lancer la vérification et lire les constats, mais il ne peut pas laisser de remarques.
 
 ## Avec un assistant LLM {#with-llm}
 

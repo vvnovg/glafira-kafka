@@ -74,7 +74,7 @@ La pestaña del topic muestra el número de particiones, el factor de replicaci�
 
 - [[ui:topics.details.refresh]]: vuelve a cargar los datos del topic.
 - [[ui:topics.details.produce]]: abre el [[ui:sidebar.producer]] con este topic. Consulta [Producer](producer.md).
-- [[ui:topics.details.consume]]: inicia una sesión de consumer para este topic. Requiere Pro. Consulta [Sesiones de consumer](consumer-sessions.md).
+- [[ui:topics.details.consume]]: inicia una sesión de consumer para este topic. Consulta [Sesiones de consumer](consumer-sessions.md).
 
 En las conexiones con la opción [[ui:common.readOnly]] activada, ambos botones están deshabilitados.
 

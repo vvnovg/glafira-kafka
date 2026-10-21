@@ -1,14 +1,12 @@
 # Sessions consumer
 
-Une session consumer lit des topics en tant que véritable membre d’un consumer group. Les sessions consumer sont une fonctionnalité Pro.
+Une session consumer lit des topics en tant que véritable membre d’un consumer group.
 
 ## Qu’est-ce qu’une session {#what-is}
 
 La [lecture](browse.md) parcourt les messages sans rejoindre de groupe et ne modifie rien dans le cluster. Une session, elle, rejoint un groupe avec le `group.id` indiqué, reçoit des partitions de Kafka et peut commiter des offsets. Utilisez-la pour lire ce qu’un groupe lirait, pour déplacer les offsets d’un groupe en commitant, ou pour observer le rééquilibrage d’un groupe.
 
 Une session a un effet sur le cluster. Lorsqu’elle rejoint ou quitte le groupe, Kafka redistribue les partitions du groupe, et les autres membres subissent un rééquilibrage. Les commits modifient les offsets du groupe, que ses applications utiliseront.
-
-Dans Free, [[ui:sidebar.consumer]], [[ui:topics.details.consume]] et [[ui:groups.details.join]] sont désactivés et marqués d’un cadenas et de `Pro`. Si un onglet de session s’ouvre sans licence Pro active, il affiche [[ui:consumer.proOnly]] et le lien [[ui:common.openLicense]]. Voir [Activer une clé](license-updates.md#activate).
 
 Les sessions ne sont pas disponibles sur les connexions en [[ui:common.readOnly]] : l’onglet affiche [[ui:consumer.readOnlyBlocked]]. Si une connexion passe en lecture seule pendant une session, la session quitte le groupe.
 
@@ -81,7 +79,6 @@ Le journal conserve les 200 dernières entrées. Avant le premier rééquilibrag
 
 ## Limites {#limits}
 
-- Les sessions nécessitent Pro. Si Pro cesse d’être actif pendant une session, celle-ci continue de lire, mais les commits, les pauses et les reprises sont refusés, et aucune nouvelle session ne peut être lancée.
 - Les sessions ne sont pas disponibles sur les connexions en [[ui:common.readOnly]].
 - Une session ne peut pas démarrer à partir d’un offset choisi. Pour définir le point de départ, réinitialisez d’abord les offsets du groupe : voir [Réinitialiser les offsets](groups.md#reset-offsets). La réinitialisation exige un groupe sans membres : déconnectez les sessions de ce groupe avant de réinitialiser.
 - Le tableau conserve au plus 100000 messages. Les messages plus anciens sont supprimés, mais comptent tout de même comme lus.

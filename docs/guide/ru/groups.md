@@ -39,7 +39,7 @@ Consumer group — это набор потребителей, которые д
 
 - [[ui:groups.details.autoRefresh]] — [[ui:groups.details.refreshOff]], [[ui:groups.details.refresh5]] или [[ui:groups.details.refresh10]].
 - [[ui:groups.details.refresh]] — загрузить заново сейчас.
-- [[ui:groups.details.join]] — запустить [consumer-сессию](consumer-sessions.md) в этой группе. В форму сессии попадут ID группы и топики, в которых у неё есть коммиты. Нужна Pro; на подключениях [[ui:common.readOnly]] кнопка недоступна. Наведите на неё указатель, чтобы увидеть причину.
+- [[ui:groups.details.join]] — запустить [consumer-сессию](consumer-sessions.md) в этой группе. В форму сессии попадут ID группы и топики, в которых у неё есть коммиты. На подключениях [[ui:common.readOnly]] кнопка недоступна. Наведите на неё указатель, чтобы увидеть причину.
 
 [[ui:groups.details.partitions]] — партиции, в которых у группы есть коммиты, и партиции, назначенные её участникам. Над таблицей показан суммарный лаг группы. Столбцы: [[ui:groups.details.colTopic]], [[ui:groups.details.colPartition]], `Committed` (закоммиченный оффсет), `Log end` (конечный оффсет партиции), [[ui:groups.details.colLag]] и [[ui:groups.details.colMember]] (client ID участника, который читает партицию).
 

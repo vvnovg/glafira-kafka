@@ -36,7 +36,7 @@ Wartość w polu [[ui:connections.form.protocol]] musi odpowiadać listenerowi b
 - `SASL_PLAINTEXT` — logowanie nazwą użytkownika i hasłem, bez szyfrowania.
 - `SASL_SSL` — logowanie nazwą użytkownika i hasłem przez TLS.
 
-Po zmianie protokołu formularz pokazuje tylko pola, których ten protokół wymaga. Wszystkie protokoły, w tym mTLS, są dostępne w Free.
+Po zmianie protokołu formularz pokazuje tylko pola, których ten protokół wymaga.
 
 ## SASL {#sasl}
 
@@ -106,8 +106,6 @@ Pole [[ui:connections.form.environment]] oznacza połączenie: `local`, `dev`, `
 
 `prod` dodaje ochronę. Każda zmiana w połączeniu prod, na przykład utworzenie topiku, wysłanie wiadomości, reset offsetów lub uruchomienie sesji konsumenta, wymaga wpisania nazwy połączenia. Usuwanie i czyszczenie w każdym połączeniu wymaga wpisania nazwy obiektu (usuwanie kilku topików — ich liczby), a w połączeniu prod trzeba wpisać obie nazwy. Te potwierdzenia pojawiają się w oknie aplikacji.
 
-Tworzenie połączeń prod i przełączanie połączeń na prod wymaga Pro. W Free ta opcja jest wyświetlana jako [[ui:connections.form.prodPro]] i nie można jej wybrać. Utworzone wcześniej połączenia prod nadal działają w Free, z tymi samymi potwierdzeniami.
-
 Nowe połączenie prod ma domyślnie włączoną opcję [[ui:common.readOnly]]. Jeśli trzeba wprowadzać zmiany, należy odznaczyć to pole.
 
 ## Tylko do odczytu {#read-only}
@@ -115,8 +113,6 @@ Nowe połączenie prod ma domyślnie włączoną opcję [[ui:common.readOnly]]. 
 Opcja [[ui:common.readOnly]] blokuje wszystko, co zmienia klaster: tworzenie, zmienianie, czyszczenie i usuwanie topików, wysyłanie wiadomości, reset offsetów, usuwanie grup i uruchamianie sesji konsumenta. Przyciski tych działań są ukryte lub nieaktywne, a rdzeń aplikacji również odrzuca takie operacje. Przeglądanie i odczyt pozostają dostępne. Ikona kłódki obok nazwy w panelu oznacza połączenia tylko do odczytu.
 
 Z tego trybu warto korzystać, gdy trzeba tylko obejrzeć dane, zwłaszcza we współdzielonych klastrach. Tryb tylko do odczytu to ochrona wewnątrz aplikacji: nie zastępuje uprawnień dostępu (ACL) w Kafce.
-
-W Free w połączeniu prod z włączoną opcją tylko do odczytu nie można odznaczyć tego pola: zdjęcie tej ochrony wymaga Pro.
 
 ## Foldery {#folders}
 
@@ -160,4 +156,4 @@ Jak aplikacja dopasowuje plik do istniejących połączeń:
 - Jeśli nowe połączenie ma taką samą nazwę jak inne w tym samym folderze, dodawany jest numer, na przykład `kafka-dev (2)`.
 - Połączenia, których ta wersja Glafiry nie obsługuje lub które zawierają sekrety w dodatkowych właściwościach, są pomijane.
 
-Podgląd ostrzega też, gdy pliki certyfikatów nie zostaną znalezione na tym komputerze oraz gdy połączenia prod staną się tylko do odczytu, ponieważ Pro nie jest aktywne. Hasła nie są zapisane w pliku, więc po imporcie panel informuje, ile połączeń ich wymaga. Należy otworzyć każde z tych połączeń, wpisać hasła i zapisać.
+Podgląd ostrzega też, gdy pliki certyfikatów nie zostaną znalezione na tym komputerze. Hasła nie są zapisane w pliku, więc po imporcie panel informuje, ile połączeń ich wymaga. Należy otworzyć każde z tych połączeń, wpisać hasła i zapisać.

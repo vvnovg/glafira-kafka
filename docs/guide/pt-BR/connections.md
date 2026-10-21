@@ -36,7 +36,7 @@ O protocolo escolhido em [[ui:connections.form.protocol]] precisa corresponder a
 - `SASL_PLAINTEXT` — login com usuário e senha, sem criptografia.
 - `SASL_SSL` — login com usuário e senha sobre TLS.
 
-Quando você muda o protocolo, o formulário mostra apenas os campos de que ele precisa. Todos os protocolos, inclusive mTLS, estão disponíveis no Free.
+Quando você muda o protocolo, o formulário mostra apenas os campos de que ele precisa.
 
 ## SASL {#sasl}
 
@@ -106,8 +106,6 @@ O campo [[ui:connections.form.environment]] marca a conexão: `local`, `dev`, `t
 
 `prod` adiciona proteção. Qualquer alteração em uma conexão prod, como criar um tópico, enviar uma mensagem, redefinir offsets ou iniciar uma sessão de consumer, pede que você digite o nome da conexão. Excluir e limpar pedem o nome do objeto em qualquer conexão (excluir vários tópicos pede a quantidade deles), e em prod você digita os dois. Essas confirmações aparecem dentro da janela do aplicativo.
 
-Criar conexões prod e mudar conexões para prod exige o Pro. No Free, essa opção aparece como [[ui:connections.form.prodPro]] e não pode ser selecionada. As conexões prod criadas antes continuam funcionando no Free, com as mesmas confirmações.
-
 Uma nova conexão prod é criada com a opção [[ui:common.readOnly]] ativada. Desmarque a caixa se precisar fazer alterações.
 
 ## Somente leitura {#read-only}
@@ -115,8 +113,6 @@ Uma nova conexão prod é criada com a opção [[ui:common.readOnly]] ativada. D
 A opção [[ui:common.readOnly]] bloqueia tudo o que altera o cluster: criar, alterar, limpar e excluir tópicos, enviar mensagens, redefinir offsets, excluir grupos e iniciar sessões de consumer. Os botões dessas ações ficam ocultos ou desativados, e o núcleo do aplicativo também rejeita essas operações. A navegação e a leitura continuam disponíveis. Um ícone de cadeado ao lado do nome no painel marca as conexões somente leitura.
 
 Use esse modo quando precisar apenas consultar os dados, principalmente em clusters compartilhados. O modo somente leitura é uma proteção dentro do aplicativo: ele não substitui os direitos de acesso (ACLs) no Kafka.
-
-No Free, a caixa não pode ser desmarcada em uma conexão prod somente leitura: remover essa proteção exige o Pro.
 
 ## Pastas {#folders}
 
@@ -160,4 +156,4 @@ Como o aplicativo associa o arquivo às suas conexões:
 - Se uma nova conexão tiver o mesmo nome de outra na mesma pasta, um número é acrescentado, por exemplo `kafka-dev (2)`.
 - As conexões que esta versão do Glafira não suporta, ou que contêm segredos nas propriedades adicionais, são ignoradas.
 
-A pré-visualização também avisa quando os arquivos de certificado não são encontrados neste computador e quando as conexões prod passarão a ser somente leitura porque o Pro não está ativo. As senhas não estão no arquivo, então, depois da importação, o painel informa quantas conexões precisam delas. Abra cada uma dessas conexões, digite as senhas e salve.
+A pré-visualização também avisa quando os arquivos de certificado não são encontrados neste computador. As senhas não estão no arquivo, então, depois da importação, o painel informa quantas conexões precisam delas. Abra cada uma dessas conexões, digite as senhas e salve.

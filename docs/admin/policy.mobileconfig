@@ -11,7 +11,6 @@
       <key>PayloadVersion</key><integer>1</integer>
       <key>updatesEnabled</key><false/>
       <key>updateUrl</key><string>https://mirror.example.corp/glafira-kafka/latest.json</string>
-      <key>licenseKey</key><string>&lt;ключ организации&gt;</string>
       <key>language</key><string>en</string>
       <key>mcpEnabled</key><false/>
     </dict>

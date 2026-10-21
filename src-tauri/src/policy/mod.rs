@@ -10,7 +10,6 @@ use crate::i18n::LocalizedText;
 
 pub const KEY_UPDATES_ENABLED: &str = "updatesEnabled";
 pub const KEY_UPDATE_URL: &str = "updateUrl";
-pub const KEY_LICENSE_KEY: &str = "licenseKey";
 pub const KEY_LANGUAGE: &str = "language";
 pub const KEY_MCP_ENABLED: &str = "mcpEnabled";
 
@@ -69,7 +68,6 @@ pub struct PolicyStatus {
     pub source: Option<String>,
     pub updates_enabled: bool,
     pub update_url: Option<String>,
-    pub has_license_key: bool,
     /// Язык интерфейса, заданный администратором.
     pub language: Option<String>,
     /// `false` — MCP-шлюз запрещён администратором (спец. G1 §9).
@@ -84,7 +82,6 @@ impl Default for PolicyStatus {
             source: None,
             updates_enabled: true,
             update_url: None,
-            has_license_key: false,
             language: None,
             mcp_enabled: true,
             errors: Vec::new(),
@@ -95,8 +92,6 @@ impl Default for PolicyStatus {
 #[derive(Debug, Clone, Default)]
 pub struct Policy {
     pub status: PolicyStatus,
-    /// Ключ организации; в интерфейс не отдаётся.
-    pub license_key: Option<String>,
 }
 
 /// Политика, которую задал администратор, но которую не удалось понять, выключает обновления:
@@ -118,7 +113,6 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                     )],
                     ..PolicyStatus::default()
                 },
-                license_key: None,
             };
         }
         RawPolicy::Values(map) => map,
@@ -128,7 +122,6 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
         source: Some(source.to_string()),
         ..PolicyStatus::default()
     };
-    let mut license_key = None;
     let mut broken = false;
     for (key, value) in map {
         match (key.as_str(), value) {
@@ -144,10 +137,6 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                     "{{key}}: an https:// address is required — updates are not downloaded over http",
                     key = key
                 ));
-            }
-            (KEY_LICENSE_KEY, PolicyValue::Str(s)) if !s.trim().is_empty() => {
-                license_key = Some(s.trim().to_string());
-                status.has_license_key = true;
             }
             (KEY_LANGUAGE, PolicyValue::Str(s))
                 if crate::settings::LANGUAGES.contains(&s.trim()) =>
@@ -169,20 +158,18 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                 status.mcp_enabled = false;
                 status.errors.push(other.invalid(&key));
             }
-            (KEY_UPDATES_ENABLED | KEY_UPDATE_URL | KEY_LICENSE_KEY, other) => {
+            (KEY_UPDATES_ENABLED | KEY_UPDATE_URL, other) => {
                 broken = true;
                 status.errors.push(other.invalid(&key));
             }
+            // Сюда же попадает `licenseKey` политик версий 0.2.x: ключи больше не используются.
             (unknown, _) => tracing::warn!("unknown policy key “{unknown}” ignored"),
         }
     }
     if broken {
         status.updates_enabled = false;
     }
-    Policy {
-        status,
-        license_key,
-    }
+    Policy { status }
 }
 
 #[cfg(test)]
@@ -203,7 +190,6 @@ mod tests {
         let p = resolve("/etc/x/policy.json", RawPolicy::Absent);
         assert!(!p.status.managed);
         assert!(p.status.updates_enabled);
-        assert_eq!(p.license_key, None);
     }
 
     #[test]
@@ -216,7 +202,6 @@ mod tests {
                     "updateUrl",
                     PolicyValue::Str("https://mirror.corp/latest.json".into()),
                 ),
-                ("licenseKey", PolicyValue::Str(" abc.def ".into())),
             ]),
         );
         assert!(p.status.managed);
@@ -226,8 +211,6 @@ mod tests {
             p.status.update_url.as_deref(),
             Some("https://mirror.corp/latest.json")
         );
-        assert!(p.status.has_license_key);
-        assert_eq!(p.license_key.as_deref(), Some("abc.def"));
         assert!(p.status.errors.is_empty());
     }
 
@@ -358,13 +341,17 @@ mod tests {
     }
 
     #[test]
-    fn license_key_is_not_serialized() {
+    fn legacy_license_key_is_ignored() {
+        // Политика версий 0.2.x с ключом организации: не ошибка, ключ никуда не попадает.
         let p = resolve(
             "src",
             values(&[("licenseKey", PolicyValue::Str("secret.key".into()))]),
         );
+        assert!(p.status.managed);
+        assert!(p.status.updates_enabled);
+        assert!(p.status.errors.is_empty());
         let json = serde_json::to_string(&p.status).unwrap();
         assert!(!json.contains("secret.key"));
-        assert!(json.contains("\"hasLicenseKey\":true"));
+        assert!(!json.to_lowercase().contains("license"));
     }
 }

@@ -169,7 +169,7 @@ mod tests {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>updatesEnabled</key><false/>
-  <key>licenseKey</key><string>a.b</string>
+  <key>updateUrl</key><string>https://mirror.corp/latest.json</string>
   <key>n</key><integer>3</integer>
 </dict></plist>"#,
         )
@@ -178,7 +178,10 @@ mod tests {
             panic!()
         };
         assert_eq!(v["updatesEnabled"], PolicyValue::Bool(false));
-        assert_eq!(v["licenseKey"], PolicyValue::Str("a.b".into()));
+        assert_eq!(
+            v["updateUrl"],
+            PolicyValue::Str("https://mirror.corp/latest.json".into())
+        );
         assert_eq!(v["n"], PolicyValue::Int(3));
         std::fs::write(&path, "not a plist").unwrap();
         assert!(matches!(read_plist_file(&path), RawPolicy::Unreadable(_)));
@@ -209,7 +212,6 @@ mod tests {
         assert!(p.status.errors.is_empty(), "{:?}", p.status.errors);
         assert!(!p.status.updates_enabled);
         assert!(p.status.update_url.is_some());
-        assert!(p.status.has_license_key);
         assert_eq!(p.status.language.as_deref(), Some("en"));
         assert!(!p.status.mcp_enabled, "пример запрещает MCP");
 
@@ -226,13 +228,7 @@ mod tests {
             content.get("PayloadType").and_then(|v| v.as_string()),
             Some(crate::product::IDENTIFIER)
         );
-        for key in [
-            "updatesEnabled",
-            "updateUrl",
-            "licenseKey",
-            "language",
-            "mcpEnabled",
-        ] {
+        for key in ["updatesEnabled", "updateUrl", "language", "mcpEnabled"] {
             assert!(content.contains_key(key), "{key}");
         }
         assert_eq!(

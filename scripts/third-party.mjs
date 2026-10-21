@@ -13,9 +13,17 @@ export const C_LIBRARIES = [
   { name: "zstd", license: "BSD-3-Clause", url: "https://github.com/facebook/zstd", note: "rdkafka-sys, feature zstd" },
   { name: "zlib", license: "Zlib", url: "https://zlib.net/", note: "rdkafka-sys, feature libz-static" },
   { name: "OpenSSL 3", license: "Apache-2.0", url: "https://www.openssl.org/", note: "openssl-src, feature ssl-vendored" },
+  {
+    name: "librdkafka bundled components",
+    license: "MIT, BSD-3-Clause, Zlib, CC0-1.0, ISC, public domain",
+    url: "https://github.com/confluentinc/librdkafka/blob/master/LICENSES.txt",
+    note: "cJSON, snappy, tinycthread, nanopb, crc32c, queue.h, regexp, murmur2, fnv1a, HdrHistogram, pycrc, wingetopt, OpenTelemetry proto — see LICENSES.txt",
+  },
 ];
 
-const byNameVersion = (a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version);
+// Сравнение по кодовым точкам, а не localeCompare: порядок не зависит от локали и версии ICU.
+const cmp = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
+const byNameVersion = (a, b) => cmp(a.name, b.name) || cmp(a.version, b.version);
 
 /**
  * Крейты, которые попадают в сборку: обход графа `resolve` от корня по обычным и build-зависимостям
@@ -40,7 +48,7 @@ export function rustRows(metadata) {
     .map((p) => ({
       name: p.name,
       version: p.version,
-      license: p.license ?? (p.license_file ? `см. ${p.license_file} в крейте` : "unknown"),
+      license: p.license ?? (p.license_file ? `see ${p.license_file} in the crate` : "unknown"),
       url: p.repository ?? "",
     }))
     .sort(byNameVersion);
@@ -58,7 +66,7 @@ export function npmRows(byLicense) {
 const cell = (s) => String(s).replace(/\|/g, "\\|");
 const table = (header, rows) => [`| ${header.join(" | ")} |`, `|${header.map(() => "---").join("|")}|`, ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`)];
 
-/** Markdown THIRD_PARTY.md. Без дат и путей — файл детерминирован и пригоден для diff. */
+/** Markdown THIRD_PARTY.md. Без дат и путей, порядок строк не зависит от локали — файл детерминирован и пригоден для diff. */
 export function render({ rust, npm, cLibraries = C_LIBRARIES }) {
   return [
     "# Third-party software",

@@ -29,7 +29,7 @@ test("rustRows: обычные и build-зависимости от корня, 
   const rows = rustRows(metadata);
   assert.deepEqual(
     rows.map((r) => `${r.name} ${r.version} ${r.license}`),
-    ["alpha 1.0.0 MIT", "beta 2.0.0 MIT OR Apache-2.0", "gamma 0.1.0 см. LICENSE.txt в крейте"],
+    ["alpha 1.0.0 MIT", "beta 2.0.0 MIT OR Apache-2.0", "gamma 0.1.0 see LICENSE.txt in the crate"],
   );
   assert.equal(rows[0].url, "https://example.org/alpha");
 });

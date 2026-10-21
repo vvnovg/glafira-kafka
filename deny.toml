@@ -1,8 +1,8 @@
 # Лицензии зависимостей: `cargo deny --manifest-path <крейт>/Cargo.toml --config deny.toml check licenses`
 # для src-tauri и crates/glafira-mcp (так же в CI). Белый список — только разрешительные лицензии;
 # MPL-2.0 — копилефт на уровне файла, совместима, пока файлы этих крейтов не изменяются.
-# C-библиотеки, которые собирает rdkafka-sys (librdkafka, zstd, zlib, lz4), cargo deny не видит —
-# они перечислены в THIRD_PARTY.md вручную.
+# C-библиотеки, которые собирают rdkafka-sys (librdkafka, zstd, zlib, lz4) и openssl-src (OpenSSL 3,
+# feature ssl-vendored), cargo deny не видит — они перечислены в THIRD_PARTY.md вручную.
 [licenses]
 confidence-threshold = 0.8
 unused-allowed-license = "allow"

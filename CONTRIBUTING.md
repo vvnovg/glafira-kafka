@@ -24,7 +24,7 @@ cargo deny --manifest-path src-tauri/Cargo.toml --config deny.toml check license
 cargo deny --manifest-path crates/glafira-mcp/Cargo.toml --config deny.toml check licenses
 ```
 
-`cargo-deny` can be installed with `cargo install cargo-deny --locked`.
+`cargo-deny` can be installed with `cargo install cargo-deny --locked --version 0.20.2`.
 
 ## Interface strings and the guide
 
@@ -34,6 +34,7 @@ Every new string goes to all 12 dictionaries in `src/locales/` at once (see `doc
 
 ## Developer Certificate of Origin
 
-Contributions are accepted under the Apache License 2.0 (`LICENSE`). Every commit must be signed off
-(`git commit -s`), which certifies the [Developer Certificate of Origin](https://developercertificate.org/).
-Pull requests with commits that lack a `Signed-off-by` line are not merged.
+Contributions are accepted under the Apache License 2.0 (`LICENSE`). Commits in pull requests from contributors
+must be signed off (`git commit -s`), which certifies the
+[Developer Certificate of Origin](https://developercertificate.org/). Pull requests whose commits lack
+a `Signed-off-by` line are not merged.

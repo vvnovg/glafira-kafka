@@ -40,6 +40,7 @@ describe("AboutPanel", () => {
   });
 
   it("строка лицензии и кнопка поддержки открывают страницы в браузере", async () => {
+    vi.mocked(openUrl).mockClear();
     const user = userEvent.setup();
     renderWithClient(<AboutPanel />);
     await user.click(await screen.findByRole("button", { name: "Apache 2.0" }));

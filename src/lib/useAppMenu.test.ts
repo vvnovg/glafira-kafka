@@ -121,6 +121,7 @@ beforeEach(() => {
   h.helpForNSApp = [];
   h.previous = [];
   h.channels.clear();
+  vi.mocked(openUrl).mockClear();
   useWorkspace.setState({ tabs: [], activeId: null });
   useDiagnosticsRequest.setState({ pending: false });
 });

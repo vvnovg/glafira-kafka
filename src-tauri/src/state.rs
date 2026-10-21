@@ -18,13 +18,13 @@ pub struct AppState {
     pub history: Arc<crate::storage::history::HistoryStore>,
     pub templates: Arc<crate::storage::templates::TemplateStore>,
     pub policy: Arc<crate::policy::Policy>,
-    pub license: Arc<crate::license::LicenseManager>,
     pub settings: Arc<crate::settings::SettingsStore>,
     pub health: Arc<crate::health::service::HealthService>,
 }
 
 impl AppState {
     pub fn new(data_dir: &Path, secrets: Arc<dyn SecretStore>) -> AppResult<Self> {
+        crate::migrate::remove_legacy_license_file(data_dir);
         Ok(Self {
             connections: Arc::new(ConnectionStore::open(data_dir)?),
             secrets,
@@ -35,10 +35,6 @@ impl AppState {
             history: Arc::new(crate::storage::history::HistoryStore::open(data_dir)?),
             templates: Arc::new(crate::storage::templates::TemplateStore::open(data_dir)),
             policy: Arc::new(crate::policy::Policy::default()),
-            license: Arc::new(crate::license::LicenseManager::open(
-                data_dir,
-                crate::license::LicenseManager::embedded_key(),
-            )),
             settings: Arc::new(crate::settings::SettingsStore::open(data_dir)),
             health: Arc::new(crate::health::service::HealthService::open(data_dir)),
         })
@@ -46,7 +42,6 @@ impl AppState {
 
     /// Политика администратора (читается при запуске в lib.rs).
     pub fn with_policy(mut self, policy: crate::policy::Policy) -> Self {
-        self.license.set_policy_key(policy.license_key.clone());
         self.policy = Arc::new(policy);
         self
     }
@@ -282,21 +277,5 @@ mod tests {
         assert!(state.templates.list("a").is_err());
         state.connections.upsert(sample_profile("a")).unwrap();
         assert!(state.handles("a").is_ok(), "остальное работает");
-    }
-
-    #[test]
-    fn policy_license_key_reaches_manager() {
-        let dir = tempfile::tempdir().unwrap();
-        let mut st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
-        st.license = Arc::new(crate::license::LicenseManager::open(
-            dir.path(),
-            license_format::dev::verifying_key(),
-        ));
-        let policy = crate::policy::Policy {
-            license_key: Some(license_format::dev::pro_token("ACME", None)),
-            ..Default::default()
-        };
-        let st = st.with_policy(policy);
-        assert_eq!(st.license.status().licensee.as_deref(), Some("ACME"));
     }
 }

@@ -730,10 +730,6 @@ impl Backend for AppBackend {
     fn health(&self, op: mh::HealthOp) -> BoxFuture<'_, Result<mh::HealthOutput, BackendError>> {
         Box::pin(self.health_impl(op))
     }
-
-    fn pro_active(&self) -> bool {
-        self.state.license.require_pro().is_ok()
-    }
 }
 
 #[cfg(test)]
@@ -918,7 +914,6 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(e.code, "not_allowed");
-        assert!(!b.pro_active());
     }
 
     #[tokio::test]

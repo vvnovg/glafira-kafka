@@ -368,7 +368,7 @@ mod tests {
     }
 
     #[test]
-    fn priority_without_license() {
+    fn priority_of_sources() {
         use LanguageReason::*;
         assert_eq!(resolve(Some("ru-RU"), None, None), ("ru".into(), System));
         assert_eq!(resolve(Some("de-DE"), None, None), ("de".into(), System));

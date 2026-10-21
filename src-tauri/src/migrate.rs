@@ -19,7 +19,21 @@ pub struct MigrationReport {
 /// Признак установки: без него каталог не считается ни старой, ни новой установкой.
 const MARKER: &str = "connections.json";
 /// Файлы, кроме `MARKER`; он копируется последним (см. `migrate`).
-const FILES: [&str; 2] = ["templates.json", "license.json"];
+const FILES: [&str; 1] = ["templates.json"];
+
+/// Файл лицензионного ключа версий 0.2.x: ключи больше не используются, файл удаляется при запуске.
+const LEGACY_LICENSE_FILE: &str = "license.json";
+
+/// Удаляет `license.json` из каталога данных, если он остался от 0.2.x. Ошибка удаления
+/// не мешает запуску: файл больше ни на что не влияет.
+pub fn remove_legacy_license_file(data_dir: &Path) {
+    let path = data_dir.join(LEGACY_LICENSE_FILE);
+    match std::fs::remove_file(&path) {
+        Ok(()) => tracing::info!(path = %path.display(), "legacy license file removed"),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => tracing::warn!(path = %path.display(), "legacy license file not removed: {e}"),
+    }
+}
 
 /// Каталоги данных прежних идентификаторов рядом с текущим (`<app data>/<identifier>`).
 pub fn legacy_sources(data_dir_parent: &Path) -> Vec<(PathBuf, Arc<dyn SecretStore>)> {
@@ -242,22 +256,34 @@ mod tests {
 
     #[test]
     fn existing_new_file_is_not_overwritten() {
-        // Новая версия уже запускалась без подключений, но с лицензией.
+        // Новая версия уже запускалась без подключений, но с шаблонами.
         let root = tempfile::tempdir().unwrap();
         let old = root.path().join("old");
         let new = root.path().join("new");
         let old_secrets = old_install(&old);
-        std::fs::write(old.join("license.json"), "old").unwrap();
+        std::fs::write(old.join("templates.json"), "old").unwrap();
         std::fs::create_dir_all(&new).unwrap();
-        std::fs::write(new.join("license.json"), "new").unwrap();
+        std::fs::write(new.join("templates.json"), "new").unwrap();
         let r = migrate(&new, &[(old, old_secrets)], &MemoryStore::default());
         assert!(r.errors.is_empty(), "{:?}", r.errors);
         assert_eq!(
-            std::fs::read_to_string(new.join("license.json")).unwrap(),
+            std::fs::read_to_string(new.join("templates.json")).unwrap(),
             "new"
         );
-        assert!(!r.files.iter().any(|f| f == "license.json"));
+        assert!(!r.files.iter().any(|f| f == "templates.json"));
         assert!(new.join("connections.json").exists());
+    }
+
+    #[test]
+    fn legacy_license_file_is_removed_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("license.json");
+        std::fs::write(&path, "{\"token\":\"a.b\"}").unwrap();
+        remove_legacy_license_file(dir.path());
+        assert!(!path.exists());
+        // Повторный вызов без файла — тихий.
+        remove_legacy_license_file(dir.path());
+        assert!(!path.exists());
     }
 
     #[test]

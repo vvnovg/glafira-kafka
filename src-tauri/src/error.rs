@@ -18,7 +18,6 @@ pub enum ErrorCode {
     ReadOnly,
     ConfirmationRequired,
     GroupNotEmpty,
-    ProRequired,
     Internal,
 }
 
@@ -317,7 +316,6 @@ mod tests {
             (ErrorCode::ReadOnly, "READ_ONLY"),
             (ErrorCode::ConfirmationRequired, "CONFIRMATION_REQUIRED"),
             (ErrorCode::GroupNotEmpty, "GROUP_NOT_EMPTY"),
-            (ErrorCode::ProRequired, "PRO_REQUIRED"),
         ] {
             assert_eq!(serde_json::to_value(code).unwrap(), name);
             assert!(!AppError::localized(code, LocalizedText::raw("x")).retryable);

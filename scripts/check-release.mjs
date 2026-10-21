@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Проверки перед релизом: версии, боевые ключи, раздел CHANGELOG.
-// --dry-run (workflow_dispatch): проблемы с ключами — предупреждения, а не ошибки.
+// Проверки перед релизом: версии, ключ updater, раздел CHANGELOG.
+// --dry-run (workflow_dispatch): проблема с ключом — предупреждение, а не ошибка.
 // Сборка по тегу всегда строгая.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -18,9 +18,6 @@ export function releaseIssues({ tag, files }) {
   for (const [name, v] of [["package.json", pkg], ["src-tauri/Cargo.toml", cargo], ["src-tauri/tauri.conf.json", tauri.version]]) {
     if (v !== version) add("version", `${name}: версия ${v ?? "не найдена"}, а тег ${tag}`);
   }
-  if (files.licensePublic.trim() === files.devPublic.trim()) {
-    add("key", "src-tauri/license-public.key — тестовый dev-ключ лицензий: сгенерируйте боевой (docs/licensing.md)");
-  }
   const pubkey = tauri.plugins?.updater?.pubkey;
   if (!pubkey || pubkey === "REPLACE_WITH_UPDATER_PUBKEY") {
     add("key", "tauri.conf.json: не задан открытый ключ updater (plugins.updater.pubkey)");
@@ -32,8 +29,8 @@ export function releaseIssues({ tag, files }) {
 }
 
 /**
- * Ошибки, блокирующие релиз (string[]). По умолчанию строго: ключи — ошибки.
- * С dryRun ключи уходят в warnings (если передан массив).
+ * Ошибки, блокирующие релиз (string[]). По умолчанию строго: ключ — ошибка.
+ * С dryRun ключ уходит в warnings (если передан массив).
  */
 export function checkRelease({ tag, files, dryRun = false, warnings = [] }) {
   const errors = [];
@@ -62,8 +59,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       packageJson: read("package.json"),
       cargoToml: read("src-tauri/Cargo.toml"),
       tauriConf: read("src-tauri/tauri.conf.json"),
-      licensePublic: read("src-tauri/license-public.key"),
-      devPublic: read("crates/license-format/testdata/dev-public.key"),
       changelog: read("CHANGELOG.md"),
     },
   });

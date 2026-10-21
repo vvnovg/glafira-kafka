@@ -110,11 +110,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsecret-1-dev cmake libcurl4-openssl-dev libsasl2-dev rpm
       - run: pnpm install --frozen-lockfile
-      # Только пробный прогон: на пуше тега переменная не задаётся, и build.rs
-      # не даст собрать релиз с dev-ключом лицензий.
-      - name: Пробный прогон — разрешить dev-ключ лицензий
-        if: github.event_name == 'workflow_dispatch'
-        run: echo "KE_ALLOW_DEV_LICENSE_KEY=1" >> "$GITHUB_ENV"
       # Секреты Apple — только в env шага tauri-action (не в GITHUB_ENV: иначе их видели бы все
       # следующие шаги). Пустые APPLE_* ломают сборку (bundler импортирует пустой сертификат),
       # поэтому шагов два: с подписью — когда заданы все секреты, без подписи — когда не задан ни один.

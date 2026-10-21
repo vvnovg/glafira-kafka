@@ -23,10 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Закрытые ключи лицензий (кроме тестовых dev-ключей)
-license-signing.key
-tools/issue-license/target
-crates/license-format/target
 crates/glafira-mcp/target
 dist-e2e
 

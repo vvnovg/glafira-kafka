@@ -2,6 +2,7 @@ use tauri::State;
 
 use super::blocking;
 use crate::error::{AppResult, ErrorCode};
+use crate::policy::PolicyStatus;
 use crate::settings::{LanguageSettings, language_settings, system_locale};
 use crate::state::AppState;
 
@@ -40,6 +41,11 @@ pub async fn set_language(
     blocking(move || apply_language(&st, lang.as_deref())).await
 }
 
+#[tauri::command]
+pub fn get_policy_status(state: State<'_, AppState>) -> AppResult<PolicyStatus> {
+    Ok(state.policy.status.clone())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -71,10 +77,9 @@ mod tests {
     }
 
     #[test]
-    fn pro_can_pick_any_language() {
+    fn any_language_can_be_picked_without_a_key() {
         let dir = tempfile::tempdir().unwrap();
-        let mut st = state(dir.path());
-        st.license = Arc::new(crate::license::pro_for_tests(dir.path()));
+        let st = state(dir.path());
         let r = apply_language(&st, Some("pt-BR")).unwrap();
         assert_eq!(
             (r.effective.as_str(), r.reason),

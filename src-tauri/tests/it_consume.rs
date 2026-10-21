@@ -317,17 +317,9 @@ async fn app_shutdown_waits_for_session_to_leave_group() {
     let (t, g) = (topic.to_string(), group.to_string());
     tokio::task::spawn_blocking(move || {
         let dir = tempfile::tempdir().unwrap();
-        let mut st =
+        let st =
             kafka_explorer_lib::state::AppState::new(dir.path(), Arc::new(MemoryStore::default()))
                 .unwrap();
-        let license = kafka_explorer_lib::license::LicenseManager::open(
-            dir.path(),
-            license_format::dev::verifying_key(),
-        );
-        license
-            .set_user_key(&license_format::dev::pro_token("it", None))
-            .unwrap();
-        st.license = Arc::new(license);
         st.connections
             .upsert(common::plaintext_profile(&bs))
             .unwrap();

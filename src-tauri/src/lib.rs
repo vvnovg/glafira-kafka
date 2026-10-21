@@ -9,7 +9,6 @@ pub mod error;
 pub mod guard;
 pub mod health;
 pub mod kafka;
-pub mod license;
 pub mod logging;
 pub mod mcp;
 pub mod migrate;
@@ -111,7 +110,6 @@ pub fn run() {
                 "policy"
             );
             let st = AppState::new(&dir, Arc::new(KeyringStore::default()))?.with_policy(policy);
-            tracing::info!(tier = ?st.license.status().tier, "license");
             if crate::mcp::files::data_dir().as_deref() != Some(dir.as_path()) {
                 tracing::warn!(
                     shim = ?crate::mcp::files::data_dir(),
@@ -190,12 +188,9 @@ pub fn run() {
             commands::app::export_diagnostics,
             commands::app::check_update,
             commands::app::install_update,
-            commands::license::get_policy_status,
-            commands::license::get_license_status,
-            commands::license::set_license_key,
-            commands::license::remove_license_key,
             commands::settings::get_language_settings,
             commands::settings::set_language,
+            commands::settings::get_policy_status,
             commands::mcp::get_mcp_status,
             commands::mcp::set_mcp_enabled,
             commands::mcp::answer_mcp_approval,

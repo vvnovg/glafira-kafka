@@ -12,8 +12,8 @@ use crate::kafka::config::{
 };
 use crate::secrets::{SecretStore, secret_key};
 use crate::storage::connections::{
-    ConnectionFolder, ConnectionProfile, ConnectionStore, Environment, LlmAccess, SecurityConfig,
-    StoreData, check_tree, folder_not_found, is_secret_property, unique_name, validate_profile,
+    ConnectionFolder, ConnectionProfile, ConnectionStore, LlmAccess, SecurityConfig, StoreData,
+    check_tree, folder_not_found, is_secret_property, unique_name, validate_profile,
 };
 use crate::storage::tree::TreeItemKind;
 
@@ -293,7 +293,6 @@ pub struct ImportOptions<'a> {
     /// Папка, под которую попадают корневые элементы файла; `None` — корень.
     pub target: Option<&'a str>,
     pub update_existing: bool,
-    pub is_pro: bool,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
@@ -478,19 +477,11 @@ pub(crate) fn plan_import(
     let mut connections: Vec<&(ConnectionProfile, NeedsPassword)> =
         parsed.connections.iter().collect();
     connections.sort_by_key(|(p, _)| p.order);
-    let mut prod_read_only = 0usize;
     let mut missing_files = 0usize;
     for (incoming, needs) in connections {
         let mut profile = incoming.clone();
-        let forced_read_only = !opts.is_pro && profile.environment == Environment::Prod;
-        if forced_read_only {
-            profile.read_only = true;
-        }
         if let Some(slot) = next.connections.iter_mut().find(|c| c.id == profile.id) {
-            // Во Free совпадение с файлом «как есть» — тоже «без изменений»: иначе локальный
-            // prod без readOnly выглядел бы обновлённым при каждом импорте того же файла.
-            let unchanged_settings = same_settings(slot, incoming) || same_settings(slot, &profile);
-            if unchanged_settings || !opts.update_existing {
+            if same_settings(slot, incoming) || !opts.update_existing {
                 unchanged.push((TreeItemKind::Connection, profile.id.clone()));
                 continue;
             }
@@ -499,7 +490,6 @@ pub(crate) fn plan_import(
             profile.order = slot.order;
             profile.llm_access = slot.llm_access;
             profile.extra = std::mem::take(&mut slot.extra);
-            prod_read_only += usize::from(forced_read_only);
             missing_files += usize::from(misses_files(&profile, file_exists));
             updated.push((TreeItemKind::Connection, profile.id.clone()));
             *slot = profile;
@@ -537,7 +527,6 @@ pub(crate) fn plan_import(
         profile.name = name;
         profile.llm_access = LlmAccess::Off;
         profile.extra = Default::default();
-        prod_read_only += usize::from(forced_read_only);
         missing_files += usize::from(misses_files(&profile, file_exists));
         if needs.sasl || needs.truststore || needs.keystore || needs.key {
             preview.needs_passwords += 1;
@@ -546,13 +535,6 @@ pub(crate) fn plan_import(
         next.connections.push(profile);
     }
 
-    if prod_read_only > 0 {
-        preview.warnings.push(ltext!(
-            "warnings.import.prodReadOnly",
-            "{{count}} prod connections will be read-only: changing prod connections requires Pro",
-            count = prod_read_only
-        ));
-    }
     if missing_files > 0 {
         preview.warnings.push(ltext!(
             "warnings.import.missingFiles",
@@ -855,7 +837,6 @@ mod tests {
         ImportOptions {
             target,
             update_existing: true,
-            is_pro: true,
         }
     }
 
@@ -1079,53 +1060,22 @@ mod tests {
     }
 
     #[test]
-    fn prod_becomes_read_only_in_free() {
+    fn prod_read_only_comes_from_the_file() {
+        // readOnly prod-подключения берётся из файла как есть: без принуждения и предупреждения.
         let mut prod = conn_json("p", "P", None);
         prod["environment"] = "prod".into();
         let bytes = file(vec![], vec![prod, conn_json("d", "D", None)]);
-        let free = ImportOptions {
-            is_pro: false,
-            ..opts(None)
-        };
-        let p = plan(&StoreData::default(), &bytes, &free);
-        assert!(conn(&p.next, "p").read_only);
-        assert!(!conn(&p.next, "d").read_only);
-        assert_eq!(p.preview.warnings.len(), 1);
-        assert_eq!(p.preview.warnings[0].key, "warnings.import.prodReadOnly");
-        assert_eq!(p.preview.warnings[0].params["count"], "1");
-
         let p = plan(&StoreData::default(), &bytes, &opts(None));
         assert!(!conn(&p.next, "p").read_only);
+        assert!(!conn(&p.next, "d").read_only);
         assert!(p.preview.warnings.is_empty());
 
-        // Pro: readOnly из файла сохраняется как есть.
         let mut ro = conn_json("r", "R", None);
         ro["environment"] = "prod".into();
         ro["readOnly"] = true.into();
         let p = plan(&StoreData::default(), &file(vec![], vec![ro]), &opts(None));
         assert!(conn(&p.next, "r").read_only);
-    }
-
-    #[test]
-    fn identical_prod_in_free_is_unchanged_and_keeps_read_only() {
-        let mut local = sample_profile("p");
-        local.environment = Environment::Prod;
-        local.read_only = false;
-        let data = StoreData {
-            connections: vec![local.clone()],
-            ..Default::default()
-        };
-        let mut same = conn_json("p", "conn-p", None);
-        same["environment"] = "prod".into();
-        let free = ImportOptions {
-            is_pro: false,
-            ..opts(None)
-        };
-        let p = plan(&data, &file(vec![], vec![same]), &free);
-        assert_eq!(preview_ids(&p.preview.unchanged), ["p"]);
-        assert!(p.preview.updated.is_empty());
         assert!(p.preview.warnings.is_empty());
-        assert_eq!(conn(&p.next, "p"), &local);
     }
 
     #[test]

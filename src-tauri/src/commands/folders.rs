@@ -5,7 +5,6 @@ use time::format_description::well_known::Rfc3339;
 
 use super::blocking;
 use crate::error::{AppError, AppResult};
-use crate::license::Tier;
 use crate::state::AppState;
 use crate::storage::connections::ConnectionFolder;
 use crate::storage::exchange::{
@@ -150,7 +149,6 @@ fn import_from_file(
     let opts = ImportOptions {
         target,
         update_existing,
-        is_pro: st.license.status().tier == Tier::Pro,
     };
     let file_exists = |p: &str| Path::new(p).is_file();
     if !apply {
@@ -245,8 +243,8 @@ mod tests {
         let preview = import_from_file(&st, &path, None, true, false).unwrap();
         assert_eq!(preview.updated.len(), 1);
         assert_eq!(preview.added.len(), 1);
-        // Free: prod-подключение станет только для чтения.
-        assert_eq!(preview.warnings[0].key, "warnings.import.prodReadOnly");
+        // prod-подключение импортируется как в файле: без принудительного read-only.
+        assert!(preview.warnings.is_empty());
         assert_eq!(std::fs::read(&conns).unwrap(), before);
 
         let applied = import_from_file(&st, &path, None, true, true).unwrap();
@@ -255,7 +253,7 @@ mod tests {
             st.connections.get("a").unwrap().bootstrap_servers,
             "changed:9092"
         );
-        assert!(st.connections.get("n").unwrap().read_only);
+        assert!(!st.connections.get("n").unwrap().read_only);
         let reopened = crate::storage::connections::ConnectionStore::open(dir.path()).unwrap();
         assert_eq!(reopened.list().len(), 2);
     }

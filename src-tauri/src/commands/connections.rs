@@ -12,7 +12,7 @@ use crate::kafka::config::{
 use crate::kafka::connectivity::{self, TestReport};
 use crate::secrets::{OverlayStore, SecretStore, secret_key};
 use crate::state::AppState;
-use crate::storage::connections::{ConnectionProfile, Environment};
+use crate::storage::connections::ConnectionProfile;
 
 /// Пароли TLS из формы. Для каждого: `null`/нет — оставить сохранённый, `""` — удалить, иное — сохранить.
 #[derive(Debug, Default, Deserialize)]
@@ -119,17 +119,6 @@ pub fn save_connection_blocking(
         profile.id = uuid::Uuid::new_v4().to_string();
     }
     let previous = st.connections.get(&profile.id).ok();
-    // Перевод в prod и снятие read-only с prod — функции Pro. Уже доступный для записи
-    // prod-профиль (например, со времён Pro) остаётся редактируемым и защищённым guard.
-    let was_prod = previous.as_ref().map(|p| p.environment) == Some(Environment::Prod);
-    let becomes_prod = profile.environment == Environment::Prod && !was_prod;
-    let becomes_writable = profile.environment == Environment::Prod
-        && was_prod
-        && previous.as_ref().is_some_and(|p| p.read_only)
-        && !profile.read_only;
-    if becomes_prod || becomes_writable {
-        st.license.require_pro()?;
-    }
     // upsert валидирует профиль — секрет трогаем только после успешного сохранения.
     let saved = st.connections.upsert(profile)?;
     let ops = secret_ops(&saved, sasl_password.as_deref(), tls_passwords.as_ref());
@@ -211,7 +200,7 @@ mod tests {
     use crate::error::{AppError, ErrorCode};
     use crate::secrets::MemoryStore;
     use crate::storage::connections::{
-        CertFormat, ClientCert, SaslConfig, SaslMechanism, SecurityConfig, TlsConfig,
+        CertFormat, ClientCert, Environment, SaslConfig, SaslMechanism, SecurityConfig, TlsConfig,
         sample_profile,
     };
 
@@ -420,62 +409,19 @@ mod tests {
     }
 
     #[test]
-    fn prod_environment_requires_pro_but_existing_prod_stays_editable() {
+    fn prod_environment_needs_no_key() {
         let (_d, st) = state(Arc::new(MemoryStore::default()));
-        // Новый prod-профиль без лицензии — нельзя.
-        let e = save_connection_blocking(&st, input(prod(sample_profile("a")), None)).unwrap_err();
-        assert_eq!(e.code, ErrorCode::ProRequired);
-        assert!(st.connections.get("a").is_err());
-        // dev → prod — нельзя.
+        // Новый prod-профиль и перевод dev → prod сохраняются без ключа.
+        let saved = save_connection_blocking(&st, input(prod(sample_profile("a")), None)).unwrap();
+        assert_eq!(saved.environment, Environment::Prod);
         save_connection_blocking(&st, input(sample_profile("b"), None)).unwrap();
-        assert_eq!(
-            save_connection_blocking(&st, input(prod(sample_profile("b")), None))
-                .unwrap_err()
-                .code,
-            ErrorCode::ProRequired
-        );
-        // Существующий prod-профиль (создан раньше) остаётся редактируемым и защищённым.
-        st.connections.upsert(prod(sample_profile("c"))).unwrap();
-        let mut renamed = prod(sample_profile("c"));
-        renamed.name = "новое имя".into();
-        save_connection_blocking(&st, input(renamed, None)).unwrap();
+        let saved = save_connection_blocking(&st, input(prod(sample_profile("b")), None)).unwrap();
+        assert_eq!(saved.environment, Environment::Prod);
     }
 
     #[test]
-    fn free_cannot_lift_read_only_of_imported_prod_profile() {
+    fn read_only_of_prod_profile_can_be_lifted() {
         let (_d, st) = state(Arc::new(MemoryStore::default()));
-        // Так prod-подключение попадает в хранилище при импорте во Free.
-        let mut imported = prod(sample_profile("p"));
-        imported.read_only = true;
-        st.connections.upsert(imported.clone()).unwrap();
-        let mut writable = imported.clone();
-        writable.read_only = false;
-        let e = save_connection_blocking(&st, input(writable, None)).unwrap_err();
-        assert_eq!(e.code, ErrorCode::ProRequired);
-        assert!(st.connections.get("p").unwrap().read_only);
-        // Остальные правки read-only prod-профиля по-прежнему сохраняются.
-        let mut renamed = imported;
-        renamed.name = "новое имя".into();
-        save_connection_blocking(&st, input(renamed, None)).unwrap();
-        assert!(st.connections.get("p").unwrap().read_only);
-    }
-
-    #[test]
-    fn free_keeps_writable_prod_profile_editable() {
-        let (_d, st) = state(Arc::new(MemoryStore::default()));
-        // Профиль создан во времена Pro, лицензия с тех пор истекла.
-        st.connections.upsert(prod(sample_profile("p"))).unwrap();
-        let mut renamed = prod(sample_profile("p"));
-        renamed.name = "новое имя".into();
-        let saved = save_connection_blocking(&st, input(renamed, None)).unwrap();
-        assert!(!saved.read_only);
-        assert_eq!(saved.name, "новое имя");
-    }
-
-    #[test]
-    fn pro_can_lift_read_only_of_prod_profile() {
-        let (d, mut st) = state(Arc::new(MemoryStore::default()));
-        st.license = Arc::new(crate::license::pro_for_tests(d.path()));
         let mut p = prod(sample_profile("p"));
         p.read_only = true;
         st.connections.upsert(p.clone()).unwrap();
@@ -501,12 +447,5 @@ mod tests {
         let e = save_connection_blocking(&st, input(p, None)).unwrap_err();
         assert_eq!(e.key, "errors.folders.notFound");
         assert!(st.connections.get("b").is_err());
-    }
-
-    #[test]
-    fn prod_environment_with_pro() {
-        let (d, mut st) = state(Arc::new(MemoryStore::default()));
-        st.license = Arc::new(crate::license::pro_for_tests(d.path()));
-        save_connection_blocking(&st, input(prod(sample_profile("a")), None)).unwrap();
     }
 }

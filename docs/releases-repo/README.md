@@ -25,7 +25,8 @@ Updates installed from inside the app don't need this.
 Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en-US.msi"
 ```
 
-## Pro license
-During the beta, Pro keys are free — contact the author.
+## Source code and support
+Glafira is free and open source under the Apache License 2.0: https://github.com/vvnovg/kafka-explorer.
+All features are available to everyone. If Glafira is useful to you, see [SUPPORT.md](SUPPORT.md).
 
 Apache Kafka is a trademark of the Apache Software Foundation. This project is not affiliated with the ASF.

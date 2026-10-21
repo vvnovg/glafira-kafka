@@ -305,13 +305,13 @@ jobs:
         run: |
           gh release create "$TAG" release/assets/* --repo "$RELEASES_REPO" --title "$TAG" --notes-file release/notes.md --draft
           gh release edit "$TAG" --repo "$RELEASES_REPO" --draft=false --latest
-      # Каталог guide/ и README репозитория релизов — одним коммитом «guide: $TAG», только если что-то изменилось.
+      # Каталог guide/, README и SUPPORT.md репозитория релизов — одним коммитом «guide: $TAG», только если что-то изменилось.
       # Токен — только через GH_TOKEN и credential helper gh, в URL и логи не попадает.
       # После публикации релиза: руководство не опережает релиз, если тот не создался. Сборка руководства —
       # выше, до релиза, и ломает job заранее. Сбой самого push релиз не отменяет (continue-on-error):
       # повтор job упадёт на gh release create, поэтому руководство тогда докладывают вручную
       # (pnpm guide:publish и коммит в guide/ репозитория релизов).
-      - name: Руководство и README в репозиторий релизов
+      - name: Руководство, README и SUPPORT.md в репозиторий релизов
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
@@ -321,9 +321,10 @@ jobs:
           rm -rf releases-repo/guide
           cp -R guide-out releases-repo/guide
           cp src/docs/releases-repo/README.md releases-repo/README.md
+          cp src/docs/releases-repo/SUPPORT.md releases-repo/SUPPORT.md
           cd releases-repo
-          git add -A guide README.md
-          if git diff --cached --quiet; then echo "руководство и README без изменений"; exit 0; fi
+          git add -A guide README.md SUPPORT.md
+          if git diff --cached --quiet; then echo "руководство, README и SUPPORT.md без изменений"; exit 0; fi
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -m "guide: $TAG"
           git push origin HEAD

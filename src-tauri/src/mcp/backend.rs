@@ -738,6 +738,16 @@ mod tests {
     use crate::secrets::MemoryStore;
     use crate::storage::connections::{LlmAccess, sample_profile};
 
+    /// Абсолютный путь к несуществующему файлу сертификата. На Windows путь без диска (`/…`)
+    /// не абсолютный — проверка подключения отвергла бы его раньше чтения файла.
+    fn missing_secret_path() -> &'static str {
+        if cfg!(windows) {
+            r"C:\nonexistent\secret-path\ca.pem"
+        } else {
+            "/nonexistent/secret-path/ca.pem"
+        }
+    }
+
     fn backend() -> (tempfile::TempDir, AppBackend) {
         let dir = tempfile::tempdir().unwrap();
         let st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
@@ -814,7 +824,7 @@ mod tests {
         p.llm_access = LlmAccess::Metadata;
         p.security = crate::storage::connections::SecurityConfig::Ssl {
             tls: crate::storage::connections::TlsConfig {
-                ca_location: Some("/nonexistent/secret-path/ca.pem".into()),
+                ca_location: Some(missing_secret_path().into()),
                 ca_format: crate::storage::connections::CertFormat::Pem,
                 verify_hostname: true,
                 client_cert: None,
@@ -855,12 +865,13 @@ mod tests {
 
     #[test]
     fn file_errors_hide_the_path() {
+        // Запись невозможна на любой платформе: на месте каталога `secret-path` обычный файл.
+        // (`/nonexistent/…` на Windows — путь на текущем диске, и create_dir_all его создал бы.)
+        let d = tempfile::tempdir().unwrap();
+        std::fs::write(d.path().join("secret-path"), b"x").unwrap();
         let e = to_backend(
-            crate::storage::fs::atomic_write(
-                std::path::Path::new("/nonexistent/secret-path/ca.pem/x"),
-                b"x",
-            )
-            .unwrap_err(),
+            crate::storage::fs::atomic_write(&d.path().join("secret-path").join("ca.pem"), b"x")
+                .unwrap_err(),
         );
         assert_eq!(e.code, "INTERNAL", "{e:?}");
         assert!(!e.message.contains("secret-path"), "{e:?}");
@@ -990,8 +1001,10 @@ mod tests {
     #[tokio::test]
     async fn health_file_errors_are_internal_without_the_path() {
         let (d, b) = backend();
-        // Каталог `health/` не прочитать и не создать: на его месте обычный файл.
-        std::fs::write(d.path().join("health"), b"x").unwrap();
+        // Файл `health/open.json` не прочитать и не записать: на его месте каталог. Обычный файл
+        // на месте каталога `health/` подошёл бы только на Unix: Windows отвечает на чтение
+        // сквозь него NotFound, и хранилище считает, что файла ещё нет.
+        std::fs::create_dir_all(d.path().join("health").join("open.json")).unwrap();
         let claude = view("s1", Some("claude-ai"));
         let _ = b.approvals.access(&claude, 0);
         let check = |run_id: Option<&str>| mh::HealthOp::Check {

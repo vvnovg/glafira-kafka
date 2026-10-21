@@ -40,7 +40,7 @@ jobs:
       - name: Сборка руководства (проверка)
         run: node scripts/guide-publish.mjs guide-out
       # По тегу — версия из тега и строгая проверка; вручную — версия из package.json,
-      # а проблемы с ключами (dev-ключ лицензий, заглушка updater) только предупреждения.
+      # а проблема с ключом updater (заглушка в tauri.conf.json) — только предупреждение.
       - id: v
         env:
           EVENT: ${{ github.event_name }}

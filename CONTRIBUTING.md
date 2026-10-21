@@ -20,7 +20,11 @@ cargo test --manifest-path src-tauri/Cargo.toml --lib
 cargo fmt --manifest-path crates/glafira-mcp/Cargo.toml --check
 cargo clippy --manifest-path crates/glafira-mcp/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path crates/glafira-mcp/Cargo.toml
+cargo deny --manifest-path src-tauri/Cargo.toml --config deny.toml check licenses
+cargo deny --manifest-path crates/glafira-mcp/Cargo.toml --config deny.toml check licenses
 ```
+
+`cargo-deny` can be installed with `cargo install cargo-deny --locked`.
 
 ## Interface strings and the guide
 

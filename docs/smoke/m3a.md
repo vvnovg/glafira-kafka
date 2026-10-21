@@ -28,39 +28,18 @@
    снова ✎ → «Проверить подключение» → ❌ «Неверный пароль ключа в хранилище JKS…».
 
 ## Лицензия
-7. Внизу дерева ссылка «Лицензия: Free». В дереве у подключения «Consumer-сессия 🔒 Pro» и у открытого топика
-   «Читать как группа 🔒 Pro» неактивны; при наведении подсказка «Доступно в Pro — активируйте лицензию на экране «Лицензия»».
-   В форме подключения в списке «Окружение» пункт «prod (Pro)» недоступен.
-8. Выдать dev-ключ на 10 дней (сегодня 2026-10-16, последний день — 2026-10-26; прошедшую дату утилита отклоняет, поэтому «истёкший» ключ выдать нельзя):
-   ```bash
-   cargo run --manifest-path tools/issue-license/Cargo.toml -- issue --key crates/license-format/testdata/dev-signing.key \
-     --kind personal --licensee me@example.com --expires 2026-10-26
-   ```
-   (dev-сборка проверяет dev-ключом, `src-tauri/license-public.key`.) Скопировать напечатанную строку.
-   «Лицензия: Free» → экран «Лицензия» → вставить в «Лицензионный ключ» → «Активировать». Ожидается: «Тариф» Pro,
-   «Владелец» me@example.com, «Тип» личная, «Действует до» 2026-10-26, предупреждение «Лицензия истекает через 10 дн. (2026-10-26)»,
-   полоса уведомления «Лицензия Pro истекает через 10 дн.» с кнопкой «Подробнее». Внизу «Лицензия: Pro».
-   Consumer-сессии и «Читать как группа» доступны. Создать подключение `prod-test` (`localhost:9092`, «Окружение» `prod`) и сохранить.
-   Перезапустить приложение — Pro сохраняется.
-9. «Лицензия» → «Удалить ключ» → «Да, удалить» → «Лицензия: Free». Профиль `prod-test` остаётся prod, его изменяющие операции
-   по-прежнему требуют ввести имя подключения. Новое подключение с окружением prod создать нельзя.
-10. «Активировать» с испорченным ключом: взять ключ из п. 8, заменить любой символ во второй части (после точки, не последний)
-    → ошибка «Ключ недействителен: подпись ключа не подтверждена — ключ выдан не нами или изменён».
-    Для проверки без UI: `cargo run --manifest-path tools/issue-license/Cargo.toml -- verify --public src-tauri/license-public.key '<ключ>'`.
+7–10. Лицензионных ключей больше нет (с 0.3.0 все функции бесплатны); шаг устарел.
 
 ## Политика (macOS)
 11. Политика организации. `defaults write` в «Managed Preferences» на современных macOS файл не создаёт
     (туда пишет только MDM), поэтому plist собирается и копируется вручную — всё в одной вкладке терминала:
     ```bash
-    KEY=$(cargo run -q --manifest-path tools/issue-license/Cargo.toml -- issue --key crates/license-format/testdata/dev-signing.key --kind organization --licensee "ACME Corp" --expires 2027-03-31)
     rm -f /tmp/ke-policy.plist && plutil -create xml1 /tmp/ke-policy.plist
-    plutil -insert licenseKey -string "$KEY" /tmp/ke-policy.plist && plutil -insert updatesEnabled -bool NO /tmp/ke-policy.plist
+    plutil -insert updatesEnabled -bool NO /tmp/ke-policy.plist
     sudo mkdir -p "/Library/Managed Preferences"
     sudo cp /tmp/ke-policy.plist "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"
     sudo chmod 644 "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"
-    plutil -p "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"   # licenseKey — длинная строка, updatesEnabled => false
+    plutil -p "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"   # updatesEnabled => false
     ```
-    Перезапуск `pnpm tauri dev` → в логе `политика managed=true updates=false`; «Лицензия»: «Лицензия управляется вашей организацией.»,
-    владелец ACME Corp, тип «организации», до 2027-03-31; поля ключа и «Удалить ключ» нет; блок «Политика организации» с путём.
-12. `sudo rm "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"`, перезапуск → блок политики исчез, лицензия снова
-    «Free» (или личная, если ключ из п. 8 не удалён).
+    Перезапуск `pnpm tauri dev` → в логе `политика managed=true updates=false`; блок «Политика организации» с путём.
+12. `sudo rm "/Library/Managed Preferences/io.github.vvnovg.glafira.kafka.plist"`, перезапуск → блок политики исчез.

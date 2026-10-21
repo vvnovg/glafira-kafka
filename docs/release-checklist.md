@@ -21,11 +21,12 @@
 
 ## Каждый релиз
 1. Версия в `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`; раздел в `CHANGELOG.md`.
-2. `node scripts/check-release.mjs vX.Y.Z` → «можно выпускать».
-3. `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow `release`. Релиз создаётся черновиком со всеми ассетами
+2. `node scripts/third-party.mjs` → обновлённый `THIRD_PARTY.md` (лицензии зависимостей), закоммитить.
+3. `node scripts/check-release.mjs vX.Y.Z` → «можно выпускать».
+4. `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow `release`. Релиз создаётся черновиком со всеми ассетами
    и публикуется атомарно (`--draft=false --latest`); updater читает `releases/latest/download/latest.json`
    (артефакты updater — формат v2).
-4. Смоук на трёх ОС (ниже) по установщикам из релиза.
+5. Смоук на трёх ОС (ниже) по установщикам из релиза.
 
 ## Никогда не менять
 - `bundle.windows.wix.upgradeCode` в `src-tauri/tauri.conf.json` (`88add133-7053-419a-bc78-7d7ccb39333c`):

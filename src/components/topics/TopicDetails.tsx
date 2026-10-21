@@ -5,12 +5,10 @@ import { api } from "../../api/client";
 import type { TopicDetails as TopicDetailsDto } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
-import { proHint, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
 import { useHelpChapter } from "../../state/helpContext";
 import { newConsumerKey, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
-import { ProLock } from "../common/ProLock";
 import { ConfigEditor } from "../common/ConfigEditor";
 import { ConfigTable } from "../common/ConfigTable";
 import { TOPIC_CONFIG_HINTS } from "../common/topicConfigHints";
@@ -36,7 +34,6 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const readOnly = connection?.readOnly === true;
-  const { locked } = useLicense();
   const queryClient = useQueryClient();
   const closeTab = useWorkspace((s) => s.close);
   const open = useWorkspace((s) => s.open);
@@ -75,17 +72,11 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         </button>
         <button
           type="button"
-          disabled={readOnly || locked}
-          title={readOnly ? tt("topics.details.consumeReadOnly") : locked ? proHint() : undefined}
+          disabled={readOnly}
+          title={readOnly ? tt("topics.details.consumeReadOnly") : undefined}
           onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}
         >
           {tt("topics.details.consume")}
-          {locked && (
-            <>
-              {" "}
-              <ProLock />
-            </>
-          )}
         </button>
       </div>
       <HealthBlock connectionId={connectionId} match={(x) => x.kind === "topic" && x.name === topic} />

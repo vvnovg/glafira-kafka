@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Annotation, Finding, HealthView, LicenseStatus } from "../../api/types";
+import type { Annotation, Finding, HealthView } from "../../api/types";
 import { renderWithClient } from "../../test/render";
 
 vi.mock("../../api/client", async (importOriginal) => {
@@ -15,7 +15,6 @@ vi.mock("../../api/client", async (importOriginal) => {
       setAnnotationStatus: vi.fn(),
       deleteAnnotation: vi.fn(),
       deleteAllAnnotations: vi.fn(),
-      getLicenseStatus: vi.fn(),
     },
   };
 });
@@ -68,12 +67,7 @@ function view(p: Partial<HealthView> = {}): HealthView {
   };
 }
 
-const license = (tier: "free" | "pro") => ({ tier }) as LicenseStatus;
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  vi.mocked(api.getLicenseStatus).mockResolvedValue(license("pro"));
-});
+beforeEach(() => vi.clearAllMocks());
 
 describe("FindingsPanel", () => {
   it("запускает проверку и группирует находки по правилу", async () => {
@@ -150,12 +144,12 @@ describe("FindingsPanel", () => {
     await waitFor(() => expect(screen.getByText("Замечаний LLM нет.")).toBeInTheDocument());
   });
 
-  it("во Free без замечаний показывает замок Pro", async () => {
-    vi.mocked(api.getLicenseStatus).mockResolvedValue(license("free"));
+  it("раздел замечаний без замка: подсказка про MCP и пустой список", async () => {
     vi.mocked(api.getHealth).mockResolvedValue(view());
     renderWithClient(<FindingsPanel connectionId="c1" />);
-    expect(await screen.findByText(/С Glafira Pro LLM-ассистенты могут оставлять здесь замечания/)).toBeInTheDocument();
-    expect(screen.getByText("🔒 Pro")).toBeInTheDocument();
-    expect(screen.getByText("Фактор репликации 1 у orders")).toBeInTheDocument();
+    expect(await screen.findByText("Фактор репликации 1 у orders")).toBeInTheDocument();
+    expect(screen.getByText(/LLM-ассистенты, подключённые по MCP, могут оставлять здесь замечания/)).toBeInTheDocument();
+    expect(screen.getByText("Замечаний LLM нет.")).toBeInTheDocument();
+    expect(screen.queryByText(/Pro/)).not.toBeInTheDocument();
   });
 });

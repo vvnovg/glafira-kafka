@@ -6,10 +6,8 @@ import type { Confirmation, GroupDescription, GroupPartitionOffset } from "../..
 import { i18n } from "../../i18n";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
-import { proHint, useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
 import { newConsumerKey, type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
-import { ProLock } from "../common/ProLock";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { HealthBlock } from "../health/HealthBlock";
@@ -35,7 +33,6 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const readOnly = connection?.readOnly === true;
-  const { locked } = useLicense();
   const [refreshMs, setRefreshMs] = useState(0);
   const [panel, setPanel] = useState<Panel>(resetPrefill && canMutate ? "reset" : null);
   const queryClient = useQueryClient();
@@ -112,16 +109,8 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         </button>
         <button
           type="button"
-          disabled={readOnly || locked || offsets.isPending}
-          title={
-            readOnly
-              ? t("groups.details.joinReadOnly")
-              : locked
-                ? proHint()
-                : offsets.isPending
-                ? t("groups.details.joinLoading")
-                : undefined
-          }
+          disabled={readOnly || offsets.isPending}
+          title={readOnly ? t("groups.details.joinReadOnly") : offsets.isPending ? t("groups.details.joinLoading") : undefined}
           onClick={() =>
             open({
               kind: "consumer",
@@ -134,12 +123,6 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           }
         >
           {t("groups.details.join")}
-          {locked && (
-            <>
-              {" "}
-              <ProLock />
-            </>
-          )}
         </button>
       </div>
       <HealthBlock connectionId={connectionId} match={(x) => x.kind === "group" && x.name === groupId} />

@@ -147,10 +147,4 @@ describe("api client", () => {
     args.onEvent.onmessage({ type: "progress", sent: 1, failed: 0, total: null });
     expect(onEvent).toHaveBeenCalled();
   });
-
-  it("setLicenseKey передаёт ключ", async () => {
-    invoke.mockResolvedValue({ tier: "pro" });
-    await api.setLicenseKey("a.b");
-    expect(invoke).toHaveBeenCalledWith("set_license_key", { key: "a.b" });
-  });
 });

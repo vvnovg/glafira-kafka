@@ -41,8 +41,8 @@ describe("ErrorBanner", () => {
   });
 
   it("ошибка без ключа (старый формат) — message", () => {
-    render(<ErrorBanner error={{ code: "PRO_REQUIRED", message: "Нужна Pro", retryable: false }} />);
-    expect(screen.getByText("Нужна Pro")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Открыть «Лицензия»" })).toBeInTheDocument();
+    render(<ErrorBanner error={{ code: "GROUP_NOT_EMPTY", message: "Группа не пуста", retryable: false }} />);
+    expect(screen.getByText("Группа не пуста")).toBeInTheDocument();
+    expect(screen.getByText("(GROUP_NOT_EMPTY)")).toBeInTheDocument();
   });
 });

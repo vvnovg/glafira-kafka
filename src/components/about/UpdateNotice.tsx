@@ -15,9 +15,9 @@ export function UpdateNotice() {
     <div className="notice" role="status">
       <span>{t("about.notice.available", { version: q.data.version })}</span>
       <button type="button" className="link" onClick={() => open({ kind: "about" })}>
-        {t("license.notice.more")}
+        {t("about.notice.more")}
       </button>
-      <button type="button" className="icon" aria-label={t("license.notice.hideAria")} onClick={() => setHidden(true)}>
+      <button type="button" className="icon" aria-label={t("about.notice.hideAria")} onClick={() => setHidden(true)}>
         ×
       </button>
     </div>

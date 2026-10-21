@@ -11,7 +11,6 @@ import { FindingsPanel } from "./health/FindingsPanel";
 import { ProducerPanel } from "./producer/ProducerPanel";
 import { AboutPanel } from "./about/AboutPanel";
 import { SettingsPanel } from "./settings/SettingsPanel";
-import { LicensePanel } from "./license/LicensePanel";
 import { TopicDetails } from "./topics/TopicDetails";
 
 // Справка (react-markdown и главы) грузится отдельным чанком при первом открытии.
@@ -47,8 +46,6 @@ export function TabContent({ tab }: { tab: Tab }) {
       return <LazyHelp tab={tab} />;
     case "settings":
       return <SettingsPanel />;
-    case "license":
-      return <LicensePanel />;
     case "connection-form":
       return <ConnectionFormTab connectionId={tab.connectionId} folderId={tab.folderId ?? null} tabId={tab.id} />;
     case "cluster":

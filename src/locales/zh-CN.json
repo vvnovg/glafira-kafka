@@ -1058,7 +1058,9 @@
       "installing": "正在下载并安装更新…"
     },
     "notice": {
-      "available": "版本 {{version}} 可用。"
+      "available": "版本 {{version}} 可用。",
+      "more": "详细信息",
+      "hideAria": "关闭通知"
     }
   },
   "warnings": {
@@ -1266,6 +1268,7 @@
     "closedNotes": "已关闭（{{count}}）",
     "noNotes": "没有 LLM 批注。",
     "proNotes": "使用 Glafira Pro 时，LLM 助手可以在这里留下关于集群、主题和组的批注。",
+    "llmNotes": "通过 MCP 连接的 LLM 助手可以在这里留下关于集群、主题和组的批注。",
     "status": {
       "resolved": "已解决",
       "dismissed": "不相关"

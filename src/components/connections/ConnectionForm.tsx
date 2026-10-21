@@ -4,11 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
 import { tr } from "../../i18n/text";
-import { proHint, useLicense } from "../../lib/useLicense";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
-import { ProLock } from "../common/ProLock";
 import { formatProps, parseProps, withProtocol } from "./profile";
 import { folderPaths } from "./tree/folderTree";
 import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./TlsSection";
@@ -43,9 +41,6 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const close = useWorkspace((s) => s.close);
   const closeForConnection = useWorkspace((s) => s.closeForConnection);
   const isNew = initial.id === "";
-  const { locked } = useLicense();
-  // Снять read-only с prod-подключения можно только с Pro (Rust проверяет то же при сохранении).
-  const readOnlyLocked = locked && initial.environment === "prod" && initial.readOnly && profile.environment === "prod";
   const sec = profile.security;
 
   const update = (patch: Partial<ConnectionProfile>) => setProfile((p) => ({ ...p, ...patch }));
@@ -141,18 +136,15 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           value={profile.environment}
           onChange={(e) => {
             const environment = e.target.value as Environment;
-            const forceReadOnly = environment === "prod" && (isNew || (locked && initial.environment === "prod" && initial.readOnly));
-            update({ environment, readOnly: forceReadOnly ? true : profile.readOnly });
+            // Новое prod-подключение по умолчанию только для чтения; снять флажок можно сразу.
+            update({ environment, readOnly: environment === "prod" && isNew ? true : profile.readOnly });
           }}
         >
-          {ENVIRONMENTS.map((env) => {
-            const proOnly = env === "prod" && locked && initial.environment !== "prod";
-            return (
-              <option key={env} value={env} disabled={proOnly}>
-                {proOnly ? t("connections.form.prodPro") : env}
-              </option>
-            );
-          })}
+          {ENVIRONMENTS.map((env) => (
+            <option key={env} value={env}>
+              {env}
+            </option>
+          ))}
         </select>
 
         <span className="field-label">
@@ -160,20 +152,7 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           <Hint k="hints.connections.readOnly" label={t("common.readOnly")} />
         </span>
         <span>
-          <input
-            id="cf-ro"
-            type="checkbox"
-            checked={profile.readOnly}
-            disabled={readOnlyLocked}
-            title={readOnlyLocked ? proHint() : undefined}
-            onChange={(e) => update({ readOnly: e.target.checked })}
-          />
-          {readOnlyLocked && (
-            <>
-              {" "}
-              <ProLock />
-            </>
-          )}
+          <input id="cf-ro" type="checkbox" checked={profile.readOnly} onChange={(e) => update({ readOnly: e.target.checked })} />
         </span>
 
         <span className="field-label">

@@ -2,10 +2,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Finding, Severity, TargetKind } from "../../api/types";
 import { useHealth, useHealthActions } from "../../lib/useHealth";
-import { useLicense } from "../../lib/useLicense";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
-import { ProLock } from "../common/ProLock";
 import { CheckBar } from "./CheckBar";
 import { findingsOf, SEVERITIES } from "./findings";
 import { FindingItem, NoteItem, SeverityMark } from "./parts";
@@ -19,7 +17,6 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
   const { t } = useTranslation();
   const health = useHealth(connectionId);
   const actions = useHealthActions(connectionId);
-  const { locked } = useLicense();
   const [severity, setSeverity] = useState<Severity | "all">("all");
   const [source, setSource] = useState<Source>("all");
   const [kind, setKind] = useState<TargetKind | "all">("all");
@@ -117,66 +114,59 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
 
       {source !== "rules" && (
         <section aria-labelledby="health-notes">
-          <h3 id="health-notes">
-            {t("health.notes")} {locked && <ProLock />}
-          </h3>
-          {locked && (view?.annotations.length ?? 0) === 0 ? (
-            <p className="hint">{t("health.proNotes")}</p>
-          ) : (
-            <>
-              {open.length === 0 && <p className="empty">{filtered ? t("health.nothingMatches") : t("health.noNotes")}</p>}
-              <ul className="finding-list">
-                {open.map((a) => (
-                  <NoteItem
-                    key={a.id}
-                    connectionId={connectionId}
-                    note={a}
-                    busy={busy}
-                    onStatus={(status) => actions.setStatus.mutate({ id: a.id, status })}
-                    onDelete={() => actions.remove.mutate(a.id)}
-                  />
-                ))}
-              </ul>
-              {closed.length > 0 && (
-                <details className="finding-group">
-                  <summary>{t("health.closedNotes", { count: closed.length })}</summary>
-                  <ul className="finding-list">
-                    {closed.map((a) => (
-                      <NoteItem
-                        key={a.id}
-                        connectionId={connectionId}
-                        note={a}
-                        busy={busy}
-                        onStatus={(status) => actions.setStatus.mutate({ id: a.id, status })}
-                        onDelete={() => actions.remove.mutate(a.id)}
-                      />
-                    ))}
-                  </ul>
-                </details>
-              )}
-              {(view?.annotations.length ?? 0) > 0 &&
-                (confirmAll ? (
-                  <p role="alert">
-                    {t("health.deleteAllConfirm")}{" "}
-                    <button
-                      type="button"
-                      className="danger"
-                      disabled={busy}
-                      onClick={() => actions.removeAll.mutate(undefined, { onSettled: () => setConfirmAll(false) })}
-                    >
-                      {t("health.deleteAll")}
-                    </button>{" "}
-                    <button type="button" onClick={() => setConfirmAll(false)}>
-                      {t("common.cancel")}
-                    </button>
-                  </p>
-                ) : (
-                  <button type="button" className="link danger" disabled={busy} onClick={() => setConfirmAll(true)}>
+          <h3 id="health-notes">{t("health.notes")}</h3>
+          <p className="hint">{t("health.llmNotes")}</p>
+            {open.length === 0 && <p className="empty">{filtered ? t("health.nothingMatches") : t("health.noNotes")}</p>}
+            <ul className="finding-list">
+              {open.map((a) => (
+                <NoteItem
+                  key={a.id}
+                  connectionId={connectionId}
+                  note={a}
+                  busy={busy}
+                  onStatus={(status) => actions.setStatus.mutate({ id: a.id, status })}
+                  onDelete={() => actions.remove.mutate(a.id)}
+                />
+              ))}
+            </ul>
+            {closed.length > 0 && (
+              <details className="finding-group">
+                <summary>{t("health.closedNotes", { count: closed.length })}</summary>
+                <ul className="finding-list">
+                  {closed.map((a) => (
+                    <NoteItem
+                      key={a.id}
+                      connectionId={connectionId}
+                      note={a}
+                      busy={busy}
+                      onStatus={(status) => actions.setStatus.mutate({ id: a.id, status })}
+                      onDelete={() => actions.remove.mutate(a.id)}
+                    />
+                  ))}
+                </ul>
+              </details>
+            )}
+            {(view?.annotations.length ?? 0) > 0 &&
+              (confirmAll ? (
+                <p role="alert">
+                  {t("health.deleteAllConfirm")}{" "}
+                  <button
+                    type="button"
+                    className="danger"
+                    disabled={busy}
+                    onClick={() => actions.removeAll.mutate(undefined, { onSettled: () => setConfirmAll(false) })}
+                  >
                     {t("health.deleteAll")}
+                  </button>{" "}
+                  <button type="button" onClick={() => setConfirmAll(false)}>
+                    {t("common.cancel")}
                   </button>
-                ))}
-            </>
-          )}
+                </p>
+              ) : (
+                <button type="button" className="link danger" disabled={busy} onClick={() => setConfirmAll(true)}>
+                  {t("health.deleteAll")}
+                </button>
+              ))}
         </section>
       )}
     </div>

@@ -1058,7 +1058,9 @@
       "installing": "업데이트를 다운로드하고 설치하는 중…"
     },
     "notice": {
-      "available": "{{version}} 버전을 사용할 수 있습니다."
+      "available": "{{version}} 버전을 사용할 수 있습니다.",
+      "more": "세부 정보",
+      "hideAria": "알림 닫기"
     }
   },
   "warnings": {
@@ -1266,6 +1268,7 @@
     "closedNotes": "닫힘({{count}})",
     "noNotes": "LLM 메모가 없습니다.",
     "proNotes": "Glafira Pro를 사용하면 LLM 어시스턴트가 클러스터, 토픽, 그룹에 대한 메모를 여기에 남길 수 있습니다.",
+    "llmNotes": "MCP로 연결된 LLM 어시스턴트가 클러스터, 토픽, 그룹에 대한 메모를 여기에 남길 수 있습니다.",
     "status": {
       "resolved": "해결됨",
       "dismissed": "해당 없음"

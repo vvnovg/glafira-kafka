@@ -5,9 +5,7 @@ import { api, toAppError } from "../../api/client";
 import type { BrowsedMessage, CommitTarget, ConsumerParams, DataFormat, OffsetTarget, TopicPartitionRef } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
-import { useLicense } from "../../lib/useLicense";
 import { useConnection } from "../../lib/useConnection";
-import { useWorkspace } from "../../state/workspace";
 import { FilterFields } from "../browse/FilterFields";
 import { MessageDetails } from "../browse/MessageDetails";
 import { messageKey, MessageTable } from "../browse/MessageTable";
@@ -41,8 +39,6 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
   const [commitBase, setCommitBase] = useState<OffsetTarget[] | null | undefined>(undefined);
   const { state, start, stop } = useConsumerSession(form.limit);
   const running = state.status === "running";
-  const { locked } = useLicense();
-  const openTab = useWorkspace((s) => s.open);
   const set = (patch: Partial<ConsumerFormState>) => setForm((f) => ({ ...f, ...patch }));
 
   // Сгенерированный group.id, если группа не задана.
@@ -81,16 +77,6 @@ export function ConsumerPanel({ connectionId, topic, groupId }: { connectionId: 
   }, [readOnly, running, stop]);
 
   if (!connection) return <p className="empty">{t("common.loading")}</p>;
-  if (locked && !running) {
-    return (
-      <div className="page">
-        <p className="warn">{t("consumer.proOnly")}</p>
-        <button type="button" className="link" onClick={() => openTab({ kind: "license" })}>
-          {t("common.openLicense")}
-        </button>
-      </div>
-    );
-  }
   if (connection.readOnly) {
     return (
       <div className="page">

@@ -1058,7 +1058,9 @@
       "installing": "正在下載並安裝更新…"
     },
     "notice": {
-      "available": "有新版本 {{version}} 可用。"
+      "available": "有新版本 {{version}} 可用。",
+      "more": "詳細資訊",
+      "hideAria": "關閉通知"
     }
   },
   "warnings": {
@@ -1266,6 +1268,7 @@
     "closedNotes": "已關閉（{{count}}）",
     "noNotes": "沒有 LLM 註記。",
     "proNotes": "使用 Glafira Pro 時，LLM 助理可以在這裡留下關於叢集、主題和群組的註記。",
+    "llmNotes": "透過 MCP 連線的 LLM 助理可以在這裡留下關於叢集、主題和群組的註記。",
     "status": {
       "resolved": "已解決",
       "dismissed": "不相關"

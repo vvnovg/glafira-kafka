@@ -2,8 +2,6 @@ import type { HTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConnectionProfile } from "../../../api/types";
 import { newConsumerKey, useWorkspace } from "../../../state/workspace";
-import { proHint, useLicense } from "../../../lib/useLicense";
-import { ProLock } from "../../common/ProLock";
 import { EnvBadge } from "../../common/EnvBadge";
 import { HealthBadge } from "../../health/HealthBlock";
 
@@ -14,7 +12,6 @@ import { HealthBadge } from "../../health/HealthBlock";
 export function ConnectionNode({ connection: c, rowProps }: { connection: ConnectionProfile; rowProps?: HTMLAttributes<HTMLDivElement> }) {
   const { t } = useTranslation();
   const open = useWorkspace((s) => s.open);
-  const { locked } = useLicense();
 
   return (
     <li>
@@ -58,20 +55,8 @@ export function ConnectionNode({ connection: c, rowProps }: { connection: Connec
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            className="link"
-            disabled={locked}
-            title={locked ? proHint() : undefined}
-            onClick={() => open({ kind: "consumer", connectionId: c.id, key: newConsumerKey() })}
-          >
+          <button type="button" className="link" onClick={() => open({ kind: "consumer", connectionId: c.id, key: newConsumerKey() })}>
             {t("sidebar.consumer")}
-            {locked && (
-              <>
-                {" "}
-                <ProLock />
-              </>
-            )}
           </button>
         </li>
       </ul>

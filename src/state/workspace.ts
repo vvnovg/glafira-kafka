@@ -18,7 +18,6 @@ export type TabSpec =
   | { kind: "consumer"; connectionId: string; key: string; topic?: string; groupId?: string }
   /** folderId — папка нового подключения («Новое подключение здесь»). */
   | { kind: "connection-form"; connectionId: string | null; folderId?: string | null }
-  | { kind: "license" }
   | { kind: "about" }
   /** Справка: глава и раздел руководства (F1, ссылки). */
   | { kind: "help"; chapter?: string; anchor?: string }
@@ -36,8 +35,6 @@ export function tabId(spec: TabSpec): string {
       return `consumer:${spec.connectionId}:${spec.key}`;
     case "connection-form":
       return `connection-form:${spec.connectionId ?? "new"}`;
-    case "license":
-      return "license";
     case "about":
       return "about";
     case "help":

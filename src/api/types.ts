@@ -9,7 +9,6 @@ export type ErrorCode =
   | "READ_ONLY"
   | "CONFIRMATION_REQUIRED"
   | "GROUP_NOT_EMPTY"
-  | "PRO_REQUIRED"
   | "INTERNAL";
 
 /** Текст из Rust: ключ словаря, параметры и английский текст (запасной вариант). */
@@ -533,25 +532,11 @@ export type ConsumeEvent =
   | { type: "finished"; consumed: number; matched: number }
   | { type: "error"; error: AppError };
 
-export type Tier = "free" | "pro";
-export type LicenseState = "none" | "valid" | "expiring" | "expired" | "invalid";
-export interface LicenseStatus {
-  tier: Tier;
-  state: LicenseState;
-  source: "policy" | "user" | null;
-  licensee: string | null;
-  kind: "personal" | "organization" | null;
-  expires: string | null;
-  daysLeft: number | null;
-  /** Почему ключ недействителен — полная фраза. */
-  error: LocalizedText | null;
-}
 export interface PolicyStatus {
   managed: boolean;
   source: string | null;
   updatesEnabled: boolean;
   updateUrl: string | null;
-  hasLicenseKey: boolean;
   language: string | null;
   /** false — MCP запрещён администратором; нет поля — разрешён. */
   mcpEnabled?: boolean;

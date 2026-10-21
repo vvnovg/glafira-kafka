@@ -1070,7 +1070,9 @@
       "installing": "Pobieranie i instalowanie aktualizacji…"
     },
     "notice": {
-      "available": "Dostępna jest wersja {{version}}."
+      "available": "Dostępna jest wersja {{version}}.",
+      "more": "Szczegóły",
+      "hideAria": "Zamknij powiadomienie"
     }
   },
   "warnings": {
@@ -1290,6 +1292,7 @@
     "closedNotes": "Zamknięte ({{count}})",
     "noNotes": "Brak notatek LLM.",
     "proNotes": "W Glafira Pro asystenci LLM mogą zostawiać tu notatki o klastrze, topikach i grupach.",
+    "llmNotes": "Asystenci LLM połączeni przez MCP mogą zostawiać tu notatki o klastrze, topikach i grupach.",
     "status": {
       "resolved": "rozwiązana",
       "dismissed": "nieaktualna"

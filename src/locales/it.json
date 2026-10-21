@@ -1066,7 +1066,9 @@
       "installing": "Download e installazione dell’aggiornamento…"
     },
     "notice": {
-      "available": "È disponibile la versione {{version}}."
+      "available": "È disponibile la versione {{version}}.",
+      "more": "Dettagli",
+      "hideAria": "Chiudi notifica"
     }
   },
   "warnings": {
@@ -1282,6 +1284,7 @@
     "closedNotes": "Chiuse ({{count}})",
     "noNotes": "Nessuna nota LLM.",
     "proNotes": "Con Glafira Pro gli assistenti LLM possono lasciare qui note su cluster, topic e gruppi.",
+    "llmNotes": "Gli assistenti LLM collegati via MCP possono lasciare qui note su cluster, topic e gruppi.",
     "status": {
       "resolved": "risolta",
       "dismissed": "non pertinente"

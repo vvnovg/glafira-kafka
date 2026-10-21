@@ -1066,7 +1066,9 @@
       "installing": "Téléchargement et installation de la mise à jour…"
     },
     "notice": {
-      "available": "La version {{version}} est disponible."
+      "available": "La version {{version}} est disponible.",
+      "more": "Détails",
+      "hideAria": "Masquer la notification"
     }
   },
   "warnings": {
@@ -1282,6 +1284,7 @@
     "closedNotes": "Fermées ({{count}})",
     "noNotes": "Aucune remarque LLM.",
     "proNotes": "Avec Glafira Pro, les assistants LLM peuvent laisser ici des remarques sur le cluster, les topics et les groupes.",
+    "llmNotes": "Les assistants LLM connectés via MCP peuvent laisser ici des remarques sur le cluster, les topics et les groupes.",
     "status": {
       "resolved": "résolue",
       "dismissed": "sans objet"

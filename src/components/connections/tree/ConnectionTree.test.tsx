@@ -11,7 +11,6 @@ vi.mock("../../../api/client", async (importOriginal) => {
   return {
     ...orig,
     api: {
-      getLicenseStatus: vi.fn(() => new Promise(() => {})),
       listFolders: vi.fn(),
       listConnections: vi.fn(),
       createFolder: vi.fn(),

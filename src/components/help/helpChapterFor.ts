@@ -19,7 +19,6 @@ export function helpChapterFor(tab: TabSpec | null): ChapterId {
       return "consumer-sessions";
     case "findings":
       return "health-check";
-    case "license":
     case "about":
       return "license-updates";
     default:

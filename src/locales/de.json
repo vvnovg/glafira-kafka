@@ -1062,7 +1062,9 @@
       "installing": "Update wird heruntergeladen und installiert…"
     },
     "notice": {
-      "available": "Version {{version}} ist verfügbar."
+      "available": "Version {{version}} ist verfügbar.",
+      "more": "Details",
+      "hideAria": "Benachrichtigung schließen"
     }
   },
   "warnings": {
@@ -1274,6 +1276,7 @@
     "closedNotes": "Geschlossen ({{count}})",
     "noNotes": "Keine LLM-Anmerkungen.",
     "proNotes": "Mit Glafira Pro können LLM-Assistenten hier Anmerkungen zum Cluster, zu Topics und Consumer Groups hinterlassen.",
+    "llmNotes": "Über MCP verbundene LLM-Assistenten können hier Anmerkungen zum Cluster, zu Topics und Consumer Groups hinterlassen.",
     "status": {
       "resolved": "erledigt",
       "dismissed": "nicht relevant"

@@ -10,8 +10,7 @@ vi.mock("../../api/client", async (importOriginal) => {
     ...orig,
     api: {
       getAppInfo: vi.fn().mockResolvedValue({ name: "X", version: "0.2.0", commit: "abc123", os: "macos", arch: "aarch64", dataDir: "/d", logDir: "/l" }),
-      getLicenseStatus: vi.fn().mockResolvedValue({ tier: "free", state: "none", source: null, licensee: null, kind: null, expires: null, daysLeft: null, error: null }),
-      getPolicyStatus: vi.fn().mockResolvedValue({ managed: false, source: null, updatesEnabled: true, updateUrl: null, hasLicenseKey: false, language: null, errors: [] }),
+      getPolicyStatus: vi.fn().mockResolvedValue({ managed: false, source: null, updatesEnabled: true, updateUrl: null, language: null, errors: [] }),
       exportDiagnostics: vi.fn().mockResolvedValue(undefined),
       checkUpdate: vi.fn().mockResolvedValue({ status: "upToDate" }),
       installUpdate: vi.fn(),
@@ -121,7 +120,6 @@ describe("AboutPanel", () => {
       source: "/etc/x/policy.json",
       updatesEnabled: false,
       updateUrl: null,
-      hasLicenseKey: false,
       language: null,
       errors: [
         {

@@ -1058,7 +1058,9 @@
       "installing": "アップデートをダウンロードしてインストールしています…"
     },
     "notice": {
-      "available": "バージョン{{version}}を利用できます。"
+      "available": "バージョン{{version}}を利用できます。",
+      "more": "詳細",
+      "hideAria": "通知を閉じる"
     }
   },
   "warnings": {
@@ -1266,6 +1268,7 @@
     "closedNotes": "クローズ済み（{{count}}）",
     "noNotes": "LLMの注記はありません。",
     "proNotes": "Glafira Proでは、LLMアシスタントがクラスター、トピック、グループについての注記をここに残せます。",
+    "llmNotes": "MCPで接続されたLLMアシスタントは、クラスター、トピック、グループについての注記をここに残せます。",
     "status": {
       "resolved": "解決済み",
       "dismissed": "該当なし"

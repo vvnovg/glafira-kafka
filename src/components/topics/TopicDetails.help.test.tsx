@@ -13,7 +13,6 @@ vi.mock("../../api/client", async (importOriginal) => {
       getTopic: vi.fn().mockResolvedValue({ name: "orders", internal: false, replicationFactor: 1, messageCount: 0, partitions: [] }),
       getTopicConfigs: vi.fn(() => new Promise(() => {})),
       listConnections: vi.fn().mockResolvedValue([]),
-      getLicenseStatus: vi.fn(() => new Promise(() => {})),
     },
   };
 });

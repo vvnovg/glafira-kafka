@@ -76,7 +76,7 @@ Nach dem Speichern öffnet sich die Cluster-Übersicht. Unter jeder Verbindung i
 
 Unten im Bereich befinden sich Links zu [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] und [[ui:sidebar.about]]. Das Zeichen `?` neben einem Feld zeigt einen kurzen Hinweis dazu. Mit `F1` öffnen Sie an jeder Stelle des Fensters das Kapitel der Anleitung zum aktuellen Bildschirm. Unter macOS ist die Anleitung auch im Menü „Hilfe“ zu finden.
 
-Wenn Sie Kafka Explorer (den früheren Namen der App) verwendet haben, übernimmt Glafira beim ersten Start dessen Verbindungen, Vorlagen, Sendeverlauf und Lizenz. Auch die Passwörter werden aus dem Schlüsselbund des Systems kopiert. Bereits Vorhandenes wird nicht überschrieben, und die alten Daten werden nicht gelöscht. macOS fragt möglicherweise einmal nach Zugriff auf die alten Schlüsselbundeinträge.
+Wenn Sie Kafka Explorer (den früheren Namen der App) verwendet haben, übernimmt Glafira beim ersten Start dessen Verbindungen, Vorlagen und Sendeverlauf. Auch die Passwörter werden aus dem Schlüsselbund des Systems kopiert. Bereits Vorhandenes wird nicht überschrieben, und die alten Daten werden nicht gelöscht. macOS fragt möglicherweise einmal nach Zugriff auf die alten Schlüsselbundeinträge.
 
 ## Lokales Kafka zum Üben {#local-cluster}
 

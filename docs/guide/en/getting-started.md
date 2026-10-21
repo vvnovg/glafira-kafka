@@ -76,7 +76,7 @@ After saving, the cluster overview opens. Under each connection in the panel the
 
 At the bottom of the panel there are links to [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] and [[ui:sidebar.about]]. The `?` sign next to a field shows a short hint about it. Press `F1` anywhere in the window to open the guide chapter for the current screen. On macOS the guide is also in the Help menu.
 
-If you used Kafka Explorer (the earlier name of the app), Glafira copies its connections, templates, send history and license on the first launch. Passwords are copied from the system secret store too. Nothing that already exists is overwritten, and the old data is not deleted. macOS may ask once for access to the old Keychain items.
+If you used Kafka Explorer (the earlier name of the app), Glafira copies its connections, templates and send history on the first launch. Passwords are copied from the system secret store too. Nothing that already exists is overwritten, and the old data is not deleted. macOS may ask once for access to the old Keychain items.
 
 ## Local Kafka for practice {#local-cluster}
 

@@ -76,7 +76,7 @@ Po zapisaniu otwiera się przegląd klastra. Pod każdym połączeniem w panelu 
 
 Na dole panelu znajdują się linki: [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] i [[ui:sidebar.about]]. Znak `?` obok pola wyświetla krótką podpowiedź na jego temat. Klawisz `F1` w dowolnym miejscu okna otwiera rozdział podręcznika dotyczący bieżącego ekranu. W systemie macOS podręcznik jest dostępny także w menu Pomoc.
 
-Jeśli wcześniej używano Kafka Explorer (poprzedniej nazwy aplikacji), przy pierwszym uruchomieniu Glafira kopiuje jego połączenia, szablony, historię wysyłania i licencję. Hasła również są kopiowane z systemowego magazynu sekretów. Istniejące dane nie są nadpisywane, a stare dane nie są usuwane. macOS może jednorazowo poprosić o dostęp do starych elementów pęku kluczy.
+Jeśli wcześniej używano Kafka Explorer (poprzedniej nazwy aplikacji), przy pierwszym uruchomieniu Glafira kopiuje jego połączenia, szablony i historię wysyłania. Hasła również są kopiowane z systemowego magazynu sekretów. Istniejące dane nie są nadpisywane, a stare dane nie są usuwane. macOS może jednorazowo poprosić o dostęp do starych elementów pęku kluczy.
 
 ## Lokalna Kafka do ćwiczeń {#local-cluster}
 

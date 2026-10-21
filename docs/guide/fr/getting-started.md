@@ -76,7 +76,7 @@ Après l’enregistrement, l’aperçu du cluster s’ouvre. Sous chaque connexi
 
 En bas du panneau se trouvent les liens [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] et [[ui:sidebar.about]]. Le signe `?` à côté d’un champ affiche une courte aide à son sujet. Appuyez sur `F1` n’importe où dans la fenêtre pour ouvrir le chapitre du guide consacré à l’écran actuel. Sur macOS, le guide est aussi accessible depuis le menu « Aide ».
 
-Si vous utilisiez Kafka Explorer (l’ancien nom de l’app), Glafira copie au premier lancement ses connexions, modèles, historique d’envoi et licence. Les mots de passe sont eux aussi copiés depuis le trousseau du système. Rien de ce qui existe déjà n’est écrasé, et les anciennes données ne sont pas supprimées. macOS peut demander une fois l’accès aux anciens éléments du trousseau.
+Si vous utilisiez Kafka Explorer (l’ancien nom de l’app), Glafira copie au premier lancement ses connexions, modèles et historique d’envoi. Les mots de passe sont eux aussi copiés depuis le trousseau du système. Rien de ce qui existe déjà n’est écrasé, et les anciennes données ne sont pas supprimées. macOS peut demander une fois l’accès aux anciens éléments du trousseau.
 
 ## Kafka local pour s’exercer {#local-cluster}
 

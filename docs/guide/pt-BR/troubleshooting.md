@@ -80,7 +80,7 @@ Se um botão estiver oculto ou desativado, ou se uma ação for recusada, verifi
 - A conexão é somente leitura. Um ícone de cadeado ao lado do nome dela a identifica. Os botões que alteram o cluster ficam ocultos ou desativados. Se uma solicitação desse tipo ainda assim chegar ao núcleo do aplicativo, por exemplo depois que o modo foi ativado com uma tela aberta, o erro informa que a conexão é somente leitura. Para fazer alterações, abra a conexão, desative a opção [[ui:common.readOnly]] e salve. Consulte [Somente leitura](connections.md#read-only).
 - A conexão é prod. As alterações pedem que você digite o nome da conexão. Até que o nome corresponda, a ação não é executada. Consulte [Ambientes e prod](connections.md#environments).
 - O consumer group tem membros ativos. Só é possível redefinir os offsets e excluir um grupo quando ele não tem membros. Consulte [Redefinir offsets](groups.md#reset-offsets).
-- A configuração é gerenciada pela sua organização. Uma política pode definir o idioma da interface, a chave de licença e a verificação de atualizações, e esses itens não podem ser alterados no aplicativo. Consulte [Configurações definidas pela sua organização](getting-started.md#managed-settings).
+- A configuração é gerenciada pela sua organização. Uma política pode definir o idioma da interface e a verificação de atualizações, e esses itens não podem ser alterados no aplicativo. Consulte [Configurações definidas pela sua organização](getting-started.md#managed-settings).
 - O Kafka recusou a operação com a mensagem [[ui:errors.kafka.notAuthorized]]. É uma questão de permissões no cluster, não de configurações do Glafira. Consulte [Erros de SASL](troubleshooting.md#sasl-errors).
 
 ## Logs {#logs}

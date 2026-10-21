@@ -32,7 +32,7 @@ The screen shows a short description of the app and:
 - [[ui:about.system]] — the operating system and processor architecture.
 - [[ui:about.license]] — Apache 2.0; the link opens the license text in the browser.
 - [[ui:about.policy]] — [[ui:about.policySet]] or [[ui:about.policyNone]]. Errors in the policy are listed below.
-- [[ui:about.dataDir]] — the folder with connection profiles, templates, history, settings.
+- [[ui:about.dataDir]] — the folder with connection profiles, templates, history and settings.
 - [[ui:about.logDir]] — the folder with log files. See [Logs](troubleshooting.md#logs).
 
 The [[ui:about.updates.title]] and [[ui:about.diagnostics.title]] sections are also on this screen.
@@ -47,7 +47,7 @@ The diagnostics archive collects what support needs to understand a problem. To 
 
 When the archive is saved, the screen shows its path. The ZIP file contains:
 
-- `info.json` — the app version and build, the operating system, the data and log folder paths, the policy status;
+- `info.json` — the app version and build, the operating system, the data and log folder paths and the policy status;
 - `connections.json` — connection profiles: names, environments, bootstrap servers, protocols, SASL usernames, certificate file paths, extra properties and timeouts;
 - `logs/` — the app log files.
 

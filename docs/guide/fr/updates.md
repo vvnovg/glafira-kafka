@@ -32,7 +32,7 @@ L’écran affiche une courte description de l’app, ainsi que :
 - [[ui:about.system]] — le système d’exploitation et l’architecture du processeur.
 - [[ui:about.license]] — Apache 2.0 ; le lien ouvre le texte de la licence dans le navigateur.
 - [[ui:about.policy]] — [[ui:about.policySet]] ou [[ui:about.policyNone]]. Les erreurs de la politique sont listées en dessous.
-- [[ui:about.dataDir]] — le dossier contenant les profils de connexion, les modèles, l’historique, les paramètres.
+- [[ui:about.dataDir]] — le dossier contenant les profils de connexion, les modèles, l’historique et les paramètres.
 - [[ui:about.logDir]] — le dossier des fichiers journaux. Voir [Journaux](troubleshooting.md#logs).
 
 Les sections [[ui:about.updates.title]] et [[ui:about.diagnostics.title]] se trouvent aussi sur cet écran.
@@ -47,7 +47,7 @@ L’archive de diagnostic rassemble ce dont l’assistance a besoin pour compren
 
 Une fois l’archive enregistrée, l’écran affiche son chemin. Le fichier ZIP contient :
 
-- `info.json` — la version et le build de l’app, le système d’exploitation, les chemins des dossiers de données et de journaux, l’état de la politique ;
+- `info.json` — la version et le build de l’app, le système d’exploitation, les chemins des dossiers de données et de journaux, ainsi que l’état de la politique ;
 - `connections.json` — les profils de connexion : noms, environnements, serveurs bootstrap, protocoles, noms d’utilisateur SASL, chemins des fichiers de certificats, propriétés supplémentaires et délais ;
 - `logs/` — les fichiers journaux de l’app.
 
@@ -57,4 +57,4 @@ L’app n’envoie rien d’elle-même. Joignez vous-même l’archive à votre 
 
 ## Soutenir le projet {#support}
 
-Glafira est gratuite et open source sous licence Apache License 2.0. Les dons font vivre le projet. [[ui:support.title]] en bas du panneau de gauche, sur l’écran [[ui:sidebar.about]] et, sous macOS, dans le menu « Aide » ouvre la page de soutien dans le navigateur : https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md
+Glafira est gratuite et open source sous Apache License 2.0. Les dons font vivre le projet. [[ui:support.title]] en bas du panneau de gauche, sur l’écran [[ui:sidebar.about]] et, sous macOS, dans le menu « Aide » ouvre la page de soutien dans le navigateur : https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md

@@ -80,7 +80,7 @@ TLS 或 SASL 問題可能看起來像逾時。應用程式會嘗試找出真正�
 - 連線為唯讀。名稱旁的鎖頭圖示表示唯讀。會變更叢集的按鈕會隱藏或停用。如果這類要求仍送到應用程式核心，例如在畫面開啟時開啟了唯讀模式，錯誤會說明連線為唯讀。若要進行變更，請開啟連線，取消勾選[[ui:common.readOnly]]並儲存。請參閱[唯讀](connections.md#read-only)。
 - 連線為正式環境。變更時會要求輸入連線名稱，名稱相符之前不會執行動作。請參閱[環境與正式環境](connections.md#environments)。
 - 消費者群組有作用中的成員。只有群組沒有成員時，才能重設偏移量和刪除群組。請參閱[重設偏移量](groups.md#reset-offsets)。
-- 設定由你的組織管理。原則可以設定介面語言、授權金鑰和更新檢查，這些都無法在應用程式中變更。請參閱[由組織設定的選項](getting-started.md#managed-settings)。
+- 設定由你的組織管理。原則可以設定介面語言和更新檢查，這些都無法在應用程式中變更。請參閱[由組織設定的選項](getting-started.md#managed-settings)。
 - Kafka 以「[[ui:errors.kafka.notAuthorized]]」拒絕操作。這是叢集中的權限問題，與 Glafira 設定無關。請參閱 [SASL 錯誤](troubleshooting.md#sasl-errors)。
 
 ## 日誌 {#logs}

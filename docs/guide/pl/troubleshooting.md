@@ -80,7 +80,7 @@ Jeśli przycisk jest ukryty lub nieaktywny albo działanie zostało odrzucone, n
 - Połączenie jest tylko do odczytu. Oznacza je ikona kłódki obok nazwy. Przyciski zmieniające klaster są ukryte lub nieaktywne. Jeśli takie żądanie mimo to dotrze do rdzenia aplikacji, na przykład po włączeniu trybu przy otwartym ekranie, błąd informuje, że połączenie jest tylko do odczytu. Aby wprowadzić zmiany, należy otworzyć połączenie, wyłączyć opcję [[ui:common.readOnly]] i zapisać. Zob. [Tylko do odczytu](connections.md#read-only).
 - Połączenie jest typu prod. Zmiany wymagają wpisania nazwy połączenia. Dopóki nazwa się nie zgadza, działanie nie jest wykonywane. Zob. [Środowiska i prod](connections.md#environments).
 - Grupa konsumentów ma aktywnych członków. Offsety można zresetować, a grupę usunąć tylko wtedy, gdy nie ma członków. Zob. [Reset offsetów](groups.md#reset-offsets).
-- Ustawieniem zarządza organizacja. Zasady mogą ustawić język interfejsu, klucz licencyjny i sprawdzanie aktualizacji, a tych ustawień nie można zmienić w aplikacji. Zob. [Ustawienia określone przez organizację](getting-started.md#managed-settings).
+- Ustawieniem zarządza organizacja. Zasady mogą ustawić język interfejsu i sprawdzanie aktualizacji, a tych ustawień nie można zmienić w aplikacji. Zob. [Ustawienia określone przez organizację](getting-started.md#managed-settings).
 - Kafka odrzuciła operację z komunikatem [[ui:errors.kafka.notAuthorized]]. To kwestia uprawnień w klastrze, a nie ustawień Glafiry. Zob. [Błędy SASL](troubleshooting.md#sasl-errors).
 
 ## Logi {#logs}

@@ -76,7 +76,7 @@ Glafira 将密码保存在 Secret Service 中（例如 GNOME Keyring 或 KWallet
 
 面板底部有[[ui:sidebar.settings]]、[[ui:support.title]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的链接。字段旁的 `?` 图标会显示该字段的简短提示。在窗口任意位置按 `F1`，可打开当前页面对应的指南章节。在 macOS 上，也可以通过“帮助”菜单打开指南。
 
-如果你用过 Kafka Explorer（本应用的旧名称），Glafira 会在首次启动时复制其中的连接、模板、发送历史记录和许可证，密码也会从系统密钥存储中一并复制。已有的内容不会被覆盖，旧数据也不会被删除。macOS 可能会询问一次是否允许访问旧的钥匙串项目。
+如果你用过 Kafka Explorer（本应用的旧名称），Glafira 会在首次启动时复制其中的连接、模板和发送历史记录，密码也会从系统密钥存储中一并复制。已有的内容不会被覆盖，旧数据也不会被删除。macOS 可能会询问一次是否允许访问旧的钥匙串项目。
 
 ## 用于练习的本地 Kafka {#local-cluster}
 

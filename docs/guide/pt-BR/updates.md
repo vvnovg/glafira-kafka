@@ -32,7 +32,7 @@ A tela mostra uma descrição curta do aplicativo e:
 - [[ui:about.system]] — o sistema operacional e a arquitetura do processador.
 - [[ui:about.license]] — Apache 2.0; o link abre o texto da licença no navegador.
 - [[ui:about.policy]] — [[ui:about.policySet]] ou [[ui:about.policyNone]]. Os erros na política são listados abaixo.
-- [[ui:about.dataDir]] — a pasta com os perfis de conexão, os modelos, o histórico, as configurações.
+- [[ui:about.dataDir]] — a pasta com os perfis de conexão, os modelos, o histórico e as configurações.
 - [[ui:about.logDir]] — a pasta com os arquivos de log. Consulte [Logs](troubleshooting.md#logs).
 
 As seções [[ui:about.updates.title]] e [[ui:about.diagnostics.title]] também ficam nessa tela.
@@ -47,7 +47,7 @@ O arquivo de diagnóstico reúne o que o suporte precisa para entender um proble
 
 Quando o arquivo é salvo, a tela mostra o caminho dele. O arquivo ZIP contém:
 
-- `info.json` — a versão e o build do aplicativo, o sistema operacional, os caminhos das pastas de dados e de logs, o status da política;
+- `info.json` — a versão e o build do aplicativo, o sistema operacional, os caminhos das pastas de dados e de logs, e o status da política;
 - `connections.json` — os perfis de conexão: nomes, ambientes, servidores bootstrap, protocolos, usuários SASL, caminhos dos arquivos de certificado, propriedades adicionais e tempos limite;
 - `logs/` — os arquivos de log do aplicativo.
 
@@ -57,4 +57,4 @@ O aplicativo não envia nada por conta própria. Anexe você mesmo o arquivo à 
 
 ## Apoiar o projeto {#support}
 
-O Glafira é gratuito e de código aberto sob a licença Apache License 2.0. As doações o mantêm vivo. [[ui:support.title]] na parte inferior do painel esquerdo, na tela [[ui:sidebar.about]] e, no macOS, no menu Ajuda abre a página de apoio no navegador: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md
+O Glafira é gratuito e de código aberto sob a Apache License 2.0. As doações o mantêm vivo. [[ui:support.title]] na parte inferior do painel esquerdo, na tela [[ui:sidebar.about]] e, no macOS, no menu Ajuda abre a página de apoio no navegador: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md

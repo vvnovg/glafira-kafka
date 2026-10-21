@@ -57,4 +57,4 @@
 
 ## 프로젝트 후원 {#support}
 
-Glafira는 Apache License 2.0에 따라 무료로 제공되는 오픈 소스입니다. 후원이 개발을 이어가게 합니다. 왼쪽 패널 아래, [[ui:sidebar.about]] 화면, macOS에서는 '도움말' 메뉴의 [[ui:support.title]]를 클릭하면 브라우저에서 후원 페이지가 열립니다: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md
+Glafira는 Apache License 2.0에 따라 무료로 제공되는 오픈 소스입니다. 후원이 개발을 이어가게 합니다. 왼쪽 패널 아래, [[ui:sidebar.about]] 화면, macOS에서는 '도움말' 메뉴의 [[ui:support.title]]을 클릭하면 브라우저에서 후원 페이지가 열립니다: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md

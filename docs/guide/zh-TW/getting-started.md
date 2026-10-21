@@ -76,7 +76,7 @@ Glafira 會將密碼儲存在 Secret Service 中（例如 GNOME Keyring 或 KWal
 
 面板底部有[[ui:sidebar.settings]]、[[ui:support.title]]、[[ui:sidebar.help]]和[[ui:sidebar.about]]的連結。欄位旁的 `?` 符號會顯示該欄位的簡短提示。在視窗任何位置按 `F1`，即可開啟目前畫面對應的指南章節。在 macOS 上，也可以從「輔助說明」選單開啟指南。
 
-如果你用過 Kafka Explorer（本應用程式的舊名稱），Glafira 會在第一次啟動時複製它的連線、範本、傳送歷程記錄和授權，密碼也會從系統金鑰儲存區一併複製。已經存在的項目不會被覆寫，舊資料也不會被刪除。macOS 可能會詢問一次是否允許存取舊的鑰匙圈項目。
+如果你用過 Kafka Explorer（本應用程式的舊名稱），Glafira 會在第一次啟動時複製它的連線、範本和傳送歷程記錄，密碼也會從系統金鑰儲存區一併複製。已經存在的項目不會被覆寫，舊資料也不會被刪除。macOS 可能會詢問一次是否允許存取舊的鑰匙圈項目。
 
 ## 用來練習的本機 Kafka {#local-cluster}
 

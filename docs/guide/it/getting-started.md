@@ -76,7 +76,7 @@ Dopo il salvataggio si apre la panoramica del cluster. Sotto ogni connessione de
 
 In fondo al pannello ci sono i collegamenti [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] e [[ui:sidebar.about]]. Il simbolo `?` accanto a un campo mostra un breve suggerimento. Premi `F1` in qualsiasi punto della finestra per aprire il capitolo della guida relativo alla schermata corrente. Su macOS la guida si trova anche nel menu Aiuto.
 
-Se usavi Kafka Explorer (il nome precedente dell’app), al primo avvio Glafira ne copia le connessioni, i modelli, la cronologia degli invii e la licenza. Anche le password vengono copiate dall’archivio dei segreti di sistema. Nulla di ciò che esiste già viene sovrascritto e i vecchi dati non vengono eliminati. macOS può chiedere una volta l’accesso ai vecchi elementi del Portachiavi.
+Se usavi Kafka Explorer (il nome precedente dell’app), al primo avvio Glafira ne copia le connessioni, i modelli e la cronologia degli invii. Anche le password vengono copiate dall’archivio dei segreti di sistema. Nulla di ciò che esiste già viene sovrascritto e i vecchi dati non vengono eliminati. macOS può chiedere una volta l’accesso ai vecchi elementi del Portachiavi.
 
 ## Kafka locale per fare pratica {#local-cluster}
 

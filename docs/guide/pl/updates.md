@@ -32,7 +32,7 @@ Ekran pokazuje krótki opis aplikacji oraz:
 - [[ui:about.system]] — system operacyjny i architektura procesora.
 - [[ui:about.license]] — Apache 2.0; link otwiera tekst licencji w przeglądarce.
 - [[ui:about.policy]] — [[ui:about.policySet]] lub [[ui:about.policyNone]]. Błędy w zasadach są wymienione poniżej.
-- [[ui:about.dataDir]] — folder z profilami połączeń, szablonami, historią, ustawieniami.
+- [[ui:about.dataDir]] — folder z profilami połączeń, szablonami, historią i ustawieniami.
 - [[ui:about.logDir]] — folder z plikami logów. Zob. [Logi](troubleshooting.md#logs).
 
 Na tym ekranie znajdują się też sekcje [[ui:about.updates.title]] i [[ui:about.diagnostics.title]].
@@ -47,7 +47,7 @@ Archiwum diagnostyczne zbiera to, czego pomoc techniczna potrzebuje, aby zrozumi
 
 Po zapisaniu archiwum ekran pokazuje jego ścieżkę. Plik ZIP zawiera:
 
-- `info.json` — wersję i build aplikacji, system operacyjny, ścieżki folderów danych i logów, stan zasad;
+- `info.json` — wersję i build aplikacji, system operacyjny, ścieżki folderów danych i logów oraz stan zasad;
 - `connections.json` — profile połączeń: nazwy, środowiska, serwery bootstrap, protokoły, nazwy użytkowników SASL, ścieżki plików certyfikatów, dodatkowe właściwości i limity czasu;
 - `logs/` — pliki logów aplikacji.
 
@@ -57,4 +57,4 @@ Aplikacja sama niczego nie wysyła. Archiwum należy samodzielnie dołączyć do
 
 ## Wesprzyj projekt {#support}
 
-Glafira jest bezpłatna i otwarta na licencji Apache License 2.0. Darowizny pozwalają ją rozwijać. Przycisk [[ui:support.title]] u dołu lewego panelu, na ekranie [[ui:sidebar.about]] oraz, w systemie macOS, w menu Pomoc otwiera stronę wsparcia w przeglądarce: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md
+Glafira jest bezpłatna, a jej kod źródłowy jest otwarty na licencji Apache License 2.0. Darowizny pozwalają ją rozwijać. Pozycja [[ui:support.title]] u dołu lewego panelu, na ekranie [[ui:sidebar.about]] oraz, w systemie macOS, w menu Pomoc otwiera stronę wsparcia w przeglądarce: https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md

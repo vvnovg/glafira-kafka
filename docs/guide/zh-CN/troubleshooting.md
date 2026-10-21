@@ -80,7 +80,7 @@ TLS 或 SASL 问题也可能表现为超时。应用会尝试找出真正的原�
 - 连接为只读。只读连接的名称旁带有锁形图标。会更改集群的按钮会被隐藏或禁用。如果此类请求仍到达了应用内核，例如在页面打开期间开启了该模式，错误会提示连接为只读。如需进行更改，请打开该连接，取消选中[[ui:common.readOnly]]并保存。参见[只读](connections.md#read-only)。
 - 连接为 prod。更改时会要求输入连接名称，名称一致之前不会执行操作。参见[环境与 prod](connections.md#environments)。
 - 消费者组有活动成员。只有在组中没有成员时，才能重置偏移量或删除组。参见[重置偏移量](groups.md#reset-offsets)。
-- 该设置由你的组织管理。策略可以设置界面语言、许可证密钥和更新检查，这些都无法在应用中更改。参见[由组织设置的选项](getting-started.md#managed-settings)。
+- 该设置由你的组织管理。策略可以设置界面语言和更新检查，这些都无法在应用中更改。参见[由组织设置的选项](getting-started.md#managed-settings)。
 - Kafka 以[[ui:errors.kafka.notAuthorized]]拒绝了操作。这是集群中的权限问题，与 Glafira 设置无关。参见 [SASL 错误](troubleshooting.md#sasl-errors)。
 
 ## 日志 {#logs}

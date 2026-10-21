@@ -76,7 +76,7 @@ Al guardar, se abre el resumen del clúster. Bajo cada conexión del panel hay e
 
 En la parte inferior del panel hay enlaces a [[ui:sidebar.settings]], [[ui:support.title]], [[ui:sidebar.help]] y [[ui:sidebar.about]]. El signo `?` junto a un campo muestra una breve ayuda sobre él. Pulsa `F1` en cualquier parte de la ventana para abrir el capítulo de la guía sobre la pantalla actual. En macOS, la guía también está en el menú Ayuda.
 
-Si usabas Kafka Explorer (el nombre anterior de la app), Glafira copia en el primer inicio sus conexiones, plantillas, historial de envíos y licencia. Las contraseñas también se copian del almacén de secretos del sistema. No se sobrescribe nada que ya exista y los datos antiguos no se eliminan. macOS puede pedir una vez acceso a los elementos antiguos del Llavero.
+Si usabas Kafka Explorer (el nombre anterior de la app), Glafira copia en el primer inicio sus conexiones, plantillas e historial de envíos. Las contraseñas también se copian del almacén de secretos del sistema. No se sobrescribe nada que ya exista y los datos antiguos no se eliminan. macOS puede pedir una vez acceso a los elementos antiguos del Llavero.
 
 ## Kafka local para practicar {#local-cluster}
 

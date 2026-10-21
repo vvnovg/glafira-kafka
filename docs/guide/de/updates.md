@@ -32,7 +32,7 @@ Der Bildschirm zeigt eine kurze Beschreibung der App sowie:
 - [[ui:about.system]] — Betriebssystem und Prozessorarchitektur.
 - [[ui:about.license]] — Apache 2.0; der Link öffnet den Lizenztext im Browser.
 - [[ui:about.policy]] — [[ui:about.policySet]] oder [[ui:about.policyNone]]. Fehler in der Richtlinie werden darunter aufgeführt.
-- [[ui:about.dataDir]] — der Ordner mit Verbindungsprofilen, Vorlagen, Verlauf, Einstellungen.
+- [[ui:about.dataDir]] — der Ordner mit Verbindungsprofilen, Vorlagen, Verlauf und Einstellungen.
 - [[ui:about.logDir]] — der Ordner mit den Protokolldateien. Siehe [Protokolle](troubleshooting.md#logs).
 
 Auch die Abschnitte [[ui:about.updates.title]] und [[ui:about.diagnostics.title]] befinden sich auf diesem Bildschirm.
@@ -47,7 +47,7 @@ Das Diagnosearchiv sammelt, was der Support braucht, um ein Problem zu verstehen
 
 Nach dem Speichern zeigt der Bildschirm den Pfad des Archivs. Die ZIP-Datei enthält:
 
-- `info.json` — Version und Build der App, Betriebssystem, Pfade des Daten- und Protokollordners, Status der Richtlinie;
+- `info.json` — Version und Build der App, Betriebssystem, Pfade des Daten- und Protokollordners sowie Status der Richtlinie;
 - `connections.json` — Verbindungsprofile: Namen, Umgebungen, Bootstrap-Server, Protokolle, SASL-Benutzernamen, Pfade der Zertifikatsdateien, zusätzliche Eigenschaften und Timeouts;
 - `logs/` — die Protokolldateien der App.
 

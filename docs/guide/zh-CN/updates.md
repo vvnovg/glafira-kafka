@@ -57,4 +57,4 @@
 
 ## 支持本项目 {#support}
 
-Glafira 免费且开源，采用 Apache License 2.0 许可证。捐助帮助它持续发展。左侧面板底部、[[ui:sidebar.about]]页面以及 macOS 上“帮助”菜单中的[[ui:support.title]]会在浏览器中打开支持页面：https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md
+Glafira 免费且开源，采用 Apache License 2.0。捐助帮助它持续发展。左侧面板底部、[[ui:sidebar.about]]页面以及 macOS 上“帮助”菜单中的[[ui:support.title]]会在浏览器中打开支持页面：https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md

@@ -42,10 +42,11 @@
 ### 3.1 Rust
 
 - **Команды.** `consume.rs`: четыре вызова `require_pro` (старт сессии, коммит, пауза, возобновление) удаляются.
-  `connections.rs`: удаляются проверка «перевод в prod и снятие read-only — Pro» и комментарий к ней; `was_prod` /
-  `becomes_prod` / `becomes_writable` исчезают, если больше не нужны. `folders.rs` и `storage/exchange.rs`:
-  `ImportOptions.is_pro` и `forced_read_only` удаляются, импорт сохраняет `readOnly` как в файле; код предупреждения
-  `prodReadOnly` уходит из превью импорта и из типов фронтенда.
+  `connections.rs`: удаляются проверка «перевод в prod и снятие read-only — Pro» и комментарий к ней; `was_prod`,
+  `becomes_prod` и `becomes_writable` удаляются — других потребителей у них нет. `folders.rs` и `storage/exchange.rs`:
+  `ImportOptions.is_pro`, `forced_read_only` и счётчик `prod_read_only` удаляются, импорт сохраняет `readOnly` как
+  в файле; предупреждение `warnings.import.prodReadOnly` больше не формируется, фикстура с ним в
+  `ImportDialog.test.tsx` заменяется другим предупреждением.
 - **Политика.** `policy/mod.rs`: ключ `licenseKey` не разбирается — он попадает в существующую ветку
   `tracing::warn!("unknown policy key … ignored")`. `state.rs`: вызов `set_policy_key` удаляется.
 - **Миграция и запуск.** `migrate.rs`: `FILES = ["templates.json"]`. Новая функция `remove_legacy_license_file(data_dir)`
@@ -93,8 +94,8 @@
   пожертвования помогают его развивать), `about.license` («Лицензия»), `about.notice.more`, `about.notice.hideAria`
   (переносятся из `license.notice`), `health.llmNotes`.
 - **Переписываются:** `about.summary` — последняя фраза «Pro adds…» заменяется перечислением тех же возможностей как
-  обычных; `hints.connections.environment` — без «(Pro)»; подпись окружения prod в форме подключения — как у остальных
-  окружений, без пометки.
+  обычных; `hints.connections.environment` — без «(Pro)»; в `ConnectionForm` prod подписывается значением окружения,
+  как остальные, вместо `connections.form.prodPro`.
 - Новые и изменённые строки переводятся на 12 языков по `docs/i18n/glossary.md`; из глоссария уходят термины «Pro»
   и «Free» и примеры «prod (Pro)». Тест паритета ключей (`locales.test.ts`) остаётся страховкой от пропусков.
 
@@ -158,8 +159,8 @@
 
 ## 9. Смоук (`docs/smoke/apache-2.md`)
 
-1. Положить в каталог данных `license.json` с произвольным содержимым, запустить приложение: файл удалён, в логе
-   запись уровня warn нет.
+1. Положить в каталог данных `license.json` с произвольным содержимым, запустить приложение: файл удалён, записей
+   уровня warn в логе нет.
 2. Consumer-сессия из дерева подключения стартует без ключа; коммит, пауза и возобновление работают.
 3. Новое подключение с окружением prod сохраняется; у read-only prod-подключения флажок снимается.
 4. Импорт файла с prod-подключением без `readOnly`: превью без предупреждения, подключение импортировано доступным для

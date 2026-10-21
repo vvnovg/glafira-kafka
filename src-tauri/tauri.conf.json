@@ -46,7 +46,7 @@
     "publisher": "Glafira for Apache Kafka",
     "category": "DeveloperTool",
     "shortDescription": "Glafira for Apache Kafka — desktop client for Apache Kafka",
-    "copyright": "© 2026 Glafira for Apache Kafka",
+    "copyright": "© 2026 Viacheslav Novgorodtsev",
     "linux": {
       "deb": {
         "depends": [

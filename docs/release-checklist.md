@@ -7,7 +7,7 @@
    `TAURI_SIGNING_PRIVATE_KEY` (содержимое файла ключа), `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`,
    `RELEASES_TOKEN` (fine-grained PAT: только `vvnovg/glafira-kafka-releases`, Contents: Read and write).
    Срок токена — 1 год; напоминание в календаре за 2 недели. Истёкший токен ломает только шаг publish:
-   создать новый с теми же правами и `gh secret set RELEASES_TOKEN --repo vvnovg/kafka-explorer`, затем перезапустить job publish.
+   создать новый с теми же правами и `gh secret set RELEASES_TOKEN --repo vvnovg/glafira-kafka`, затем перезапустить job publish.
    Позже, при наличии: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`,
    `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`, `APPLE_INSTALLER_IDENTITY`.
 4. Резервная копия закрытого ключа updater вне компьютера разработки.

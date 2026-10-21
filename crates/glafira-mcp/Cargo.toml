@@ -3,7 +3,7 @@ name = "glafira-mcp"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"
-repository = "https://github.com/vvnovg/kafka-explorer"
+repository = "https://github.com/vvnovg/glafira-kafka"
 description = "MCP-шлюз Glafira: сервер только для чтения, рукопожатие и транспорт шима"
 publish = false
 

@@ -27,7 +27,7 @@
 6. **Три входа «Поддержать проект».** Внизу левой панели ссылка «Поддержать проект» (порядок: Настройки, Поддержать проект, Справка,
    О программе); в «О программе» кнопка «Поддержать проект» с подсказкой; на macOS пункт «Поддержать проект» в меню Help между
    разделителем и «О программе». Каждый вход открывает в браузере https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md.
-7. **«О программе».** Строка «Лицензия: Apache 2.0» — ссылка открывает https://github.com/vvnovg/kafka-explorer/blob/main/LICENSE
+7. **«О программе».** Строка «Лицензия: Apache 2.0» — ссылка открывает https://github.com/vvnovg/glafira-kafka/blob/main/LICENSE
    в браузере; строки «Тариф» нет; ссылки «Лицензия» внизу панели нет.
 8. **Политика с `licenseKey`** (macOS): собрать plist по `docs/admin.md` («Проверка политики вручную»), но перед `sudo cp`
    добавить ключ прошлых версий: `plutil -insert licenseKey -string abc /tmp/policy.plist` — в plist `updatesEnabled=false`

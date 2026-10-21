@@ -26,7 +26,7 @@ Unblock-File -Path "$env:USERPROFILE\Downloads\Glafira_for_Apache_Kafka_*_x64_en
 ```
 
 ## Source code and support
-Glafira is free and open source under the Apache License 2.0: https://github.com/vvnovg/kafka-explorer.
+Glafira is free and open source under the Apache License 2.0: https://github.com/vvnovg/glafira-kafka.
 All features are available to everyone. If Glafira is useful to you, see [SUPPORT.md](SUPPORT.md).
 
 Apache Kafka is a trademark of the Apache Software Foundation. This project is not affiliated with the ASF.

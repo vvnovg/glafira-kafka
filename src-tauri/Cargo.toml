@@ -5,7 +5,7 @@ description = "Glafira for Apache Kafka — desktop-клиент для Apache K
 authors = ["Glafira for Apache Kafka contributors"]
 edition = "2024"
 license = "Apache-2.0"
-repository = "https://github.com/vvnovg/kafka-explorer"
+repository = "https://github.com/vvnovg/glafira-kafka"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -957,7 +957,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `kafka::admin::{ConfigChange, NewTopicSpec, validate_new_topic}`, `kafka::groups::{ResetRequest, ResetScope, ResetStrategy, validate_reset_request}`, `kafka::metadata::is_internal`, `health::model::{Severity, Target}`, `store::{sanitize, Author, MAX_TITLE_CHARS, MAX_BODY_CHARS}`.
-- Produces: `health::proposals::{MAX_CONFIG_ENTRIES = 50, MAX_CONFIG_VALUE_CHARS = 1024, MAX_SCOPE_ITEMS = 100, MAX_RATIONALE_CHARS = 2000, MAX_REJECT_REASON_CHARS = 300, MAX_RELATED_KEY_CHARS = 200, MAX_OPEN_PROPOSALS = 50, ConfigValueChange { name, value: Option<String> }, Change::{AlterTopicConfigs { topic, changes } | CreateTopic { name, partitions, replication_factor (default -1), configs } | AddPartitions { topic, new_total } | ResetOffsets { group_id, strategy, scope }} (serde `kind`, camelCase) с `kind_name()`, `target()`, `trimmed()`; ProposalStatus::{Open | Applied | Rejected | Withdrawn}.as_str(); Proposal { id, severity, title, rationale, target, change, related_rule_id, related_finding_key, client, session_id, created_at_ms, updated_at_ms, status, closed_at_ms, applied_as_proposed, reject_reason }; Facts { brokers, topics: Vec<TopicFact { name, partitions, internal }>, config_keys: Option<BTreeSet<String>>, groups: Option<BTreeSet<String>> }; ProposalError::{Invalid(String) | NotFound(String)}; validate(&Change, &Facts); Applied::{AlterTopicConfigs { topic, changes: Vec<ConfigChange> } | CreateTopic(NewTopicSpec) | AddPartitions { topic, new_total } | ResetOffsets(Option<ResetRequest>)}.matches(&Change); applied_as_proposed(&Change, &Applied)}`; `health::store::{PROPOSAL_TTL_MS, HealthFile.proposals, NewProposal { severity, title, rationale, change, related_rule_id, related_finding_key, author }, Proposed::{Created(id) | Updated(id) | LimitReached}, Withdrawn::{Withdrawn | NotFound | NotOwner | Closed(ProposalStatus)}, MarkApplied::{Applied { as_proposed } | Skipped(&'static str)}, HealthStore::{propose, set_proposal_status(id, pid, status, reason, now), mark_applied(id, pid, &Applied, now), withdraw_own(id, pid, &Author, now), delete_proposal, delete_all_proposals}}`.
+- Produces: `health::proposals::{MAX_CONFIG_ENTRIES = 50, MAX_CONFIG_VALUE_CHARS = 1024, MAX_SCOPE_ITEMS = 100, MAX_RATIONALE_CHARS = 2000, MAX_REJECT_REASON_CHARS = 300, MAX_RELATED_KEY_CHARS = 200, MAX_OPEN_PROPOSALS = 50, ConfigValueChange { name, value: Option<String> }, Change::{AlterTopicConfigs { topic, changes } | CreateTopic { name, partitions, replication_factor (default -1), configs } | AddPartitions { topic, new_total } | ResetOffsets { group_id, strategy, scope }} (serde `kind`, camelCase) с `kind_name()`, `target()`, `trimmed()`; ProposalStatus::{Open | Applied | Rejected | Withdrawn}.as_str(); Proposal { id, severity, title, rationale, target, change, related_rule_id, related_finding_key, client, session_id, created_at_ms, updated_at_ms, status, closed_at_ms, applied_as_proposed, reject_reason }; Facts { brokers, topics: Vec<TopicFact { name, partitions, internal }>, config_keys: Option<BTreeSet<String>>, groups: Option<BTreeSet<String>> }; ProposalError::{Invalid(String) | NotFound(String)}; validate(&Change, &Facts); Applied::{AlterTopicConfigs { topic, changes: Vec<ConfigChange> } | CreateTopic(NewTopicSpec) | AddPartitions { topic, new_total } | ResetOffsets { group_id, request: Option<ResetRequest> }}.matches(&Change); applied_as_proposed(&Change, &Applied)}`; `health::store::{PROPOSAL_TTL_MS, HealthFile.proposals, NewProposal { severity, title, rationale, change, related_rule_id, related_finding_key, author }, Proposed::{Created(id) | Updated(id) | LimitReached}, Withdrawn::{Withdrawn | NotFound | NotOwner | Closed(ProposalStatus)}, MarkApplied::{Applied { as_proposed } | Skipped(&'static str)}, HealthStore::{propose, set_proposal_status(id, pid, status, reason, now), mark_applied(id, pid, &Applied, now), withdraw_own(id, pid, &Author, now), delete_proposal, delete_all_proposals}}`.
 
 Спец. G3 §3, §5, §6 (хранение). Модуль `proposals.rs` не ходит в Kafka: факты ему приносит бэкенд (задача 5), а он только сверяет и сравнивает. `Facts.config_keys`/`groups` — `None`, когда факты для этого вида не собирались (имена тогда не проверяются). Хранилище: повтор того же автора по тому же виду и объекту обновляет открытое предложение; лимит 50 открытых; срок 7 дней при любом статусе; `mark_applied` никогда не ломает уже прошедшую операцию — у него есть только `Skipped(почему)`. Ключи ошибок `errors.health.proposalNotFound` и `errors.health.proposalClosed` вызываются из Rust, поэтому попадают в словари в этой же задаче.
 
@@ -1020,7 +1020,7 @@ mod tests {
         }
     }
 
-    fn reset(group: &str, scope: ResetScope) -> Change {
+    fn reset_change(group: &str, scope: ResetScope) -> Change {
         Change::ResetOffsets {
             group_id: group.into(),
             strategy: ResetStrategy::Earliest,
@@ -1079,7 +1079,7 @@ mod tests {
                 configs: BTreeMap::new()
             }
         );
-        let r = reset(
+        let r = reset_change(
             "billing",
             ResetScope::Partitions {
                 partitions: vec![TopicPartitionRef {
@@ -1105,7 +1105,7 @@ mod tests {
         assert_eq!(c.target(), Target::topic("orders"));
         assert_eq!(create("dlq", 3).target(), Target::topic("dlq"));
         assert_eq!(
-            reset(" billing", ResetScope::All).trimmed().target(),
+            reset_change(" billing", ResetScope::All).trimmed().target(),
             Target::group("billing")
         );
         assert_eq!(
@@ -1236,14 +1236,17 @@ mod tests {
     #[test]
     fn reset_offsets_is_checked_against_groups_topics_and_partitions() {
         let f = facts();
-        assert_eq!(validate(&reset("billing", ResetScope::All), &f), Ok(()));
+        assert_eq!(
+            validate(&reset_change("billing", ResetScope::All), &f),
+            Ok(())
+        );
         assert!(
-            not_found(validate(&reset("nope", ResetScope::All), &f))
+            not_found(validate(&reset_change("nope", ResetScope::All), &f))
                 .contains("consumer group nope")
         );
         assert!(
             not_found(validate(
-                &reset(
+                &reset_change(
                     "billing",
                     ResetScope::Topics {
                         topics: vec!["missing".into()]
@@ -1255,7 +1258,7 @@ mod tests {
         );
         assert!(
             invalid(validate(
-                &reset("billing", ResetScope::Topics { topics: vec![] }),
+                &reset_change("billing", ResetScope::Topics { topics: vec![] }),
                 &f
             ))
             .contains("No topics")
@@ -1266,27 +1269,35 @@ mod tests {
                 partition: p,
             }],
         };
-        assert_eq!(validate(&reset("billing", part(2)), &f), Ok(()));
+        assert_eq!(validate(&reset_change("billing", part(2)), &f), Ok(()));
         assert!(
-            invalid(validate(&reset("billing", part(3)), &f))
+            invalid(validate(&reset_change("billing", part(3)), &f))
                 .contains("partition 3 does not exist")
         );
-        assert!(invalid(validate(&reset("billing", part(-1)), &f)).contains("does not exist"));
+        assert!(
+            invalid(validate(&reset_change("billing", part(-1)), &f)).contains("does not exist")
+        );
         let too_many = ResetScope::Topics {
             topics: (0..101).map(|_| "orders".to_string()).collect(),
         };
-        assert!(invalid(validate(&reset("billing", too_many), &f)).contains("at most 100"));
+        assert!(invalid(validate(&reset_change("billing", too_many), &f)).contains("at most 100"));
         let negative = Change::ResetOffsets {
             group_id: "billing".into(),
             strategy: ResetStrategy::Offset { offset: -1 },
             scope: ResetScope::All,
         };
         assert!(invalid(validate(&negative, &f)).contains("negative"));
+        let zero = Change::ResetOffsets {
+            group_id: "billing".into(),
+            strategy: ResetStrategy::Shift { delta: 0 },
+            scope: ResetScope::All,
+        };
+        assert!(invalid(validate(&zero, &f)).contains("must not be 0"));
         // Пустая группа не обязана быть пустой: форма сама не даст применить.
         let mut no_groups = facts();
         no_groups.groups = None;
         assert_eq!(
-            validate(&reset("anything", ResetScope::All), &no_groups),
+            validate(&reset_change("anything", ResetScope::All), &no_groups),
             Ok(())
         );
     }
@@ -1313,7 +1324,13 @@ mod tests {
             })
             .matches(&create("dlq", 1))
         );
-        assert!(Applied::ResetOffsets(None).matches(&reset("billing", ResetScope::All)));
+        let reset = |group: &str| Applied::ResetOffsets {
+            group_id: group.into(),
+            request: None,
+        };
+        assert!(reset("billing").matches(&reset_change("billing", ResetScope::All)));
+        // Другая группа того же вида — не тот объект.
+        assert!(!reset("other").matches(&reset_change("billing", ResetScope::All)));
     }
 
     #[test]
@@ -1378,7 +1395,7 @@ mod tests {
             }
         ));
 
-        let r = reset("billing", ResetScope::All);
+        let r = reset_change("billing", ResetScope::All);
         let request = |strategy| ResetRequest {
             group_id: "billing".into(),
             strategy,
@@ -1386,13 +1403,37 @@ mod tests {
         };
         assert!(applied_as_proposed(
             &r,
-            &Applied::ResetOffsets(Some(request(ResetStrategy::Earliest)))
+            &Applied::ResetOffsets {
+                group_id: "billing".into(),
+                request: Some(request(ResetStrategy::Earliest))
+            }
         ));
         assert!(!applied_as_proposed(
             &r,
-            &Applied::ResetOffsets(Some(request(ResetStrategy::Latest)))
+            &Applied::ResetOffsets {
+                group_id: "billing".into(),
+                request: Some(request(ResetStrategy::Latest))
+            }
         ));
-        assert!(!applied_as_proposed(&r, &Applied::ResetOffsets(None)));
+        assert!(!applied_as_proposed(
+            &r,
+            &Applied::ResetOffsets {
+                group_id: "billing".into(),
+                request: None
+            }
+        ));
+        // Запрос по другой группе — не «как предложено».
+        assert!(!applied_as_proposed(
+            &r,
+            &Applied::ResetOffsets {
+                group_id: "other".into(),
+                request: Some(ResetRequest {
+                    group_id: "other".into(),
+                    strategy: ResetStrategy::Earliest,
+                    scope: ResetScope::All,
+                }),
+            }
+        ));
         // Разные виды — никогда.
         assert!(!applied_as_proposed(&r, &same));
     }
@@ -2114,6 +2155,9 @@ pub fn validate(change: &Change, facts: &Facts) -> Result<(), ProposalError> {
                 scope: scope.clone(),
             };
             validate_reset_request(&request).map_err(|e| ProposalError::Invalid(e.message))?;
+            if let ResetStrategy::Shift { delta: 0 } = strategy {
+                return Err(ProposalError::Invalid("shift delta must not be 0".into()));
+            }
             match scope {
                 ResetScope::All => {}
                 ResetScope::Topics { topics } => {
@@ -2160,8 +2204,12 @@ pub enum Applied {
         topic: String,
         new_total: i32,
     },
-    /// `None` — форма не передала стратегию и область: считается «с правками».
-    ResetOffsets(Option<ResetRequest>),
+    /// `request` — стратегия и область из предпросмотра формы; `None` — форма их не передала:
+    /// считается «с правками».
+    ResetOffsets {
+        group_id: String,
+        request: Option<ResetRequest>,
+    },
 }
 
 impl Applied {
@@ -2176,7 +2224,10 @@ impl Applied {
                 a == b
             }
             (Applied::CreateTopic(_), Change::CreateTopic { .. }) => true,
-            (Applied::ResetOffsets(_), Change::ResetOffsets { .. }) => true,
+            (
+                Applied::ResetOffsets { group_id: a, .. },
+                Change::ResetOffsets { group_id: b, .. },
+            ) => a == b,
             _ => false,
         }
     }
@@ -2231,7 +2282,9 @@ pub fn applied_as_proposed(change: &Change, applied: &Applied) -> bool {
                 strategy,
                 scope,
             },
-            Applied::ResetOffsets(Some(r)),
+            Applied::ResetOffsets {
+                request: Some(r), ..
+            },
         ) => &r.group_id == group_id && &r.strategy == strategy && &r.scope == scope,
         _ => false,
     }
@@ -4836,6 +4889,10 @@ index 1ed7569..011983a 100644
  ) -> AppResult<Vec<ResetResult>> {
      st.guarded(&connection_id, confirm.as_deref())?;
      validate_targets(&offsets)?;
++    let applied = Applied::ResetOffsets {
++        group_id: group_id.clone(),
++        request,
++    };
 -    on_handles(st, connection_id, move |h| {
 +    let results = on_handles(st, connection_id.clone(), move |h| {
          group_ops::reset_offsets(h, &group_id, &offsets)
@@ -4843,13 +4900,7 @@ index 1ed7569..011983a 100644
 -    .await
 +    .await?;
 +    if results.iter().all(|r| r.error.is_none()) {
-+        mark_applied(
-+            st,
-+            &connection_id,
-+            proposal_id,
-+            Applied::ResetOffsets(request),
-+        )
-+        .await;
++        mark_applied(st, &connection_id, proposal_id, applied).await;
 +    }
 +    Ok(results)
  }

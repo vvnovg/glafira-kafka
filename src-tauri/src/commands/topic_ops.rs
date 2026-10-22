@@ -1,15 +1,18 @@
 use tauri::State;
 
+use super::health::mark_applied;
 use super::{blocking, with_pooled};
 use crate::error::{AppResult, ErrorCode};
 use crate::guard::ensure_name_confirmed;
+use crate::health::proposals::Applied;
 use crate::kafka::admin::{self, ConfigChange, NewTopicSpec, PurgedPartition, TopicDeleteResult};
 use crate::kafka::configs::{TopicPolicy, describe_topic_policies};
 use crate::kafka::metadata::is_internal;
 use crate::state::AppState;
 
 // Каждая мутирующая команда первым делом вызывает `AppState::guarded` (read-only / prod),
-// затем проверяет ввод и только потом обращается к сети.
+// затем проверяет ввод и только потом обращается к сети. `proposal_id` — форма открыта из
+// предложения LLM: после успеха оно помечается применённым (спец. G3 §6).
 
 #[tauri::command]
 pub async fn create_topic(
@@ -17,8 +20,9 @@ pub async fn create_topic(
     connection_id: String,
     spec: NewTopicSpec,
     confirm: Option<String>,
+    proposal_id: Option<String>,
 ) -> AppResult<()> {
-    create_topic_impl(state.inner(), connection_id, spec, confirm).await
+    create_topic_impl(state.inner(), connection_id, spec, confirm, proposal_id).await
 }
 
 pub async fn create_topic_impl(
@@ -26,13 +30,17 @@ pub async fn create_topic_impl(
     connection_id: String,
     spec: NewTopicSpec,
     confirm: Option<String>,
+    proposal_id: Option<String>,
 ) -> AppResult<()> {
     st.guarded(&connection_id, confirm.as_deref())?;
     admin::validate_new_topic(&spec)?;
-    with_pooled(st, connection_id, |h| async move {
+    let applied = Applied::CreateTopic(spec.clone());
+    with_pooled(st, connection_id.clone(), |h| async move {
         admin::create_topic(&h, &spec).await
     })
-    .await
+    .await?;
+    mark_applied(st, &connection_id, proposal_id, applied).await;
+    Ok(())
 }
 
 #[tauri::command]
@@ -42,8 +50,17 @@ pub async fn alter_topic_configs(
     topic: String,
     changes: Vec<ConfigChange>,
     confirm: Option<String>,
+    proposal_id: Option<String>,
 ) -> AppResult<()> {
-    alter_topic_configs_impl(state.inner(), connection_id, topic, changes, confirm).await
+    alter_topic_configs_impl(
+        state.inner(),
+        connection_id,
+        topic,
+        changes,
+        confirm,
+        proposal_id,
+    )
+    .await
 }
 
 pub async fn alter_topic_configs_impl(
@@ -52,16 +69,19 @@ pub async fn alter_topic_configs_impl(
     topic: String,
     changes: Vec<ConfigChange>,
     confirm: Option<String>,
+    proposal_id: Option<String>,
 ) -> AppResult<()> {
     st.guarded(&connection_id, confirm.as_deref())?;
     admin::validate_config_changes(&changes)?;
-    let st = st.clone();
-    blocking(move || {
-        st.with_handles(&connection_id, |h| {
-            admin::alter_topic_configs(h, &topic, &changes)
-        })
-    })
-    .await
+    let applied = Applied::AlterTopicConfigs {
+        topic: topic.clone(),
+        changes: changes.clone(),
+    };
+    let (st2, id) = (st.clone(), connection_id.clone());
+    blocking(move || st2.with_handles(&id, |h| admin::alter_topic_configs(h, &topic, &changes)))
+        .await?;
+    mark_applied(st, &connection_id, proposal_id, applied).await;
+    Ok(())
 }
 
 #[tauri::command]
@@ -71,8 +91,17 @@ pub async fn add_partitions(
     topic: String,
     new_total: i32,
     confirm: Option<String>,
+    proposal_id: Option<String>,
 ) -> AppResult<()> {
-    add_partitions_impl(state.inner(), connection_id, topic, new_total, confirm).await
+    add_partitions_impl(
+        state.inner(),
+        connection_id,
+        topic,
+        new_total,
+        confirm,
+        proposal_id,
+    )
+    .await
 }
 
 pub async fn add_partitions_impl(
@@ -81,14 +110,21 @@ pub async fn add_partitions_impl(
     topic: String,
     new_total: i32,
     confirm: Option<String>,
+    proposal_id: Option<String>,
 ) -> AppResult<()> {
     st.guarded(&connection_id, confirm.as_deref())?;
     let current = partition_ids(st, &connection_id, &topic).await?.len();
     admin::validate_partition_increase(current, new_total)?;
-    with_pooled(st, connection_id, |h| async move {
+    let applied = Applied::AddPartitions {
+        topic: topic.clone(),
+        new_total,
+    };
+    with_pooled(st, connection_id.clone(), |h| async move {
         admin::add_partitions(&h, &topic, new_total as usize).await
     })
-    .await
+    .await?;
+    mark_applied(st, &connection_id, proposal_id, applied).await;
+    Ok(())
 }
 
 #[tauri::command]
@@ -253,7 +289,7 @@ mod tests {
     async fn all_mutations(st: &AppState, id: &str, confirm: Option<String>) -> Vec<ErrorCode> {
         let s = |s: &str| Some(s.to_string());
         vec![
-            create_topic_impl(st, id.into(), spec(), confirm.clone())
+            create_topic_impl(st, id.into(), spec(), confirm.clone(), None)
                 .await
                 .unwrap_err()
                 .code,
@@ -263,11 +299,12 @@ mod tests {
                 "t".into(),
                 vec![ConfigChange::Delete { name: "x".into() }],
                 confirm.clone(),
+                None,
             )
             .await
             .unwrap_err()
             .code,
-            add_partitions_impl(st, id.into(), "t".into(), 5, confirm.clone())
+            add_partitions_impl(st, id.into(), "t".into(), 5, confirm.clone(), None)
                 .await
                 .unwrap_err()
                 .code,
@@ -378,11 +415,11 @@ mod tests {
         let (_d, st) = state();
         let mut bad = spec();
         bad.name = "bad name".into();
-        let e = create_topic_impl(&st, "dev".into(), bad, None)
+        let e = create_topic_impl(&st, "dev".into(), bad, None, None)
             .await
             .unwrap_err();
         assert_eq!(e.code, ErrorCode::InvalidInput);
-        let e = alter_topic_configs_impl(&st, "dev".into(), "t".into(), vec![], None)
+        let e = alter_topic_configs_impl(&st, "dev".into(), "t".into(), vec![], None, None)
             .await
             .unwrap_err();
         assert_eq!(e.code, ErrorCode::InvalidInput);

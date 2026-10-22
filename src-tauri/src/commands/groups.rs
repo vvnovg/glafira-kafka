@@ -1,8 +1,10 @@
 use tauri::State;
 
+use super::health::mark_applied;
 use super::{blocking, with_pooled};
 use crate::error::AppResult;
 use crate::guard::ensure_name_confirmed;
+use crate::health::proposals::Applied;
 use crate::kafka::group_ops;
 use crate::kafka::groups::{
     GroupDescription, GroupLag, GroupList, GroupPartitionOffset, OffsetTarget, ResetPreviewRow,
@@ -90,6 +92,9 @@ pub async fn preview_offset_reset(
     .await
 }
 
+/// `proposal_id` и `request` — форма открыта из предложения LLM: `request` (стратегия и область,
+/// показанные в предпросмотре) сравнивается с предложением; отметка «применено» ставится, только
+/// если ни одна партиция не вернула ошибку (спец. G3 §6).
 #[tauri::command]
 pub async fn reset_offsets(
     state: State<'_, AppState>,
@@ -97,8 +102,19 @@ pub async fn reset_offsets(
     group_id: String,
     offsets: Vec<OffsetTarget>,
     confirm: Option<String>,
+    proposal_id: Option<String>,
+    request: Option<ResetRequest>,
 ) -> AppResult<Vec<ResetResult>> {
-    reset_offsets_impl(state.inner(), connection_id, group_id, offsets, confirm).await
+    reset_offsets_impl(
+        state.inner(),
+        connection_id,
+        group_id,
+        offsets,
+        confirm,
+        proposal_id,
+        request,
+    )
+    .await
 }
 
 pub async fn reset_offsets_impl(
@@ -107,13 +123,23 @@ pub async fn reset_offsets_impl(
     group_id: String,
     offsets: Vec<OffsetTarget>,
     confirm: Option<String>,
+    proposal_id: Option<String>,
+    request: Option<ResetRequest>,
 ) -> AppResult<Vec<ResetResult>> {
     st.guarded(&connection_id, confirm.as_deref())?;
     validate_targets(&offsets)?;
-    on_handles(st, connection_id, move |h| {
+    let applied = Applied::ResetOffsets {
+        group_id: group_id.clone(),
+        request,
+    };
+    let results = on_handles(st, connection_id.clone(), move |h| {
         group_ops::reset_offsets(h, &group_id, &offsets)
     })
-    .await
+    .await?;
+    if results.iter().all(|r| r.error.is_none()) {
+        mark_applied(st, &connection_id, proposal_id, applied).await;
+    }
+    Ok(results)
 }
 
 #[tauri::command]
@@ -186,13 +212,22 @@ mod tests {
     async fn group_mutations_are_guarded() {
         let (_d, st) = state();
         let g = || "g".to_string();
-        let ro_reset =
-            reset_offsets_impl(&st, "ro".into(), g(), target(), Some("conn-ro".into())).await;
+        let ro_reset = reset_offsets_impl(
+            &st,
+            "ro".into(),
+            g(),
+            target(),
+            Some("conn-ro".into()),
+            None,
+            None,
+        )
+        .await;
         assert_eq!(ro_reset.unwrap_err().code, ErrorCode::ReadOnly);
         let ro_delete =
             delete_group_impl(&st, "ro".into(), g(), Some("conn-ro".into()), Some(g())).await;
         assert_eq!(ro_delete.unwrap_err().code, ErrorCode::ReadOnly);
-        let prod_reset = reset_offsets_impl(&st, "prod".into(), g(), target(), None).await;
+        let prod_reset =
+            reset_offsets_impl(&st, "prod".into(), g(), target(), None, None, None).await;
         assert_eq!(
             prod_reset.unwrap_err().code,
             ErrorCode::ConfirmationRequired
@@ -207,7 +242,7 @@ mod tests {
             wrong_name.unwrap_err().code,
             ErrorCode::ConfirmationRequired
         );
-        let empty_plan = reset_offsets_impl(&st, "dev".into(), g(), vec![], None).await;
+        let empty_plan = reset_offsets_impl(&st, "dev".into(), g(), vec![], None, None, None).await;
         assert_eq!(empty_plan.unwrap_err().code, ErrorCode::InvalidInput);
     }
 }

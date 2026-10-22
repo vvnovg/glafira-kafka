@@ -163,6 +163,12 @@ pub trait Backend: Send + Sync + 'static {
         &self,
         op: crate::health::HealthOp,
     ) -> BoxFuture<'_, Result<crate::health::HealthOutput, BackendError>>;
+    /// Предложения изменений (спец. G3 §4): пишутся только в файл Glafira, кластер не меняется.
+    /// Реализация сверяет предложение с кластером и проверяет `llmAccess` подключения.
+    fn proposals(
+        &self,
+        op: crate::proposals::ProposalOp,
+    ) -> BoxFuture<'_, Result<crate::proposals::ProposalOutput, BackendError>>;
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

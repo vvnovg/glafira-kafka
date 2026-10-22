@@ -1,0 +1,290 @@
+//! Инструменты предложений (спец. G3 §4). Кластер они не меняют: предложение пишется в Glafira
+//! и показывается человеку рядом с объектом; применяет его человек формой.
+
+use rmcp::handler::server::wrapper::Parameters;
+use rmcp::model::CallToolResult;
+use rmcp::service::RequestContext;
+use rmcp::{ErrorData, RoleServer, tool, tool_router};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
+
+use super::GatewayServer;
+use crate::health::{Severity, StatusFilter};
+use crate::model::BackendError;
+use crate::proposals::*;
+use crate::rules;
+
+/// У `list_proposals` нет страниц: при обрезке остаются самые свежие, остальное — сужением по status.
+const PROPOSALS_TRUNCATED_HINT: &str = "The response was truncated to 100 KB: only the most recently updated proposals are shown; narrow with status";
+
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ProposeChangeParams {
+    /// Connection id from list_connections.
+    pub connection_id: String,
+    /// info, warning or critical: how urgent the change is.
+    pub severity: Severity,
+    /// Short summary for the user, up to 120 characters; plain text.
+    pub title: String,
+    /// Why this change and what it does, up to 2000 characters; plain text, no markup or links.
+    pub rationale: String,
+    /// The change itself; kind selects the form the user will see.
+    pub change: ChangeSpec,
+    /// ruleId of the health_check finding this change fixes, if any.
+    #[serde(default)]
+    pub related_rule_id: Option<String>,
+    /// key of the health_check finding this change fixes, if any.
+    #[serde(default)]
+    pub related_finding_key: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ListProposalsParams {
+    /// Connection id from list_connections.
+    pub connection_id: String,
+    /// open (default), closed (applied, rejected or withdrawn) or all.
+    #[serde(default)]
+    pub status: Option<StatusFilter>,
+}
+
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct WithdrawProposalParams {
+    /// Connection id from list_connections.
+    pub connection_id: String,
+    /// Proposal id from propose_change or list_proposals.
+    pub proposal_id: String,
+}
+
+#[derive(Serialize)]
+struct ProposalsBody {
+    items: Vec<ProposalView>,
+    truncated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    hint: Option<&'static str>,
+}
+
+fn proposals_of(b: &mut ProposalsBody) -> &mut Vec<ProposalView> {
+    &mut b.items
+}
+
+/// Сначала недавно обновлённые; при равенстве — созданные позже, затем по id.
+fn newest_first(items: &mut [ProposalView]) {
+    items.sort_by(|a, b| {
+        b.updated_at_ms
+            .cmp(&a.updated_at_ms)
+            .then(b.created_at_ms.cmp(&a.created_at_ms))
+            .then_with(|| a.id.cmp(&b.id))
+    });
+}
+
+fn to_value<T: Serialize>(v: &T) -> Result<Value, BackendError> {
+    serde_json::to_value(v).map_err(|e| BackendError::new("internal", e.to_string()))
+}
+
+#[tool_router(router = proposal_router, vis = "pub(crate)")]
+impl GatewayServer {
+    #[tool(
+        description = "Propose a change for the user to apply in Glafira. Does not change the cluster: the proposal appears next to the object with your title and rationale, and the user opens it as a pre-filled form, may edit it and confirms (or rejects it). Kinds: alterTopicConfigs (set or reset topic configs), createTopic, addPartitions, resetOffsets (the group must be empty when applied). Deleting or purging cannot be proposed — describe it in the chat instead. One problem — one proposal; a proposal with the same kind and object as your open one replaces it. The proposal is checked against the cluster (unknown topic or group, unknown config name, partitions not increasing). Then check the user's decision with list_proposals. readOnly: true in the response means the connection is read-only in Glafira and the user must lift that first. A proposal expires after 7 days; at most 50 open per connection.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    async fn propose_change(
+        &self,
+        Parameters(p): Parameters<ProposeChangeParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // В журнал — вид и объект, без заголовка, обоснования и значений изменения.
+        let args = json!({
+            "connectionId": p.connection_id,
+            "kind": p.change.kind_name(),
+            "target": p.change.target_name(),
+            "severity": p.severity,
+            "relatedRuleId": p.related_rule_id,
+        });
+        Ok(self
+            .call(
+                &ctx,
+                "propose_change",
+                args,
+                Some(&p.connection_id),
+                async {
+                    if p.title.trim().is_empty() {
+                        return Err(BackendError::invalid_argument("title must not be empty"));
+                    }
+                    if p.rationale.trim().is_empty() {
+                        return Err(BackendError::invalid_argument(
+                            "rationale must not be empty: explain the change to the user",
+                        ));
+                    }
+                    if p.related_finding_key
+                        .as_deref()
+                        .is_some_and(|k| k.chars().count() > MAX_RELATED_KEY_CHARS)
+                    {
+                        return Err(BackendError::invalid_argument(format!(
+                            "relatedFindingKey is longer than {MAX_RELATED_KEY_CHARS} characters"
+                        )));
+                    }
+                    let op = ProposalOp::Propose {
+                        connection_id: p.connection_id.clone(),
+                        session: self.identify(None),
+                        proposal: NewProposal {
+                            severity: p.severity,
+                            title: p.title.clone(),
+                            rationale: p.rationale.clone(),
+                            change: p.change.clone(),
+                            related_rule_id: p.related_rule_id.clone(),
+                            related_finding_key: p.related_finding_key.clone(),
+                        },
+                    };
+                    match self.proposals(op, true).await? {
+                        ProposalOutput::Proposed {
+                            proposal_id,
+                            created,
+                            read_only,
+                        } => to_value(&json!({
+                            "proposalId": proposal_id,
+                            "created": created,
+                            "readOnly": read_only,
+                        })),
+                        _ => Err(BackendError::unexpected()),
+                    }
+                },
+            )
+            .await)
+    }
+
+    #[tool(
+        description = "List the change proposals left in Glafira for a connection by any client, with the user's decision: open, applied (appliedAsProposed tells whether the user applied it unchanged), rejected (with rejectReason when the user gave one) or withdrawn. Check it after proposing instead of asking the user in the chat.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn list_proposals(
+        &self,
+        Parameters(p): Parameters<ListProposalsParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let args = to_value(&p).unwrap_or(Value::Null);
+        Ok(self
+            .call(
+                &ctx,
+                "list_proposals",
+                args,
+                Some(&p.connection_id),
+                async {
+                    let op = ProposalOp::List {
+                        connection_id: p.connection_id.clone(),
+                        status: p.status.unwrap_or_default(),
+                    };
+                    match self.proposals(op, false).await? {
+                        ProposalOutput::Proposals(mut items) => {
+                            newest_first(&mut items);
+                            let mut body = ProposalsBody {
+                                items,
+                                truncated: false,
+                                hint: None,
+                            };
+                            if rules::fit(&mut body, proposals_of) {
+                                body.truncated = true;
+                                body.hint = Some(PROPOSALS_TRUNCATED_HINT);
+                            }
+                            to_value(&body)
+                        }
+                        _ => Err(BackendError::unexpected()),
+                    }
+                },
+            )
+            .await)
+    }
+
+    #[tool(
+        description = "Withdraw one of your own open proposals from Glafira. A proposal of another client, or one the user already applied or rejected, cannot be withdrawn.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    async fn withdraw_proposal(
+        &self,
+        Parameters(p): Parameters<WithdrawProposalParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let args = to_value(&p).unwrap_or(Value::Null);
+        Ok(self
+            .call(
+                &ctx,
+                "withdraw_proposal",
+                args,
+                Some(&p.connection_id),
+                async {
+                    let op = ProposalOp::Withdraw {
+                        connection_id: p.connection_id.clone(),
+                        session: self.identify(None),
+                        proposal_id: p.proposal_id.clone(),
+                    };
+                    match self.proposals(op, false).await? {
+                        ProposalOutput::Withdrawn => to_value(&json!({ "withdrawn": true })),
+                        _ => Err(BackendError::unexpected()),
+                    }
+                },
+            )
+            .await)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::health::{Target, TargetKind};
+
+    fn view(id: &str, created: i64, updated: i64) -> ProposalView {
+        ProposalView {
+            id: id.into(),
+            severity: Severity::Info,
+            title: "t".into(),
+            rationale: "r".into(),
+            target: Target {
+                kind: TargetKind::Topic,
+                name: Some("orders".into()),
+            },
+            change: ChangeSpec::AddPartitions {
+                topic: "orders".into(),
+                new_total: 6,
+            },
+            related_rule_id: None,
+            related_finding_key: None,
+            client: None,
+            status: "open".into(),
+            created_at_ms: created,
+            updated_at_ms: updated,
+            closed_at_ms: None,
+            applied_as_proposed: None,
+            reject_reason: None,
+        }
+    }
+
+    #[test]
+    fn proposals_are_sorted_newest_first_with_stable_ties() {
+        let mut v = vec![
+            view("b", 1, 5),
+            view("a", 1, 5),
+            view("old", 0, 1),
+            view("later-created", 3, 5),
+            view("fresh", 0, 9),
+        ];
+        newest_first(&mut v);
+        let ids: Vec<_> = v.iter().map(|n| n.id.as_str()).collect();
+        assert_eq!(ids, ["fresh", "later-created", "a", "b", "old"]);
+    }
+}

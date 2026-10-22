@@ -25,17 +25,24 @@ use crate::endpoint::{BoxStream, Endpoint, Listener};
 use crate::health::{HealthOp, HealthOutput};
 use crate::limits::{CALLS_PER_MINUTE, GLOBAL_CONCURRENCY, RateLimiter, SESSION_CONCURRENCY};
 use crate::model::*;
+use crate::proposals::{ProposalOp, ProposalOutput};
 use crate::rules;
 
 mod health_tools;
+mod proposal_tools;
 mod tools;
 
 pub const INSTRUCTIONS: &str = "\
-Glafira is a read-only gateway to Apache Kafka clusters that the user explicitly allowed. \
-It can only read metadata: brokers, topics, partitions, configs and consumer groups. Nothing \
-in the clusters can be changed through it; when a change is needed, describe what to change and \
-where, and the user will do it in the Glafira window. Call list_connections first to get \
-connection ids.
+Glafira is a gateway to Apache Kafka clusters that the user explicitly allowed. It reads \
+metadata: brokers, topics, partitions, configs and consumer groups. Nothing in the clusters can \
+be changed through it: when a change is needed, propose it with propose_change (topic configs, a \
+new topic, more partitions, an offset reset) — the user sees the proposal next to the object in \
+Glafira and applies it themselves in a pre-filled form, or rejects it. Do not wait for the \
+decision in the same call: check it later with list_proposals (applied, rejected with a reason, \
+withdrawn). If propose_change answers readOnly: true, ask the user to lift read-only on the \
+connection in Glafira instead of looking for another way. Deleting or purging topics and groups \
+and sending messages cannot be proposed — describe them in the chat. Call list_connections first \
+to get connection ids.
 
 To review a cluster, start with health_check: it runs Glafira's deterministic rules. Take the \
 facts from it, then explain them, set priorities and find connections between them. Findings \
@@ -334,7 +341,7 @@ impl GatewayServer {
             shared,
             session_id,
             local: Arc::new(Semaphore::new(SESSION_CONCURRENCY)),
-            tool_router: Self::tool_router() + Self::health_router(),
+            tool_router: Self::tool_router() + Self::health_router() + Self::proposal_router(),
         }
     }
 
@@ -451,6 +458,17 @@ impl GatewayServer {
             None
         };
         self.shared.backend.health(op).await
+    }
+
+    /// Операция предложений. `kafka` — она сверяет предложение с кластером (`propose_change`):
+    /// тогда занимает слоты параллельности, как чтение.
+    async fn proposals(&self, op: ProposalOp, kafka: bool) -> Result<ProposalOutput, BackendError> {
+        let _slots = if kafka {
+            Some(self.slots().await?)
+        } else {
+            None
+        };
+        self.shared.backend.proposals(op).await
     }
 
     /// Общая обвязка инструмента: право, лимит, журнал, ответ или ошибка для LLM.

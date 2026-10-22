@@ -2,7 +2,8 @@
 //!
 //! Крейт ничего не знает о Kafka: данные он получает через трейт [`Backend`], который
 //! реализует приложение, и умеет только читать — изменяющих операций в [`ReadOp`] нет.
-//! Замечания LLM (G2, [`health`]) пишутся в Glafira, а не в кластер.
+//! Замечания LLM (G2, [`health`]) и предложения изменений (G3, [`proposals`]) пишутся в Glafira,
+//! а не в кластер: предложение применяет человек формой приложения.
 
 pub mod audit;
 pub mod endpoint;
@@ -11,6 +12,7 @@ pub mod health;
 pub mod limits;
 pub mod model;
 pub mod observe;
+pub mod proposals;
 pub mod rules;
 pub mod server;
 

@@ -8,6 +8,7 @@ use std::time::Duration;
 
 use glafira_mcp::health::*;
 use glafira_mcp::model::*;
+use glafira_mcp::proposals::*;
 use glafira_mcp::{
     AuditLog, Backend, BackendError, BoxFuture, GatewayOptions, McpServerHandle, endpoint,
     handshake,
@@ -42,6 +43,12 @@ struct Fake {
     big_findings: AtomicBool,
     /// Сколько длинных замечаний отдаёт `list_annotations` (0 — одно короткое).
     many_notes: AtomicUsize,
+    /// Операции предложений, которые дошли до Backend.
+    proposal_ops: Mutex<Vec<ProposalOp>>,
+    /// Сколько длинных предложений отдаёт `list_proposals` (0 — одно короткое).
+    many_proposals: AtomicUsize,
+    /// Подключение только для чтения: `propose_change` отвечает `readOnly: true`.
+    read_only: AtomicBool,
 }
 
 /// Считает одновременные операции чтения на любом выходе из `read`.
@@ -84,6 +91,9 @@ impl Fake {
             check_delay: Mutex::new(Duration::ZERO),
             big_findings: AtomicBool::new(false),
             many_notes: AtomicUsize::new(0),
+            proposal_ops: Mutex::new(Vec::new()),
+            many_proposals: AtomicUsize::new(0),
+            read_only: AtomicBool::new(false),
         })
     }
 }
@@ -168,6 +178,32 @@ fn long_note(i: i64) -> AnnotationView {
         status: "open".into(),
         created_at_ms: i,
         updated_at_ms: i,
+    }
+}
+
+fn long_proposal(i: i64) -> ProposalView {
+    ProposalView {
+        id: format!("p{i}"),
+        severity: Severity::Warning,
+        title: format!("Proposal {i}"),
+        rationale: "x".repeat(2000),
+        target: Target {
+            kind: TargetKind::Topic,
+            name: Some("orders".into()),
+        },
+        change: ChangeSpec::AddPartitions {
+            topic: "orders".into(),
+            new_total: 6,
+        },
+        related_rule_id: None,
+        related_finding_key: None,
+        client: Some("claude-ai".into()),
+        status: "open".into(),
+        created_at_ms: i,
+        updated_at_ms: i,
+        closed_at_ms: None,
+        applied_as_proposed: None,
+        reject_reason: None,
     }
 }
 
@@ -460,6 +496,60 @@ impl Backend for Fake {
             }
         })
     }
+
+    fn proposals(&self, op: ProposalOp) -> BoxFuture<'_, Result<ProposalOutput, BackendError>> {
+        Box::pin(async move {
+            self.proposal_ops.lock().unwrap().push(op.clone());
+            if op.connection_id() != "c1" {
+                return Err(BackendError::not_allowed());
+            }
+            match op {
+                ProposalOp::Propose { proposal, .. } => {
+                    if proposal.change.target_name() == "missing" {
+                        return Err(BackendError::not_found(
+                            "There is no topic missing in this cluster",
+                        ));
+                    }
+                    if proposal.title == "too many" {
+                        return Err(BackendError::new(
+                            "limit_reached",
+                            "At most 50 open proposals",
+                        ));
+                    }
+                    Ok(ProposalOutput::Proposed {
+                        proposal_id: "p1".into(),
+                        created: proposal.title != "again",
+                        read_only: self.read_only.load(Ordering::SeqCst),
+                    })
+                }
+                ProposalOp::List { .. } => {
+                    let many = self.many_proposals.load(Ordering::SeqCst);
+                    if many > 0 {
+                        // От старых к новым: без сортировки в ответ попали бы самые старые.
+                        return Ok(ProposalOutput::Proposals(
+                            (0..many).map(|i| long_proposal(i as i64)).collect(),
+                        ));
+                    }
+                    let mut applied = long_proposal(1);
+                    applied.rationale = "r".into();
+                    applied.status = "applied".into();
+                    applied.closed_at_ms = Some(2);
+                    applied.applied_as_proposed = Some(false);
+                    Ok(ProposalOutput::Proposals(vec![applied]))
+                }
+                ProposalOp::Withdraw { proposal_id, .. } => match proposal_id.as_str() {
+                    "foreign" => Err(BackendError::new(
+                        "not_allowed",
+                        "Only proposals created by this client can be withdrawn",
+                    )),
+                    "closed" => Err(BackendError::invalid_argument(
+                        "The proposal is already applied",
+                    )),
+                    _ => Ok(ProposalOutput::Withdrawn),
+                },
+            }
+        })
+    }
 }
 
 struct Env {
@@ -548,11 +638,17 @@ async fn exposes_exactly_the_tools() {
     let c = client(&e.ep).await;
     let info = c.peer_info().unwrap();
     let instructions = info.instructions.as_deref().unwrap();
-    assert!(instructions.contains("read-only gateway"));
+    assert!(instructions.contains("propose_change"));
+    assert!(instructions.contains("cannot be proposed"));
     assert!(instructions.contains("start with health_check"));
-    // С 0.3.0 платного тарифа нет: ни инструкции, ни описания инструментов не упоминают Pro.
-    assert!(!glafira_mcp::server::INSTRUCTIONS.contains("Pro"));
-    assert!(!instructions.contains("Pro"));
+    // С 0.3.0 платного тарифа нет: ни инструкции, ни описания инструментов не упоминают Pro
+    // (слово целиком: «proposal» и «appliedAsProposed» — не тариф).
+    let mentions_pro = |s: &str| {
+        s.split(|c: char| !c.is_ascii_alphanumeric())
+            .any(|w| w == "Pro")
+    };
+    assert!(!mentions_pro(glafira_mcp::server::INSTRUCTIONS));
+    assert!(!mentions_pro(instructions));
     let mut tools = c.list_all_tools().await.unwrap();
     tools.sort_by(|a, b| a.name.cmp(&b.name));
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
@@ -572,15 +668,21 @@ async fn exposes_exactly_the_tools() {
             "list_annotations",
             "list_connections",
             "list_consumer_groups",
+            "list_proposals",
             "list_topics",
             "observe_consumer_group",
+            "propose_change",
             "remove_annotation",
+            "withdraw_proposal",
         ]
     );
     for t in &tools {
         let a = t.annotations.as_ref().unwrap();
-        // Замечания пишутся в Glafira (не в кластер): только они не read-only.
-        let writes = matches!(t.name.as_ref(), "annotate" | "remove_annotation");
+        // Замечания и предложения пишутся в Glafira (не в кластер): только они не read-only.
+        let writes = matches!(
+            t.name.as_ref(),
+            "annotate" | "remove_annotation" | "propose_change" | "withdraw_proposal"
+        );
         assert_eq!(
             (a.read_only_hint, a.destructive_hint),
             (Some(!writes), Some(false)),
@@ -596,7 +698,7 @@ async fn exposes_exactly_the_tools() {
             t.name
         );
         assert!(
-            !t.description.as_deref().unwrap_or_default().contains("Pro"),
+            !mentions_pro(t.description.as_deref().unwrap_or_default()),
             "{}",
             t.name
         );
@@ -1476,4 +1578,188 @@ async fn short_annotation_list_is_not_marked_truncated() {
     // Новые вперёд.
     assert_eq!(v["items"][0]["id"], "n2");
     assert_eq!(v["items"][2]["id"], "n0");
+}
+
+fn proposal(topic: &str, title: &str) -> Value {
+    json!({
+        "connectionId": "c1",
+        "severity": "warning",
+        "title": title,
+        "rationale": "acks=all producers need two in-sync replicas",
+        "change": {
+            "kind": "alterTopicConfigs",
+            "topic": topic,
+            "changes": [{ "name": "min.insync.replicas", "value": "2" }]
+        },
+        "relatedRuleId": "topic.minIsrOne",
+        "relatedFindingKey": "topic.minIsrOne:topic:orders",
+    })
+}
+
+#[tokio::test]
+async fn propose_change_validates_and_keeps_text_out_of_the_log() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    let mut empty_rationale = proposal("orders", "t");
+    empty_rationale["rationale"] = json!("  ");
+    let mut long_key = proposal("orders", "t");
+    long_key["relatedFindingKey"] = json!("k".repeat(201));
+    for (args, code) in [
+        (proposal("orders", "  "), "invalid_argument"),
+        (empty_rationale, "invalid_argument"),
+        (long_key, "invalid_argument"),
+        (proposal("missing", "t"), "not_found"),
+        (proposal("orders", "too many"), "limit_reached"),
+    ] {
+        let msg = err(&call(&c, "propose_change", args).await);
+        assert!(msg.starts_with(code), "{msg}");
+    }
+    // Неизвестный вид изменения не проходит схему параметров.
+    let mut unknown = proposal("orders", "t");
+    unknown["change"] = json!({ "kind": "deleteTopic", "topic": "orders" });
+    let msg = err(&call(&c, "propose_change", unknown).await);
+    assert!(!msg.is_empty());
+    assert!(fake.proposal_ops.lock().unwrap().iter().all(|op| !matches!(
+        op,
+        ProposalOp::Propose { proposal: np, .. } if np.title == "t" && np.change.target_name() == "orders"
+    )));
+
+    let v = ok(call(
+        &c,
+        "propose_change",
+        proposal("orders", "Raise min.insync.replicas"),
+    )
+    .await);
+    assert_eq!(
+        v,
+        json!({ "proposalId": "p1", "created": true, "readOnly": false })
+    );
+    let ops = fake.proposal_ops.lock().unwrap().clone();
+    let Some(ProposalOp::Propose {
+        proposal: np,
+        session,
+        ..
+    }) = ops.last()
+    else {
+        panic!("{ops:?}")
+    };
+    assert_eq!(np.title, "Raise min.insync.replicas");
+    assert_eq!(np.related_rule_id.as_deref(), Some("topic.minIsrOne"));
+    assert_eq!(
+        np.related_finding_key.as_deref(),
+        Some("topic.minIsrOne:topic:orders")
+    );
+    assert_eq!(
+        np.change,
+        ChangeSpec::AlterTopicConfigs {
+            topic: "orders".into(),
+            changes: vec![ConfigChangeSpec {
+                name: "min.insync.replicas".into(),
+                value: Some("2".into())
+            }]
+        }
+    );
+    assert!(!session.id.is_empty());
+    let line = e.audit.recent(1)[0].to_string();
+    assert!(
+        line.contains("\"propose_change\"")
+            && line.contains("alterTopicConfigs")
+            && line.contains("\"orders\""),
+        "{line}"
+    );
+    assert!(
+        !line.contains("Raise min") && !line.contains("acks=all") && !line.contains("\"2\""),
+        "{line}"
+    );
+    // Повтор того же предложения — created: false, как отвечает Backend.
+    let v = ok(call(&c, "propose_change", proposal("orders", "again")).await);
+    assert_eq!(v["created"], false);
+}
+
+#[tokio::test]
+async fn read_only_connection_is_reported_to_the_llm() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.read_only.store(true, Ordering::SeqCst);
+    let e = env(fake).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(&c, "propose_change", proposal("orders", "t")).await);
+    assert_eq!(v["readOnly"], true);
+}
+
+#[tokio::test]
+async fn proposals_are_listed_with_decisions_and_withdrawn() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(
+        &c,
+        "list_proposals",
+        json!({ "connectionId": "c1", "status": "closed" }),
+    )
+    .await);
+    let item = &v["items"][0];
+    assert_eq!(
+        (
+            item["id"].as_str(),
+            item["status"].as_str(),
+            item["appliedAsProposed"].as_bool()
+        ),
+        (Some("p1"), Some("applied"), Some(false))
+    );
+    assert_eq!(item["change"]["kind"], "addPartitions");
+    assert_eq!(item["change"]["newTotal"], 6);
+    assert!(item.get("rejectReason").is_none());
+    assert!(matches!(
+        fake.proposal_ops.lock().unwrap()[0],
+        ProposalOp::List {
+            status: StatusFilter::Closed,
+            ..
+        }
+    ));
+    let v = ok(call(
+        &c,
+        "withdraw_proposal",
+        json!({ "connectionId": "c1", "proposalId": "p1" }),
+    )
+    .await);
+    assert_eq!(v, json!({ "withdrawn": true }));
+    for (id, code) in [("foreign", "not_allowed"), ("closed", "invalid_argument")] {
+        let msg = err(&call(
+            &c,
+            "withdraw_proposal",
+            json!({ "connectionId": "c1", "proposalId": id }),
+        )
+        .await);
+        assert!(msg.starts_with(code), "{msg}");
+    }
+    // Чужое подключение — как у всех инструментов.
+    let msg = err(&call(&c, "list_proposals", json!({ "connectionId": "c2" })).await);
+    assert!(msg.starts_with("not_allowed"), "{msg}");
+}
+
+#[tokio::test]
+async fn long_proposal_list_is_cut_to_the_newest() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.many_proposals.store(80, Ordering::SeqCst);
+    let e = env(fake).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(&c, "list_proposals", json!({ "connectionId": "c1" })).await);
+    assert!(serde_json::to_vec(&v).unwrap().len() <= 100 * 1024);
+    assert_eq!(v["truncated"], true);
+    let hint = v["hint"].as_str().unwrap();
+    assert!(hint.contains("100 KB") && hint.contains("most recently updated"));
+    let ids: Vec<&str> = v["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["id"].as_str().unwrap())
+        .collect();
+    assert!(!ids.is_empty() && ids.len() < 80, "{}", ids.len());
+    let expected: Vec<String> = (0..80)
+        .rev()
+        .take(ids.len())
+        .map(|i| format!("p{i}"))
+        .collect();
+    assert_eq!(ids, expected);
 }

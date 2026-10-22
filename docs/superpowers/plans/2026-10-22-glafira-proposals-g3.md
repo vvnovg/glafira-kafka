@@ -929,7 +929,7 @@ index 0013e5c..1566a20 100644
  "zh-CN": { "checkedAs": "按 {{env}} 检查" },
  "zh-TW": { "checkedAs": "以 {{env}} 檢查" },
  "ja": { "checkedAs": "{{env}}として確認" },
- "ko": { "checkedAs": "검사 환경: {{env}}" }
+ "ko": { "checkedAs": "점검 환경: {{env}}" }
 }}
 ````
 

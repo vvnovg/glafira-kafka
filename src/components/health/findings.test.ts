@@ -128,6 +128,30 @@ describe("selection and badges", () => {
     expect(badgeTooltip(b, t, "ru").split("\n")[3]).toBe("Fix a");
     expect(badgeFor(v, () => true)).toMatchObject({ count: 4 });
   });
+
+  it("keeps createTopic proposals off object blocks and badges but counts them for the connection", () => {
+    const create: Proposal = {
+      id: "c",
+      severity: "warning",
+      title: "Create a",
+      rationale: "r",
+      // Имя совпадает с существующим топиком: блок и значок топика предложение не показывают.
+      target: { kind: "topic", name: "a" },
+      change: { kind: "createTopic", name: "a", partitions: 3, replicationFactor: -1, configs: {} },
+      client: "claude-ai",
+      createdAtMs: 1,
+      updatedAtMs: 1,
+      status: "open",
+    };
+    const v = { ...view([]), proposals: [create] };
+    const isA = (x: Finding["target"]) => sameTarget(x, { kind: "topic", name: "a" });
+    expect(itemsFor(v, isA).proposals).toEqual([]);
+    expect(badgeFor(v, isA)).toBeNull();
+    expect(badgeFor(v, () => true)).toBeNull();
+    // Без match — всё подключение (значок вкладки «Замечания»).
+    expect(itemsFor(v).proposals).toEqual([create]);
+    expect(badgeFor(v)).toMatchObject({ count: 1, severity: "warning" });
+  });
 });
 
 describe("badge tooltip", () => {

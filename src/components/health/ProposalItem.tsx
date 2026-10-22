@@ -7,12 +7,16 @@ import { useWorkspace } from "../../state/workspace";
 import { SeverityMark, TargetLink } from "./parts";
 import { changeSummary, proposalStatusText, proposalTab } from "./proposals";
 
+/** Длина причины отклонения — как `MAX_REJECT_REASON_CHARS` в Rust. */
+const REJECT_REASON_MAX = 300;
+
 interface Props {
   connectionId: string;
   proposal: Proposal;
   busy?: boolean;
   showTarget?: boolean;
-  onStatus: (status: "rejected" | "open", reason?: string) => void;
+  /** `true` — статус сменился; при ошибке (её показывает панель) поле причины остаётся с текстом. */
+  onStatus: (status: "rejected" | "open", reason?: string) => Promise<boolean>;
   onDelete: () => void;
 }
 
@@ -75,15 +79,16 @@ export function ProposalItem({ connectionId, proposal: p, busy, showTarget = tru
                   aria-label={t("health.proposals.reasonPlaceholder")}
                   placeholder={t("health.proposals.reasonPlaceholder")}
                   value={reason}
+                  maxLength={REJECT_REASON_MAX}
+                  autoFocus
                   onChange={(e) => setReason(e.target.value)}
                 />
                 <button
                   type="button"
                   className="link danger"
                   disabled={busy}
-                  onClick={() => {
-                    onStatus("rejected", reason.trim() || undefined);
-                    cancelReject();
+                  onClick={async () => {
+                    if (await onStatus("rejected", reason.trim() || undefined)) cancelReject();
                   }}
                 >
                   {t("health.proposals.rejectConfirm")}
@@ -100,7 +105,7 @@ export function ProposalItem({ connectionId, proposal: p, busy, showTarget = tru
           </>
         )}
         {p.status === "rejected" && (
-          <button type="button" className="link" disabled={busy} onClick={() => onStatus("open")}>
+          <button type="button" className="link" disabled={busy} onClick={() => void onStatus("open")}>
             {t("health.reopen")}
           </button>
         )}

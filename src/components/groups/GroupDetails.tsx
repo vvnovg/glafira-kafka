@@ -195,16 +195,16 @@ export function GroupDetails({ connectionId, groupId, resetPrefill: fromMessage,
         <>
           <ProposalBanner prefill={forReset} />
           <ResetOffsetsPanel
-          key={resetPrefill?.nonce ?? 0}
-          connection={connection}
-          groupId={groupId}
-          prefill={resetPrefill}
-          blockedReason={resetBlock}
-          onApplied={refresh}
-          onClose={() => {
-            setPanel(null);
-            clearPrefill();
-          }}
+            key={resetPrefill?.nonce ?? 0}
+            connection={connection}
+            groupId={groupId}
+            prefill={resetPrefill}
+            blockedReason={resetBlock}
+            onApplied={refresh}
+            onClose={() => {
+              setPanel(null);
+              clearPrefill();
+            }}
           />
         </>
       )}

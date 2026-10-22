@@ -65,12 +65,17 @@ export function openProposals(view: HealthView | undefined): Proposal[] {
   return (view?.proposals ?? []).filter((p) => p.status === "open");
 }
 
-/** Что относится к объекту: видимые находки, открытые замечания и открытые предложения. */
-export function itemsFor(view: HealthView | undefined, match: (t: HealthTarget) => boolean) {
+/**
+ * Что относится к объекту: видимые находки, открытые замечания и открытые предложения. Без `match` —
+ * всё подключение (значок вкладки «Замечания»). Предложения `createTopic` — только там: топика ещё
+ * нет, и блок или значок объекта, даже одноимённого топика, их не показывает (спец. G3 §7).
+ */
+export function itemsFor(view: HealthView | undefined, match?: (t: HealthTarget) => boolean) {
+  const m = match ?? (() => true);
   return {
-    findings: findingsOf(view, false).filter((f) => match(f.target)),
-    notes: openNotes(view).filter((a) => match(a.target)),
-    proposals: openProposals(view).filter((p) => match(p.target)),
+    findings: findingsOf(view, false).filter((f) => m(f.target)),
+    notes: openNotes(view).filter((a) => m(a.target)),
+    proposals: openProposals(view).filter((p) => !match || (p.change.kind !== "createTopic" && match(p.target))),
   };
 }
 
@@ -90,8 +95,8 @@ export interface Badge {
 /** Сколько заголовков показывает подсказка значка; остальное сворачивается в «…». */
 export const BADGE_TITLES_MAX = 10;
 
-/** Значок: число видимых находок, открытых замечаний и предложений уровня «критично» и «предупреждение». */
-export function badgeFor(view: HealthView | undefined, match: (t: HealthTarget) => boolean): Badge | null {
+/** Значок: число видимых находок, открытых замечаний и предложений уровня «критично» и «предупреждение»; без `match` — всего подключения. */
+export function badgeFor(view: HealthView | undefined, match?: (t: HealthTarget) => boolean): Badge | null {
   const { findings, notes, proposals } = itemsFor(view, match);
   const items: BadgeItem[] = [
     ...findings.map((finding): BadgeItem => ({ kind: "finding", severity: finding.severity, finding })),

@@ -187,6 +187,8 @@ describe("FindingsPanel", () => {
     const user = userEvent.setup();
     renderWithClient(<FindingsPanel connectionId="c1" />);
     const card = (await screen.findByText("Proposal p1")).closest("li")!;
+    // Имя раздела — только заголовок, без текста подсказки «?».
+    expect(screen.getByRole("region", { name: "Предложения LLM" })).toContainElement(card);
     expect(within(card).getByText("Конфиги топика: min.insync.replicas → 2")).toBeInTheDocument();
     expect(within(card).getByText(/acks=all/)).toHaveClass("note-body");
     expect(within(card).getByText("Предложение LLM · claude-code · min.insync.replicas равен 1")).toBeInTheDocument();
@@ -207,6 +209,22 @@ describe("FindingsPanel", () => {
     await user.click(within(card).getByRole("button", { name: "Отклонить предложение" }));
     expect(api.setProposalStatus).toHaveBeenCalledWith("c1", "p1", "rejected", "позже");
     await waitFor(() => expect(screen.getByText("Закрытые (3)")).toBeInTheDocument());
+  });
+
+  it("при ошибке отклонения поле причины остаётся с текстом", async () => {
+    vi.mocked(api.getHealth).mockResolvedValue(view({ proposals: [proposal("p1")] }));
+    vi.mocked(api.setProposalStatus).mockRejectedValue({ code: "INTERNAL", message: "диск занят", retryable: false });
+    const user = userEvent.setup();
+    renderWithClient(<FindingsPanel connectionId="c1" />);
+    const card = (await screen.findByText("Proposal p1")).closest("li")!;
+    await user.click(within(card).getByRole("button", { name: "Отклонить" }));
+    const reason = within(card).getByRole("textbox", { name: "Причина (необязательно)" });
+    expect(reason).toHaveFocus();
+    expect(reason).toHaveAttribute("maxLength", "300");
+    await user.type(reason, "позже");
+    await user.click(within(card).getByRole("button", { name: "Отклонить предложение" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("диск занят");
+    expect(within(card).getByRole("textbox", { name: "Причина (необязательно)" })).toHaveValue("позже");
   });
 
   it("у read-only подключения «Открыть в форме» неактивна", async () => {

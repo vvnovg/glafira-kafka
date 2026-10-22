@@ -132,9 +132,11 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
 
       {source !== "rules" && (
         <section aria-labelledby="health-proposals">
-          <h3 id="health-proposals">
-            {t("health.proposals.title")} <Hint k="hints.health.proposals" label={t("health.proposals.title")} />
-          </h3>
+          {/* Подсказка — рядом с заголовком, а не в нём: имя раздела — только «Предложения LLM». */}
+          <div className="field-label">
+            <h3 id="health-proposals">{t("health.proposals.title")}</h3>
+            <Hint k="hints.health.proposals" label={t("health.proposals.title")} />
+          </div>
           <p className="hint">{t("health.proposals.intro")}</p>
           {openProposals.length === 0 && <p className="empty">{filtered ? t("health.nothingMatches") : t("health.proposals.none")}</p>}
           <ul className="finding-list">
@@ -144,7 +146,7 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
                 connectionId={connectionId}
                 proposal={p}
                 busy={busy}
-                onStatus={(status, reason) => actions.setProposalStatus.mutate({ id: p.id, status, reason })}
+                onStatus={(status, reason) => actions.setProposalStatus.mutateAsync({ id: p.id, status, reason }).then(() => true, () => false)}
                 onDelete={() => actions.removeProposal.mutate(p.id)}
               />
             ))}
@@ -159,7 +161,7 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
                     connectionId={connectionId}
                     proposal={p}
                     busy={busy}
-                    onStatus={(status, reason) => actions.setProposalStatus.mutate({ id: p.id, status, reason })}
+                    onStatus={(status, reason) => actions.setProposalStatus.mutateAsync({ id: p.id, status, reason }).then(() => true, () => false)}
                     onDelete={() => actions.removeProposal.mutate(p.id)}
                   />
                 ))}

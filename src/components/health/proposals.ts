@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import type { Proposal, ProposalChange, ResetScope, ResetStrategy } from "../../api/types";
+import { formatAgo } from "../../lib/formatAgo";
 import type { TabSpec } from "../../state/workspace";
-import { formatAgo } from "./CheckBar";
 
 /** Вкладка, в которой предложение открывается заполненной формой (спец. G3 §8). */
 export function proposalTab(connectionId: string, proposal: Proposal, nonce = Date.now()): TabSpec {

@@ -10,8 +10,11 @@ import { ProposalItem } from "./ProposalItem";
 
 type Match = (t: HealthTarget) => boolean;
 
-/** Значок объекта: число находок и замечаний уровня «критично» и «предупреждение»; в подсказке — их заголовки. */
-export function HealthBadge({ connectionId, match }: { connectionId: string; match: Match }) {
+/**
+ * Значок объекта: число находок и замечаний уровня «критично» и «предупреждение»; в подсказке — их заголовки.
+ * Без `match` — значок всего подключения (вкладка «Замечания»), с предложениями `createTopic`.
+ */
+export function HealthBadge({ connectionId, match }: { connectionId: string; match?: Match }) {
   const { t } = useTranslation();
   const health = useHealth(connectionId);
   const b = badgeFor(health.data, match);
@@ -77,7 +80,7 @@ export function HealthBlock({ connectionId, match, showTarget = false }: { conne
             proposal={p}
             busy={busy}
             showTarget={showTarget}
-            onStatus={(status, reason) => actions.setProposalStatus.mutate({ id: p.id, status, reason })}
+            onStatus={(status, reason) => actions.setProposalStatus.mutateAsync({ id: p.id, status, reason }).then(() => true, () => false)}
             onDelete={() => actions.removeProposal.mutate(p.id)}
           />
         ))}

@@ -9,6 +9,7 @@ import type { ProposalPrefill } from "../../state/workspace";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { ProposalBanner } from "../health/ProposalBanner";
+import { useActivePrefill } from "../health/useActivePrefill";
 import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
 
 type Action = "partitions" | "purge" | "delete" | null;
@@ -42,11 +43,12 @@ export function purgeBlockReason(cleanup: string | null): string | null {
 
 export function TopicActions({ connection, topic, onDeleted, proposal }: Props) {
   const { t } = useTranslation();
-  const [action, setAction] = useState<Action>(proposal ? "partitions" : null);
+  const [active, clearPrefill] = useActivePrefill(proposal);
+  const [action, setAction] = useState<Action>(active ? "partitions" : null);
   // Предложение LLM добавить партиции (новый nonce) открывает диалог с его числом.
   useEffect(() => {
-    if (proposal) setAction("partitions");
-  }, [proposal]);
+    if (active) setAction("partitions");
+  }, [active]);
   const policy = useQuery({
     queryKey: ["topicPolicies", connection.id, [topic.name]],
     queryFn: () => api.getTopicPolicies(connection.id, [topic.name]),
@@ -75,14 +77,17 @@ export function TopicActions({ connection, topic, onDeleted, proposal }: Props) 
       {purgeBlock && <p className="warn">{purgeBlock}</p>}
       {action === "partitions" && (
         <>
-          <ProposalBanner prefill={proposal} />
+          <ProposalBanner prefill={active} />
           <AddPartitions
-            key={proposal?.nonce ?? 0}
+            key={active?.nonce ?? 0}
             connection={connection}
             topic={topic}
-            initialTotal={proposal?.proposal.change.kind === "addPartitions" ? proposal.proposal.change.newTotal : undefined}
-            proposalId={proposal?.proposal.id ?? null}
-            onClose={() => setAction(null)}
+            initialTotal={active?.proposal.change.kind === "addPartitions" ? active.proposal.change.newTotal : undefined}
+            proposalId={active?.proposal.id ?? null}
+            onClose={() => {
+              setAction(null);
+              clearPrefill();
+            }}
           />
         </>
       )}

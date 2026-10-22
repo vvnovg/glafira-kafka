@@ -5,5 +5,5 @@ import type { ProposalPrefill } from "../../state/workspace";
 export function ProposalBanner({ prefill }: { prefill: ProposalPrefill | undefined }) {
   const { t } = useTranslation();
   if (!prefill) return null;
-  return <p className="hint proposal-banner">{t("health.proposals.applying", { title: prefill.proposal.title })}</p>;
+  return <p className="muted">{t("health.proposals.applying", { title: prefill.proposal.title })}</p>;
 }

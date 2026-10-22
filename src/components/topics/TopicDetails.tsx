@@ -16,6 +16,7 @@ import { TOPIC_CONFIG_HINTS } from "../common/topicConfigHints";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { HealthBlock } from "../health/HealthBlock";
 import { ProposalBanner } from "../health/ProposalBanner";
+import { useActivePrefill } from "../health/useActivePrefill";
 import { TopicActions } from "./TopicActions";
 import { TopicGroups } from "./TopicGroups";
 
@@ -41,11 +42,15 @@ function partitionsProposal(prefill: ProposalPrefill | undefined, topic: string)
 export function TopicDetails({ connectionId, topic, proposal }: { connectionId: string; topic: string; proposal?: ProposalPrefill }) {
   const { t: tt } = useTranslation();
   const forConfigs = configProposal(proposal, topic);
+  // Активное предложение по конфигам хранится здесь, а не в TopicConfigs: подвкладка размонтируется при переключении,
+  // и закрытый или применённый редактор не должен возвращаться заполненным.
+  const [activeConfigs, clearConfigs] = useActivePrefill(forConfigs);
+  const configsNonce = forConfigs?.nonce;
   const [sub, setSub] = useState<SubTab>(forConfigs ? "configs" : "messages");
   // Новое предложение по конфигам (другой nonce) переключает на подвкладку «Конфигурация».
   useEffect(() => {
-    if (forConfigs) setSub("configs");
-  }, [forConfigs]);
+    if (configsNonce !== undefined) setSub("configs");
+  }, [configsNonce]);
   useHelpChapter(tabId({ kind: "topic", connectionId, topic }), sub === "messages" ? "browse" : "topics");
   const q = useQuery({ queryKey: ["topic", connectionId, topic], queryFn: () => api.getTopic(connectionId, topic) });
 
@@ -121,7 +126,7 @@ export function TopicDetails({ connectionId, topic, proposal }: { connectionId: 
         <BrowsePanel connectionId={connectionId} topic={topic} />
       </div>
       {sub === "partitions" && <PartitionsTable topic={t} />}
-      {sub === "configs" && <TopicConfigs connectionId={connectionId} topic={topic} proposal={forConfigs} />}
+      {sub === "configs" && <TopicConfigs connectionId={connectionId} topic={topic} proposal={activeConfigs} onProposalDone={clearConfigs} />}
       {sub === "groups" && <TopicGroups connectionId={connectionId} topic={topic} />}
     </div>
   );
@@ -168,7 +173,18 @@ function editsOf(prefill: ProposalPrefill | undefined): Record<string, ConfigEdi
   return Object.fromEntries(c.changes.map((x) => [x.name, x.value === null ? { kind: "reset" } : { kind: "set", value: x.value }]));
 }
 
-function TopicConfigs({ connectionId, topic, proposal }: { connectionId: string; topic: string; proposal?: ProposalPrefill }) {
+function TopicConfigs({
+  connectionId,
+  topic,
+  proposal,
+  onProposalDone,
+}: {
+  connectionId: string;
+  topic: string;
+  proposal?: ProposalPrefill;
+  /** Редактор закрыт или применён: предложение снимается, «Редактировать» дальше открывает пустой редактор. */
+  onProposalDone: () => void;
+}) {
   const { t } = useTranslation();
   const connection = useConnection(connectionId);
   const [editing, setEditing] = useState(proposal !== undefined);
@@ -193,7 +209,10 @@ function TopicConfigs({ connectionId, topic, proposal }: { connectionId: string;
             aria-pressed={editing}
             disabled={editing && dirty}
             title={editing && dirty ? t("topics.details.dirtyTitle") : undefined}
-            onClick={() => setEditing((v) => !v)}>
+            onClick={() => {
+              if (editing) onProposalDone();
+              setEditing((v) => !v);
+            }}>
             {editing ? t("topics.details.closeEditor") : t("topics.details.edit")}
           </button>
         </div>
@@ -206,7 +225,10 @@ function TopicConfigs({ connectionId, topic, proposal }: { connectionId: string;
             connection={connection}
             topic={topic}
             entries={q.data}
-            onDone={() => setEditing(false)}
+            onDone={() => {
+              setEditing(false);
+              onProposalDone();
+            }}
             onDirtyChange={setDirty}
             hints={TOPIC_CONFIG_HINTS}
             initialEdits={editsOf(proposal)}

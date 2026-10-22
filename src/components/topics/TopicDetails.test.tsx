@@ -26,6 +26,7 @@ vi.mock("../../api/client", async (importOriginal) => {
       getTopicConfigs: vi.fn().mockResolvedValue([
         { name: "cleanup.policy", value: "compact", source: "DynamicTopic", isDefault: false, isReadOnly: false, isSensitive: false },
       ]),
+      alterTopicConfigs: vi.fn().mockResolvedValue(undefined),
     },
   };
 });
@@ -45,29 +46,65 @@ describe("TopicDetails", () => {
 });
 
 describe("TopicDetails: предложение LLM", () => {
+  const proposal = {
+    proposal: {
+      id: "p1",
+      severity: "warning" as const,
+      title: "Compact orders",
+      rationale: "r",
+      target: { kind: "topic" as const, name: "orders" },
+      change: { kind: "alterTopicConfigs" as const, topic: "orders", changes: [{ name: "cleanup.policy", value: "delete" }] },
+      client: "claude-code",
+      createdAtMs: 1,
+      updatedAtMs: 1,
+      status: "open" as const,
+    },
+    nonce: 1,
+  };
+  const banner = "Применяется предложение LLM: Compact orders";
+
   it("открывает «Конфигурацию» с заполненным редактором и строкой о предложении", async () => {
     const { api } = await import("../../api/client");
     vi.mocked(api.listConnections).mockResolvedValue([{ ...newProfile(), id: "c", name: "dev-1", environment: "dev" }]);
-    const proposal = {
-      proposal: {
-        id: "p1",
-        severity: "warning" as const,
-        title: "Compact orders",
-        rationale: "r",
-        target: { kind: "topic" as const, name: "orders" },
-        change: { kind: "alterTopicConfigs" as const, topic: "orders", changes: [{ name: "cleanup.policy", value: "delete" }] },
-        client: "claude-code",
-        createdAtMs: 1,
-        updatedAtMs: 1,
-        status: "open" as const,
-      },
-      nonce: 1,
-    };
     renderWithClient(<TopicDetails connectionId="c" topic="orders" proposal={proposal} />);
-    expect(await screen.findByText("Применяется предложение LLM: Compact orders")).toBeInTheDocument();
+    expect(await screen.findByText(banner)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Конфигурация" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Значение cleanup.policy")).toHaveValue("delete");
     expect(screen.getByText("изменений: 1")).toBeInTheDocument();
+  });
+
+  it("после применения «Редактировать» открывает редактор без правок и без строки о предложении", async () => {
+    const user = userEvent.setup();
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...newProfile(), id: "c", name: "dev-1", environment: "dev" }]);
+    renderWithClient(<TopicDetails connectionId="c" topic="orders" proposal={proposal} />);
+    expect(await screen.findByText(banner)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Проверить изменения" }));
+    await user.click(screen.getByRole("button", { name: "Применить" }));
+    expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "orders", [{ op: "set", name: "cleanup.policy", value: "delete" }], null, "p1");
+    await user.click(await screen.findByRole("button", { name: "Редактировать" }));
+    expect(screen.queryByText(banner)).toBeNull();
+    expect(screen.getByLabelText("Значение cleanup.policy")).toHaveValue("compact");
+    expect(screen.getByText("изменений: 0")).toBeInTheDocument();
+  });
+
+  it("закрытый редактор не возвращается с предложением: ни после смены подвкладки, ни по «Редактировать»", async () => {
+    const user = userEvent.setup();
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...newProfile(), id: "c", name: "dev-1", environment: "dev" }]);
+    renderWithClient(<TopicDetails connectionId="c" topic="orders" proposal={proposal} />);
+    expect(await screen.findByText(banner)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Отменить правки" }));
+    await user.click(screen.getByRole("button", { name: "Закрыть редактор" }));
+    expect(screen.queryByText(banner)).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Партиции" }));
+    await user.click(screen.getByRole("button", { name: "Конфигурация" }));
+    expect(await screen.findByRole("button", { name: "Редактировать" })).toBeInTheDocument();
+    expect(screen.queryByText(banner)).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Редактировать" }));
+    expect(screen.queryByText(banner)).toBeNull();
+    expect(screen.getByLabelText("Значение cleanup.policy")).toHaveValue("compact");
+    expect(screen.getByText("изменений: 0")).toBeInTheDocument();
   });
 });
 

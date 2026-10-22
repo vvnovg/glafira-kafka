@@ -19,6 +19,22 @@ const stable: GroupDescription = {
   members: [{ memberId: "m1", clientId: "svc-1", host: "/10.0.0.1", assignment: [{ topic: "orders", partition: 0 }, { topic: "orders", partition: 1 }] }],
 };
 
+const resetProposal = {
+  proposal: {
+    id: "p1",
+    severity: "warning" as const,
+    title: "Replay orders",
+    rationale: "r",
+    target: { kind: "group" as const, name: "g" },
+    change: { kind: "resetOffsets" as const, groupId: "g", strategy: { type: "latest" as const }, scope: { type: "all" as const } },
+    client: "claude-code",
+    createdAtMs: 1,
+    updatedAtMs: 1,
+    status: "open" as const,
+  },
+  nonce: 1,
+};
+
 vi.mock("../../api/client", async (importOriginal) => {
   const orig = await importOriginal<typeof import("../../api/client")>();
   return {
@@ -174,25 +190,26 @@ describe("GroupDetails", () => {
 
   it("предложение LLM открывает панель сброса с его стратегией и строкой о предложении", async () => {
     vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Empty", members: [] }]);
-    const proposal = {
-      proposal: {
-        id: "p1",
-        severity: "warning" as const,
-        title: "Replay orders",
-        rationale: "r",
-        target: { kind: "group" as const, name: "g" },
-        change: { kind: "resetOffsets" as const, groupId: "g", strategy: { type: "latest" as const }, scope: { type: "all" as const } },
-        client: "claude-code",
-        createdAtMs: 1,
-        updatedAtMs: 1,
-        status: "open" as const,
-      },
-      nonce: 1,
-    };
-    renderWithClient(<GroupDetails connectionId="c" groupId="g" proposal={proposal} />);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" proposal={resetProposal} />);
     expect(await screen.findByText("Применяется предложение LLM: Replay orders")).toBeInTheDocument();
     expect(screen.getByLabelText("Стратегия")).toHaveValue("latest");
     expect(screen.getByRole("button", { name: "Предпросмотр" })).toBeInTheDocument();
+  });
+
+  it("панель из предложения LLM закрывается, после неё открывается удаление группы", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Empty", members: [] }]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" proposal={resetProposal} />);
+    expect(await screen.findByText("Применяется предложение LLM: Replay orders")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Закрыть" }));
+    expect(screen.queryByRole("button", { name: "Предпросмотр" })).toBeNull();
+    expect(screen.queryByText("Применяется предложение LLM: Replay orders")).toBeNull();
+    const del = screen.getByRole("button", { name: "Удалить группу" });
+    await waitFor(() => expect(del).toBeEnabled());
+    await user.click(del);
+    expect(screen.getByText("Удалить группу «g»?")).toBeInTheDocument();
+    expect(screen.getByLabelText("Подтверждение: id группы")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Предпросмотр" })).toBeNull();
   });
 
   it("read-only: панель сброса не открывается даже с prefill", async () => {

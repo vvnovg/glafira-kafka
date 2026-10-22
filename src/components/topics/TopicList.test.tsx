@@ -13,6 +13,22 @@ vi.mock("@tanstack/react-virtual", () => ({
 
 const topic = (name: string) => ({ name, partitionCount: 1, replicationFactor: 1, underReplicated: 0, internal: false });
 
+const createProposal = {
+  proposal: {
+    id: "p1",
+    severity: "info" as const,
+    title: "DLQ for orders",
+    rationale: "r",
+    target: { kind: "topic" as const, name: "orders-dlq" },
+    change: { kind: "createTopic" as const, name: "orders-dlq", partitions: 3, replicationFactor: 1, configs: {} },
+    client: "claude-code",
+    createdAtMs: 1,
+    updatedAtMs: 1,
+    status: "open" as const,
+  },
+  nonce: 1,
+};
+
 vi.mock("../../api/client", async (importOriginal) => {
   const orig = await importOriginal<typeof import("../../api/client")>();
   return {
@@ -53,25 +69,33 @@ describe("TopicList", () => {
   });
 
   it("предложение LLM открывает форму создания с его полями", async () => {
-    const proposal = {
-      proposal: {
-        id: "p1",
-        severity: "info" as const,
-        title: "DLQ for orders",
-        rationale: "r",
-        target: { kind: "topic" as const, name: "orders-dlq" },
-        change: { kind: "createTopic" as const, name: "orders-dlq", partitions: 3, replicationFactor: 1, configs: {} },
-        client: "claude-code",
-        createdAtMs: 1,
-        updatedAtMs: 1,
-        status: "open" as const,
-      },
-      nonce: 1,
-    };
-    renderWithClient(<TopicList connectionId="c" proposal={proposal} />);
+    renderWithClient(<TopicList connectionId="c" proposal={createProposal} />);
     expect(await screen.findByText("Применяется предложение LLM: DLQ for orders")).toBeInTheDocument();
     expect(screen.getByLabelText("Имя топика")).toHaveValue("orders-dlq");
     expect(screen.getByLabelText("Партиции")).toHaveValue(3);
+  });
+
+  it("read-only: предложение LLM не открывает форму создания, список показывается", async () => {
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...newProfile(), id: "c", name: "dev-1", environment: "dev", readOnly: true }]);
+    const { client } = renderWithClient(<TopicList connectionId="c" proposal={createProposal} />);
+    expect(await screen.findByText("a")).toBeInTheDocument();
+    await vi.waitFor(() => expect(client.getQueryData(["connections"])).toBeDefined());
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByLabelText("Имя топика")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Создать" })).toBeNull();
+    expect(screen.queryByText("Применяется предложение LLM: DLQ for orders")).toBeNull();
+    expect(screen.getByText("c")).toBeInTheDocument();
+  });
+
+  it("после отмены формы из предложения «Создать топик» открывает пустую форму без строки о предложении", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<TopicList connectionId="c" proposal={createProposal} />);
+    expect(await screen.findByText("Применяется предложение LLM: DLQ for orders")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Отмена" }));
+    expect(screen.queryByLabelText("Имя топика")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Создать топик" }));
+    expect(screen.getByLabelText("Имя топика")).toHaveValue("");
+    expect(screen.queryByText("Применяется предложение LLM: DLQ for orders")).toBeNull();
   });
 
   it("цель удаления фиксируется при открытии панели", async () => {

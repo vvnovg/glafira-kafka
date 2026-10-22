@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { api, toAppError } from "../../api/client";
+import type { NewTopicSpec } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
@@ -13,6 +14,7 @@ import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { HealthBadge } from "../health/HealthBlock";
 import { ProposalBanner } from "../health/ProposalBanner";
+import { useActivePrefill } from "../health/useActivePrefill";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import {
   buildCounts,
@@ -34,9 +36,16 @@ function createProposal(prefill: ProposalPrefill | undefined): ProposalPrefill |
   return prefill?.proposal.change.kind === "createTopic" ? prefill : undefined;
 }
 
+/** Поля формы создания из предложения LLM. */
+function newTopicSpecOf(prefill: ProposalPrefill | undefined): NewTopicSpec | undefined {
+  const c = prefill?.proposal.change;
+  if (c?.kind !== "createTopic") return undefined;
+  return { name: c.name, partitions: c.partitions, replicationFactor: c.replicationFactor, configs: c.configs };
+}
+
 export function TopicList({ connectionId, proposal }: { connectionId: string; proposal?: ProposalPrefill }) {
   const { t: tt } = useTranslation();
-  const forCreate = createProposal(proposal);
+  const [active, clearPrefill] = useActivePrefill(createProposal(proposal));
   const [query, setQuery] = useState("");
   const [showInternal, setShowInternal] = useState(false);
   const [refreshMs, setRefreshMs] = useState(0);
@@ -45,11 +54,12 @@ export function TopicList({ connectionId, proposal }: { connectionId: string; pr
   const open = useWorkspace((s) => s.open);
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
-  const [creating, setCreating] = useState(forCreate !== undefined);
-  // Новое предложение (другой nonce) открывает форму заново; форма пересоздаётся по nonce.
+  // Read-only подключение формы не открывает (спец. G3 §8); новое предложение (другой nonce) открывает её заново,
+  // форма пересоздаётся по nonce.
+  const [creating, setCreating] = useState(active !== undefined && canMutate);
   useEffect(() => {
-    if (forCreate) setCreating(true);
-  }, [forCreate]);
+    if (active && canMutate) setCreating(true);
+  }, [active, canMutate]);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTargets, setDeleteTargets] = useState<string[] | null>(null);
@@ -208,26 +218,21 @@ export function TopicList({ connectionId, proposal }: { connectionId: string; pr
           {tt("topics.list.shownOf", { shown: rows.length, total: q.data.length })}
         </span>
       </div>
-      {creating && connection && (
+      {creating && connection && canMutate && (
         <>
-          <ProposalBanner prefill={forCreate} />
+          <ProposalBanner prefill={active} />
           <CreateTopicForm
-            key={forCreate?.nonce ?? 0}
+            key={active?.nonce ?? 0}
             connection={connection}
-            initial={
-              forCreate?.proposal.change.kind === "createTopic"
-                ? {
-                    name: forCreate.proposal.change.name,
-                    partitions: forCreate.proposal.change.partitions,
-                    replicationFactor: forCreate.proposal.change.replicationFactor,
-                    configs: forCreate.proposal.change.configs,
-                  }
-                : undefined
-            }
-            proposalId={forCreate?.proposal.id ?? null}
-            onCancel={() => setCreating(false)}
+            initial={newTopicSpecOf(active)}
+            proposalId={active?.proposal.id ?? null}
+            onCancel={() => {
+              setCreating(false);
+              clearPrefill();
+            }}
             onCreated={(name) => {
               setCreating(false);
+              clearPrefill();
               void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
               open({ kind: "topic", connectionId, topic: name });
             }}

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { Confirmation, GroupDescription, GroupPartitionOffset } from "../../api/types";
@@ -12,6 +12,7 @@ import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { HealthBlock } from "../health/HealthBlock";
 import { ProposalBanner } from "../health/ProposalBanner";
+import { useActivePrefill } from "../health/useActivePrefill";
 import { groupTotalLag } from "./groupLag";
 import { ResetOffsetsPanel } from "./ResetOffsetsPanel";
 
@@ -31,19 +32,27 @@ interface Props {
   proposal?: ProposalPrefill;
 }
 
-/** Заполнение панели сброса: предложение LLM по этой группе или «Сбросить группу сюда» из сообщения. */
-function resetPrefillOf(proposal: ProposalPrefill | undefined, groupId: string, resetPrefill: ResetPrefill | undefined): ResetPrefill | undefined {
+/** Заполнение панели сброса из предложения LLM по этой группе. */
+function resetFromProposal(proposal: ProposalPrefill | undefined, groupId: string): ResetPrefill | undefined {
   const c = proposal?.proposal.change;
   if (proposal && c?.kind === "resetOffsets" && c.groupId === groupId) {
     return { strategy: c.strategy, scope: c.scope, proposalId: proposal.proposal.id, nonce: proposal.nonce };
   }
-  return resetPrefill;
+  return undefined;
 }
 
 export function GroupDetails({ connectionId, groupId, resetPrefill: fromMessage, proposal }: Props) {
   const { t } = useTranslation();
-  const resetPrefill = resetPrefillOf(proposal, groupId, fromMessage);
-  const forReset = resetPrefill && "proposalId" in resetPrefill ? proposal : undefined;
+  const [activeProposal, clearPrefill] = useActivePrefill(proposal);
+  // Вкладка с предложением заполняет сброс только из него, «Сбросить группу сюда» из сообщения — без предложения.
+  // Снятое (закрытое) предложение не подменяется заполнением из сообщения, иначе панель открылась бы снова.
+  // useMemo держит объект стабильным: эффект ниже открывает панель только при новом заполнении.
+  const hasProposal = proposal !== undefined;
+  const resetPrefill = useMemo(
+    () => (hasProposal ? resetFromProposal(activeProposal, groupId) : fromMessage),
+    [hasProposal, activeProposal, groupId, fromMessage],
+  );
+  const forReset = resetPrefill && "proposalId" in resetPrefill ? activeProposal : undefined;
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const readOnly = connection?.readOnly === true;
@@ -192,7 +201,10 @@ export function GroupDetails({ connectionId, groupId, resetPrefill: fromMessage,
           prefill={resetPrefill}
           blockedReason={resetBlock}
           onApplied={refresh}
-          onClose={() => setPanel(null)}
+          onClose={() => {
+            setPanel(null);
+            clearPrefill();
+          }}
           />
         </>
       )}

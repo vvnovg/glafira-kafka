@@ -1,3 +1,4 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,6 +34,23 @@ const topic: TopicDetails = {
   ],
 };
 
+/** Предложение LLM добавить партиции; `nonce` — повторное «Открыть в форме». */
+const partitionsProposal = (newTotal: number, nonce: number) => ({
+  proposal: {
+    id: "p1",
+    severity: "warning" as const,
+    title: "More partitions",
+    rationale: "r",
+    target: { kind: "topic" as const, name: "orders" },
+    change: { kind: "addPartitions" as const, topic: "orders", newTotal },
+    client: "claude-code",
+    createdAtMs: 1,
+    updatedAtMs: 1,
+    status: "open" as const,
+  },
+  nonce,
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -54,26 +72,36 @@ describe("TopicActions", () => {
 
   it("предложение LLM открывает диалог партиций с его числом и передаёт proposalId", async () => {
     const user = userEvent.setup();
-    const proposal = {
-      proposal: {
-        id: "p1",
-        severity: "warning" as const,
-        title: "More partitions",
-        rationale: "r",
-        target: { kind: "topic" as const, name: "orders" },
-        change: { kind: "addPartitions" as const, topic: "orders", newTotal: 4 },
-        client: "claude-code",
-        createdAtMs: 1,
-        updatedAtMs: 1,
-        status: "open" as const,
-      },
-      nonce: 1,
-    };
-    renderWithClient(<TopicActions connection={dev} topic={topic} onDeleted={() => {}} proposal={proposal} />);
+    renderWithClient(<TopicActions connection={dev} topic={topic} onDeleted={() => {}} proposal={partitionsProposal(4, 1)} />);
     expect(screen.getByText("Применяется предложение LLM: More partitions")).toBeInTheDocument();
     expect(screen.getByLabelText("Новое число партиций")).toHaveValue(4);
     await user.click(screen.getByRole("button", { name: "Увеличить" }));
     expect(api.addPartitions).toHaveBeenCalledWith("c", "orders", 4, null, "p1");
+  });
+
+  it("после закрытия диалога из предложения ручной диалог пустой; новый nonce открывает диалог с новым числом", async () => {
+    const user = userEvent.setup();
+    const { client, rerender } = renderWithClient(
+      <TopicActions connection={dev} topic={topic} onDeleted={() => {}} proposal={partitionsProposal(4, 1)} />,
+    );
+    expect(screen.getByLabelText("Новое число партиций")).toHaveValue(4);
+    await user.click(screen.getByRole("button", { name: "Отмена" }));
+    expect(screen.queryByLabelText("Новое число партиций")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Добавить партиции" }));
+    expect(screen.queryByText("Применяется предложение LLM: More partitions")).toBeNull();
+    expect(screen.getByLabelText("Новое число партиций")).toHaveValue(3);
+    await user.click(screen.getByRole("button", { name: "Увеличить" }));
+    expect(api.addPartitions).toHaveBeenCalledWith("c", "orders", 3, null, null);
+    await vi.waitFor(() => expect(screen.queryByLabelText("Новое число партиций")).toBeNull());
+
+    rerender(
+      <QueryClientProvider client={client}>
+        <TopicActions connection={dev} topic={topic} onDeleted={() => {}} proposal={partitionsProposal(5, 2)} />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Применяется предложение LLM: More partitions")).toBeInTheDocument();
+    expect(screen.getByLabelText("Новое число партиций")).toHaveValue(5);
   });
 
   it("purge предупреждает о compact и требует имя топика", async () => {

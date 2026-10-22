@@ -66,7 +66,7 @@ Para desactivar MCP por completo, desmarca [[ui:settings.mcp.enable]]: los clien
 
 El asistente puede ejecutar la comprobación integrada del clúster de Glafira (herramienta `health_check`) y basarse en sus hallazgos. También puede dejar notas sobre los objetos: aparecen en la pestaña [[ui:sidebar.findings]] y en las pantallas de topics y grupos, y el clúster no cambia. Consulta [Comprobación del clúster y notas](health-check.md#with-llm).
 
-El asistente también puede proponer un cambio con la herramienta `propose_change`: la configuración de un topic, un topic nuevo, más particiones o un restablecimiento de offsets. La propuesta aparece junto al objeto; la aplicas tú en un formulario ya relleno o la rechazas, y el asistente ve tu decisión en `list_proposals`. Eliminar y vaciar no se pueden proponer. Consulta [Propuestas LLM](health-check.md#proposals).
+El asistente también puede proponer un cambio con la herramienta `propose_change`: la configuración de un topic, un topic nuevo, más particiones o un restablecimiento de offsets. La propuesta aparece junto al objeto; la aplicas tú en un formulario ya relleno o la rechazas, y el asistente ve tu decisión en `list_proposals`. Eliminar y purgar no se pueden proponer. Consulta [Propuestas LLM](health-check.md#proposals).
 
 ## Si no funciona {#troubleshooting}
 

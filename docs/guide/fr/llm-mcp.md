@@ -42,7 +42,7 @@ L’assistant voit :
 - les brokers avec leurs hôtes et leurs ports, le contrôleur ;
 - les topics, partitions, répliques, ISR, offsets, le nombre approximatif de messages ;
 - les configurations des brokers et des topics, les mots de passe et autres valeurs secrètes étant masqués ;
-- les consumer groups : état, protocole, coordinateur, membres avec client id, hôte et `group.instance.id`, attributions, offsets commités et lag;
+- les consumer groups : état, protocole, coordinateur, membres avec client id, hôte et `group.instance.id`, attributions, offsets commités et lag ;
 - ses propositions et votre décision à leur sujet : appliquée (telle quelle ou avec des modifications), rejetée avec votre motif, retirée.
 
 L’assistant ne voit pas les messages des topics, la chaîne bootstrap ni les paramètres de sécurité d’une connexion, ni les mots de passe, les certificats, les propriétés librdkafka supplémentaires, l’historique d’envoi et les modèles.

@@ -66,7 +66,7 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 
 助理可以執行 Glafira 內建的叢集檢查（`health_check` 工具），並以其檢查結果為依據。它還可以為物件留下註記：註記會顯示在[[ui:sidebar.findings]]分頁以及主題與消費者群組畫面中，叢集不會被變更。請參閱[叢集檢查與註記](health-check.md#with-llm)。
 
-助理也可以透過 `propose_change` 工具提出變更建議：主題設定、新主題、增加分區或重設偏移量。建議會顯示在物件旁邊，由你在已填好的表單中自行套用或拒絕；助理隨後可在 `list_proposals` 中看到你的決定。刪除和清空無法被建議。請參閱[LLM 建議](health-check.md#proposals)。
+助理也可以透過 `propose_change` 工具提出變更建議：主題設定、新主題、增加分區或重設偏移量。建議會顯示在物件旁邊，由你在已填好的表單中自行套用或拒絕；助理隨後可在 `list_proposals` 中看到你的決定。刪除和清除無法被建議。請參閱[LLM 建議](health-check.md#proposals)。
 
 ## 無法運作時 {#troubleshooting}
 

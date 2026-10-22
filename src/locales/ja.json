@@ -1178,6 +1178,11 @@
         "title": "チェックが不完全です",
         "details": "確認したトピック設定：{{topicsChecked}}/{{topicsTotal}}、グループ：{{groupsChecked}}/{{groupsTotal}}、読み取りエラー：{{errors}}。",
         "fix": "結果は読み取れた範囲だけを対象にしています。1回のチェックでは45秒以内に最大2000トピック、500グループを読み取ります。クラスターの応答が遅かった場合は、後でもう一度実行してください。"
+      },
+      "cluster.controllerUnknown": {
+        "title": "コントローラーが不明です",
+        "details": "Glafiraは時間内にコントローラーIDを取得できませんでしたが、すべてのパーティションにリーダーがあるため、クラスターはおそらく正常です。",
+        "fix": "チェックをやり直してください。コントローラーが不明のままなら、コントローラーのクォーラム（KRaft）またはZooKeeperを確認してください。"
       }
     },
     "title": "検出事項",
@@ -1244,7 +1249,8 @@
       "group.rebalancing": "リバランス中のグループ",
       "group.idleMembers": "パーティションのないメンバー",
       "group.lagGrowing": "増加するラグ",
-      "check.partial": "不完全なチェック"
+      "check.partial": "不完全なチェック",
+      "cluster.controllerUnknown": "コントローラー不明"
     },
     "allFindings": "すべての検出事項",
     "badgeTitle": "要確認：{{count}}",

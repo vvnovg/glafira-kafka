@@ -1183,6 +1183,11 @@
         "title": "Die Prüfung ist unvollständig",
         "details": "Geprüfte Topic-Konfigurationen: {{topicsChecked}} von {{topicsTotal}}; Consumer Groups: {{groupsChecked}} von {{groupsTotal}}; Lesefehler: {{errors}}.",
         "fix": "Die Befunde decken nur das Gelesene ab. Eine Prüfung liest bis zu 2000 Topics und 500 Consumer Groups in 45 Sekunden; war der Cluster langsam, wiederholen Sie sie später."
+      },
+      "cluster.controllerUnknown": {
+        "title": "Controller unbekannt",
+        "details": "Glafira konnte die Controller-ID nicht rechtzeitig ermitteln, aber jede Partition hat einen Leader – der Cluster ist wahrscheinlich in Ordnung.",
+        "fix": "Wiederholen Sie die Prüfung. Bleibt der Controller unbekannt, prüfen Sie das Controller-Quorum (KRaft) oder ZooKeeper."
       }
     },
     "title": "Befunde",
@@ -1249,7 +1254,8 @@
       "group.rebalancing": "Gruppen im Rebalance",
       "group.idleMembers": "Mitglieder ohne Partitionen",
       "group.lagGrowing": "Wachsender Lag",
-      "check.partial": "Unvollständige Prüfung"
+      "check.partial": "Unvollständige Prüfung",
+      "cluster.controllerUnknown": "Controller unbekannt"
     },
     "allFindings": "Alle Befunde",
     "badgeTitle": "Erfordern Aufmerksamkeit: {{count}}",

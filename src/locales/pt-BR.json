@@ -1188,6 +1188,11 @@
         "title": "A verificação está incompleta",
         "details": "Configurações de tópicos verificadas: {{topicsChecked}} de {{topicsTotal}}; grupos: {{groupsChecked}} de {{groupsTotal}}; erros de leitura: {{errors}}.",
         "fix": "As constatações cobrem apenas o que foi lido. Uma verificação lê até 2000 tópicos e 500 grupos em 45 segundos; se o cluster estava lento, tente mais tarde."
+      },
+      "cluster.controllerUnknown": {
+        "title": "Controlador desconhecido",
+        "details": "O Glafira não conseguiu obter a tempo o id do controlador, mas todas as partições têm leader: o cluster provavelmente está saudável.",
+        "fix": "Repita a verificação. Se o controlador continuar desconhecido, verifique o quórum de controladores (KRaft) ou o ZooKeeper."
       }
     },
     "title": "Constatações",
@@ -1254,7 +1259,8 @@
       "group.rebalancing": "Grupos em rebalanceamento",
       "group.idleMembers": "Membros sem partições",
       "group.lagGrowing": "Lag crescente",
-      "check.partial": "Verificação incompleta"
+      "check.partial": "Verificação incompleta",
+      "cluster.controllerUnknown": "Controlador desconhecido"
     },
     "allFindings": "Todas as constatações",
     "badgeTitle": "Exigem atenção: {{count}}",

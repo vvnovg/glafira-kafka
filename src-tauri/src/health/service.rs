@@ -29,7 +29,8 @@ pub fn now_ms() -> i64 {
 
 pub struct HealthService {
     pub store: HealthStore,
-    running: Mutex<HashMap<String, watch::Receiver<Outcome>>>,
+    /// Идущие проверки: окружение, под которым считается строгость, и канал результата.
+    running: Mutex<HashMap<String, (Environment, watch::Receiver<Outcome>)>>,
     /// Поколение данных подключения: растёт при удалении (`forget`), нет записи — 0. Идущая проверка
     /// сохраняет результат, только если поколение с её начала не изменилось.
     generations: Mutex<HashMap<String, u64>>,
@@ -143,32 +144,40 @@ impl HealthService {
         src: Arc<dyn Source>,
         limits: Limits,
     ) -> AppResult<Arc<CheckRun>> {
-        let rx = {
-            let mut running = self.running.lock_safe();
-            match running.get(connection_id) {
-                Some(rx) => rx.clone(),
-                None => {
-                    let (tx, rx) = watch::channel(None);
-                    running.insert(connection_id.to_string(), rx.clone());
-                    let this = self.clone();
-                    let id = connection_id.to_string();
-                    // Проверка доводится до конца, даже если вызвавший перестал ждать.
-                    tauri::async_runtime::spawn(async move {
-                        let r = this
-                            .check(&id, generation, env, trigger, src, limits)
-                            .await
-                            .map(Arc::new);
-                        this.running.lock_safe().remove(&id);
-                        if r.is_ok() {
-                            this.changed(&id);
-                        }
-                        let _ = tx.send(Some(r));
-                    });
-                    rx
+        loop {
+            let (rx, same_env) = {
+                let mut running = self.running.lock_safe();
+                match running.get(connection_id) {
+                    Some((running_env, rx)) => (rx.clone(), *running_env == env),
+                    None => {
+                        let (tx, rx) = watch::channel(None);
+                        running.insert(connection_id.to_string(), (env, rx.clone()));
+                        let this = self.clone();
+                        let id = connection_id.to_string();
+                        let (trigger, src) = (trigger.clone(), src.clone());
+                        // Проверка доводится до конца, даже если вызвавший перестал ждать.
+                        tauri::async_runtime::spawn(async move {
+                            let r = this
+                                .check(&id, generation, env, trigger, src, limits)
+                                .await
+                                .map(Arc::new);
+                            this.running.lock_safe().remove(&id);
+                            if r.is_ok() {
+                                this.changed(&id);
+                            }
+                            let _ = tx.send(Some(r));
+                        });
+                        (rx, true)
+                    }
                 }
+            };
+            if same_env {
+                return wait(rx).await;
             }
-        };
-        wait(rx).await
+            // Идущая проверка считается под другим окружением (его сменили в форме подключения):
+            // её строгость не годится — дождаться её и запустить свою.
+            let _ = wait(rx).await;
+        }
     }
 
     async fn check(
@@ -467,6 +476,70 @@ mod tests {
         .unwrap();
         assert!(file.exists());
         assert!(svc.store.load("c1", now_ms()).unwrap().last_check.is_some());
+    }
+
+    #[tokio::test]
+    async fn check_of_another_environment_waits_and_runs_its_own() {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = Arc::new(HealthService::open(dir.path()));
+        // Проверка на prod стоит у ворот; тем временем окружение подключения сменили на dev.
+        let (entered, gate) = (
+            Arc::new(tokio::sync::Notify::new()),
+            Arc::new(tokio::sync::Notify::new()),
+        );
+        let gated = Arc::new(Gated {
+            inner: Counting::default(),
+            entered: entered.clone(),
+            gate: gate.clone(),
+        });
+        let prod = tokio::spawn({
+            let svc = svc.clone();
+            async move {
+                svc.run_source(
+                    "c1",
+                    svc.generation("c1"),
+                    Environment::Prod,
+                    Trigger::Ui,
+                    gated,
+                    LIMITS,
+                )
+                .await
+            }
+        });
+        entered.notified().await;
+        let dev_src = Arc::new(Counting {
+            lag: 1,
+            ..Default::default()
+        });
+        let dev = tokio::spawn({
+            let (svc, dev_src) = (svc.clone(), dev_src.clone());
+            async move {
+                svc.run_source(
+                    "c1",
+                    svc.generation("c1"),
+                    Environment::Dev,
+                    Trigger::Mcp { client: None },
+                    dev_src,
+                    LIMITS,
+                )
+                .await
+            }
+        });
+        // Пока prod не закончилась, dev ждёт и свой источник не трогает.
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        assert_eq!(dev_src.metadata_calls.load(Ordering::SeqCst), 0);
+        gate.notify_one();
+        let prod = prod.await.unwrap().unwrap();
+        let dev = dev.await.unwrap().unwrap();
+        assert_ne!(prod.run_id, dev.run_id);
+        assert_eq!(
+            (prod.environment, dev.environment),
+            (Environment::Prod, Environment::Dev)
+        );
+        assert_eq!(dev_src.metadata_calls.load(Ordering::SeqCst), 1);
+        // В файле — последняя (dev) проверка.
+        let saved = svc.store.load("c1", now_ms()).unwrap().last_check.unwrap();
+        assert_eq!(saved.run_id, dev.run_id);
     }
 
     #[tokio::test]

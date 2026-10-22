@@ -181,13 +181,25 @@ fn same_title(a: &str, b: &str) -> bool {
     a.trim().to_lowercase() == b.trim().to_lowercase()
 }
 
-/// Идентификатор подключения в имени файла: только то, что создаёт приложение (uuid).
-fn safe_id(id: &str) -> bool {
-    !id.is_empty()
-        && id.len() <= 64
-        && id
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+/// Самый длинный id подключения, у которого есть файл: hex-имя (`h-` + 2 символа на байт + `.json`)
+/// должно укладываться в 255 байт имени файла.
+pub const MAX_ID_BYTES: usize = 100;
+
+/// Имя файла по id подключения. Id, который создаёт приложение (uuid), — как есть; любой другой
+/// (импортированный файл подключений может принести что угодно) — `h-<hex байтов id>`: такое имя
+/// безопасно для файловой системы и однозначно. Пустой и слишком длинный id файла не имеют.
+pub(crate) fn file_stem(id: &str) -> Option<String> {
+    if id.is_empty() || id.len() > MAX_ID_BYTES {
+        return None;
+    }
+    let plain = id
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+    Some(if plain {
+        id.to_string()
+    } else {
+        format!("h-{}", hex::encode(id))
+    })
 }
 
 /// Подключения нет (или его id не годится для имени файла).
@@ -214,10 +226,8 @@ impl HealthStore {
     }
 
     fn path(&self, connection_id: &str) -> AppResult<PathBuf> {
-        if !safe_id(connection_id) {
-            return Err(connection_not_found(connection_id));
-        }
-        Ok(self.dir.join(format!("{connection_id}.json")))
+        let stem = file_stem(connection_id).ok_or_else(|| connection_not_found(connection_id))?;
+        Ok(self.dir.join(format!("{stem}.json")))
     }
 
     /// Каталог `health/` — только для владельца (файлы — 0600, см. `atomic_write`).
@@ -670,15 +680,39 @@ mod tests {
     }
 
     #[test]
-    fn unsafe_connection_id_is_not_a_path() {
-        let (_d, s) = store();
-        for id in ["../x", "a/b", "", "a b"] {
+    fn imported_id_gets_a_hex_file_name_and_is_never_a_path() {
+        let (d, s) = store();
+        // Импортированный id с «/», «..» и пробелом: файл внутри health/, по hex байтов id.
+        for (id, stem) in [
+            ("../x", "h-2e2e2f78"),
+            ("a/b", "h-612f62"),
+            ("a b", "h-612062"),
+        ] {
+            s.set_ignored(id, "k", true, T0).unwrap();
+            assert_eq!(file_stem(id).as_deref(), Some(stem), "{id}");
+            let file = d.path().join("health").join(format!("{stem}.json"));
+            assert!(file.exists(), "{id}");
+            assert!(s.load(id, T0).unwrap().is_ignored("k"), "{id}");
+            s.delete_connection(id).unwrap();
+            assert!(!file.exists(), "{id}");
+        }
+        assert!(!d.path().join("x.json").exists());
+        assert!(!d.path().join("health").join("b.json").exists());
+        // Uuid приложения — без изменений.
+        assert_eq!(file_stem("c1").as_deref(), Some("c1"));
+        // Пустой и слишком длинный id файла не имеют.
+        let long = "й".repeat(MAX_ID_BYTES / 2 + 1);
+        for id in ["", long.as_str()] {
             assert_eq!(
                 s.load(id, T0).unwrap_err().code,
                 ErrorCode::NotFound,
-                "{id}"
+                "{id:?}"
             );
         }
+        assert_eq!(
+            file_stem(&"a".repeat(MAX_ID_BYTES)).as_deref(),
+            Some("a".repeat(MAX_ID_BYTES).as_str())
+        );
     }
 
     #[test]

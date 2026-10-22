@@ -39,6 +39,7 @@ const fn rule(
 /// Таблица §4 спецификации: prod, stage, остальные окружения.
 pub const RULES: &[RuleDef] = &[
     rule("cluster.noController", C, C, C),
+    rule("cluster.controllerUnknown", W, W, W),
     rule("partition.offline", C, C, C),
     rule("partition.underReplicated", C, W, I),
     rule("cluster.singleBroker", C, W, N),
@@ -171,7 +172,7 @@ mod tests {
         ids.sort();
         ids.dedup();
         assert_eq!(ids.len(), n);
-        assert_eq!(n, 20);
+        assert_eq!(n, 21);
     }
 
     #[test]
@@ -179,6 +180,7 @@ mod tests {
         // Строки таблицы §4: правило, prod, stage, прочие («К», «П», «И», «—»).
         let spec = [
             ("cluster.noController", "ККК"),
+            ("cluster.controllerUnknown", "ППП"),
             ("partition.offline", "ККК"),
             ("partition.underReplicated", "КПИ"),
             ("cluster.singleBroker", "КП—"),

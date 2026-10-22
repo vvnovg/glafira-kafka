@@ -1188,6 +1188,11 @@
         "title": "Il controllo è incompleto",
         "details": "Configurazioni dei topic controllate: {{topicsChecked}} su {{topicsTotal}}; gruppi: {{groupsChecked}} su {{groupsTotal}}; errori di lettura: {{errors}}.",
         "fix": "I rilievi coprono solo ciò che è stato letto. Un controllo legge fino a 2000 topic e 500 gruppi in 45 secondi; se il cluster era lento, riprova più tardi."
+      },
+      "cluster.controllerUnknown": {
+        "title": "Controller sconosciuto",
+        "details": "Glafira non è riuscita a ottenere in tempo l’id del controller, ma ogni partizione ha un leader: probabilmente il cluster è sano.",
+        "fix": "Ripeti il controllo. Se il controller resta sconosciuto, controlla il quorum dei controller (KRaft) o ZooKeeper."
       }
     },
     "title": "Rilievi",
@@ -1254,7 +1259,8 @@
       "group.rebalancing": "Gruppi in ribilanciamento",
       "group.idleMembers": "Membri senza partizioni",
       "group.lagGrowing": "Lag in crescita",
-      "check.partial": "Controllo incompleto"
+      "check.partial": "Controllo incompleto",
+      "cluster.controllerUnknown": "Controller sconosciuto"
     },
     "allFindings": "Tutti i rilievi",
     "badgeTitle": "Da esaminare: {{count}}",

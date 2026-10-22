@@ -56,14 +56,24 @@ fn to_backend(e: AppError) -> BackendError {
 
 /// Текст для LLM при сбое файла `health/<id>.json` (спец. G2 §9): путь к файлу не раскрывается.
 const HEALTH_FILE_FAILED: &str = "Glafira could not read or save its data for this connection";
+/// Текст для LLM, когда фоновая задача Glafira не завершилась (паника blocking-потока).
+const BACKGROUND_FAILED: &str = "A background task in Glafira failed; retry the call";
 
-/// Ошибки операций G2: сбой файла Glafira (диск, права, версия файла — ключи `errors.io`,
-/// `errors.json`, `errors.storage.*`) — `internal` с общим текстом, а не «настройки или сертификаты
-/// подключения». Различаем по ключу, а не по коду: проверка (`latest_or_run`) возвращает и ошибки
-/// Kafka и настроек подключения — они, как и «не найдено», остаются как в G1.
+/// Ключи ошибок файла Glafira: диск, разбор JSON, атомарная запись и версия файла.
+const FILE_ERROR_KEYS: [&str; 2] = ["errors.io", "errors.json"];
+const FILE_ERROR_PREFIX: &str = "errors.storage.";
+const TASK_PANICKED_KEY: &str = "errors.app.taskPanicked";
+
+/// Ошибки операций G2 и G3: сбой файла Glafira (`errors.io`, `errors.json`, `errors.storage.*`) и
+/// паника фоновой задачи (`errors.app.taskPanicked`) — код `internal` (строчными, как у других
+/// ошибок шлюза) с общим текстом, а не «настройки или сертификаты подключения». Различаем по
+/// ключу, а не по коду: проверка (`latest_or_run`) возвращает и ошибки Kafka и настроек
+/// подключения — они, как и «не найдено», остаются как в G1.
 fn health_to_backend(e: AppError) -> BackendError {
-    if e.key == "errors.io" || e.key == "errors.json" || e.key.starts_with("errors.storage.") {
+    if FILE_ERROR_KEYS.contains(&e.key.as_str()) || e.key.starts_with(FILE_ERROR_PREFIX) {
         BackendError::new("internal", HEALTH_FILE_FAILED)
+    } else if e.key == TASK_PANICKED_KEY {
+        BackendError::new("internal", BACKGROUND_FAILED)
     } else {
         to_backend(e)
     }
@@ -1040,6 +1050,52 @@ mod tests {
                 "{name}"
             );
         }
+    }
+
+    #[test]
+    fn health_errors_are_classified_by_key() {
+        // Файловые ошибки и паника фоновой задачи — `internal` строчными с общим текстом;
+        // остальное — как в G1.
+        let err = |key: &str| {
+            let mut e = app_err!(
+                ErrorCode::Internal,
+                "errors.io",
+                "Failed to write {{path}}",
+                path = "/secret-path/health/open.json"
+            );
+            e.key = key.to_string();
+            e
+        };
+        for key in [
+            "errors.io",
+            "errors.json",
+            "errors.storage.writeFailed",
+            "errors.storage.newerSchema",
+        ] {
+            let e = health_to_backend(err(key));
+            assert_eq!(
+                (e.code.as_str(), e.message.as_str()),
+                ("internal", HEALTH_FILE_FAILED),
+                "{key}"
+            );
+        }
+        let e = health_to_backend(err(TASK_PANICKED_KEY));
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("internal", BACKGROUND_FAILED)
+        );
+        let e = health_to_backend(crate::health::store::connection_not_found("x"));
+        assert_eq!(e.code, "NOT_FOUND");
+        let e = health_to_backend(app_err!(
+            ErrorCode::Internal,
+            "errors.kafka.emptyResponse",
+            "Empty {{request}} response",
+            request = "DescribeConfigs"
+        ));
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("INTERNAL", "Empty DescribeConfigs response")
+        );
     }
 
     #[test]

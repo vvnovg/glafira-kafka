@@ -53,7 +53,14 @@ pub fn english(f: &Finding) -> (String, String) {
     match f.rule_id.as_str() {
         "cluster.noController" => (
             "No active controller".into(),
-            "The cluster reports no controller: metadata changes, leader elections and topic operations will not work until a controller is elected.".into(),
+            format!(
+                "The cluster reports no controller and {} partition(s) have no leader: metadata changes, leader elections and topic operations will not work until a controller is elected.",
+                num(f, "leaderless")
+            ),
+        ),
+        "cluster.controllerUnknown" => (
+            "Controller unknown".into(),
+            "Glafira could not learn the controller id in time, but every partition has a leader, so the cluster is probably healthy; repeat the check. If the controller stays unknown, check the controller quorum (KRaft) or ZooKeeper.".into(),
         ),
         "partition.offline" => (
             format!("Topic {name} has offline partitions"),

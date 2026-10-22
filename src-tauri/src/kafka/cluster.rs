@@ -88,7 +88,12 @@ fn native_cluster_info(h: &KafkaHandles) -> (Option<String>, Option<i32>) {
             rd::rd_kafka_mem_free(rk, ptr as *mut c_void);
             Some(s)
         };
-        let controller = rd::rd_kafka_controllerid(rk, ms);
+        // Id контроллера приходит с метаданными; `-1` — брокер его не сообщил или ответ не
+        // успел за таймаут. Один повтор отличает второе от первого.
+        let mut controller = rd::rd_kafka_controllerid(rk, ms);
+        if controller < 0 {
+            controller = rd::rd_kafka_controllerid(rk, ms);
+        }
         (cluster_id, (controller >= 0).then_some(controller))
     }
 }

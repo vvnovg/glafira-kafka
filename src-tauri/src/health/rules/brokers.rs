@@ -18,8 +18,30 @@ const SKEW_MIN_AVERAGE: usize = 10;
 const SKEW_DENOMINATOR: usize = 5;
 
 pub(super) fn check(s: &ClusterSnapshot, out: &mut Findings) {
+    // Контроллер неизвестен: при партициях без лидера кластер действительно без контроллера;
+    // если лидеры у всех — скорее всего, запрос id не успел ответить (предупреждение).
     if s.controller_id.is_none() {
-        out.emit("cluster.noController", Target::cluster(), None, json!({}));
+        let leaderless = s
+            .topics
+            .iter()
+            .flat_map(|t| &t.partitions)
+            .filter(|p| p.offline())
+            .count();
+        if leaderless > 0 {
+            out.emit(
+                "cluster.noController",
+                Target::cluster(),
+                None,
+                json!({ "leaderless": leaderless }),
+            );
+        } else {
+            out.emit(
+                "cluster.controllerUnknown",
+                Target::cluster(),
+                None,
+                json!({}),
+            );
+        }
     }
     if s.brokers.len() == 1 {
         out.emit("cluster.singleBroker", Target::cluster(), None, json!({}));
@@ -158,14 +180,41 @@ mod tests {
     }
 
     #[test]
-    fn no_controller_is_critical_everywhere() {
-        let mut s = snap(3, vec![]);
+    fn no_controller_with_leaderless_partitions_is_critical_everywhere() {
+        let mut s = snap(
+            3,
+            vec![topic("a", &[(-1, &[1, 2], &[]), (2, &[2, 3], &[2, 3])])],
+        );
         s.controller_id = None;
         for env in ENVS {
             let f = evaluate(&s, env);
-            assert_eq!(f[0].rule_id, "cluster.noController");
+            assert_eq!(f[0].rule_id, "cluster.noController", "{env:?}");
             assert_eq!(f[0].severity, Severity::Critical);
+            assert_eq!(f[0].params["leaderless"], 1);
+            assert!(
+                !f.iter().any(|x| x.rule_id == "cluster.controllerUnknown"),
+                "{env:?}"
+            );
         }
+    }
+
+    #[test]
+    fn unknown_controller_with_leaders_everywhere_is_a_warning() {
+        let mut s = snap(3, vec![topic("a", &[(1, &[1, 2], &[1, 2])])]);
+        s.controller_id = None;
+        for env in ENVS {
+            let f = evaluate(&s, env);
+            assert_eq!(f[0].rule_id, "cluster.controllerUnknown", "{env:?}");
+            assert_eq!(f[0].severity, Severity::Warning);
+            assert!(!f.iter().any(|x| x.rule_id == "cluster.noController"));
+        }
+        // Без топиков лидеров нет вовсе — тоже «неизвестен», а не «нет контроллера».
+        let mut empty = snap(3, vec![]);
+        empty.controller_id = None;
+        assert_eq!(
+            evaluate(&empty, Environment::Prod)[0].rule_id,
+            "cluster.controllerUnknown"
+        );
     }
 
     #[test]

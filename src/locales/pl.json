@@ -1193,6 +1193,11 @@
         "title": "Sprawdzenie jest niepełne",
         "details": "Sprawdzone konfiguracje topików: {{topicsChecked}} z {{topicsTotal}}; grupy: {{groupsChecked}} z {{groupsTotal}}; błędy odczytu: {{errors}}.",
         "fix": "Ustalenia obejmują tylko to, co odczytano. Sprawdzenie czyta do 2000 topików i 500 grup w 45 sekund; jeśli klaster działał wolno, spróbuj później."
+      },
+      "cluster.controllerUnknown": {
+        "title": "Kontroler nieznany",
+        "details": "Glafira nie zdążyła ustalić id kontrolera, ale każda partycja ma leadera — klaster jest prawdopodobnie sprawny.",
+        "fix": "Powtórz sprawdzenie. Jeśli kontroler pozostaje nieznany, sprawdź kworum kontrolerów (KRaft) lub ZooKeeper."
       }
     },
     "title": "Ustalenia",
@@ -1259,7 +1264,8 @@
       "group.rebalancing": "Grupy w trakcie rebalansu",
       "group.idleMembers": "Członkowie bez partycji",
       "group.lagGrowing": "Rosnący lag",
-      "check.partial": "Niepełne sprawdzenie"
+      "check.partial": "Niepełne sprawdzenie",
+      "cluster.controllerUnknown": "Kontroler nieznany"
     },
     "allFindings": "Wszystkie ustalenia",
     "badgeTitle": "Wymagają uwagi: {{count}}",

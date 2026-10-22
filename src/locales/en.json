@@ -1183,6 +1183,11 @@
         "title": "The check is incomplete",
         "details": "Topic configs checked: {{topicsChecked}} of {{topicsTotal}}; groups: {{groupsChecked}} of {{groupsTotal}}; read errors: {{errors}}.",
         "fix": "Findings cover only what was read. A check reads up to 2000 topics and 500 groups within 45 seconds; if the cluster was slow, retry later."
+      },
+      "cluster.controllerUnknown": {
+        "title": "Controller unknown",
+        "details": "Glafira could not learn the controller id in time, but every partition has a leader, so the cluster is probably healthy.",
+        "fix": "Repeat the check. If the controller stays unknown, check the controller quorum (KRaft) or ZooKeeper."
       }
     },
     "title": "Findings",
@@ -1249,7 +1254,8 @@
       "group.rebalancing": "Rebalancing groups",
       "group.idleMembers": "Members without partitions",
       "group.lagGrowing": "Growing lag",
-      "check.partial": "Incomplete check"
+      "check.partial": "Incomplete check",
+      "cluster.controllerUnknown": "Controller unknown"
     },
     "allFindings": "All findings",
     "badgeTitle": "Needs attention: {{count}}",

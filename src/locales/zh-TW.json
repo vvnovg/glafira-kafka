@@ -1178,6 +1178,11 @@
         "title": "檢查不完整",
         "details": "已檢查的主題設定：{{topicsChecked}}/{{topicsTotal}}，消費者群組：{{groupsChecked}}/{{groupsTotal}}，讀取錯誤：{{errors}}。",
         "fix": "檢查結果只涵蓋已讀取的內容。一次檢查會在 45 秒內最多讀取 2000 個主題與 500 個群組；若叢集回應緩慢，請稍後再試。"
+      },
+      "cluster.controllerUnknown": {
+        "title": "控制器未知",
+        "details": "Glafira 未能及時取得控制器 ID，但所有分區都有 Leader，叢集很可能是正常的。",
+        "fix": "請重新執行檢查。若控制器仍然未知，請檢查控制器仲裁（KRaft）或 ZooKeeper。"
       }
     },
     "title": "檢查結果",
@@ -1244,7 +1249,8 @@
       "group.rebalancing": "正在重新平衡的消費者群組",
       "group.idleMembers": "沒有分區的成員",
       "group.lagGrowing": "延遲增加",
-      "check.partial": "檢查不完整"
+      "check.partial": "檢查不完整",
+      "cluster.controllerUnknown": "控制器未知"
     },
     "allFindings": "所有檢查結果",
     "badgeTitle": "需要注意：{{count}}",

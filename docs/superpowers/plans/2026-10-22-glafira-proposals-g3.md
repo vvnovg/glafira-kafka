@@ -645,7 +645,7 @@ index c9c6742..5c11c48 100644
  "zh-CN": { "cluster.controllerUnknown": { "title": "控制器未知", "details": "Glafira 未能及时获取控制器 ID，但所有分区都有 Leader，集群很可能是正常的。", "fix": "重新运行检查。如果控制器仍然未知，请检查控制器仲裁（KRaft）或 ZooKeeper。" } },
  "zh-TW": { "cluster.controllerUnknown": { "title": "控制器未知", "details": "Glafira 未能及時取得控制器 ID，但所有分區都有 Leader，叢集很可能是正常的。", "fix": "請重新執行檢查。若控制器仍然未知，請檢查控制器仲裁（KRaft）或 ZooKeeper。" } },
  "ja": { "cluster.controllerUnknown": { "title": "コントローラーが不明です", "details": "Glafiraは時間内にコントローラーIDを取得できませんでしたが、すべてのパーティションにリーダーがあるため、クラスターはおそらく正常です。", "fix": "チェックをやり直してください。コントローラーが不明のままなら、コントローラーのクォーラム（KRaft）またはZooKeeperを確認してください。" } },
- "ko": { "cluster.controllerUnknown": { "title": "컨트롤러를 알 수 없습니다", "details": "Glafira가 컨트롤러 ID를 제때 확인하지 못했지만 모든 파티션에 리더가 있으므로 클러스터는 정상일 가능성이 큽니다.", "fix": "검사를 다시 실행하세요. 컨트롤러가 계속 알 수 없는 상태이면 컨트롤러 쿼럼(KRaft) 또는 ZooKeeper를 확인하세요." } }
+ "ko": { "cluster.controllerUnknown": { "title": "컨트롤러를 알 수 없습니다", "details": "Glafira가 컨트롤러 ID를 제때 확인하지 못했지만 모든 파티션에 리더가 있으므로 클러스터는 정상일 가능성이 큽니다.", "fix": "점검을 다시 실행하세요. 컨트롤러가 계속 알 수 없는 상태이면 컨트롤러 쿼럼(KRaft) 또는 ZooKeeper를 확인하세요." } }
 }}
 ````
 

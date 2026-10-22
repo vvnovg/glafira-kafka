@@ -702,6 +702,20 @@ async fn exposes_exactly_the_tools() {
             "{}",
             t.name
         );
+        assert_eq!(a.open_world_hint, Some(false), "{}", t.name);
+    }
+    // Всё, что читает LLM, — по-английски: описания, инструкции и схемы параметров (schemars берёт
+    // doc-комментарии типов как description).
+    let cyrillic = |s: &str| s.chars().any(|c| ('\u{0400}'..='\u{04FF}').contains(&c));
+    assert!(!cyrillic(instructions));
+    for t in &tools {
+        assert!(
+            !cyrillic(t.description.as_deref().unwrap_or_default()),
+            "{}",
+            t.name
+        );
+        let schema = serde_json::to_string(&t.input_schema).unwrap();
+        assert!(!cyrillic(&schema), "{}: {schema}", t.name);
     }
 }
 
@@ -1619,7 +1633,7 @@ async fn propose_change_validates_and_keeps_text_out_of_the_log() {
     let mut unknown = proposal("orders", "t");
     unknown["change"] = json!({ "kind": "deleteTopic", "topic": "orders" });
     let msg = err(&call(&c, "propose_change", unknown).await);
-    assert!(!msg.is_empty());
+    assert!(msg.contains("deleteTopic"), "{msg}");
     assert!(fake.proposal_ops.lock().unwrap().iter().all(|op| !matches!(
         op,
         ProposalOp::Propose { proposal: np, .. } if np.title == "t" && np.change.target_name() == "orders"

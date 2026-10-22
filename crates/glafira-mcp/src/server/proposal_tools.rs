@@ -9,7 +9,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use super::GatewayServer;
+use super::{GatewayServer, Recency, newest_first, to_value};
 use crate::health::{Severity, StatusFilter};
 use crate::model::BackendError;
 use crate::proposals::*;
@@ -70,18 +70,16 @@ fn proposals_of(b: &mut ProposalsBody) -> &mut Vec<ProposalView> {
     &mut b.items
 }
 
-/// Сначала недавно обновлённые; при равенстве — созданные позже, затем по id.
-fn newest_first(items: &mut [ProposalView]) {
-    items.sort_by(|a, b| {
-        b.updated_at_ms
-            .cmp(&a.updated_at_ms)
-            .then(b.created_at_ms.cmp(&a.created_at_ms))
-            .then_with(|| a.id.cmp(&b.id))
-    });
-}
-
-fn to_value<T: Serialize>(v: &T) -> Result<Value, BackendError> {
-    serde_json::to_value(v).map_err(|e| BackendError::new("internal", e.to_string()))
+impl Recency for ProposalView {
+    fn updated_at_ms(&self) -> i64 {
+        self.updated_at_ms
+    }
+    fn created_at_ms(&self) -> i64 {
+        self.created_at_ms
+    }
+    fn id(&self) -> &str {
+        &self.id
+    }
 }
 
 #[tool_router(router = proposal_router, vis = "pub(crate)")]
@@ -148,7 +146,7 @@ impl GatewayServer {
                             proposal_id,
                             created,
                             read_only,
-                        } => to_value(&json!({
+                        } => Ok(json!({
                             "proposalId": proposal_id,
                             "created": created,
                             "readOnly": read_only,
@@ -234,57 +232,11 @@ impl GatewayServer {
                         proposal_id: p.proposal_id.clone(),
                     };
                     match self.proposals(op, false).await? {
-                        ProposalOutput::Withdrawn => to_value(&json!({ "withdrawn": true })),
+                        ProposalOutput::Withdrawn => Ok(json!({ "withdrawn": true })),
                         _ => Err(BackendError::unexpected()),
                     }
                 },
             )
             .await)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::health::{Target, TargetKind};
-
-    fn view(id: &str, created: i64, updated: i64) -> ProposalView {
-        ProposalView {
-            id: id.into(),
-            severity: Severity::Info,
-            title: "t".into(),
-            rationale: "r".into(),
-            target: Target {
-                kind: TargetKind::Topic,
-                name: Some("orders".into()),
-            },
-            change: ChangeSpec::AddPartitions {
-                topic: "orders".into(),
-                new_total: 6,
-            },
-            related_rule_id: None,
-            related_finding_key: None,
-            client: None,
-            status: "open".into(),
-            created_at_ms: created,
-            updated_at_ms: updated,
-            closed_at_ms: None,
-            applied_as_proposed: None,
-            reject_reason: None,
-        }
-    }
-
-    #[test]
-    fn proposals_are_sorted_newest_first_with_stable_ties() {
-        let mut v = vec![
-            view("b", 1, 5),
-            view("a", 1, 5),
-            view("old", 0, 1),
-            view("later-created", 3, 5),
-            view("fresh", 0, 9),
-        ];
-        newest_first(&mut v);
-        let ids: Vec<_> = v.iter().map(|n| n.id.as_str()).collect();
-        assert_eq!(ids, ["fresh", "later-created", "a", "b", "old"]);
     }
 }

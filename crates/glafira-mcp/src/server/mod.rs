@@ -298,6 +298,28 @@ fn tool_error(e: &BackendError) -> CallToolResult {
     ))])
 }
 
+/// Значение ответа инструмента; ошибка сериализации — `internal`.
+pub(super) fn to_value<T: Serialize>(v: &T) -> Result<Value, BackendError> {
+    serde_json::to_value(v).map_err(|e| BackendError::new("internal", e.to_string()))
+}
+
+/// Порядок списков без страниц (`list_annotations`, `list_proposals`): сначала недавно
+/// обновлённые, при равенстве — созданные позже, затем по id. Обрезка до 100 КБ оставляет голову.
+pub(super) trait Recency {
+    fn updated_at_ms(&self) -> i64;
+    fn created_at_ms(&self) -> i64;
+    fn id(&self) -> &str;
+}
+
+pub(super) fn newest_first<T: Recency>(items: &mut [T]) {
+    items.sort_by(|a, b| {
+        b.updated_at_ms()
+            .cmp(&a.updated_at_ms())
+            .then(b.created_at_ms().cmp(&a.created_at_ms()))
+            .then_with(|| a.id().cmp(b.id()))
+    });
+}
+
 // ---- Сервер одной сессии ----
 
 #[derive(Clone)]
@@ -443,6 +465,18 @@ impl GatewayServer {
         Ok((local, global))
     }
 
+    /// Слоты параллельности Kafka, если операция ходит в кластер; иначе ничего не занимает.
+    async fn maybe_slots(
+        &self,
+        kafka: bool,
+    ) -> Result<Option<(SemaphorePermit<'_>, SemaphorePermit<'_>)>, BackendError> {
+        if kafka {
+            Ok(Some(self.slots().await?))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Операция Kafka под лимитами параллельности сессии и всех сессий.
     async fn read(&self, op: ReadOp) -> Result<ReadOutput, BackendError> {
         let _slots = self.slots().await?;
@@ -452,22 +486,14 @@ impl GatewayServer {
     /// Операция проверки и замечаний. `kafka` — она ходит в кластер (проверка, сверка объекта
     /// замечания): тогда занимает слоты параллельности, как чтение.
     async fn health(&self, op: HealthOp, kafka: bool) -> Result<HealthOutput, BackendError> {
-        let _slots = if kafka {
-            Some(self.slots().await?)
-        } else {
-            None
-        };
+        let _slots = self.maybe_slots(kafka).await?;
         self.shared.backend.health(op).await
     }
 
     /// Операция предложений. `kafka` — она сверяет предложение с кластером (`propose_change`):
     /// тогда занимает слоты параллельности, как чтение.
     async fn proposals(&self, op: ProposalOp, kafka: bool) -> Result<ProposalOutput, BackendError> {
-        let _slots = if kafka {
-            Some(self.slots().await?)
-        } else {
-            None
-        };
+        let _slots = self.maybe_slots(kafka).await?;
         self.shared.backend.proposals(op).await
     }
 

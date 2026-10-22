@@ -13,7 +13,7 @@ use crate::model::SessionView;
 /// Длина `relatedFindingKey`.
 pub const MAX_RELATED_KEY_CHARS: usize = 200;
 
-/// Одно изменение конфига топика.
+/// One topic config change.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigChangeSpec {
@@ -31,7 +31,7 @@ pub struct PartitionRef {
     pub partition: i32,
 }
 
-/// Куда сбросить оффсеты (`type`).
+/// Where to reset the offsets (`type`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ResetStrategySpec {
@@ -48,7 +48,7 @@ pub enum ResetStrategySpec {
     Shift { delta: i64 },
 }
 
-/// Какие партиции сбрасывать (`type`).
+/// Which partitions to reset (`type`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ResetScopeSpec {
@@ -60,7 +60,7 @@ pub enum ResetScopeSpec {
     Partitions { partitions: Vec<PartitionRef> },
 }
 
-/// Что предлагает LLM (`kind`). JSON-форма та же, что хранит Glafira и читает интерфейс.
+/// The change an LLM proposes (`kind`): the same JSON shape Glafira stores and shows.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum ChangeSpec {

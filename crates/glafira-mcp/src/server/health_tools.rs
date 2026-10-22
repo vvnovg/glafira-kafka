@@ -9,7 +9,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use super::GatewayServer;
+use super::{GatewayServer, Recency, newest_first, to_value};
 use crate::health::*;
 use crate::model::BackendError;
 use crate::rules::{self, Page, TRUNCATED_HINT};
@@ -121,23 +121,21 @@ fn notes_of(b: &mut NotesBody) -> &mut Vec<AnnotationView> {
     &mut b.items
 }
 
-/// Сначала недавно обновлённые; при равенстве — созданные позже, затем по id.
-fn newest_first(items: &mut [AnnotationView]) {
-    items.sort_by(|a, b| {
-        b.updated_at_ms
-            .cmp(&a.updated_at_ms)
-            .then(b.created_at_ms.cmp(&a.created_at_ms))
-            .then_with(|| a.id.cmp(&b.id))
-    });
+impl Recency for AnnotationView {
+    fn updated_at_ms(&self) -> i64 {
+        self.updated_at_ms
+    }
+    fn created_at_ms(&self) -> i64 {
+        self.created_at_ms
+    }
+    fn id(&self) -> &str {
+        &self.id
+    }
 }
 
 /// Аргументы вызова для журнала.
 fn args<T: Serialize>(p: &T) -> Value {
     serde_json::to_value(p).unwrap_or(Value::Null)
-}
-
-fn to_value<T: Serialize>(v: &T) -> Result<Value, BackendError> {
-    serde_json::to_value(v).map_err(|e| BackendError::new("internal", e.to_string()))
 }
 
 impl GatewayServer {

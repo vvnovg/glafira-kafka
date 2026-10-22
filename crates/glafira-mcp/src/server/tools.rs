@@ -9,15 +9,11 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::{Flag, GatewayServer};
+use super::{Flag, GatewayServer, to_value};
 use crate::audit::now_ms;
 use crate::model::*;
 use crate::observe;
 use crate::rules::{self, TRUNCATED_HINT};
-
-fn to_value<T: Serialize>(v: &T) -> Result<Value, BackendError> {
-    serde_json::to_value(v).map_err(|e| BackendError::new("internal", e.to_string()))
-}
 
 /// Ответ со списком, обрезанным под предел размера.
 #[derive(Serialize)]

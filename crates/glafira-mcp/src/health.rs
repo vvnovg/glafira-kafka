@@ -31,7 +31,7 @@ pub enum TargetKind {
     Group,
 }
 
-/// Объект находки или замечания. У `cluster` имени нет; у `broker` имя — его id.
+/// Object of a finding or note: `cluster` has no name, a `broker` is named by its id.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Target {

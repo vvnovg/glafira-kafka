@@ -1,6 +1,21 @@
 import type { TFunction } from "i18next";
 import type { Proposal, ProposalChange, ResetScope, ResetStrategy } from "../../api/types";
+import type { TabSpec } from "../../state/workspace";
 import { formatAgo } from "./CheckBar";
+
+/** Вкладка, в которой предложение открывается заполненной формой (спец. G3 §8). */
+export function proposalTab(connectionId: string, proposal: Proposal, nonce = Date.now()): TabSpec {
+  const prefill = { proposal, nonce };
+  switch (proposal.change.kind) {
+    case "alterTopicConfigs":
+    case "addPartitions":
+      return { kind: "topic", connectionId, topic: proposal.change.topic, proposal: prefill };
+    case "createTopic":
+      return { kind: "topics", connectionId, proposal: prefill };
+    case "resetOffsets":
+      return { kind: "group", connectionId, groupId: proposal.change.groupId, proposal: prefill };
+  }
+}
 
 /** Стратегия сброса словами формы сброса: «С начала (earliest)», «По времени 22.10.2026, 10:00:00», «Сдвиг на ±N −5». */
 export function strategyText(s: ResetStrategy, t: TFunction, lang: string): string {

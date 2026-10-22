@@ -1398,7 +1398,8 @@
     },
     "health": {
       "check": "Führt die integrierten Regeln von Glafira aus: Partitionen und Replikation, Topic- und Broker-Konfigurationen, Consumer Groups. Der Schweregrad hängt von der Umgebung der Verbindung ab. Die Prüfung liest den Cluster nur.",
-      "hidden": "Befunde, die Sie für ein bestimmtes Objekt ausgeblendet haben. Sie zählen nicht in den Badges; LLM-Assistenten sehen sie als ausgeblendet markiert."
+      "hidden": "Befunde, die Sie für ein bestimmtes Objekt ausgeblendet haben. Sie zählen nicht in den Badges; LLM-Assistenten sehen sie als ausgeblendet markiert.",
+      "proposals": "Eine Änderung, die ein LLM-Assistent vorschlägt. Nichts wird angewendet, bis Sie sie im Formular öffnen und bestätigen; die Werte können Sie vorher ändern."
     }
   }
 }

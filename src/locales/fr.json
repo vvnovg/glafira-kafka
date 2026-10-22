@@ -1403,7 +1403,8 @@
     },
     "health": {
       "check": "Exécute les règles intégrées de Glafira : partitions et réplication, configurations des topics et des brokers, consumer groups. La gravité dépend de l’environnement de la connexion. La vérification ne fait que lire le cluster.",
-      "hidden": "Constats que vous avez masqués pour un objet précis. Ils ne sont pas comptés dans les badges ; les assistants LLM les voient marqués comme masqués."
+      "hidden": "Constats que vous avez masqués pour un objet précis. Ils ne sont pas comptés dans les badges ; les assistants LLM les voient marqués comme masqués.",
+      "proposals": "Une modification proposée par un assistant LLM. Rien n’est appliqué tant que vous ne l’ouvrez pas dans un formulaire et ne la confirmez pas ; vous pouvez d’abord modifier les valeurs."
     }
   }
 }

@@ -1408,7 +1408,8 @@
     },
     "health": {
       "check": "Uruchamia wbudowane reguły Glafira: partycje i replikacja, konfiguracje topików i brokerów, grupy konsumentów. Waga zależy od środowiska połączenia. Sprawdzenie tylko odczytuje klaster.",
-      "hidden": "Ustalenia ukryte przez Ciebie dla konkretnego obiektu. Nie są liczone w znaczkach; asystenci LLM widzą je oznaczone jako ukryte."
+      "hidden": "Ustalenia ukryte przez Ciebie dla konkretnego obiektu. Nie są liczone w znaczkach; asystenci LLM widzą je oznaczone jako ukryte.",
+      "proposals": "Zmiana zaproponowana przez asystenta LLM. Nic nie zostanie zastosowane, dopóki nie zostanie otwarta w formularzu i potwierdzona; wartości można wcześniej poprawić."
     }
   }
 }

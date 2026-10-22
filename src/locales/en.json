@@ -1398,7 +1398,8 @@
     },
     "health": {
       "check": "Runs Glafira’s built-in rules: partitions and replication, topic and broker configs, consumer groups. Severity depends on the connection environment. The check only reads the cluster.",
-      "hidden": "Findings you hid for a specific object. They do not count in badges; LLM assistants see them marked as hidden."
+      "hidden": "Findings you hid for a specific object. They do not count in badges; LLM assistants see them marked as hidden.",
+      "proposals": "A change an LLM assistant suggests. Nothing is applied until you open it in a form and confirm; you can edit the values first."
     }
   }
 }

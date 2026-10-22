@@ -12,10 +12,13 @@ vi.mock("../../api/client", async (importOriginal) => {
   return {
     ...orig,
     api: {
+      listConnections: vi.fn().mockResolvedValue([]),
       getHealth: vi.fn(),
       setFindingIgnored: vi.fn(),
       setAnnotationStatus: vi.fn(),
       deleteAnnotation: vi.fn(),
+      setProposalStatus: vi.fn(),
+      deleteProposal: vi.fn(),
     },
   };
 });
@@ -86,6 +89,48 @@ describe("HealthBlock", () => {
     const block = await screen.findByRole("region", { name: "Замечания" });
     expect(within(block).getByText("Фактор репликации 1 у orders")).toBeInTheDocument();
     expect(screen.getAllByRole("region", { name: "Замечания" })).toHaveLength(1);
+  });
+});
+
+describe("HealthBlock: предложения LLM", () => {
+  const proposal = (id: string, name: string, status: "open" | "applied"): HealthView["proposals"][number] => ({
+    id,
+    severity: "critical",
+    title: `More partitions for ${name}`,
+    rationale: "r",
+    target: { kind: "topic", name },
+    change: { kind: "addPartitions", topic: name, newTotal: 6 },
+    client: "claude-code",
+    createdAtMs: 1,
+    updatedAtMs: 1,
+    status,
+  });
+
+  it("показывает открытые предложения объекта, закрытые — нет, и считает их в значке", async () => {
+    vi.mocked(api.getHealth).mockResolvedValue({
+      ...view,
+      proposals: [proposal("p1", "orders", "open"), proposal("p2", "orders", "applied"), proposal("p3", "audit", "open")],
+    });
+    vi.mocked(api.deleteProposal).mockResolvedValue({ ...view, proposals: [] });
+    const user = userEvent.setup();
+    renderWithClient(
+      <>
+        <HealthBadge connectionId="c1" match={isTopic("orders")} />
+        <HealthBlock connectionId="c1" match={isTopic("orders")} />
+      </>,
+    );
+    const block = await screen.findByRole("region", { name: "Замечания" });
+    expect(within(block).getByText("More partitions for orders")).toBeInTheDocument();
+    expect(within(block).getByText("Партиций: → 6")).toBeInTheDocument();
+    expect(within(block).getAllByText(/More partitions/)).toHaveLength(1);
+    expect(within(block).queryByText("More partitions for audit")).not.toBeInTheDocument();
+    // Значок: находка k1 (критично), замечание n1 (предупреждение), предложение p1 (критично).
+    expect(screen.getByTitle(/Требуют внимания: 3/)).toHaveAttribute(
+      "title",
+      "Требуют внимания: 3\nФактор репликации 1 у orders\nMore partitions for orders\nOrders is not replicated",
+    );
+    await user.click(within(block).getAllByRole("button", { name: "Удалить" })[1]);
+    expect(api.deleteProposal).toHaveBeenCalledWith("c1", "p1");
   });
 });
 

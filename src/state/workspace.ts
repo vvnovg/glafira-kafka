@@ -1,19 +1,22 @@
 import { create } from "zustand";
 
-import type { ProduceMessage, ProducerSettings } from "../api/types";
+import type { ProduceMessage, ProducerSettings, Proposal } from "../api/types";
 
 export type ProducerPrefill = { message: ProduceMessage; settings?: ProducerSettings; nonce: number };
 
 export type ResetPrefill = { topic: string; partition: number; offset: number; nonce: number };
 
+/** Предложение LLM, которое открывает заполненную форму вкладки (G3); `nonce` — повторное открытие обновляет заполнение. */
+export type ProposalPrefill = { proposal: Proposal; nonce: number };
+
 export type TabSpec =
   | { kind: "cluster"; connectionId: string }
-  | { kind: "topics"; connectionId: string }
-  | { kind: "topic"; connectionId: string; topic: string }
+  | { kind: "topics"; connectionId: string; proposal?: ProposalPrefill }
+  | { kind: "topic"; connectionId: string; topic: string; proposal?: ProposalPrefill }
   | { kind: "groups"; connectionId: string }
-  /** «Замечания»: находки проверки кластера и замечания LLM (G2). */
+  /** «Замечания»: находки проверки кластера, замечания и предложения LLM (G2, G3). */
   | { kind: "findings"; connectionId: string }
-  | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill }
+  | { kind: "group"; connectionId: string; groupId: string; resetPrefill?: ResetPrefill; proposal?: ProposalPrefill }
   | { kind: "producer"; connectionId: string; prefill?: ProducerPrefill }
   | { kind: "consumer"; connectionId: string; key: string; topic?: string; groupId?: string }
   /** folderId — папка нового подключения («Новое подключение здесь»). */

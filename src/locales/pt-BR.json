@@ -1403,7 +1403,8 @@
     },
     "health": {
       "check": "Executa as regras integradas do Glafira: partições e replicação, configurações de tópicos e brokers, consumer groups. A gravidade depende do ambiente da conexão. A verificação apenas lê o cluster.",
-      "hidden": "Constatações que você ocultou para um objeto específico. Elas não contam nos selos; assistentes LLM as veem marcadas como ocultas."
+      "hidden": "Constatações que você ocultou para um objeto específico. Elas não contam nos selos; assistentes LLM as veem marcadas como ocultas.",
+      "proposals": "Uma alteração sugerida por um assistente LLM. Nada é aplicado até você abri-la em um formulário e confirmar; antes é possível editar os valores."
     }
   }
 }

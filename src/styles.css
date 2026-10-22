@@ -183,6 +183,8 @@ label.inline { display: inline-flex; gap: 4px; align-items: center; white-space:
 .finding-actions { display: flex; gap: 12px; }
 .finding.is-hidden, .finding.is-closed { opacity: 0.65; }
 .note-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.proposal-change { overflow-wrap: anywhere; }
+.proposal-reject { display: inline-flex; gap: 8px; align-items: center; }
 .health-badge { margin-left: 4px; }
 .health-block { border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
 .health-block h3 { margin: 0 0 4px; font-size: 14px; }

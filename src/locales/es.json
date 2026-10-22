@@ -1403,7 +1403,8 @@
     },
     "health": {
       "check": "Ejecuta las reglas integradas de Glafira: particiones y replicación, configuración de topics y brokers, consumer groups. La gravedad depende del entorno de la conexión. La comprobación solo lee el clúster.",
-      "hidden": "Hallazgos que ocultaste para un objeto concreto. No cuentan en las insignias; los asistentes LLM los ven marcados como ocultos."
+      "hidden": "Hallazgos que ocultaste para un objeto concreto. No cuentan en las insignias; los asistentes LLM los ven marcados como ocultos.",
+      "proposals": "Un cambio que sugiere un asistente LLM. Nada se aplica hasta que lo abras en un formulario y lo confirmes; antes puedes editar los valores."
     }
   }
 }

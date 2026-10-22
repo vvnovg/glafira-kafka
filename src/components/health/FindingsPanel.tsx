@@ -7,12 +7,13 @@ import { Hint } from "../common/Hint";
 import { CheckBar } from "./CheckBar";
 import { findingsOf, SEVERITIES } from "./findings";
 import { FindingItem, NoteItem, SeverityMark } from "./parts";
+import { ProposalItem } from "./ProposalItem";
 
 const KINDS: TargetKind[] = ["cluster", "broker", "topic", "group"];
 
 type Source = "all" | "rules" | "llm";
 
-/** Вкладка «Замечания»: находки последней проверки по правилам и замечания LLM (спец. G2 §7). */
+/** Вкладка «Замечания»: находки последней проверки по правилам, замечания и предложения LLM (спец. G2 §7, G3 §7). */
 export function FindingsPanel({ connectionId }: { connectionId: string }) {
   const { t } = useTranslation();
   const health = useHealth(connectionId);
@@ -23,6 +24,7 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
   const [query, setQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [confirmAll, setConfirmAll] = useState(false);
+  const [confirmAllProposals, setConfirmAllProposals] = useState(false);
 
   const view = health.data;
   const hidden = new Set(view?.ignored ?? []);
@@ -38,9 +40,25 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
   const notes = source === "rules" ? [] : (view?.annotations ?? []).filter(matches);
   const open = notes.filter((a) => a.status === "open");
   const closed = notes.filter((a) => a.status !== "open");
+  const proposals = source === "rules" ? [] : (view?.proposals ?? []).filter(matches);
+  const openProposals = proposals.filter((p) => p.status === "open");
+  const closedProposals = proposals.filter((p) => p.status !== "open");
   const busy =
-    actions.ignore.isPending || actions.setStatus.isPending || actions.remove.isPending || actions.removeAll.isPending;
-  const error = actions.ignore.error ?? actions.setStatus.error ?? actions.remove.error ?? actions.removeAll.error;
+    actions.ignore.isPending ||
+    actions.setStatus.isPending ||
+    actions.remove.isPending ||
+    actions.removeAll.isPending ||
+    actions.setProposalStatus.isPending ||
+    actions.removeProposal.isPending ||
+    actions.removeAllProposals.isPending;
+  const error =
+    actions.ignore.error ??
+    actions.setStatus.error ??
+    actions.remove.error ??
+    actions.removeAll.error ??
+    actions.setProposalStatus.error ??
+    actions.removeProposal.error ??
+    actions.removeAllProposals.error;
   const filtered = severity !== "all" || kind !== "all" || q !== "";
 
   return (
@@ -109,6 +127,66 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
               </ul>
             </details>
           ))}
+        </section>
+      )}
+
+      {source !== "rules" && (
+        <section aria-labelledby="health-proposals">
+          <h3 id="health-proposals">
+            {t("health.proposals.title")} <Hint k="hints.health.proposals" label={t("health.proposals.title")} />
+          </h3>
+          <p className="hint">{t("health.proposals.intro")}</p>
+          {openProposals.length === 0 && <p className="empty">{filtered ? t("health.nothingMatches") : t("health.proposals.none")}</p>}
+          <ul className="finding-list">
+            {openProposals.map((p) => (
+              <ProposalItem
+                key={p.id}
+                connectionId={connectionId}
+                proposal={p}
+                busy={busy}
+                onStatus={(status, reason) => actions.setProposalStatus.mutate({ id: p.id, status, reason })}
+                onDelete={() => actions.removeProposal.mutate(p.id)}
+              />
+            ))}
+          </ul>
+          {closedProposals.length > 0 && (
+            <details className="finding-group">
+              <summary>{t("health.closedNotes", { count: closedProposals.length })}</summary>
+              <ul className="finding-list">
+                {closedProposals.map((p) => (
+                  <ProposalItem
+                    key={p.id}
+                    connectionId={connectionId}
+                    proposal={p}
+                    busy={busy}
+                    onStatus={(status, reason) => actions.setProposalStatus.mutate({ id: p.id, status, reason })}
+                    onDelete={() => actions.removeProposal.mutate(p.id)}
+                  />
+                ))}
+              </ul>
+            </details>
+          )}
+          {(view?.proposals.length ?? 0) > 0 &&
+            (confirmAllProposals ? (
+              <p role="alert">
+                {t("health.proposals.deleteAllConfirm")}{" "}
+                <button
+                  type="button"
+                  className="danger"
+                  disabled={busy}
+                  onClick={() => actions.removeAllProposals.mutate(undefined, { onSettled: () => setConfirmAllProposals(false) })}
+                >
+                  {t("health.proposals.deleteAll")}
+                </button>{" "}
+                <button type="button" onClick={() => setConfirmAllProposals(false)}>
+                  {t("common.cancel")}
+                </button>
+              </p>
+            ) : (
+              <button type="button" className="link danger" disabled={busy} onClick={() => setConfirmAllProposals(true)}>
+                {t("health.proposals.deleteAll")}
+              </button>
+            ))}
         </section>
       )}
 

@@ -1403,7 +1403,8 @@
     },
     "health": {
       "check": "Esegue le regole integrate di Glafira: partizioni e replica, configurazioni di topic e broker, consumer group. La gravità dipende dall’ambiente della connessione. Il controllo legge soltanto il cluster.",
-      "hidden": "Rilievi che hai nascosto per un oggetto specifico. Non contano nei badge; gli assistenti LLM li vedono contrassegnati come nascosti."
+      "hidden": "Rilievi che hai nascosto per un oggetto specifico. Non contano nei badge; gli assistenti LLM li vedono contrassegnati come nascosti.",
+      "proposals": "Una modifica suggerita da un assistente LLM. Nulla viene applicato finché non la apri in un modulo e la confermi; prima puoi modificare i valori."
     }
   }
 }

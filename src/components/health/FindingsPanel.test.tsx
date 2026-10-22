@@ -1,8 +1,10 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Annotation, Finding, HealthView } from "../../api/types";
+import type { Annotation, Finding, HealthView, Proposal } from "../../api/types";
+import { useWorkspace } from "../../state/workspace";
 import { renderWithClient } from "../../test/render";
+import { newProfile } from "../connections/profile";
 
 vi.mock("../../api/client", async (importOriginal) => {
   const orig = await importOriginal<typeof import("../../api/client")>();
@@ -16,6 +18,9 @@ vi.mock("../../api/client", async (importOriginal) => {
       setAnnotationStatus: vi.fn(),
       deleteAnnotation: vi.fn(),
       deleteAllAnnotations: vi.fn(),
+      setProposalStatus: vi.fn(),
+      deleteProposal: vi.fn(),
+      deleteAllProposals: vi.fn(),
     },
   };
 });
@@ -69,7 +74,27 @@ function view(p: Partial<HealthView> = {}): HealthView {
   };
 }
 
-beforeEach(() => vi.clearAllMocks());
+const proposal = (id: string, status: Proposal["status"] = "open"): Proposal => ({
+  id,
+  severity: "warning",
+  title: `Proposal ${id}`,
+  rationale: "acks=all\nneeds two replicas",
+  target: { kind: "topic", name: "orders" },
+  change: { kind: "alterTopicConfigs", topic: "orders", changes: [{ name: "min.insync.replicas", value: "2" }] },
+  relatedRuleId: "topic.minIsrOne",
+  client: "claude-code",
+  createdAtMs: 1,
+  updatedAtMs: 1,
+  status,
+  ...(status === "applied" ? { closedAtMs: Date.now() - 60_000, appliedAsProposed: false } : {}),
+  ...(status === "rejected" ? { closedAtMs: Date.now() - 60_000, rejectReason: "позже" } : {}),
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(api.listConnections).mockResolvedValue([{ ...newProfile(), id: "c1", name: "dev-1", environment: "dev" }]);
+  useWorkspace.setState({ tabs: [], activeId: null });
+});
 
 describe("FindingsPanel", () => {
   it("запускает проверку и группирует находки по правилу", async () => {
@@ -123,7 +148,8 @@ describe("FindingsPanel", () => {
     await user.type(screen.getByRole("textbox", { name: "Поиск по имени" }), "bill");
     expect(screen.getByText("Группа billing пуста, но у неё есть лаг")).toBeInTheDocument();
     expect(screen.queryByText("Фактор репликации 1 у orders")).not.toBeInTheDocument();
-    expect(screen.getByText("Под фильтры ничего не подходит.")).toBeInTheDocument();
+    // Пустое состояние под фильтры — у замечаний и у предложений.
+    expect(screen.getAllByText("Под фильтры ничего не подходит.")).toHaveLength(2);
   });
 
   it("закрывает и удаляет замечания LLM", async () => {
@@ -153,5 +179,59 @@ describe("FindingsPanel", () => {
     expect(screen.getByText(/LLM-ассистенты, подключённые по MCP, могут оставлять здесь замечания/)).toBeInTheDocument();
     expect(screen.getByText("Замечаний LLM нет.")).toBeInTheDocument();
     expect(screen.queryByText(/Pro/)).not.toBeInTheDocument();
+  });
+
+  it("показывает предложения LLM, открывает форму и отклоняет с причиной", async () => {
+    vi.mocked(api.getHealth).mockResolvedValue(view({ proposals: [proposal("p1"), proposal("p2", "applied"), proposal("p3", "rejected")] }));
+    vi.mocked(api.setProposalStatus).mockResolvedValue(view({ proposals: [proposal("p1", "rejected"), proposal("p2", "applied"), proposal("p3", "rejected")] }));
+    const user = userEvent.setup();
+    renderWithClient(<FindingsPanel connectionId="c1" />);
+    const card = (await screen.findByText("Proposal p1")).closest("li")!;
+    expect(within(card).getByText("Конфиги топика: min.insync.replicas → 2")).toBeInTheDocument();
+    expect(within(card).getByText(/acks=all/)).toHaveClass("note-body");
+    expect(within(card).getByText("Предложение LLM · claude-code · min.insync.replicas равен 1")).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "orders" })).toBeInTheDocument();
+    // Закрытые — в свёрнутом разделе со статусами.
+    await user.click(screen.getByText("Закрытые (2)"));
+    expect(screen.getByText(/применено с правками/)).toBeInTheDocument();
+    expect(screen.getByText(/отклонено: позже/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Открыть снова" })).toBeInTheDocument();
+    // «Открыть в форме» — вкладка топика с предложением.
+    await user.click(within(card).getByRole("button", { name: "Открыть в форме" }));
+    const tab = useWorkspace.getState().tabs.find((x) => x.id === "topic:c1:orders");
+    expect(tab && "proposal" in tab && tab.proposal?.proposal.id).toBe("p1");
+    expect(useWorkspace.getState().activeId).toBe("topic:c1:orders");
+    // «Отклонить» спрашивает причину.
+    await user.click(within(card).getByRole("button", { name: "Отклонить" }));
+    await user.type(within(card).getByRole("textbox", { name: "Причина (необязательно)" }), "позже");
+    await user.click(within(card).getByRole("button", { name: "Отклонить предложение" }));
+    expect(api.setProposalStatus).toHaveBeenCalledWith("c1", "p1", "rejected", "позже");
+    await waitFor(() => expect(screen.getByText("Закрытые (3)")).toBeInTheDocument());
+  });
+
+  it("у read-only подключения «Открыть в форме» неактивна", async () => {
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...newProfile(), id: "c1", name: "ro", readOnly: true }]);
+    vi.mocked(api.getHealth).mockResolvedValue(view({ proposals: [proposal("p1")] }));
+    renderWithClient(<FindingsPanel connectionId="c1" />);
+    const btn = await screen.findByRole("button", { name: "Открыть в форме" });
+    await waitFor(() => expect(btn).toBeDisabled());
+    expect(btn).toHaveAttribute("title", "Подключение только для чтения");
+  });
+
+  it("фильтр «Правила» прячет предложения; «Удалить все предложения LLM» спрашивает на странице", async () => {
+    vi.mocked(api.getHealth).mockResolvedValue(view({ proposals: [proposal("p1")] }));
+    vi.mocked(api.deleteAllProposals).mockResolvedValue(view());
+    const user = userEvent.setup();
+    renderWithClient(<FindingsPanel connectionId="c1" />);
+    await screen.findByText("Proposal p1");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Источник" }), "rules");
+    expect(screen.queryByText("Proposal p1")).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Источник" }), "llm");
+    expect(screen.getByText("Proposal p1")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Удалить все предложения LLM" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Удалить все предложения LLM у этого подключения?");
+    await user.click(within(screen.getByRole("alert")).getByRole("button", { name: "Удалить все предложения LLM" }));
+    expect(api.deleteAllProposals).toHaveBeenCalledWith("c1");
+    await waitFor(() => expect(screen.getByText("Предложений LLM нет.")).toBeInTheDocument());
   });
 });

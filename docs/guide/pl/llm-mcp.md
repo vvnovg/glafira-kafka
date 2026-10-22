@@ -42,7 +42,8 @@ Asystent widzi:
 - brokery z hostami i portami, kontroler;
 - topiki, partycje, repliki, ISR, offsety, przybliżoną liczbę wiadomości;
 - konfiguracje brokerów i topików, przy czym hasła i inne wartości tajne są ukryte;
-- grupy konsumentów: stan, protokół, koordynator, członków z client id, hostem i `group.instance.id`, przypisania, zatwierdzone offsety i lag.
+- grupy konsumentów: stan, protokół, koordynator, członków z client id, hostem i `group.instance.id`, przypisania, zatwierdzone offsety i lag;
+- swoje propozycje i decyzje w ich sprawie: zastosowano (bez zmian lub ze zmianami), odrzucono z podanym powodem, wycofano.
 
 Asystent nie widzi wiadomości w topikach, ciągu bootstrap ani ustawień zabezpieczeń połączenia, haseł, certyfikatów, dodatkowych właściwości librdkafka, historii wysyłania ani szablonów.
 
@@ -61,9 +62,11 @@ Dopóki klient jest połączony, na dole lewego panelu widać wskaźnik `LLM` z 
 
 Aby całkowicie wyłączyć MCP, należy odznaczyć opcję [[ui:settings.mcp.enable]]: klienci zostaną rozłączeni.
 
-## Sprawdzanie klastra i notatki {#health}
+## Sprawdzanie klastra, notatki i propozycje {#health}
 
 Asystent może uruchomić wbudowane sprawdzenie klastra Glafira (narzędzie `health_check`) i opierać się na jego ustaleniach. Może też zostawiać notatki o obiektach: pojawiają się na karcie [[ui:sidebar.findings]] i na ekranach topików i grup, a klaster się nie zmienia. Zob. [Sprawdzanie klastra i notatki](health-check.md#with-llm).
+
+Asystent może też zaproponować zmianę narzędziem `propose_change`: konfigurację topiku, nowy topik, więcej partycji lub reset offsetów. Propozycja pojawia się obok obiektu; stosuje się ją samodzielnie w wypełnionym formularzu albo odrzuca, a asystent widzi decyzję w `list_proposals`. Usunięcia i czyszczenia nie da się zaproponować. Zob. [Propozycje LLM](health-check.md#proposals).
 
 ## Gdy nie działa {#troubleshooting}
 

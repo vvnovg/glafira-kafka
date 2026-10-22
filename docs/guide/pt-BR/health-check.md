@@ -37,6 +37,15 @@ Um assistente LLM conectado por MCP (consulte [Assistentes LLM (MCP)](llm-mcp.md
 - [[ui:common.delete]] exclui uma nota, e [[ui:health.deleteAll]] exclui todas as notas da conexão.
 - Uma nota é excluída automaticamente 7 dias depois de criada. Uma conexão pode ter no máximo 200 notas abertas.
 
+## Propostas de LLM {#proposals}
+
+Além de notas, um assistente LLM pode propor uma alteração: as configurações de um tópico, um novo tópico, mais partições ou a redefinição dos offsets de um consumer group vazio. A proposta aparece em [[ui:health.proposals.title]] na aba [[ui:sidebar.findings]] e na tela do tópico ou do grupo, com a justificativa do assistente, uma descrição da alteração e o nome do cliente. Nada é aplicado sozinho; exclusão e limpeza não podem ser propostas de forma alguma.
+
+- [[ui:health.proposals.openForm]] abre a aba do objeto com o formulário habitual já preenchido: o editor de configurações com a revisão “antes → depois”, o formulário de criação de tópico, o diálogo de partições ou a redefinição de offsets com pré-visualização. Edite os valores se quiser e confirme como de costume; em uma conexão prod, o Glafira pede o nome da conexão. Depois de uma alteração bem-sucedida a proposta é marcada como aplicada (com alterações, se você mudou algo), e o assistente vê isso em `list_proposals`.
+- [[ui:health.proposals.reject]] fecha uma proposta; você pode informar um motivo, e o assistente o verá. [[ui:health.reopen]] traz de volta uma proposta rejeitada.
+- Em uma conexão somente leitura a proposta é mantida, mas [[ui:health.proposals.openForm]] fica indisponível até você desmarcar somente leitura no formulário da conexão; o assistente também é informado disso.
+- [[ui:common.delete]] exclui uma proposta, [[ui:health.proposals.deleteAll]] exclui todas as propostas da conexão. Uma proposta é excluída automaticamente 7 dias depois de criada; uma conexão pode ter no máximo 50 propostas abertas.
+
 ## Com um assistente LLM {#with-llm}
 
 O assistente executa a mesma verificação com a ferramenta `health_check` e vê as mesmas constatações, inclusive as ocultas, que aparecem marcadas. Se a última verificação tem menos de 5 minutos, o assistente recebe o resultado dela sem consultar o cluster de novo. Peça, por exemplo: “Verifique a saúde do cluster e deixe notas sobre os problemas mais importantes.”

@@ -42,7 +42,8 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 - Broker 的主機和連接埠，以及控制器；
 - 主題、分區、複本、ISR、偏移量、訊息的大致數量；
 - Broker 和主題的設定，其中密碼和其他機密值會被隱藏；
-- 消費者群組：狀態、通訊協定、協調器、成員（含 client id、主機和 `group.instance.id`）、指派、已提交的偏移量和延遲。
+- 消費者群組：狀態、通訊協定、協調器、成員（含 client id、主機和 `group.instance.id`）、指派、已提交的偏移量和延遲；
+- 自己的建議以及你對它們的決定：已套用（原樣或已修改）、已拒絕（附你的原因）、已撤回。
 
 助理看不到主題中的訊息、連線的 Bootstrap 伺服器位址和安全性設定、密碼、憑證、librdkafka 的額外屬性、傳送歷程記錄和範本。
 
@@ -61,9 +62,11 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 
 若要完全關閉 MCP，請取消勾選[[ui:settings.mcp.enable]]：用戶端會被中斷連線。
 
-## 叢集檢查與註記 {#health}
+## 叢集檢查、註記與建議 {#health}
 
 助理可以執行 Glafira 內建的叢集檢查（`health_check` 工具），並以其檢查結果為依據。它還可以為物件留下註記：註記會顯示在[[ui:sidebar.findings]]分頁以及主題與消費者群組畫面中，叢集不會被變更。請參閱[叢集檢查與註記](health-check.md#with-llm)。
+
+助理也可以透過 `propose_change` 工具提出變更建議：主題設定、新主題、增加分區或重設偏移量。建議會顯示在物件旁邊，由你在已填好的表單中自行套用或拒絕；助理隨後可在 `list_proposals` 中看到你的決定。刪除和清空無法被建議。請參閱[LLM 建議](health-check.md#proposals)。
 
 ## 無法運作時 {#troubleshooting}
 

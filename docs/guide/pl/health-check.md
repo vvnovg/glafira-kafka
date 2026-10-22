@@ -37,6 +37,15 @@ Asystent LLM połączony przez MCP (zob. [Asystenci LLM (MCP)](llm-mcp.md#how-it
 - [[ui:common.delete]] usuwa notatkę, a [[ui:health.deleteAll]] usuwa wszystkie notatki połączenia.
 - Notatka jest usuwana automatycznie 7 dni po utworzeniu. Połączenie może mieć najwyżej 200 otwartych notatek.
 
+## Propozycje LLM {#proposals}
+
+Oprócz notatek asystent LLM może zaproponować zmianę: konfigurację topiku, nowy topik, więcej partycji lub reset offsetów pustej grupy konsumentów. Propozycja pojawia się w sekcji [[ui:health.proposals.title]] na karcie [[ui:sidebar.findings]] oraz na ekranie topiku lub grupy — z uzasadnieniem asystenta, opisem zmiany i nazwą klienta. Nic nie jest stosowane samo z siebie, a usunięcia i czyszczenia nie da się zaproponować wcale.
+
+- [[ui:health.proposals.openForm]] otwiera kartę obiektu ze zwykłym, już wypełnionym formularzem: edytorem konfiguracji z porównaniem „było → będzie”, formularzem tworzenia topiku, oknem partycji lub resetem offsetów z podglądem. W razie potrzeby popraw wartości i potwierdź jak zwykle; przy połączeniu prod Glafira poprosi o jego nazwę. Po udanej zmianie propozycja zostaje oznaczona jako zastosowana (ze zmianami, jeśli coś poprawiono), a asystent widzi to w `list_proposals`.
+- [[ui:health.proposals.reject]] zamyka propozycję; można podać powód, który zobaczy asystent. [[ui:health.reopen]] przywraca odrzuconą propozycję.
+- Przy połączeniu tylko do odczytu propozycja zostaje zachowana, ale [[ui:health.proposals.openForm]] jest niedostępne, dopóki tryb tylko do odczytu nie zostanie wyłączony w formularzu połączenia; asystent też się o tym dowiaduje.
+- [[ui:common.delete]] usuwa propozycję, [[ui:health.proposals.deleteAll]] — wszystkie propozycje połączenia. Propozycja jest usuwana automatycznie 7 dni po utworzeniu; połączenie może mieć najwyżej 50 otwartych propozycji.
+
 ## Razem z asystentem LLM {#with-llm}
 
 Asystent uruchamia to samo sprawdzenie narzędziem `health_check` i widzi te same ustalenia, w tym ukryte, oznaczone jako ukryte. Jeśli ostatnie sprawdzenie ma mniej niż 5 minut, asystent dostaje jego wynik bez ponownego odpytywania klastra. Można na przykład poprosić: „Sprawdź stan klastra i zostaw notatki o najważniejszych problemach”.

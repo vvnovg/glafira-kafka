@@ -97,6 +97,10 @@ DNS, TCP, ID, MCP, LLM, stdio, Claude Desktop, Claude Code, Cursor, Build (сб�
 | critical / warning / info | критично / предупреждение / информация | Kritisch / Warnung / Hinweis | Critique / Avertissement / Information | Crítico / Advertencia / Información | Critico / Avviso / Informazione | Krytyczne / Ostrzeżenie / Informacja | Crítico / Aviso / Informação | 严重 / 警告 / 信息 | 嚴重 / 警告 / 資訊 | 重大 / 警告 / 情報 | 심각 / 경고 / 정보 |
 | hide for this object | скрыть для этого объекта | für dieses Objekt ausblenden | masquer pour cet objet | ocultar para este objeto | nascondi per questo oggetto | ukryj dla tego obiektu | ocultar para este objeto | 对此对象隐藏 | 對此物件隱藏 | このオブジェクトで非表示 | 이 개체에서 숨기기 |
 | badge (число у объекта в дереве и списках) | значок | Badge (das, Pl. Badges) | badge (m.) | insignia (как цветная метка окружения; не «indicador» — это индикатор `LLM` в панели) | badge (m.) | znaczek | selo (как цветная метка окружения; не «indicador» — это индикатор `LLM` в панели) | 标记 | 標記 | バッジ | 배지 |
+| proposal (предложение LLM) | предложение LLM | LLM-Vorschlag | proposition LLM | propuesta LLM | proposta LLM | propozycja LLM | proposta de LLM | LLM 建议 | LLM 建議 | LLMの提案 | LLM 제안 |
+| open in form (кнопка предложения) | открыть в форме | im Formular öffnen | ouvrir dans le formulaire | abrir en el formulario | apri nel modulo | otwórz w formularzu | abrir no formulário | 在表单中打开 | 在表單中開啟 | フォームで開く | 양식에서 열기 |
+| applied / applied with edits (статус предложения) | применено / применено с правками | angewendet / mit Änderungen angewendet | appliquée / appliquée avec des modifications | aplicada / aplicada con cambios | applicata / applicata con modifiche | zastosowano / zastosowano ze zmianami | aplicada / aplicada com alterações | 已应用 / 已修改后应用 | 已套用 / 已修改後套用 | 適用 / 修正して適用 | 적용됨 / 수정하여 적용됨 |
+| reject / withdraw (предложение) | отклонить / отозвать | ablehnen / zurückziehen | rejeter / retirer | rechazar / retirar | rifiuta / ritira | odrzuć / wycofaj | rejeitar / retirar | 拒绝 / 撤回 | 拒絕 / 撤回 | 却下 / 取り下げ | 거부 / 철회 |
 
 ## Частые слова интерфейса
 

@@ -37,6 +37,15 @@ Ein über MCP verbundener LLM-Assistent (siehe [LLM-Assistenten (MCP)](llm-mcp.m
 - [[ui:common.delete]] entfernt eine Anmerkung, [[ui:health.deleteAll]] entfernt alle Anmerkungen der Verbindung.
 - Eine Anmerkung wird 7 Tage nach dem Erstellen automatisch entfernt. Eine Verbindung kann höchstens 200 offene Anmerkungen haben.
 
+## LLM-Vorschläge {#proposals}
+
+Neben Anmerkungen kann ein LLM-Assistent eine Änderung vorschlagen: Topic-Konfiguration, ein neues Topic, mehr Partitionen oder das Zurücksetzen der Offsets einer leeren Consumer Group. Ein Vorschlag erscheint unter [[ui:health.proposals.title]] im Tab [[ui:sidebar.findings]] und auf dem Bildschirm des Topics oder der Gruppe — mit der Begründung des Assistenten, einer Beschreibung der Änderung und dem Namen des Clients. Von selbst wird nichts angewendet; Löschen und Leeren lassen sich gar nicht vorschlagen.
+
+- [[ui:health.proposals.openForm]] öffnet den Tab des Objekts mit dem gewohnten, bereits ausgefüllten Formular: dem Konfigurationseditor mit Vorher-nachher-Prüfung, dem Formular zum Anlegen eines Topics, dem Partitionsdialog oder dem Zurücksetzen der Offsets mit Vorschau. Ändern Sie die Werte bei Bedarf und bestätigen Sie wie gewohnt; bei einer Prod-Verbindung fragt Glafira nach ihrem Namen. Nach einer erfolgreichen Änderung wird der Vorschlag als angewendet markiert (mit Änderungen, falls Sie etwas geändert haben), und der Assistent sieht das in `list_proposals`.
+- [[ui:health.proposals.reject]] schließt einen Vorschlag; Sie können einen Grund angeben, den der Assistent sieht. [[ui:health.reopen]] holt einen abgelehnten Vorschlag zurück.
+- Bei einer schreibgeschützten Verbindung bleibt der Vorschlag erhalten, aber [[ui:health.proposals.openForm]] ist nicht verfügbar, bis Sie den Schreibschutz im Verbindungsformular aufheben; der Assistent erfährt das ebenfalls.
+- [[ui:common.delete]] entfernt einen Vorschlag, [[ui:health.proposals.deleteAll]] entfernt alle Vorschläge der Verbindung. Ein Vorschlag wird 7 Tage nach dem Erstellen automatisch entfernt; eine Verbindung kann höchstens 50 offene Vorschläge haben.
+
 ## Mit einem LLM-Assistenten {#with-llm}
 
 Der Assistent führt dieselbe Prüfung mit dem Tool `health_check` aus und sieht dieselben Befunde, auch ausgeblendete, die markiert sind. Ist die letzte Prüfung jünger als 5 Minuten, erhält der Assistent ihr Ergebnis, ohne den Cluster erneut abzufragen. Bitten Sie zum Beispiel: „Prüfe den Zustand des Clusters und hinterlasse Anmerkungen zu den wichtigsten Problemen.“

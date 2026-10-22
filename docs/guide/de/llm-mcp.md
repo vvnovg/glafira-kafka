@@ -42,7 +42,8 @@ Der Assistent sieht:
 - Broker mit Hosts und Ports, den Controller;
 - Topics, Partitionen, Replikate, ISR, Offsets, die ungefähre Anzahl der Nachrichten;
 - Konfigurationen von Brokern und Topics, wobei Passwörter und andere geheime Werte verborgen sind;
-- Consumer Groups: Status, Protokoll, Koordinator, Mitglieder mit Client-ID, Host und `group.instance.id`, Zuweisungen, committete Offsets und Lag.
+- Consumer Groups: Status, Protokoll, Koordinator, Mitglieder mit Client-ID, Host und `group.instance.id`, Zuweisungen, committete Offsets und Lag;
+- seine Vorschläge und Ihre Entscheidung dazu: angewendet (unverändert oder mit Änderungen), abgelehnt mit Ihrem Grund, zurückgezogen.
 
 Der Assistent sieht keine Nachrichten in Topics, keine Bootstrap-Zeichenfolge und keine Sicherheitseinstellungen einer Verbindung, keine Passwörter, Zertifikate und zusätzlichen librdkafka-Eigenschaften, keinen Sendeverlauf und keine Vorlagen.
 
@@ -61,9 +62,11 @@ Solange ein Client verbunden ist, erscheint unten im linken Bereich die Anzeige 
 
 Um MCP ganz auszuschalten, deaktivieren Sie [[ui:settings.mcp.enable]]: Die Clients werden getrennt.
 
-## Clusterprüfung und Anmerkungen {#health}
+## Clusterprüfung, Anmerkungen und Vorschläge {#health}
 
 Der Assistent kann die integrierte Clusterprüfung von Glafira (Tool `health_check`) ausführen und sich auf ihre Befunde stützen. Er kann außerdem Anmerkungen zu Objekten hinterlassen: Sie erscheinen im Tab [[ui:sidebar.findings]] und auf den Bildschirmen von Topics und Gruppen, der Cluster wird dabei nicht geändert. Siehe [Clusterprüfung und Anmerkungen](health-check.md#with-llm).
+
+Der Assistent kann mit dem Tool `propose_change` auch eine Änderung vorschlagen: Topic-Konfiguration, ein neues Topic, mehr Partitionen oder das Zurücksetzen von Offsets. Der Vorschlag erscheint neben dem Objekt; Sie wenden ihn selbst in einem ausgefüllten Formular an oder lehnen ihn ab, und der Assistent sieht Ihre Entscheidung in `list_proposals`. Löschen und Leeren lassen sich nicht vorschlagen. Siehe [LLM-Vorschläge](health-check.md#proposals).
 
 ## Wenn es nicht funktioniert {#troubleshooting}
 

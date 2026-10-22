@@ -37,6 +37,15 @@ Un assistente LLM collegato tramite MCP (vedi [Assistenti LLM (MCP)](llm-mcp.md#
 - [[ui:common.delete]] elimina una nota e [[ui:health.deleteAll]] elimina tutte le note della connessione.
 - Una nota viene eliminata automaticamente 7 giorni dopo la creazione. Una connessione può avere al massimo 200 note aperte.
 
+## Proposte LLM {#proposals}
+
+Oltre alle note, un assistente LLM può proporre una modifica: la configurazione di un topic, un nuovo topic, più partizioni o il reset degli offset di un consumer group vuoto. La proposta compare in [[ui:health.proposals.title]] nella scheda [[ui:sidebar.findings]] e nella schermata del topic o del gruppo, con la motivazione dell’assistente, una descrizione della modifica e il nome del client. Nulla viene applicato da solo; eliminazione e svuotamento non si possono proporre affatto.
+
+- [[ui:health.proposals.openForm]] apre la scheda dell’oggetto con il modulo consueto già compilato: l’editor di configurazione con il confronto “prima → dopo”, il modulo di creazione del topic, la finestra delle partizioni o il reset degli offset con anteprima. Modifica i valori se vuoi e conferma come al solito; su una connessione prod Glafira chiede il nome della connessione. Dopo una modifica riuscita la proposta viene segnata come applicata (con modifiche, se hai cambiato qualcosa), e l’assistente lo vede in `list_proposals`.
+- [[ui:health.proposals.reject]] chiude una proposta; puoi indicare un motivo, che l’assistente vedrà. [[ui:health.reopen]] ripristina una proposta rifiutata.
+- Su una connessione in sola lettura la proposta resta, ma [[ui:health.proposals.openForm]] non è disponibile finché non togli la sola lettura nel modulo della connessione; anche l’assistente ne viene informato.
+- [[ui:common.delete]] elimina una proposta, [[ui:health.proposals.deleteAll]] elimina tutte le proposte della connessione. Una proposta viene eliminata automaticamente 7 giorni dopo la creazione; una connessione può avere al massimo 50 proposte aperte.
+
 ## Con un assistente LLM {#with-llm}
 
 L’assistente avvia lo stesso controllo con lo strumento `health_check` e vede gli stessi rilievi, compresi quelli nascosti, che sono contrassegnati. Se l’ultimo controllo ha meno di 5 minuti, l’assistente ne riceve il risultato senza interrogare di nuovo il cluster. Chiedi per esempio: “Controlla lo stato del cluster e lascia note sui problemi più importanti”.

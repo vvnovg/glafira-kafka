@@ -42,7 +42,8 @@ El asistente ve:
 - los brokers con sus hosts y puertos, el controlador;
 - los topics, las particiones, las réplicas, ISR, los offsets, el número aproximado de mensajes;
 - las configuraciones de brokers y topics, con las contraseñas y otros valores secretos ocultos;
-- los consumer groups: estado, protocolo, coordinador, miembros con client id, host y `group.instance.id`, asignaciones, offsets con commit y lag.
+- los consumer groups: estado, protocolo, coordinador, miembros con client id, host y `group.instance.id`, asignaciones, offsets con commit y lag;
+- sus propuestas y tu decisión sobre ellas: aplicada (tal cual o con cambios), rechazada con tu motivo, retirada.
 
 El asistente no ve los mensajes de los topics, la cadena bootstrap ni los ajustes de seguridad de una conexión, ni las contraseñas, los certificados, las propiedades adicionales de librdkafka, el historial de envíos ni las plantillas.
 
@@ -61,9 +62,11 @@ Mientras hay un cliente conectado, en la parte inferior del panel izquierdo se m
 
 Para desactivar MCP por completo, desmarca [[ui:settings.mcp.enable]]: los clientes se desconectan.
 
-## Comprobación del clúster y notas {#health}
+## Comprobación del clúster, notas y propuestas {#health}
 
 El asistente puede ejecutar la comprobación integrada del clúster de Glafira (herramienta `health_check`) y basarse en sus hallazgos. También puede dejar notas sobre los objetos: aparecen en la pestaña [[ui:sidebar.findings]] y en las pantallas de topics y grupos, y el clúster no cambia. Consulta [Comprobación del clúster y notas](health-check.md#with-llm).
+
+El asistente también puede proponer un cambio con la herramienta `propose_change`: la configuración de un topic, un topic nuevo, más particiones o un restablecimiento de offsets. La propuesta aparece junto al objeto; la aplicas tú en un formulario ya relleno o la rechazas, y el asistente ve tu decisión en `list_proposals`. Eliminar y vaciar no se pueden proponer. Consulta [Propuestas LLM](health-check.md#proposals).
 
 ## Si no funciona {#troubleshooting}
 

@@ -42,7 +42,8 @@ Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor
 - Broker 的主机和端口，以及控制器；
 - 主题、分区、副本、ISR、偏移量、消息的大致数量；
 - Broker 和主题的配置，其中密码和其他机密值会被隐藏；
-- 消费者组：状态、协议、协调器、成员（含 client id、主机和 `group.instance.id`）、分配、已提交的偏移量和延迟。
+- 消费者组：状态、协议、协调器、成员（含 client id、主机和 `group.instance.id`）、分配、已提交的偏移量和延迟；
+- 自己的建议以及你对它们的决定：已应用（原样或已修改）、已拒绝（附你的原因）、已撤回。
 
 助手看不到主题中的消息、连接的 Bootstrap 服务器地址和安全设置、密码、证书、librdkafka 的附加属性、发送历史记录和模板。
 
@@ -61,9 +62,11 @@ Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor
 
 要完全关闭 MCP，请取消选中[[ui:settings.mcp.enable]]：客户端会被断开。
 
-## 集群检查与批注 {#health}
+## 集群检查、批注与建议 {#health}
 
 助手可以运行 Glafira 内置的集群检查（`health_check` 工具），并以其检查结果为依据。它还可以为对象留下批注：批注显示在[[ui:sidebar.findings]]标签页以及主题和消费者组页面中，集群不会被更改。参见[集群检查与批注](health-check.md#with-llm)。
+
+助手还可以通过 `propose_change` 工具提出更改建议：主题配置、新主题、增加分区或重置偏移量。建议显示在对象旁边，由你在已填好的表单中自行应用或拒绝；助手随后可在 `list_proposals` 中看到你的决定。删除和清空无法被建议。参见[LLM 建议](health-check.md#proposals)。
 
 ## 无法使用时 {#troubleshooting}
 

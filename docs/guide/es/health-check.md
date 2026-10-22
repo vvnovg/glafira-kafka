@@ -37,6 +37,15 @@ Un asistente LLM conectado por MCP (consulta [Asistentes LLM (MCP)](llm-mcp.md#h
 - [[ui:common.delete]] elimina una nota y [[ui:health.deleteAll]] elimina todas las notas de la conexión.
 - Una nota se elimina automáticamente 7 días después de crearse. Una conexión puede tener como máximo 200 notas abiertas.
 
+## Propuestas LLM {#proposals}
+
+Además de notas, un asistente LLM puede proponer un cambio: la configuración de un topic, un topic nuevo, más particiones o el restablecimiento de los offsets de un consumer group vacío. La propuesta aparece en [[ui:health.proposals.title]] de la pestaña [[ui:sidebar.findings]] y en la pantalla del topic o del grupo, con la justificación del asistente, una descripción del cambio y el nombre del cliente. Nada se aplica por sí solo; eliminar y vaciar no se pueden proponer en absoluto.
+
+- [[ui:health.proposals.openForm]] abre la pestaña del objeto con el formulario habitual ya relleno: el editor de configuración con la revisión “antes → después”, el formulario de creación de topic, el diálogo de particiones o el restablecimiento de offsets con vista previa. Edita los valores si quieres y confirma como siempre; en una conexión prod, Glafira pide el nombre de la conexión. Tras un cambio correcto la propuesta se marca como aplicada (con cambios, si modificaste algo), y el asistente lo ve en `list_proposals`.
+- [[ui:health.proposals.reject]] cierra una propuesta; puedes indicar un motivo, y el asistente lo verá. [[ui:health.reopen]] recupera una propuesta rechazada.
+- En una conexión de solo lectura la propuesta se conserva, pero [[ui:health.proposals.openForm]] no está disponible hasta que quites la solo lectura en el formulario de conexión; al asistente también se le informa.
+- [[ui:common.delete]] elimina una propuesta, [[ui:health.proposals.deleteAll]] elimina todas las propuestas de la conexión. Una propuesta se elimina automáticamente 7 días después de crearse; una conexión puede tener como máximo 50 propuestas abiertas.
+
 ## Con un asistente LLM {#with-llm}
 
 El asistente ejecuta la misma comprobación con la herramienta `health_check` y ve los mismos hallazgos, incluidos los ocultos, que aparecen marcados. Si la última comprobación tiene menos de 5 minutos, el asistente recibe su resultado sin volver a consultar el clúster. Pide, por ejemplo: “Comprueba el estado del clúster y deja notas sobre los problemas más importantes”.

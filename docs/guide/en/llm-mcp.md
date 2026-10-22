@@ -42,7 +42,8 @@ The assistant sees:
 - brokers with hosts and ports, the controller;
 - topics, partitions, replicas, ISR, offsets, approximate message counts;
 - broker and topic configs, with passwords and other secret values hidden;
-- consumer groups: state, protocol, coordinator, members with client id, host and `group.instance.id`, assignments, committed offsets and lag.
+- consumer groups: state, protocol, coordinator, members with client id, host and `group.instance.id`, assignments, committed offsets and lag;
+- its proposals and your decision on them: applied (unchanged or with edits), rejected with your reason, withdrawn.
 
 The assistant does not see topic messages, the bootstrap string or the security settings of a connection, passwords, certificates, additional librdkafka properties, the send history or templates.
 
@@ -61,9 +62,11 @@ While a client is connected, an `LLM` indicator with the client name is shown at
 
 To turn MCP off completely, clear [[ui:settings.mcp.enable]]: clients are disconnected.
 
-## Cluster check and notes {#health}
+## Cluster check, notes and proposals {#health}
 
 The assistant can run Glafira's built-in cluster check (the `health_check` tool) and rely on its findings. It can also leave notes about objects: they appear on the [[ui:sidebar.findings]] tab and on the topic and group screens, and the cluster is not changed. See [Cluster check and notes](health-check.md#with-llm).
+
+The assistant can also propose a change with the `propose_change` tool: topic configs, a new topic, more partitions or an offset reset. The proposal appears next to the object, and you apply it yourself in a pre-filled form or reject it; the assistant then sees your decision in `list_proposals`. Deleting and purging cannot be proposed. See [LLM proposals](health-check.md#proposals).
 
 ## If it does not work {#troubleshooting}
 

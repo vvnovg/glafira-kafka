@@ -37,6 +37,15 @@ Un assistant LLM connecté par MCP (voir [Assistants LLM (MCP)](llm-mcp.md#how-i
 - [[ui:common.delete]] supprime une remarque, [[ui:health.deleteAll]] supprime toutes les remarques de la connexion.
 - Une remarque est supprimée automatiquement 7 jours après sa création. Une connexion peut avoir au plus 200 remarques ouvertes.
 
+## Propositions LLM {#proposals}
+
+En plus des remarques, un assistant LLM peut proposer une modification : la configuration d’un topic, un nouveau topic, davantage de partitions ou la réinitialisation des offsets d’un consumer group vide. Une proposition apparaît dans [[ui:health.proposals.title]] de l’onglet [[ui:sidebar.findings]] et sur l’écran du topic ou du groupe, avec la justification de l’assistant, une description de la modification et le nom du client. Rien n’est appliqué tout seul ; la suppression et la purge ne peuvent pas du tout être proposées.
+
+- [[ui:health.proposals.openForm]] ouvre l’onglet de l’objet avec le formulaire habituel déjà rempli : l’éditeur de configuration avec sa vérification avant / après, le formulaire de création de topic, la boîte de dialogue des partitions ou la réinitialisation des offsets avec aperçu. Modifiez les valeurs si besoin et confirmez comme d’habitude ; sur une connexion prod, Glafira demande le nom de la connexion. Après une modification réussie, la proposition est marquée comme appliquée (avec des modifications si vous avez changé quelque chose), et l’assistant le voit dans `list_proposals`.
+- [[ui:health.proposals.reject]] ferme une proposition ; vous pouvez indiquer un motif, que l’assistant verra. [[ui:health.reopen]] rétablit une proposition rejetée.
+- Sur une connexion en lecture seule, la proposition est conservée, mais [[ui:health.proposals.openForm]] est indisponible tant que vous ne désactivez pas la lecture seule dans le formulaire de connexion ; l’assistant en est aussi informé.
+- [[ui:common.delete]] supprime une proposition, [[ui:health.proposals.deleteAll]] supprime toutes les propositions de la connexion. Une proposition est supprimée automatiquement 7 jours après sa création ; une connexion peut avoir au plus 50 propositions ouvertes.
+
 ## Avec un assistant LLM {#with-llm}
 
 L’assistant lance la même vérification avec l’outil `health_check` et voit les mêmes constats, y compris les constats masqués, qui sont signalés. Si la dernière vérification date de moins de 5 minutes, l’assistant reçoit son résultat sans interroger à nouveau le cluster. Demandez par exemple : « Vérifie l’état du cluster et laisse des remarques sur les problèmes les plus importants. »

@@ -42,7 +42,8 @@ O assistente vê:
 - os brokers com hosts e portas, o controlador;
 - os tópicos, as partições, as réplicas, ISR, os offsets, o número aproximado de mensagens;
 - as configurações de brokers e tópicos, com senhas e outros valores secretos ocultos;
-- os consumer groups: estado, protocolo, coordenador, membros com client id, host e `group.instance.id`, atribuições, offsets com commit e lag.
+- os consumer groups: estado, protocolo, coordenador, membros com client id, host e `group.instance.id`, atribuições, offsets com commit e lag;
+- as próprias propostas e a sua decisão sobre elas: aplicada (como está ou com alterações), rejeitada com o seu motivo, retirada.
 
 O assistente não vê as mensagens dos tópicos, a string de bootstrap nem as configurações de segurança de uma conexão, nem as senhas, os certificados, as propriedades adicionais do librdkafka, o histórico de envio e os modelos.
 
@@ -61,9 +62,11 @@ Enquanto um cliente está conectado, na parte inferior do painel esquerdo aparec
 
 Para desativar o MCP por completo, desmarque [[ui:settings.mcp.enable]]: os clientes são desconectados.
 
-## Verificação do cluster e notas {#health}
+## Verificação do cluster, notas e propostas {#health}
 
 O assistente pode executar a verificação integrada do cluster do Glafira (ferramenta `health_check`) e se basear nas constatações dela. Ele também pode deixar notas sobre os objetos: elas aparecem na aba [[ui:sidebar.findings]] e nas telas de tópicos e grupos, e o cluster não é alterado. Consulte [Verificação do cluster e notas](health-check.md#with-llm).
+
+O assistente também pode propor uma alteração com a ferramenta `propose_change`: as configurações de um tópico, um novo tópico, mais partições ou uma redefinição de offsets. A proposta aparece ao lado do objeto; você mesmo a aplica em um formulário pré-preenchido ou a rejeita, e o assistente vê sua decisão em `list_proposals`. Exclusão e limpeza não podem ser propostas. Consulte [Propostas de LLM](health-check.md#proposals).
 
 ## Se não funcionar {#troubleshooting}
 

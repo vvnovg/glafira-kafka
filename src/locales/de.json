@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "Die Anmerkung wurde gelöscht oder ist abgelaufen",
-      "checkTimeout": "Die Clusterprüfung hat die Metadaten nicht rechtzeitig erhalten"
+      "checkTimeout": "Die Clusterprüfung hat die Metadaten nicht rechtzeitig erhalten",
+      "proposalNotFound": "Der Vorschlag wurde gelöscht oder ist abgelaufen",
+      "proposalClosed": "Der Vorschlag ist {{status}} und kann nicht auf {{to}} geändert werden"
     }
   },
   "messages": {

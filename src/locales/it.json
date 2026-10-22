@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "La nota è stata eliminata o è scaduta",
-      "checkTimeout": "Il controllo del cluster non ha ricevuto i metadati in tempo"
+      "checkTimeout": "Il controllo del cluster non ha ricevuto i metadati in tempo",
+      "proposalNotFound": "La proposta è stata eliminata o è scaduta",
+      "proposalClosed": "La proposta è {{status}} e non può passare a {{to}}"
     }
   },
   "messages": {

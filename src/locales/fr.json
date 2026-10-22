@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "La remarque a été supprimée ou a expiré",
-      "checkTimeout": "La vérification du cluster n’a pas reçu les métadonnées à temps"
+      "checkTimeout": "La vérification du cluster n’a pas reçu les métadonnées à temps",
+      "proposalNotFound": "La proposition a été supprimée ou a expiré",
+      "proposalClosed": "La proposition est {{status}} et ne peut pas passer à {{to}}"
     }
   },
   "messages": {

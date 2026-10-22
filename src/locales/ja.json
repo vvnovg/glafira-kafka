@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "この注記は削除されたか、期限が切れています",
-      "checkTimeout": "クラスターチェックで時間内にメタデータを取得できませんでした"
+      "checkTimeout": "クラスターチェックで時間内にメタデータを取得できませんでした",
+      "proposalNotFound": "提案は削除されたか期限切れです",
+      "proposalClosed": "提案は{{status}}のため{{to}}に変更できません"
     }
   },
   "messages": {

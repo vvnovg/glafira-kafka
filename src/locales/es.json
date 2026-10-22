@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "La nota se eliminó o caducó",
-      "checkTimeout": "La comprobación del clúster no recibió los metadatos a tiempo"
+      "checkTimeout": "La comprobación del clúster no recibió los metadatos a tiempo",
+      "proposalNotFound": "La propuesta se eliminó o ha caducado",
+      "proposalClosed": "La propuesta está {{status}} y no se puede cambiar a {{to}}"
     }
   },
   "messages": {

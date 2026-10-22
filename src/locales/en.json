@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "The note was deleted or has expired",
-      "checkTimeout": "The cluster check did not get metadata in time"
+      "checkTimeout": "The cluster check did not get metadata in time",
+      "proposalNotFound": "The proposal was deleted or has expired",
+      "proposalClosed": "The proposal is {{status}} and cannot be changed to {{to}}"
     }
   },
   "messages": {

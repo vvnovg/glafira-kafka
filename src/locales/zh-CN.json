@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "该批注已被删除或已过期",
-      "checkTimeout": "集群检查未能及时获取元数据"
+      "checkTimeout": "集群检查未能及时获取元数据",
+      "proposalNotFound": "建议已删除或已过期",
+      "proposalClosed": "建议处于 {{status}} 状态，无法改为 {{to}}"
     }
   },
   "messages": {

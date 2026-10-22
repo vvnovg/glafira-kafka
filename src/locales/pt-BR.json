@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "A nota foi excluída ou expirou",
-      "checkTimeout": "A verificação do cluster não recebeu os metadados a tempo"
+      "checkTimeout": "A verificação do cluster não recebeu os metadados a tempo",
+      "proposalNotFound": "A proposta foi excluída ou expirou",
+      "proposalClosed": "A proposta está {{status}} e não pode mudar para {{to}}"
     }
   },
   "messages": {

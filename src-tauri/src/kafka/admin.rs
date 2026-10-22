@@ -54,7 +54,7 @@ pub fn validate_topic_name(name: &str) -> AppResult<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewTopicSpec {
     pub name: String,

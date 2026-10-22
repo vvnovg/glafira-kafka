@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "메모가 삭제되었거나 만료되었습니다",
-      "checkTimeout": "클러스터 점검에서 메타데이터를 제시간에 받지 못했습니다"
+      "checkTimeout": "클러스터 점검에서 메타데이터를 제시간에 받지 못했습니다",
+      "proposalNotFound": "제안이 삭제되었거나 만료되었습니다",
+      "proposalClosed": "제안 상태: {{status}}. 다음 상태로 변경할 수 없음: {{to}}"
     }
   },
   "messages": {

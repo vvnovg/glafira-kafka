@@ -337,7 +337,9 @@
     },
     "health": {
       "annotationNotFound": "此註記已刪除或已過期",
-      "checkTimeout": "叢集檢查未能及時取得中繼資料"
+      "checkTimeout": "叢集檢查未能及時取得中繼資料",
+      "proposalNotFound": "建議已刪除或已過期",
+      "proposalClosed": "建議處於 {{status}} 狀態，無法改為 {{to}}"
     }
   },
   "messages": {

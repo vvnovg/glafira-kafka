@@ -188,12 +188,13 @@ pub const MAX_ID_BYTES: usize = 100;
 /// Имя файла по id подключения. Id, который создаёт приложение (uuid), — как есть; любой другой
 /// (импортированный файл подключений может принести что угодно) — `h-<hex байтов id>`: такое имя
 /// безопасно для файловой системы и однозначно. Пустой и слишком длинный id файла не имеют.
-/// Id, который сам начинается с «h-», тоже кодируется — иначе он совпал бы с hex-именем другого id.
+/// Id, который сам начинается с «h-» или «H-» (файловые системы macOS и Windows не различают регистр),
+/// тоже кодируется — иначе он совпал бы с hex-именем другого id.
 pub(crate) fn file_stem(id: &str) -> Option<String> {
     if id.is_empty() || id.len() > MAX_ID_BYTES {
         return None;
     }
-    let plain = !id.starts_with("h-")
+    let plain = !id.get(..2).is_some_and(|p| p.eq_ignore_ascii_case("h-"))
         && id
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
@@ -704,6 +705,7 @@ mod tests {
         assert_eq!(file_stem("c1").as_deref(), Some("c1"));
         // Id, похожий на hex-имя, кодируется сам: имена однозначны.
         assert_eq!(file_stem("h-612f62").as_deref(), Some("h-682d363132663632"));
+        assert_eq!(file_stem("H-612f62").as_deref(), Some("h-482d363132663632"));
         // Пустой и слишком длинный id файла не имеют.
         let long = "й".repeat(MAX_ID_BYTES / 2 + 1);
         for id in ["", long.as_str()] {

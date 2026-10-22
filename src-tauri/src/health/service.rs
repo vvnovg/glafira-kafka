@@ -27,16 +27,24 @@ pub fn now_ms() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
 
-/// Снимает проверку с учёта `running` при любом выходе задачи, включая панику: иначе ждущие её
-/// вызовы другого окружения кружили бы по закрытому каналу, а того же — получали бы ошибку.
+/// Снимает проверку с учёта `running`, но только свою запись (по каналу): запись проверки,
+/// зарегистрированной следом с тем же id, не трогается. Сбрасывается явно перед отправкой
+/// результата, а при панике задачи — при раскрутке стека.
 struct Unregister {
     service: Arc<HealthService>,
     id: String,
+    rx: watch::Receiver<Outcome>,
 }
 
 impl Drop for Unregister {
     fn drop(&mut self) {
-        self.service.running.lock_safe().remove(&self.id);
+        let mut running = self.service.running.lock_safe();
+        if running
+            .get(&self.id)
+            .is_some_and(|(_, rx)| rx.same_channel(&self.rx))
+        {
+            running.remove(&self.id);
+        }
     }
 }
 
@@ -168,17 +176,21 @@ impl HealthService {
                         let this = self.clone();
                         let id = connection_id.to_string();
                         let (trigger, src) = (trigger.clone(), src.clone());
+                        let own = rx.clone();
                         // Проверка доводится до конца, даже если вызвавший перестал ждать.
                         tauri::async_runtime::spawn(async move {
-                            let _unregister = Unregister {
+                            let unregister = Unregister {
                                 service: this.clone(),
                                 id: id.clone(),
+                                rx: own,
                             };
                             let r = this
                                 .check(&id, generation, env, trigger, src, limits)
                                 .await
                                 .map(Arc::new);
-                            this.running.lock_safe().remove(&id);
+                            // Запись снимается ровно один раз — до уведомления и отправки результата,
+                            // чтобы разбуженный ждущий не увидел свою же завершённую проверку.
+                            drop(unregister);
                             if r.is_ok() {
                                 this.changed(&id);
                             }
@@ -619,6 +631,78 @@ mod tests {
         .unwrap();
         assert_eq!(dev.environment, Environment::Dev);
         assert!(svc.running.lock_safe().is_empty());
+    }
+
+    #[tokio::test]
+    async fn finished_check_does_not_unregister_the_next_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = Arc::new(HealthService::open(dir.path()));
+        // Прошлая проверка упала: следующая под тем же окружением запускается как обычно.
+        let _ = svc
+            .run_source(
+                "c1",
+                svc.generation("c1"),
+                Environment::Prod,
+                Trigger::Ui,
+                Arc::new(Panicking),
+                LIMITS,
+            )
+            .await;
+        svc.run_source(
+            "c1",
+            svc.generation("c1"),
+            Environment::Prod,
+            Trigger::Ui,
+            Arc::new(Counting {
+                lag: 1,
+                ..Default::default()
+            }),
+            LIMITS,
+        )
+        .await
+        .unwrap();
+        // Проверка A стоит у ворот; пока она не закончилась, регистрируется чужая запись с тем же id.
+        // Завершение A не должно снять её: последующий вызов присоединяется к ней, а не запускает новую.
+        let (entered, gate) = (
+            Arc::new(tokio::sync::Notify::new()),
+            Arc::new(tokio::sync::Notify::new()),
+        );
+        let gated = Arc::new(Gated {
+            inner: Counting::default(),
+            entered: entered.clone(),
+            gate: gate.clone(),
+        });
+        let a = tokio::spawn({
+            let svc = svc.clone();
+            async move {
+                svc.run_source(
+                    "c1",
+                    svc.generation("c1"),
+                    Environment::Prod,
+                    Trigger::Ui,
+                    gated,
+                    LIMITS,
+                )
+                .await
+            }
+        });
+        entered.notified().await;
+        let (foreign_tx, foreign_rx) = watch::channel(None);
+        // Подменяем запись: так выглядит проверка, зарегистрированная между снятием записи A и концом её задачи.
+        svc.running
+            .lock_safe()
+            .insert("c1".into(), (Environment::Dev, foreign_rx.clone()));
+        gate.notify_one();
+        a.await.unwrap().unwrap();
+        // Чужая запись на месте: страж A снял только свою.
+        let kept = svc
+            .running
+            .lock_safe()
+            .get("c1")
+            .map(|(e, rx)| (*e, rx.same_channel(&foreign_rx)));
+        assert_eq!(kept, Some((Environment::Dev, true)));
+        drop(foreign_tx);
+        svc.running.lock_safe().remove("c1");
     }
 
     #[tokio::test]

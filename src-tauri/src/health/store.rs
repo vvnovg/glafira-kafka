@@ -1228,6 +1228,21 @@ mod tests {
             .set_proposal_status(ID, "nope", ProposalStatus::Rejected, None, T0)
             .unwrap_err();
         assert_eq!(e.key, "errors.health.proposalNotFound");
+        // Отозванное LLM тоже не открыть снова.
+        let id3 = proposed_id(
+            s.propose(ID, proposal(alter("w", "2"), author(Some("c"), "s")), T0)
+                .unwrap(),
+        );
+        assert_eq!(
+            s.withdraw_own(ID, &id3, &author(Some("c"), "s"), T0)
+                .unwrap(),
+            Withdrawn::Withdrawn
+        );
+        let e = s
+            .set_proposal_status(ID, &id3, ProposalStatus::Open, None, T0)
+            .unwrap_err();
+        assert_eq!(e.key, "errors.health.proposalClosed");
+        assert_eq!(e.params["status"], "withdrawn");
     }
 
     #[test]

@@ -326,6 +326,9 @@ pub fn validate(change: &Change, facts: &Facts) -> Result<(), ProposalError> {
                 scope: scope.clone(),
             };
             validate_reset_request(&request).map_err(|e| ProposalError::Invalid(e.message))?;
+            if let ResetStrategy::Shift { delta: 0 } = strategy {
+                return Err(ProposalError::Invalid("shift delta must not be 0".into()));
+            }
             match scope {
                 ResetScope::All => {}
                 ResetScope::Topics { topics } => {
@@ -372,8 +375,12 @@ pub enum Applied {
         topic: String,
         new_total: i32,
     },
-    /// `None` — форма не передала стратегию и область: считается «с правками».
-    ResetOffsets(Option<ResetRequest>),
+    /// `request` — стратегия и область из предпросмотра формы; `None` — форма их не передала:
+    /// считается «с правками».
+    ResetOffsets {
+        group_id: String,
+        request: Option<ResetRequest>,
+    },
 }
 
 impl Applied {
@@ -388,7 +395,10 @@ impl Applied {
                 a == b
             }
             (Applied::CreateTopic(_), Change::CreateTopic { .. }) => true,
-            (Applied::ResetOffsets(_), Change::ResetOffsets { .. }) => true,
+            (
+                Applied::ResetOffsets { group_id: a, .. },
+                Change::ResetOffsets { group_id: b, .. },
+            ) => a == b,
             _ => false,
         }
     }
@@ -443,7 +453,9 @@ pub fn applied_as_proposed(change: &Change, applied: &Applied) -> bool {
                 strategy,
                 scope,
             },
-            Applied::ResetOffsets(Some(r)),
+            Applied::ResetOffsets {
+                request: Some(r), ..
+            },
         ) => &r.group_id == group_id && &r.strategy == strategy && &r.scope == scope,
         _ => false,
     }
@@ -502,7 +514,7 @@ mod tests {
         }
     }
 
-    fn reset(group: &str, scope: ResetScope) -> Change {
+    fn reset_change(group: &str, scope: ResetScope) -> Change {
         Change::ResetOffsets {
             group_id: group.into(),
             strategy: ResetStrategy::Earliest,
@@ -561,7 +573,7 @@ mod tests {
                 configs: BTreeMap::new()
             }
         );
-        let r = reset(
+        let r = reset_change(
             "billing",
             ResetScope::Partitions {
                 partitions: vec![TopicPartitionRef {
@@ -587,7 +599,7 @@ mod tests {
         assert_eq!(c.target(), Target::topic("orders"));
         assert_eq!(create("dlq", 3).target(), Target::topic("dlq"));
         assert_eq!(
-            reset(" billing", ResetScope::All).trimmed().target(),
+            reset_change(" billing", ResetScope::All).trimmed().target(),
             Target::group("billing")
         );
         assert_eq!(
@@ -718,14 +730,17 @@ mod tests {
     #[test]
     fn reset_offsets_is_checked_against_groups_topics_and_partitions() {
         let f = facts();
-        assert_eq!(validate(&reset("billing", ResetScope::All), &f), Ok(()));
+        assert_eq!(
+            validate(&reset_change("billing", ResetScope::All), &f),
+            Ok(())
+        );
         assert!(
-            not_found(validate(&reset("nope", ResetScope::All), &f))
+            not_found(validate(&reset_change("nope", ResetScope::All), &f))
                 .contains("consumer group nope")
         );
         assert!(
             not_found(validate(
-                &reset(
+                &reset_change(
                     "billing",
                     ResetScope::Topics {
                         topics: vec!["missing".into()]
@@ -737,7 +752,7 @@ mod tests {
         );
         assert!(
             invalid(validate(
-                &reset("billing", ResetScope::Topics { topics: vec![] }),
+                &reset_change("billing", ResetScope::Topics { topics: vec![] }),
                 &f
             ))
             .contains("No topics")
@@ -748,27 +763,35 @@ mod tests {
                 partition: p,
             }],
         };
-        assert_eq!(validate(&reset("billing", part(2)), &f), Ok(()));
+        assert_eq!(validate(&reset_change("billing", part(2)), &f), Ok(()));
         assert!(
-            invalid(validate(&reset("billing", part(3)), &f))
+            invalid(validate(&reset_change("billing", part(3)), &f))
                 .contains("partition 3 does not exist")
         );
-        assert!(invalid(validate(&reset("billing", part(-1)), &f)).contains("does not exist"));
+        assert!(
+            invalid(validate(&reset_change("billing", part(-1)), &f)).contains("does not exist")
+        );
         let too_many = ResetScope::Topics {
             topics: (0..101).map(|_| "orders".to_string()).collect(),
         };
-        assert!(invalid(validate(&reset("billing", too_many), &f)).contains("at most 100"));
+        assert!(invalid(validate(&reset_change("billing", too_many), &f)).contains("at most 100"));
         let negative = Change::ResetOffsets {
             group_id: "billing".into(),
             strategy: ResetStrategy::Offset { offset: -1 },
             scope: ResetScope::All,
         };
         assert!(invalid(validate(&negative, &f)).contains("negative"));
+        let zero = Change::ResetOffsets {
+            group_id: "billing".into(),
+            strategy: ResetStrategy::Shift { delta: 0 },
+            scope: ResetScope::All,
+        };
+        assert!(invalid(validate(&zero, &f)).contains("must not be 0"));
         // Пустая группа не обязана быть пустой: форма сама не даст применить.
         let mut no_groups = facts();
         no_groups.groups = None;
         assert_eq!(
-            validate(&reset("anything", ResetScope::All), &no_groups),
+            validate(&reset_change("anything", ResetScope::All), &no_groups),
             Ok(())
         );
     }
@@ -795,7 +818,13 @@ mod tests {
             })
             .matches(&create("dlq", 1))
         );
-        assert!(Applied::ResetOffsets(None).matches(&reset("billing", ResetScope::All)));
+        let reset = |group: &str| Applied::ResetOffsets {
+            group_id: group.into(),
+            request: None,
+        };
+        assert!(reset("billing").matches(&reset_change("billing", ResetScope::All)));
+        // Другая группа того же вида — не тот объект.
+        assert!(!reset("other").matches(&reset_change("billing", ResetScope::All)));
     }
 
     #[test]
@@ -860,7 +889,7 @@ mod tests {
             }
         ));
 
-        let r = reset("billing", ResetScope::All);
+        let r = reset_change("billing", ResetScope::All);
         let request = |strategy| ResetRequest {
             group_id: "billing".into(),
             strategy,
@@ -868,13 +897,37 @@ mod tests {
         };
         assert!(applied_as_proposed(
             &r,
-            &Applied::ResetOffsets(Some(request(ResetStrategy::Earliest)))
+            &Applied::ResetOffsets {
+                group_id: "billing".into(),
+                request: Some(request(ResetStrategy::Earliest))
+            }
         ));
         assert!(!applied_as_proposed(
             &r,
-            &Applied::ResetOffsets(Some(request(ResetStrategy::Latest)))
+            &Applied::ResetOffsets {
+                group_id: "billing".into(),
+                request: Some(request(ResetStrategy::Latest))
+            }
         ));
-        assert!(!applied_as_proposed(&r, &Applied::ResetOffsets(None)));
+        assert!(!applied_as_proposed(
+            &r,
+            &Applied::ResetOffsets {
+                group_id: "billing".into(),
+                request: None
+            }
+        ));
+        // Запрос по другой группе — не «как предложено».
+        assert!(!applied_as_proposed(
+            &r,
+            &Applied::ResetOffsets {
+                group_id: "other".into(),
+                request: Some(ResetRequest {
+                    group_id: "other".into(),
+                    strategy: ResetStrategy::Earliest,
+                    scope: ResetScope::All,
+                }),
+            }
+        ));
         // Разные виды — никогда.
         assert!(!applied_as_proposed(&r, &same));
     }

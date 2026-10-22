@@ -12,6 +12,7 @@ use glafira_mcp::{
     Backend, BackendError, BoxFuture, ReadOp, ReadOutput, SessionAccess, SessionView,
 };
 use rdkafka::admin::ResourceSpecifier;
+use serde::{Serialize, de::DeserializeOwned};
 
 use super::approvals::Approvals;
 use crate::commands::{blocking, pooled_configs};
@@ -397,17 +398,7 @@ impl AppBackend {
                 session,
                 note,
             } => {
-                if let Some(r) = &note.related_rule_id
-                    && !rules::rule_ids().any(|id| id == r)
-                {
-                    return Err(BackendError::invalid_argument(format!(
-                        "relatedRuleId {r} is not a health_check rule"
-                    )));
-                }
-                // Заголовок из одних управляющих символов после очистки пуст — как пустой заголовок.
-                if sanitize(&note.title, MAX_TITLE_CHARS).is_empty() {
-                    return Err(BackendError::invalid_argument("title must not be empty"));
-                }
+                check_note_texts(note.related_rule_id.as_deref(), &note.title)?;
                 self.target_exists(&connection_id, &note.target).await?;
                 let new = NewAnnotation {
                     target: to_target(&note.target),
@@ -562,19 +553,10 @@ impl AppBackend {
                 session,
                 proposal,
             } => {
-                if let Some(r) = &proposal.related_rule_id
-                    && !rules::rule_ids().any(|id| id == r)
-                {
-                    return Err(BackendError::invalid_argument(format!(
-                        "relatedRuleId {r} is not a health_check rule"
-                    )));
-                }
-                if sanitize(&proposal.title, MAX_TITLE_CHARS).is_empty() {
-                    return Err(BackendError::invalid_argument("title must not be empty"));
-                }
+                check_note_texts(proposal.related_rule_id.as_deref(), &proposal.title)?;
                 if sanitize(&proposal.rationale, MAX_BODY_CHARS).is_empty() {
                     return Err(BackendError::invalid_argument(
-                        "rationale must not be empty",
+                        "rationale must not be empty: explain the change to the user",
                     ));
                 }
                 let change = to_change(&proposal.change)?.trimmed();
@@ -683,16 +665,34 @@ impl AppBackend {
 
 /// Вид изменения из крейта в вид приложения: одна и та же JSON-форма (спец. G3 §3).
 fn to_change(spec: &mp::ChangeSpec) -> Result<Change, BackendError> {
-    serde_json::to_value(spec)
+    reshape(spec).ok_or_else(|| BackendError::invalid_argument("change has an unexpected shape"))
+}
+
+/// Перекладывает значение между одинаковыми по JSON типами крейта и приложения.
+fn reshape<T: Serialize, U: DeserializeOwned>(t: &T) -> Option<U> {
+    serde_json::to_value(t)
         .ok()
         .and_then(|v| serde_json::from_value(v).ok())
-        .ok_or_else(|| BackendError::invalid_argument("change has an unexpected shape"))
+}
+
+/// Общие проверки текстов замечания и предложения: правило из каталога, непустой заголовок.
+fn check_note_texts(related_rule_id: Option<&str>, title: &str) -> Result<(), BackendError> {
+    if let Some(r) = related_rule_id
+        && !rules::rule_ids().any(|id| id == r)
+    {
+        return Err(BackendError::invalid_argument(format!(
+            "relatedRuleId {r} is not a health_check rule"
+        )));
+    }
+    // Заголовок из одних управляющих символов после очистки пуст — как пустой заголовок.
+    if sanitize(title, MAX_TITLE_CHARS).is_empty() {
+        return Err(BackendError::invalid_argument("title must not be empty"));
+    }
+    Ok(())
 }
 
 fn proposal_view(p: &Proposal) -> Result<mp::ProposalView, BackendError> {
-    let change = serde_json::to_value(&p.change)
-        .ok()
-        .and_then(|v| serde_json::from_value(v).ok())
+    let change = reshape(&p.change)
         .ok_or_else(|| BackendError::new("internal", "Unexpected stored proposal shape"))?;
     Ok(mp::ProposalView {
         id: p.id.clone(),
@@ -1392,31 +1392,49 @@ mod tests {
         }
     }
 
+    fn propose_in<'a>(
+        b: &'a AppBackend,
+        connection_id: &str,
+        session: &SessionView,
+        proposal: mp::NewProposal,
+    ) -> BoxFuture<'a, Result<mp::ProposalOutput, BackendError>> {
+        b.proposals(mp::ProposalOp::Propose {
+            connection_id: connection_id.into(),
+            session: session.clone(),
+            proposal,
+        })
+    }
+
     fn propose<'a>(
         b: &'a AppBackend,
         session: &SessionView,
         title: &str,
         related: Option<&str>,
     ) -> BoxFuture<'a, Result<mp::ProposalOutput, BackendError>> {
-        b.proposals(mp::ProposalOp::Propose {
-            connection_id: "open".into(),
-            session: session.clone(),
-            proposal: new_proposal(title, related),
-        })
+        propose_in(b, "open", session, new_proposal(title, related))
     }
 
     #[tokio::test]
     async fn proposals_need_llm_access() {
         let (_d, b) = backend();
+        let s = view("s1", Some("claude-ai"));
         for id in ["closed", "missing"] {
-            let e = b
-                .proposals(mp::ProposalOp::List {
+            let ops = [
+                b.proposals(mp::ProposalOp::List {
                     connection_id: id.into(),
                     status: mh::StatusFilter::All,
-                })
-                .await
-                .unwrap_err();
-            assert_eq!(e.code, "not_allowed", "{id}");
+                }),
+                b.proposals(mp::ProposalOp::Withdraw {
+                    connection_id: id.into(),
+                    session: s.clone(),
+                    proposal_id: "p1".into(),
+                }),
+                propose_in(&b, id, &s, new_proposal("t", None)),
+            ];
+            for (n, op) in ["list", "withdraw", "propose"].into_iter().zip(ops) {
+                let e = op.await.unwrap_err();
+                assert_eq!(e.code, "not_allowed", "{id} {n}: {e:?}");
+            }
         }
     }
 
@@ -1434,6 +1452,12 @@ mod tests {
             (e.code.as_str(), e.message.as_str()),
             ("invalid_argument", "title must not be empty")
         );
+        // Обоснование из одних управляющих символов после очистки пусто.
+        let mut bad = new_proposal("Raise min.insync.replicas", None);
+        bad.rationale = "\u{0}\u{1}".into();
+        let e = propose_in(&b, "open", &claude, bad).await.unwrap_err();
+        assert_eq!(e.code, "invalid_argument", "{e:?}");
+        assert!(e.message.contains("rationale"), "{e:?}");
         assert!(!d.path().join("health").join("open.json").exists());
         // Дальше предложение сверяется с кластером: 127.0.0.1:1 не отвечает.
         let e = propose(
@@ -1457,6 +1481,57 @@ mod tests {
                 .proposals
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn change_spec_and_change_share_one_json_shape() {
+        let specs = [
+            mp::ChangeSpec::AlterTopicConfigs {
+                topic: "orders".into(),
+                changes: vec![
+                    mp::ConfigChangeSpec {
+                        name: "min.insync.replicas".into(),
+                        value: Some("2".into()),
+                    },
+                    mp::ConfigChangeSpec {
+                        name: "retention.ms".into(),
+                        value: None,
+                    },
+                ],
+            },
+            mp::ChangeSpec::CreateTopic {
+                name: "payments".into(),
+                partitions: 6,
+                replication_factor: Some(-1),
+                configs: Some(std::collections::BTreeMap::from([(
+                    "cleanup.policy".to_string(),
+                    "compact".to_string(),
+                )])),
+            },
+            mp::ChangeSpec::AddPartitions {
+                topic: "orders".into(),
+                new_total: 12,
+            },
+            mp::ChangeSpec::ResetOffsets {
+                group_id: "billing".into(),
+                strategy: mp::ResetStrategySpec::Timestamp {
+                    timestamp_ms: 1_700_000_000_000,
+                },
+                scope: mp::ResetScopeSpec::Partitions {
+                    partitions: vec![mp::PartitionRef {
+                        topic: "orders".into(),
+                        partition: 3,
+                    }],
+                },
+            },
+        ];
+        for spec in specs {
+            let json = serde_json::to_value(&spec).unwrap();
+            let change: Change =
+                serde_json::from_value(json.clone()).unwrap_or_else(|e| panic!("{json}: {e}"));
+            assert_eq!(serde_json::to_value(&change).unwrap(), json);
+            assert_eq!(reshape::<_, mp::ChangeSpec>(&change), Some(spec), "{json}");
+        }
     }
 
     #[tokio::test]

@@ -168,6 +168,7 @@ async fn proposal_is_checked_against_the_cluster_and_marked_applied() {
     let e = propose(alter(&strict, "no.such.config", "1"))
         .await
         .unwrap_err();
+    assert_eq!(e.code, "invalid_argument");
     assert!(e.message.contains("unknown topic config"), "{e:?}");
     let e = propose(ChangeSpec::AddPartitions {
         topic: strict.to_string(),
@@ -175,6 +176,7 @@ async fn proposal_is_checked_against_the_cluster_and_marked_applied() {
     })
     .await
     .unwrap_err();
+    assert_eq!(e.code, "invalid_argument");
     assert!(e.message.contains("has 1 partitions"), "{e:?}");
     let e = propose(alter("no-such-topic", "min.insync.replicas", "1"))
         .await
@@ -218,6 +220,34 @@ async fn proposal_is_checked_against_the_cluster_and_marked_applied() {
     let saved = f.proposals.iter().find(|p| p.id == proposal_id).unwrap();
     assert_eq!(saved.status, ProposalStatus::Applied);
     assert_eq!(saved.applied_as_proposed, Some(true));
+
+    // Ошибка Kafka при применении с proposal_id: отметки нет, предложение остаётся открытым.
+    // Значения конфигов проверка предложения не смотрит (это делает Kafka) — брокер отвергает «abc».
+    let ProposalOutput::Proposed { proposal_id, .. } =
+        propose(alter(&strict, "retention.ms", "abc"))
+            .await
+            .unwrap()
+    else {
+        panic!()
+    };
+    let e = alter_topic_configs_impl(
+        &st,
+        "it".into(),
+        strict.to_string(),
+        vec![ConfigChange::Set {
+            name: "retention.ms".into(),
+            value: "abc".into(),
+        }],
+        None,
+        Some(proposal_id.clone()),
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(e.key, "errors.topics.alterConfigFailed", "{e:?}");
+    let f = st.health.store.load("it", now_ms()).unwrap();
+    let saved = f.proposals.iter().find(|p| p.id == proposal_id).unwrap();
+    assert_eq!(saved.status, ProposalStatus::Open);
+    assert_eq!(saved.applied_as_proposed, None);
 
     // Создание топика по предложению: значение брокера для фактора репликации (-1) — как в форме.
     let name = common::unique_topic("it-proposal-new");

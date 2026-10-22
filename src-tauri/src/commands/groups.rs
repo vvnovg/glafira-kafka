@@ -136,10 +136,16 @@ pub async fn reset_offsets_impl(
         group_ops::reset_offsets(h, &group_id, &offsets)
     })
     .await?;
-    if results.iter().all(|r| r.error.is_none()) {
+    if all_succeeded(&results) {
         mark_applied(st, &connection_id, proposal_id, applied).await;
     }
     Ok(results)
+}
+
+/// Отметка «применено» после сброса: только если сброшена хотя бы одна партиция и ни одна не
+/// вернула ошибку (спец. G3 §6).
+fn all_succeeded(results: &[ResetResult]) -> bool {
+    !results.is_empty() && results.iter().all(|r| r.error.is_none())
 }
 
 #[tauri::command]
@@ -180,6 +186,7 @@ mod tests {
 
     use super::*;
     use crate::error::ErrorCode;
+    use crate::i18n::LocalizedText;
     use crate::secrets::MemoryStore;
     use crate::storage::connections::{Environment, sample_profile};
 
@@ -206,6 +213,20 @@ mod tests {
             partition: 0,
             offset: 0,
         }]
+    }
+
+    #[test]
+    fn reset_is_marked_only_when_every_partition_succeeded() {
+        let row = |partition: i32, error: Option<&str>| ResetResult {
+            topic: "t".into(),
+            partition,
+            offset: 0,
+            error: error.map(LocalizedText::raw),
+        };
+        assert!(all_succeeded(&[row(0, None), row(1, None)]));
+        assert!(!all_succeeded(&[row(0, None), row(1, Some("boom"))]));
+        // Пустой итог — ничего не сброшено, отметки нет.
+        assert!(!all_succeeded(&[]));
     }
 
     #[tokio::test]

@@ -37,7 +37,7 @@ fn view(st: &AppState, connection_id: &str) -> AppResult<HealthView> {
 
 /// Отметка «применено» после успеха операции в Kafka (спец. G3 §6). Операция уже прошла, поэтому
 /// ничто здесь её не отменяет: предложения нет, оно закрыто или про другой объект — отметка
-/// пропускается; ошибка файла — только в лог. Без `proposal_id` ничего не делает.
+/// пропускается без события; ошибка файла — только в лог. Без `proposal_id` ничего не делает.
 pub(crate) async fn mark_applied(
     st: &AppState,
     connection_id: &str,
@@ -54,7 +54,9 @@ pub(crate) async fn mark_applied(
         let r = st.health.write(&id, generation, |s| {
             s.mark_applied(&id, &pid2, &applied, now_ms())
         })?;
-        st.health.changed(&id);
+        if matches!(r, MarkApplied::Applied { .. }) {
+            st.health.changed(&id);
+        }
         Ok(r)
     })
     .await;
@@ -418,6 +420,12 @@ mod tests {
             },
         )
         .await;
+        // Пропуск ничего не меняет: прежнее предложение применено, события нет.
+        assert_eq!(
+            view(&st, "c1").unwrap().proposals[0].status,
+            ProposalStatus::Applied
+        );
+        assert_eq!(n.load(Ordering::SeqCst), 1);
         st.delete_connection_full("c1").unwrap();
         mark_applied(
             &st,

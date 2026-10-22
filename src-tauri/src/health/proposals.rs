@@ -17,7 +17,6 @@ pub const MAX_CONFIG_ENTRIES: usize = 50;
 pub const MAX_CONFIG_VALUE_CHARS: usize = 1024;
 /// Топиков или партиций в области сброса оффсетов.
 pub const MAX_SCOPE_ITEMS: usize = 100;
-pub const MAX_RATIONALE_CHARS: usize = 2000;
 pub const MAX_REJECT_REASON_CHARS: usize = 300;
 pub const MAX_RELATED_KEY_CHARS: usize = 200;
 /// Открытых предложений на подключение.

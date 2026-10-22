@@ -436,10 +436,8 @@ impl AppBackend {
                 connection_id,
                 status,
             } => {
-                let f = st
-                    .health
-                    .store
-                    .load(&connection_id, now_ms())
+                let f = blocking(move || st.health.store.load(&connection_id, now_ms()))
+                    .await
                     .map_err(health_to_backend)?;
                 let items = f
                     .annotations

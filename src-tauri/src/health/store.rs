@@ -332,11 +332,23 @@ impl HealthStore {
         now_ms: i64,
         f: impl FnOnce(&mut HealthFile) -> T,
     ) -> AppResult<T> {
+        self.update_if(connection_id, now_ms, |file| (f(file), true))
+    }
+
+    /// Как `update`, но файл пишется, только если операция сообщила об изменении (второй элемент).
+    fn update_if<T>(
+        &self,
+        connection_id: &str,
+        now_ms: i64,
+        f: impl FnOnce(&mut HealthFile) -> (T, bool),
+    ) -> AppResult<T> {
         let _g = self.lock.lock_safe();
         let mut file = self.read(connection_id, now_ms)?;
-        let out = f(&mut file);
-        self.ensure_dir()?;
-        write_json(&self.path(connection_id)?, &file)?;
+        let (out, changed) = f(&mut file);
+        if changed {
+            self.ensure_dir()?;
+            write_json(&self.path(connection_id)?, &file)?;
+        }
         Ok(out)
     }
 
@@ -603,7 +615,7 @@ impl HealthStore {
     }
 
     /// Команда изменения после успеха в Kafka: открытое предложение того же вида и объекта
-    /// становится `applied`; иначе отметка пропускается (операция уже прошла).
+    /// становится `applied`; иначе отметка пропускается (операция уже прошла) и файл не пишется.
     pub fn mark_applied(
         &self,
         connection_id: &str,
@@ -611,21 +623,24 @@ impl HealthStore {
         applied: &Applied,
         now_ms: i64,
     ) -> AppResult<MarkApplied> {
-        self.update(connection_id, now_ms, |f| {
+        self.update_if(connection_id, now_ms, |f| {
             let Some(p) = f.proposals.iter_mut().find(|p| p.id == proposal_id) else {
-                return MarkApplied::Skipped("proposal not found");
+                return (MarkApplied::Skipped("proposal not found"), false);
             };
             if p.status != ProposalStatus::Open {
-                return MarkApplied::Skipped("proposal is not open");
+                return (MarkApplied::Skipped("proposal is not open"), false);
             }
             if !applied.matches(&p.change) {
-                return MarkApplied::Skipped("proposal is about another change");
+                return (
+                    MarkApplied::Skipped("proposal is about another change"),
+                    false,
+                );
             }
             let as_proposed = applied_as_proposed(&p.change, applied);
             p.status = ProposalStatus::Applied;
             p.closed_at_ms = Some(now_ms);
             p.applied_as_proposed = Some(as_proposed);
-            MarkApplied::Applied { as_proposed }
+            (MarkApplied::Applied { as_proposed }, true)
         })
     }
 
@@ -1288,6 +1303,16 @@ mod tests {
             s.mark_applied(ID, &id2, &applied("u", "2"), T0).unwrap(),
             MarkApplied::Applied { as_proposed: true }
         );
+    }
+
+    #[test]
+    fn skipped_mark_applied_does_not_write_the_file() {
+        let (d, s) = store();
+        assert_eq!(
+            s.mark_applied(ID, "nope", &applied("t", "2"), T0).unwrap(),
+            MarkApplied::Skipped("proposal not found")
+        );
+        assert!(!d.path().join("health").join("c1.json").exists());
     }
 
     #[test]

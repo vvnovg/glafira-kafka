@@ -50,9 +50,18 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
     mutationFn: () => api.previewOffsetReset(connection.id, buildResetRequest(groupId, form)),
   });
   const queryClient = useQueryClient();
+  // Форма открыта из предложения LLM: вместе с планом уходит его id и запрос, который показал предпросмотр
+  // (после любой правки формы предпросмотр сбрасывается, так что запрос всегда тот самый).
+  const proposalId = prefill && "proposalId" in prefill ? prefill.proposalId : null;
   const apply = useMutation({
     mutationFn: ({ targets, confirm }: { targets: OffsetTarget[]; confirm: string | null }) =>
-      api.resetOffsets(connection.id, groupId, targets, confirm),
+      api.resetOffsets(
+        connection.id,
+        groupId,
+        targets,
+        confirm,
+        proposalId === null ? null : { id: proposalId, request: buildResetRequest(groupId, form) },
+      ),
     onSuccess: (results) => {
       setConfirming(false);
       invalidateGroup();

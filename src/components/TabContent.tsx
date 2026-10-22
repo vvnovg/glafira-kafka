@@ -51,15 +51,15 @@ export function TabContent({ tab }: { tab: Tab }) {
     case "cluster":
       return <ClusterOverview connectionId={tab.connectionId} />;
     case "topics":
-      return <TopicList connectionId={tab.connectionId} />;
+      return <TopicList connectionId={tab.connectionId} proposal={tab.proposal} />;
     case "topic":
-      return <TopicDetails connectionId={tab.connectionId} topic={tab.topic} />;
+      return <TopicDetails connectionId={tab.connectionId} topic={tab.topic} proposal={tab.proposal} />;
     case "groups":
       return <GroupList connectionId={tab.connectionId} />;
     case "findings":
       return <FindingsPanel connectionId={tab.connectionId} />;
     case "group":
-      return <GroupDetails connectionId={tab.connectionId} groupId={tab.groupId} resetPrefill={tab.resetPrefill} />;
+      return <GroupDetails connectionId={tab.connectionId} groupId={tab.groupId} resetPrefill={tab.resetPrefill} proposal={tab.proposal} />;
     case "producer":
       return <ProducerPanel connectionId={tab.connectionId} prefill={tab.prefill} />;
     case "consumer":

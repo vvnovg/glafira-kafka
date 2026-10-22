@@ -43,8 +43,34 @@ describe("CreateTopicForm", () => {
       "c",
       { name: "orders", partitions: 3, replicationFactor: 1, configs: { "cleanup.policy": "compact" } },
       null,
+      null,
     );
     await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("orders"));
+  });
+
+  it("поля из предложения LLM заполнены, создание передаёт proposalId", async () => {
+    const user = userEvent.setup();
+    renderWithClient(
+      <CreateTopicForm
+        connection={dev}
+        onCreated={() => {}}
+        onCancel={() => {}}
+        initial={{ name: "orders-dlq", partitions: 6, replicationFactor: -1, configs: { "cleanup.policy": "compact", "retention.ms": "1000" } }}
+        proposalId="p1"
+      />,
+    );
+    expect(screen.getByLabelText("Имя топика")).toHaveValue("orders-dlq");
+    expect(screen.getByLabelText("Партиции")).toHaveValue(6);
+    expect(screen.getByLabelText("Фактор репликации")).toHaveValue(-1);
+    expect(screen.getByLabelText("Пресет")).toHaveValue("delete");
+    expect(screen.getByLabelText("Доп. конфиги (key=value)")).toHaveValue("cleanup.policy=compact\nretention.ms=1000");
+    await user.click(screen.getByRole("button", { name: "Создать" }));
+    expect(api.createTopic).toHaveBeenCalledWith(
+      "c",
+      { name: "orders-dlq", partitions: 6, replicationFactor: -1, configs: { "cleanup.policy": "compact", "retention.ms": "1000" } },
+      null,
+      "p1",
+    );
   });
 
   it("в prod просит имя подключения перед созданием", async () => {
@@ -55,7 +81,7 @@ describe("CreateTopicForm", () => {
     expect(api.createTopic).not.toHaveBeenCalled();
     await user.type(screen.getByLabelText("Имя подключения"), "prod-1");
     await user.click(screen.getByRole("button", { name: "Создать топик" }));
-    expect(api.createTopic).toHaveBeenCalledWith("c", expect.objectContaining({ name: "t" }), "prod-1");
+    expect(api.createTopic).toHaveBeenCalledWith("c", expect.objectContaining({ name: "t" }), "prod-1", null);
   });
 
   it("подсказки «?» у полей формы; открытая подсказка показывает текст", async () => {

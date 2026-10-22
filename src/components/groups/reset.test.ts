@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildResetRequest, defaultResetForm, targetsFromPreview } from "./reset";
+import { buildResetRequest, defaultResetForm, targetsFromPreview, toLocalInput } from "./reset";
 
 describe("reset", () => {
   it("стратегии и области", () => {
@@ -37,6 +37,29 @@ describe("reset", () => {
       scope: "partitions",
       scopeText: "t:2",
     });
+  });
+
+  it("предзаполнение из предложения LLM", () => {
+    const at = new Date(2026, 9, 22, 10, 5, 9).getTime();
+    expect(defaultResetForm({ strategy: { type: "timestamp", timestampMs: at }, scope: { type: "topics", topics: ["a", "b"] }, proposalId: "p1", nonce: 1 })).toEqual({
+      strategy: "timestamp",
+      value: "2026-10-22T10:05:09",
+      scope: "topics",
+      scopeText: "a, b",
+    });
+    expect(toLocalInput(at)).toBe("2026-10-22T10:05:09");
+    expect(
+      defaultResetForm({
+        strategy: { type: "shift", delta: -5 },
+        scope: { type: "partitions", partitions: [{ topic: "t", partition: 0 }, { topic: "t", partition: 2 }] },
+        proposalId: "p1",
+        nonce: 1,
+      }),
+    ).toEqual({ strategy: "shift", value: "-5", scope: "partitions", scopeText: "t:0, t:2" });
+    const form = defaultResetForm({ strategy: { type: "earliest" }, scope: { type: "all" }, proposalId: "p1", nonce: 1 });
+    expect(form).toEqual({ strategy: "earliest", value: "", scope: "all", scopeText: "" });
+    // Обратно получается тот же запрос, что предлагала модель.
+    expect(buildResetRequest("g", form)).toEqual({ groupId: "g", strategy: { type: "earliest" }, scope: { type: "all" } });
   });
 
   it("применяются только строки без ошибок", () => {

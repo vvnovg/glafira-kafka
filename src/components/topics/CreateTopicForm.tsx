@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { ConnectionProfile, NewTopicSpec } from "../../api/types";
-import { parseProps } from "../connections/profile";
+import { formatProps, parseProps } from "../connections/profile";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
@@ -13,20 +13,24 @@ interface Props {
   connection: ConnectionProfile;
   onCreated: (name: string) => void;
   onCancel: () => void;
+  /** Поля из предложения LLM (G3): конфиги — строками `k=v` в дополнительных свойствах, пресет «delete». */
+  initial?: NewTopicSpec;
+  /** Предложение LLM, из которого открыта форма: Rust отметит его применённым после успеха. */
+  proposalId?: string | null;
 }
 
-export function CreateTopicForm({ connection, onCreated, onCancel }: Props) {
+export function CreateTopicForm({ connection, onCreated, onCancel, initial, proposalId = null }: Props) {
   const { t } = useTranslation();
   const cluster = useQuery({
     queryKey: ["cluster", connection.id],
     queryFn: () => api.getClusterOverview(connection.id),
   });
   const brokers = cluster.data?.brokers.length;
-  const [name, setName] = useState("");
-  const [partitions, setPartitions] = useState("1");
-  const [rf, setRf] = useState<string | null>(null);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [partitions, setPartitions] = useState(initial ? String(initial.partitions) : "1");
+  const [rf, setRf] = useState<string | null>(initial ? String(initial.replicationFactor) : null);
   const [preset, setPreset] = useState("delete");
-  const [extra, setExtra] = useState("");
+  const [extra, setExtra] = useState(initial ? formatProps(initial.configs) : "");
   const [confirming, setConfirming] = useState(false);
 
   // RF по умолчанию — min(3, число брокеров), пока пользователь не ввёл своё значение.
@@ -51,7 +55,7 @@ export function CreateTopicForm({ connection, onCreated, onCancel }: Props) {
   const valid = !nameError && !extraError && !numbersError;
 
   const create = useMutation({
-    mutationFn: (confirm: string | null) => api.createTopic(connection.id, spec, confirm),
+    mutationFn: (confirm: string | null) => api.createTopic(connection.id, spec, confirm, proposalId),
     onSuccess: () => onCreated(name),
   });
 

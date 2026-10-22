@@ -11,8 +11,23 @@ export interface ResetForm {
   scopeText: string;
 }
 
+/** Значение `datetime-local` (местное время, с секундами) из Unix-миллисекунд. */
+export function toLocalInput(ms: number): string {
+  const d = new Date(ms);
+  const two = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
+}
+
 export function defaultResetForm(prefill?: ResetPrefill): ResetForm {
   if (!prefill) return { strategy: "earliest", value: "", scope: "all", scopeText: "" };
+  if ("strategy" in prefill) {
+    // Предложение LLM: стратегия и область — в поля формы в том виде, в каком их вводит человек.
+    const s = prefill.strategy;
+    const value = s.type === "offset" ? String(s.offset) : s.type === "shift" ? String(s.delta) : s.type === "timestamp" ? toLocalInput(s.timestampMs) : "";
+    const sc = prefill.scope;
+    const scopeText = sc.type === "topics" ? sc.topics.join(", ") : sc.type === "partitions" ? sc.partitions.map((p) => `${p.topic}:${p.partition}`).join(", ") : "";
+    return { strategy: s.type, value, scope: sc.type, scopeText };
+  }
   return { strategy: "offset", value: String(prefill.offset), scope: "partitions", scopeText: `${prefill.topic}:${prefill.partition}` };
 }
 

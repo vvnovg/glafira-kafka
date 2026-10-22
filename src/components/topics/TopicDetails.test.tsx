@@ -44,6 +44,33 @@ describe("TopicDetails", () => {
   });
 });
 
+describe("TopicDetails: предложение LLM", () => {
+  it("открывает «Конфигурацию» с заполненным редактором и строкой о предложении", async () => {
+    const { api } = await import("../../api/client");
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...newProfile(), id: "c", name: "dev-1", environment: "dev" }]);
+    const proposal = {
+      proposal: {
+        id: "p1",
+        severity: "warning" as const,
+        title: "Compact orders",
+        rationale: "r",
+        target: { kind: "topic" as const, name: "orders" },
+        change: { kind: "alterTopicConfigs" as const, topic: "orders", changes: [{ name: "cleanup.policy", value: "delete" }] },
+        client: "claude-code",
+        createdAtMs: 1,
+        updatedAtMs: 1,
+        status: "open" as const,
+      },
+      nonce: 1,
+    };
+    renderWithClient(<TopicDetails connectionId="c" topic="orders" proposal={proposal} />);
+    expect(await screen.findByText("Применяется предложение LLM: Compact orders")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Конфигурация" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Значение cleanup.policy")).toHaveValue("delete");
+    expect(screen.getByText("изменений: 1")).toBeInTheDocument();
+  });
+});
+
 describe("TopicDetails: недоступные оффсеты", () => {
   it("показывает «—» и ошибку в title", async () => {
     const user = userEvent.setup();

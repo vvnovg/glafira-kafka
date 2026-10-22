@@ -100,6 +100,10 @@ describe("api client", () => {
     const offsets = [{ topic: "t", partition: 0, offset: 5 }];
     await api.resetOffsets("c1", "g", offsets, null);
     expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null, proposalId: null, request: null });
+    // Из предложения LLM — его id и запрос предпросмотра для сравнения в Rust.
+    const request = { groupId: "g", strategy: { type: "earliest" as const }, scope: { type: "all" as const } };
+    await api.resetOffsets("c1", "g", offsets, "prod-1", { id: "p1", request });
+    expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: "prod-1", proposalId: "p1", request });
   });
   it("startConsumer передаёт параметры, Channel и подтверждение", async () => {
     invoke.mockResolvedValue("sid");

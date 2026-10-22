@@ -1,10 +1,16 @@
 import { create } from "zustand";
 
-import type { ProduceMessage, ProducerSettings, Proposal } from "../api/types";
+import type { ProduceMessage, ProducerSettings, Proposal, ResetScope, ResetStrategy } from "../api/types";
 
 export type ProducerPrefill = { message: ProduceMessage; settings?: ProducerSettings; nonce: number };
 
-export type ResetPrefill = { topic: string; partition: number; offset: number; nonce: number };
+/**
+ * Заполнение формы сброса оффсетов: из просмотра сообщений («Сбросить группу сюда») или из
+ * предложения LLM (стратегия и область; `proposalId` уходит в команду вместе с запросом предпросмотра).
+ */
+export type ResetPrefill =
+  | { topic: string; partition: number; offset: number; nonce: number }
+  | { strategy: ResetStrategy; scope: ResetScope; proposalId: string; nonce: number };
 
 /** Предложение LLM, которое открывает заполненную форму вкладки (G3); `nonce` — повторное открытие обновляет заполнение. */
 export type ProposalPrefill = { proposal: Proposal; nonce: number };

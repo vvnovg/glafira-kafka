@@ -44,8 +44,30 @@ describe("ResetOffsetsPanel", () => {
     await user.click(screen.getByRole("button", { name: "Применить (1)" }));
     await user.type(screen.getByLabelText("Имя подключения"), "prod-1");
     await user.click(screen.getByRole("button", { name: "Сбросить оффсеты" }));
-    expect(api.resetOffsets).toHaveBeenCalledWith("c", "g", [{ topic: "t", partition: 0, offset: 0 }], "prod-1");
+    expect(api.resetOffsets).toHaveBeenCalledWith("c", "g", [{ topic: "t", partition: 0, offset: 0 }], "prod-1", null);
     await vi.waitFor(() => expect(onApplied).toHaveBeenCalled());
+  });
+
+  it("из предложения LLM: форма заполнена, в команду уходят proposalId и запрос предпросмотра", async () => {
+    const user = userEvent.setup();
+    const dev = { ...prod, environment: "dev" as const };
+    renderWithClient(
+      <ResetOffsetsPanel
+        connection={dev}
+        groupId="g"
+        prefill={{ strategy: { type: "offset", offset: 0 }, scope: { type: "topics", topics: ["t"] }, proposalId: "p1", nonce: 1 }}
+        onApplied={() => {}}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByLabelText("Стратегия")).toHaveValue("offset");
+    expect(screen.getByLabelText("Оффсет")).toHaveValue(0);
+    expect(screen.getByLabelText("Область")).toHaveValue("topics");
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    const request = { groupId: "g", strategy: { type: "offset", offset: 0 }, scope: { type: "topics", topics: ["t"] } };
+    expect(api.previewOffsetReset).toHaveBeenCalledWith("c", request);
+    await user.click(await screen.findByRole("button", { name: "Применить (1)" }));
+    expect(api.resetOffsets).toHaveBeenCalledWith("c", "g", [{ topic: "t", partition: 0, offset: 0 }], null, { id: "p1", request });
   });
 
   it("blockedReason блокирует «Применить» и показывает подсказку", async () => {

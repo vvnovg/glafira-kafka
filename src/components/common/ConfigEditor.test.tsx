@@ -32,8 +32,28 @@ describe("ConfigEditor", () => {
     await user.click(screen.getByRole("button", { name: "Проверить изменения" }));
     expect(screen.getByText("1000 → 2000")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Применить" }));
-    expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "t", [{ op: "set", name: "retention.ms", value: "2000" }], null);
+    expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "t", [{ op: "set", name: "retention.ms", value: "2000" }], null, null);
     await vi.waitFor(() => expect(onDone).toHaveBeenCalled());
+  });
+
+  it("правки из предложения LLM уже заполнены, применение передаёт proposalId", async () => {
+    const user = userEvent.setup();
+    renderWithClient(
+      <ConfigEditor
+        connection={dev}
+        topic="t"
+        entries={entries}
+        onDone={() => {}}
+        initialEdits={{ "retention.ms": { kind: "set", value: "2000" } }}
+        proposalId="p1"
+      />,
+    );
+    expect(screen.getByLabelText("Значение retention.ms")).toHaveValue("2000");
+    expect(screen.getByText("изменений: 1")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Проверить изменения" }));
+    expect(screen.getByText("1000 → 2000")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Применить" }));
+    expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "t", [{ op: "set", name: "retention.ms", value: "2000" }], null, "p1");
   });
 
   it("очищенное поле не отправляет пустой set", async () => {
@@ -65,7 +85,7 @@ describe("ConfigEditor", () => {
     expect(screen.getByRole("button", { name: "Применить" })).toBeDisabled();
     await user.type(screen.getByLabelText("Имя подключения"), "prod-1");
     await user.click(screen.getByRole("button", { name: "Применить" }));
-    expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "t", [{ op: "set", name: "retention.ms", value: "2000" }], "prod-1");
+    expect(api.alterTopicConfigs).toHaveBeenCalledWith("c", "t", [{ op: "set", name: "retention.ms", value: "2000" }], "prod-1", null);
   });
 
   it("подсказка «?» рядом с «Проверить изменения»", async () => {

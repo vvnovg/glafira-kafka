@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
@@ -7,13 +7,15 @@ import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { useConnection } from "../../lib/useConnection";
 import { useHelpChapter } from "../../state/helpContext";
-import { newConsumerKey, tabId, useWorkspace } from "../../state/workspace";
+import { newConsumerKey, type ProposalPrefill, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
 import { ConfigEditor } from "../common/ConfigEditor";
+import type { ConfigEdit } from "../common/configDiff";
 import { ConfigTable } from "../common/ConfigTable";
 import { TOPIC_CONFIG_HINTS } from "../common/topicConfigHints";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { HealthBlock } from "../health/HealthBlock";
+import { ProposalBanner } from "../health/ProposalBanner";
 import { TopicActions } from "./TopicActions";
 import { TopicGroups } from "./TopicGroups";
 
@@ -25,9 +27,25 @@ const SUBTABS: { id: SubTab; labelKey: string }[] = [
   { id: "groups", labelKey: "topics.details.tabGroups" },
 ];
 
-export function TopicDetails({ connectionId, topic }: { connectionId: string; topic: string }) {
+/** Предложение LLM по конфигам этого топика (G3); другие виды здесь не открывают редактор. */
+function configProposal(prefill: ProposalPrefill | undefined, topic: string): ProposalPrefill | undefined {
+  const c = prefill?.proposal.change;
+  return c?.kind === "alterTopicConfigs" && c.topic === topic ? prefill : undefined;
+}
+
+function partitionsProposal(prefill: ProposalPrefill | undefined, topic: string): ProposalPrefill | undefined {
+  const c = prefill?.proposal.change;
+  return c?.kind === "addPartitions" && c.topic === topic ? prefill : undefined;
+}
+
+export function TopicDetails({ connectionId, topic, proposal }: { connectionId: string; topic: string; proposal?: ProposalPrefill }) {
   const { t: tt } = useTranslation();
-  const [sub, setSub] = useState<SubTab>("messages");
+  const forConfigs = configProposal(proposal, topic);
+  const [sub, setSub] = useState<SubTab>(forConfigs ? "configs" : "messages");
+  // Новое предложение по конфигам (другой nonce) переключает на подвкладку «Конфигурация».
+  useEffect(() => {
+    if (forConfigs) setSub("configs");
+  }, [forConfigs]);
   useHelpChapter(tabId({ kind: "topic", connectionId, topic }), sub === "messages" ? "browse" : "topics");
   const q = useQuery({ queryKey: ["topic", connectionId, topic], queryFn: () => api.getTopic(connectionId, topic) });
 
@@ -84,6 +102,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         <TopicActions
           connection={connection}
           topic={t}
+          proposal={partitionsProposal(proposal, topic)}
           onDeleted={() => {
             void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
             closeTab(tabId({ kind: "topic", connectionId, topic }));
@@ -102,7 +121,7 @@ export function TopicDetails({ connectionId, topic }: { connectionId: string; to
         <BrowsePanel connectionId={connectionId} topic={topic} />
       </div>
       {sub === "partitions" && <PartitionsTable topic={t} />}
-      {sub === "configs" && <TopicConfigs connectionId={connectionId} topic={topic} />}
+      {sub === "configs" && <TopicConfigs connectionId={connectionId} topic={topic} proposal={forConfigs} />}
       {sub === "groups" && <TopicGroups connectionId={connectionId} topic={topic} />}
     </div>
   );
@@ -142,11 +161,22 @@ function PartitionsTable({ topic }: { topic: TopicDetailsDto }) {
   );
 }
 
-function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: string }) {
+/** Правки редактора из предложения: `value` — установить, `null` — вернуть значение по умолчанию. */
+function editsOf(prefill: ProposalPrefill | undefined): Record<string, ConfigEdit> | undefined {
+  const c = prefill?.proposal.change;
+  if (c?.kind !== "alterTopicConfigs") return undefined;
+  return Object.fromEntries(c.changes.map((x) => [x.name, x.value === null ? { kind: "reset" } : { kind: "set", value: x.value }]));
+}
+
+function TopicConfigs({ connectionId, topic, proposal }: { connectionId: string; topic: string; proposal?: ProposalPrefill }) {
   const { t } = useTranslation();
   const connection = useConnection(connectionId);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(proposal !== undefined);
   const [dirty, setDirty] = useState(false);
+  // Предложение (новый nonce) включает редактор; редактор пересоздаётся по nonce с новыми правками.
+  useEffect(() => {
+    if (proposal) setEditing(true);
+  }, [proposal]);
   const q = useQuery({
     queryKey: ["topicConfigs", connectionId, topic],
     queryFn: () => api.getTopicConfigs(connectionId, topic),
@@ -169,7 +199,20 @@ function TopicConfigs({ connectionId, topic }: { connectionId: string; topic: st
         </div>
       )}
       {editing && canEdit && connection ? (
-        <ConfigEditor connection={connection} topic={topic} entries={q.data} onDone={() => setEditing(false)} onDirtyChange={setDirty} hints={TOPIC_CONFIG_HINTS} />
+        <>
+          <ProposalBanner prefill={proposal} />
+          <ConfigEditor
+            key={proposal?.nonce ?? 0}
+            connection={connection}
+            topic={topic}
+            entries={q.data}
+            onDone={() => setEditing(false)}
+            onDirtyChange={setDirty}
+            hints={TOPIC_CONFIG_HINTS}
+            initialEdits={editsOf(proposal)}
+            proposalId={proposal?.proposal.id ?? null}
+          />
+        </>
       ) : (
         <ConfigTable entries={q.data} hints={TOPIC_CONFIG_HINTS} />
       )}

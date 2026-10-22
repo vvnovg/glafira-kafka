@@ -17,12 +17,16 @@ interface Props {
   onDirtyChange?: (dirty: boolean) => void;
   /** Подсказки к параметрам: имя → ключ словаря; без него значков нет. */
   hints?: Record<string, string>;
+  /** Начальные правки из предложения LLM (G3): редактор открывается уже заполненным. */
+  initialEdits?: Record<string, ConfigEdit>;
+  /** Предложение LLM, из которого открыт редактор: Rust отметит его применённым после успеха. */
+  proposalId?: string | null;
 }
 
-export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange, hints }: Props) {
+export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange, hints, initialEdits, proposalId = null }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [edits, setEdits] = useState<Record<string, ConfigEdit>>({});
+  const [edits, setEdits] = useState<Record<string, ConfigEdit>>(() => initialEdits ?? {});
   // Снимок изменений на момент открытия проверки: дальше он не зависит от живых правок/обновления entries.
   const [review, setReview] = useState<{ changes: ConfigChange[]; rows: DiffRow[] } | null>(null);
   const [query, setQuery] = useState("");
@@ -30,7 +34,7 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
   const invalidSet = new Set(invalid);
   const apply = useMutation({
     mutationFn: (v: { changes: ConfigChange[]; confirm: string | null }) =>
-      api.alterTopicConfigs(connection.id, topic, v.changes, v.confirm),
+      api.alterTopicConfigs(connection.id, topic, v.changes, v.confirm, proposalId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["topicConfigs", connection.id, topic] });
       void queryClient.invalidateQueries({ queryKey: ["topicPolicies", connection.id] });

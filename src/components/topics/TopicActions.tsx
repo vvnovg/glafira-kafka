@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
 import type { ConnectionProfile, TopicDetails } from "../../api/types";
 import { i18n } from "../../i18n";
 import { tr } from "../../i18n/text";
+import type { ProposalPrefill } from "../../state/workspace";
 import { ConfirmDialog, needsConfirmation } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { ProposalBanner } from "../health/ProposalBanner";
 import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
 
 type Action = "partitions" | "purge" | "delete" | null;
@@ -15,6 +17,8 @@ interface Props {
   connection: ConnectionProfile;
   topic: TopicDetails;
   onDeleted: () => void;
+  /** Предложение LLM добавить партиции (G3): диалог открывается с его числом. */
+  proposal?: ProposalPrefill;
 }
 
 function useInvalidateTopic(connectionId: string, topic: string) {
@@ -36,9 +40,13 @@ export function purgeBlockReason(cleanup: string | null): string | null {
   return i18n.t("topics.actions.purgeBlocked", { policy: cleanup });
 }
 
-export function TopicActions({ connection, topic, onDeleted }: Props) {
+export function TopicActions({ connection, topic, onDeleted, proposal }: Props) {
   const { t } = useTranslation();
-  const [action, setAction] = useState<Action>(null);
+  const [action, setAction] = useState<Action>(proposal ? "partitions" : null);
+  // Предложение LLM добавить партиции (новый nonce) открывает диалог с его числом.
+  useEffect(() => {
+    if (proposal) setAction("partitions");
+  }, [proposal]);
   const policy = useQuery({
     queryKey: ["topicPolicies", connection.id, [topic.name]],
     queryFn: () => api.getTopicPolicies(connection.id, [topic.name]),
@@ -65,7 +73,19 @@ export function TopicActions({ connection, topic, onDeleted }: Props) {
         </button>
       </div>
       {purgeBlock && <p className="warn">{purgeBlock}</p>}
-      {action === "partitions" && <AddPartitions connection={connection} topic={topic} onClose={() => setAction(null)} />}
+      {action === "partitions" && (
+        <>
+          <ProposalBanner prefill={proposal} />
+          <AddPartitions
+            key={proposal?.nonce ?? 0}
+            connection={connection}
+            topic={topic}
+            initialTotal={proposal?.proposal.change.kind === "addPartitions" ? proposal.proposal.change.newTotal : undefined}
+            proposalId={proposal?.proposal.id ?? null}
+            onClose={() => setAction(null)}
+          />
+        </>
+      )}
       {action === "purge" && <Purge connection={connection} topic={topic} cleanup={cleanup} policyError={policy.error} onClose={() => setAction(null)} />}
       {action === "delete" && (
         <DeleteTopicsPanel
@@ -81,17 +101,30 @@ export function TopicActions({ connection, topic, onDeleted }: Props) {
   );
 }
 
-function AddPartitions({ connection, topic, onClose }: { connection: ConnectionProfile; topic: TopicDetails; onClose: () => void }) {
+function AddPartitions({
+  connection,
+  topic,
+  onClose,
+  initialTotal,
+  proposalId = null,
+}: {
+  connection: ConnectionProfile;
+  topic: TopicDetails;
+  onClose: () => void;
+  /** Число из предложения LLM (G3). */
+  initialTotal?: number;
+  proposalId?: string | null;
+}) {
   const { t } = useTranslation();
   const invalidate = useInvalidateTopic(connection.id, topic.name);
   const current = topic.partitions.length;
-  const [value, setValue] = useState(String(current + 1));
+  const [value, setValue] = useState(String(initialTotal ?? current + 1));
   // Снимок цели на момент открытия подтверждения.
   const [confirming, setConfirming] = useState<number | null>(null);
   const n = Number(value);
   const valid = Number.isInteger(n) && n > current;
   const run = useMutation({
-    mutationFn: (v: { total: number; confirm: string | null }) => api.addPartitions(connection.id, topic.name, v.total, v.confirm),
+    mutationFn: (v: { total: number; confirm: string | null }) => api.addPartitions(connection.id, topic.name, v.total, v.confirm, proposalId),
     onSuccess: () => {
       invalidate();
       onClose();

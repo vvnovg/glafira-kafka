@@ -7,10 +7,11 @@ import { i18n } from "../../i18n";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { useConnection } from "../../lib/useConnection";
-import { newConsumerKey, type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
+import { newConsumerKey, type ProposalPrefill, type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { HealthBlock } from "../health/HealthBlock";
+import { ProposalBanner } from "../health/ProposalBanner";
 import { groupTotalLag } from "./groupLag";
 import { ResetOffsetsPanel } from "./ResetOffsetsPanel";
 
@@ -26,10 +27,23 @@ interface Props {
   connectionId: string;
   groupId: string;
   resetPrefill?: ResetPrefill;
+  /** Предложение LLM сбросить оффсеты этой группы (G3): панель открывается заполненной. */
+  proposal?: ProposalPrefill;
 }
 
-export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
+/** Заполнение панели сброса: предложение LLM по этой группе или «Сбросить группу сюда» из сообщения. */
+function resetPrefillOf(proposal: ProposalPrefill | undefined, groupId: string, resetPrefill: ResetPrefill | undefined): ResetPrefill | undefined {
+  const c = proposal?.proposal.change;
+  if (proposal && c?.kind === "resetOffsets" && c.groupId === groupId) {
+    return { strategy: c.strategy, scope: c.scope, proposalId: proposal.proposal.id, nonce: proposal.nonce };
+  }
+  return resetPrefill;
+}
+
+export function GroupDetails({ connectionId, groupId, resetPrefill: fromMessage, proposal }: Props) {
   const { t } = useTranslation();
+  const resetPrefill = resetPrefillOf(proposal, groupId, fromMessage);
+  const forReset = resetPrefill && "proposalId" in resetPrefill ? proposal : undefined;
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
   const readOnly = connection?.readOnly === true;
@@ -169,7 +183,9 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
         </>
       )}
       {panel === "reset" && connection && canMutate && (
-        <ResetOffsetsPanel
+        <>
+          <ProposalBanner prefill={forReset} />
+          <ResetOffsetsPanel
           key={resetPrefill?.nonce ?? 0}
           connection={connection}
           groupId={groupId}
@@ -177,7 +193,8 @@ export function GroupDetails({ connectionId, groupId, resetPrefill }: Props) {
           blockedReason={resetBlock}
           onApplied={refresh}
           onClose={() => setPanel(null)}
-        />
+          />
+        </>
       )}
 
       <h3>{t("groups.details.partitions")}</h3>

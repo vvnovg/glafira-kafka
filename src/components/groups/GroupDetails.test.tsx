@@ -172,6 +172,29 @@ describe("GroupDetails", () => {
     expect(screen.getByText("Сброс возможен только для группы без участников (сейчас: Stable)")).toBeInTheDocument();
   });
 
+  it("предложение LLM открывает панель сброса с его стратегией и строкой о предложении", async () => {
+    vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Empty", members: [] }]);
+    const proposal = {
+      proposal: {
+        id: "p1",
+        severity: "warning" as const,
+        title: "Replay orders",
+        rationale: "r",
+        target: { kind: "group" as const, name: "g" },
+        change: { kind: "resetOffsets" as const, groupId: "g", strategy: { type: "latest" as const }, scope: { type: "all" as const } },
+        client: "claude-code",
+        createdAtMs: 1,
+        updatedAtMs: 1,
+        status: "open" as const,
+      },
+      nonce: 1,
+    };
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" proposal={proposal} />);
+    expect(await screen.findByText("Применяется предложение LLM: Replay orders")).toBeInTheDocument();
+    expect(screen.getByLabelText("Стратегия")).toHaveValue("latest");
+    expect(screen.getByRole("button", { name: "Предпросмотр" })).toBeInTheDocument();
+  });
+
   it("read-only: панель сброса не открывается даже с prefill", async () => {
     vi.mocked(api.listConnections).mockResolvedValue([{ ...dev, readOnly: true }]);
     vi.mocked(api.describeGroups).mockResolvedValue([stable]);

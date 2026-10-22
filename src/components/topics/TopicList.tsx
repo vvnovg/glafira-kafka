@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -6,12 +6,13 @@ import { api, toAppError } from "../../api/client";
 import { tr } from "../../i18n/text";
 import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
-import { useWorkspace } from "../../state/workspace";
+import { type ProposalPrefill, useWorkspace } from "../../state/workspace";
 import { useConnection } from "../../lib/useConnection";
 import { CreateTopicForm } from "./CreateTopicForm";
 import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { HealthBadge } from "../health/HealthBlock";
+import { ProposalBanner } from "../health/ProposalBanner";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import {
   buildCounts,
@@ -28,8 +29,14 @@ const REFRESH_OPTIONS = [
   { labelKey: "topics.list.every30", value: 30_000 },
 ];
 
-export function TopicList({ connectionId }: { connectionId: string }) {
+/** Предложение LLM создать топик (G3); другие виды форму не открывают. */
+function createProposal(prefill: ProposalPrefill | undefined): ProposalPrefill | undefined {
+  return prefill?.proposal.change.kind === "createTopic" ? prefill : undefined;
+}
+
+export function TopicList({ connectionId, proposal }: { connectionId: string; proposal?: ProposalPrefill }) {
   const { t: tt } = useTranslation();
+  const forCreate = createProposal(proposal);
   const [query, setQuery] = useState("");
   const [showInternal, setShowInternal] = useState(false);
   const [refreshMs, setRefreshMs] = useState(0);
@@ -38,7 +45,11 @@ export function TopicList({ connectionId }: { connectionId: string }) {
   const open = useWorkspace((s) => s.open);
   const connection = useConnection(connectionId);
   const canMutate = connection !== undefined && !connection.readOnly;
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(forCreate !== undefined);
+  // Новое предложение (другой nonce) открывает форму заново; форма пересоздаётся по nonce.
+  useEffect(() => {
+    if (forCreate) setCreating(true);
+  }, [forCreate]);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTargets, setDeleteTargets] = useState<string[] | null>(null);
@@ -198,15 +209,30 @@ export function TopicList({ connectionId }: { connectionId: string }) {
         </span>
       </div>
       {creating && connection && (
-        <CreateTopicForm
-          connection={connection}
-          onCancel={() => setCreating(false)}
-          onCreated={(name) => {
-            setCreating(false);
-            void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
-            open({ kind: "topic", connectionId, topic: name });
-          }}
-        />
+        <>
+          <ProposalBanner prefill={forCreate} />
+          <CreateTopicForm
+            key={forCreate?.nonce ?? 0}
+            connection={connection}
+            initial={
+              forCreate?.proposal.change.kind === "createTopic"
+                ? {
+                    name: forCreate.proposal.change.name,
+                    partitions: forCreate.proposal.change.partitions,
+                    replicationFactor: forCreate.proposal.change.replicationFactor,
+                    configs: forCreate.proposal.change.configs,
+                  }
+                : undefined
+            }
+            proposalId={forCreate?.proposal.id ?? null}
+            onCancel={() => setCreating(false)}
+            onCreated={(name) => {
+              setCreating(false);
+              void queryClient.invalidateQueries({ queryKey: ["topics", connectionId] });
+              open({ kind: "topic", connectionId, topic: name });
+            }}
+          />
+        </>
       )}
       {deleting && connection && (
         <DeleteTopicsPanel

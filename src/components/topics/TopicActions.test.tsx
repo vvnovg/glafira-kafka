@@ -49,7 +49,31 @@ describe("TopicActions", () => {
     await user.clear(input);
     await user.type(input, "4");
     await user.click(screen.getByRole("button", { name: "Увеличить" }));
-    expect(api.addPartitions).toHaveBeenCalledWith("c", "orders", 4, null);
+    expect(api.addPartitions).toHaveBeenCalledWith("c", "orders", 4, null, null);
+  });
+
+  it("предложение LLM открывает диалог партиций с его числом и передаёт proposalId", async () => {
+    const user = userEvent.setup();
+    const proposal = {
+      proposal: {
+        id: "p1",
+        severity: "warning" as const,
+        title: "More partitions",
+        rationale: "r",
+        target: { kind: "topic" as const, name: "orders" },
+        change: { kind: "addPartitions" as const, topic: "orders", newTotal: 4 },
+        client: "claude-code",
+        createdAtMs: 1,
+        updatedAtMs: 1,
+        status: "open" as const,
+      },
+      nonce: 1,
+    };
+    renderWithClient(<TopicActions connection={dev} topic={topic} onDeleted={() => {}} proposal={proposal} />);
+    expect(screen.getByText("Применяется предложение LLM: More partitions")).toBeInTheDocument();
+    expect(screen.getByLabelText("Новое число партиций")).toHaveValue(4);
+    await user.click(screen.getByRole("button", { name: "Увеличить" }));
+    expect(api.addPartitions).toHaveBeenCalledWith("c", "orders", 4, null, "p1");
   });
 
   it("purge предупреждает о compact и требует имя топика", async () => {

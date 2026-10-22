@@ -17,7 +17,7 @@ export const healthCheckKey = (connectionId: string) => ["healthCheck", connecti
  */
 const HEALTH_STALE_MS = 60_000;
 
-/** Последняя проверка, скрытые находки и замечания LLM подключения. */
+/** Последняя проверка, скрытые находки, замечания и предложения LLM подключения. */
 export function useHealth(connectionId: string) {
   return useQuery({ queryKey: healthKey(connectionId), queryFn: () => api.getHealth(connectionId), staleTime: HEALTH_STALE_MS });
 }
@@ -56,5 +56,13 @@ export function useHealthActions(connectionId: string) {
     }),
     remove: useMutation({ mutationFn: (id: string) => api.deleteAnnotation(connectionId, id), onSuccess }),
     removeAll: useMutation({ mutationFn: () => api.deleteAllAnnotations(connectionId), onSuccess }),
+    // Предложения LLM: отклонить (с необязательной причиной) или открыть снова, удалить одно или все.
+    setProposalStatus: useMutation({
+      mutationFn: (p: { id: string; status: "rejected" | "open"; reason?: string }) =>
+        api.setProposalStatus(connectionId, p.id, p.status, p.reason ?? null),
+      onSuccess,
+    }),
+    removeProposal: useMutation({ mutationFn: (id: string) => api.deleteProposal(connectionId, id), onSuccess }),
+    removeAllProposals: useMutation({ mutationFn: () => api.deleteAllProposals(connectionId), onSuccess }),
   };
 }

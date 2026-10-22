@@ -1200,7 +1200,7 @@
     "filterSource": "来源",
     "allSources": "全部来源",
     "sourceRules": "规则",
-    "sourceLlm": "LLM 批注",
+    "sourceLlm": "LLM 批注和建议",
     "filterKind": "对象",
     "allKinds": "全部对象",
     "kind": {
@@ -1257,7 +1257,36 @@
     "allFindings": "全部检查结果",
     "badgeTitle": "需要关注：{{count}}",
     "allHidden": "所有检查结果均已隐藏。要查看，请勾选“显示已隐藏”。",
-    "checkedAs": "按 {{env}} 检查"
+    "checkedAs": "按 {{env}} 检查",
+    "proposals": {
+      "title": "LLM 建议",
+      "intro": "通过 MCP 连接的 LLM 助手可以在这里提出更改建议。在你于表单中打开建议并确认之前，不会应用任何更改。",
+      "none": "没有 LLM 建议。",
+      "by": "LLM 建议 · {{client}}",
+      "openForm": "在表单中打开",
+      "readOnly": "连接为只读",
+      "reject": "拒绝",
+      "reasonPlaceholder": "原因（可选）",
+      "rejectConfirm": "拒绝建议",
+      "deleteAll": "删除所有 LLM 建议",
+      "deleteAllConfirm": "删除此连接的所有 LLM 建议？",
+      "applying": "正在应用 LLM 建议：{{title}}",
+      "status": {
+        "applied": "已应用，{{when}}",
+        "appliedEdited": "已修改后应用，{{when}}",
+        "rejected": "已拒绝",
+        "rejectedWithReason": "已拒绝：{{reason}}",
+        "withdrawn": "已撤回"
+      },
+      "change": {
+        "alterTopicConfigs": "主题配置：",
+        "createTopic": "新主题 — 分区：{{partitions}}，副本因子：{{rf}}",
+        "brokerDefault": "Broker 默认值",
+        "configs": "配置：{{configs}}",
+        "addPartitions": "分区：→ {{newTotal}}",
+        "resetOffsets": "组偏移量：{{strategy}}，{{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "提示：{{name}}",

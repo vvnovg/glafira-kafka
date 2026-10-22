@@ -97,6 +97,11 @@ export const api = {
   deleteAnnotation: (connectionId: string, annotationId: string) =>
     call<HealthView>("delete_annotation", { connectionId, annotationId }),
   deleteAllAnnotations: (connectionId: string) => call<HealthView>("delete_all_annotations", { connectionId }),
+  setProposalStatus: (connectionId: string, proposalId: string, status: "rejected" | "open", reason: string | null) =>
+    call<HealthView>("set_proposal_status", { connectionId, proposalId, status, reason }),
+  deleteProposal: (connectionId: string, proposalId: string) =>
+    call<HealthView>("delete_proposal", { connectionId, proposalId }),
+  deleteAllProposals: (connectionId: string) => call<HealthView>("delete_all_proposals", { connectionId }),
   listConnections: () => call<ConnectionProfile[]>("list_connections"),
   saveConnection: (profile: ConnectionProfile, saslPassword?: string, tlsPasswords?: TlsPasswordsInput) =>
     call<ConnectionProfile>("save_connection", {
@@ -132,12 +137,13 @@ export const api = {
   getTopicConfigs: (connectionId: string, topic: string) =>
     call<ConfigEntry[]>("get_topic_configs", { connectionId, topic }),
 
-  createTopic: (connectionId: string, spec: NewTopicSpec, confirm: string | null) =>
-    call<void>("create_topic", { connectionId, spec, confirm }),
-  alterTopicConfigs: (connectionId: string, topic: string, changes: ConfigChange[], confirm: string | null) =>
-    call<void>("alter_topic_configs", { connectionId, topic, changes, confirm }),
-  addPartitions: (connectionId: string, topic: string, newTotal: number, confirm: string | null) =>
-    call<void>("add_partitions", { connectionId, topic, newTotal, confirm }),
+  // `proposalId` — форма открыта из предложения LLM: Rust отметит его применённым после успеха.
+  createTopic: (connectionId: string, spec: NewTopicSpec, confirm: string | null, proposalId: string | null = null) =>
+    call<void>("create_topic", { connectionId, spec, confirm, proposalId }),
+  alterTopicConfigs: (connectionId: string, topic: string, changes: ConfigChange[], confirm: string | null, proposalId: string | null = null) =>
+    call<void>("alter_topic_configs", { connectionId, topic, changes, confirm, proposalId }),
+  addPartitions: (connectionId: string, topic: string, newTotal: number, confirm: string | null, proposalId: string | null = null) =>
+    call<void>("add_partitions", { connectionId, topic, newTotal, confirm, proposalId }),
   purgeTopic: (connectionId: string, topic: string, partitions: number[] | null, c: Confirmation) =>
     call<PurgedPartition[]>("purge_topic", { connectionId, topic, partitions, confirm: c.confirm, typedName: c.typedName }),
   deleteTopics: (connectionId: string, topics: string[], c: Confirmation) =>
@@ -160,8 +166,22 @@ export const api = {
   getTopicGroups: (connectionId: string, topic: string) => call<TopicGroups>("get_topic_groups", { connectionId, topic }),
   previewOffsetReset: (connectionId: string, request: ResetRequest) =>
     call<ResetPreviewRow[]>("preview_offset_reset", { connectionId, request }),
-  resetOffsets: (connectionId: string, groupId: string, offsets: OffsetTarget[], confirm: string | null) =>
-    call<ResetResult[]>("reset_offsets", { connectionId, groupId, offsets, confirm }),
+  // `proposal` — сброс открыт из предложения LLM: его id и запрос предпросмотра для сравнения.
+  resetOffsets: (
+    connectionId: string,
+    groupId: string,
+    offsets: OffsetTarget[],
+    confirm: string | null,
+    proposal: { id: string; request: ResetRequest } | null = null,
+  ) =>
+    call<ResetResult[]>("reset_offsets", {
+      connectionId,
+      groupId,
+      offsets,
+      confirm,
+      proposalId: proposal?.id ?? null,
+      request: proposal?.request ?? null,
+    }),
   deleteGroup: (connectionId: string, groupId: string, c: Confirmation) =>
     call<void>("delete_group", { connectionId, groupId, confirm: c.confirm, typedName: c.typedName }),
 

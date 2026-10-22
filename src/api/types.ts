@@ -678,9 +678,46 @@ export interface Annotation {
   closedAtMs?: number;
 }
 
-/** Состояние подключения: последняя проверка, скрытые находки (ключи), замечания LLM. */
+export type ProposalStatus = "open" | "applied" | "rejected" | "withdrawn";
+
+/** Одно изменение конфига топика; `value: null` — вернуть значение по умолчанию. */
+export interface ConfigValueChange {
+  name: string;
+  value: string | null;
+}
+
+/** Что предлагает LLM (G3); та же форма, что у модели и в файле Glafira. */
+export type ProposalChange =
+  | { kind: "alterTopicConfigs"; topic: string; changes: ConfigValueChange[] }
+  | { kind: "createTopic"; name: string; partitions: number; replicationFactor: number; configs: Record<string, string> }
+  | { kind: "addPartitions"; topic: string; newTotal: number }
+  | { kind: "resetOffsets"; groupId: string; strategy: ResetStrategy; scope: ResetScope };
+
+/** Предложение LLM: изменение, которое человек применяет формой; статус «применено» ставит Rust. */
+export interface Proposal {
+  id: string;
+  severity: Severity;
+  title: string;
+  rationale: string;
+  target: HealthTarget;
+  change: ProposalChange;
+  relatedRuleId?: string;
+  relatedFindingKey?: string;
+  client: string | null;
+  createdAtMs: number;
+  updatedAtMs: number;
+  status: ProposalStatus;
+  closedAtMs?: number;
+  /** Только у applied: применено без правок (true) или с правками. */
+  appliedAsProposed?: boolean;
+  /** Только у rejected: комментарий человека. */
+  rejectReason?: string;
+}
+
+/** Состояние подключения: последняя проверка, скрытые находки (ключи), замечания и предложения LLM. */
 export interface HealthView {
   lastCheck: CheckRun | null;
   ignored: string[];
   annotations: Annotation[];
+  proposals: Proposal[];
 }

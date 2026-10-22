@@ -1210,7 +1210,7 @@
     "filterSource": "Origem",
     "allSources": "Todas as origens",
     "sourceRules": "Regras",
-    "sourceLlm": "Notas de LLM",
+    "sourceLlm": "Notas e propostas de LLM",
     "filterKind": "Objeto",
     "allKinds": "Todos os objetos",
     "kind": {
@@ -1267,7 +1267,36 @@
     "allFindings": "Todas as constatações",
     "badgeTitle": "Exigem atenção: {{count}}",
     "allHidden": "Todas as constatações estão ocultas. Para vê-las, marque “Mostrar ocultas”.",
-    "checkedAs": "verificado como {{env}}"
+    "checkedAs": "verificado como {{env}}",
+    "proposals": {
+      "title": "Propostas de LLM",
+      "intro": "Assistentes LLM conectados por MCP podem propor alterações aqui. Nada é aplicado até você abrir a proposta em um formulário e confirmá-la.",
+      "none": "Nenhuma proposta de LLM.",
+      "by": "Proposta de LLM · {{client}}",
+      "openForm": "Abrir no formulário",
+      "readOnly": "A conexão é somente leitura",
+      "reject": "Rejeitar",
+      "reasonPlaceholder": "Motivo (opcional)",
+      "rejectConfirm": "Rejeitar a proposta",
+      "deleteAll": "Excluir todas as propostas de LLM",
+      "deleteAllConfirm": "Excluir todas as propostas de LLM desta conexão?",
+      "applying": "Aplicando a proposta de LLM: {{title}}",
+      "status": {
+        "applied": "aplicada {{when}}",
+        "appliedEdited": "aplicada com alterações {{when}}",
+        "rejected": "rejeitada",
+        "rejectedWithReason": "rejeitada: {{reason}}",
+        "withdrawn": "retirada"
+      },
+      "change": {
+        "alterTopicConfigs": "Configurações do tópico:",
+        "createTopic": "Novo tópico — partições: {{partitions}}, fator de replicação: {{rf}}",
+        "brokerDefault": "padrão do broker",
+        "configs": "configurações: {{configs}}",
+        "addPartitions": "Partições: → {{newTotal}}",
+        "resetOffsets": "Offsets do grupo: {{strategy}}, {{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "Dica: {{name}}",

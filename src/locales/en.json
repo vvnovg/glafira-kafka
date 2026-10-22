@@ -1205,7 +1205,7 @@
     "filterSource": "Source",
     "allSources": "All sources",
     "sourceRules": "Rules",
-    "sourceLlm": "LLM notes",
+    "sourceLlm": "LLM notes and proposals",
     "filterKind": "Object",
     "allKinds": "All objects",
     "kind": {
@@ -1262,7 +1262,36 @@
     "allFindings": "All findings",
     "badgeTitle": "Needs attention: {{count}}",
     "allHidden": "All findings are hidden. To see them, turn on “Show hidden”.",
-    "checkedAs": "checked as {{env}}"
+    "checkedAs": "checked as {{env}}",
+    "proposals": {
+      "title": "LLM proposals",
+      "intro": "LLM assistants connected over MCP can propose changes here. Nothing is applied until you open a proposal in a form and confirm it.",
+      "none": "No LLM proposals.",
+      "by": "LLM proposal · {{client}}",
+      "openForm": "Open in form",
+      "readOnly": "The connection is read-only",
+      "reject": "Reject",
+      "reasonPlaceholder": "Reason (optional)",
+      "rejectConfirm": "Reject proposal",
+      "deleteAll": "Delete all LLM proposals",
+      "deleteAllConfirm": "Delete all LLM proposals of this connection?",
+      "applying": "Applying LLM proposal: {{title}}",
+      "status": {
+        "applied": "applied {{when}}",
+        "appliedEdited": "applied with edits {{when}}",
+        "rejected": "rejected",
+        "rejectedWithReason": "rejected: {{reason}}",
+        "withdrawn": "withdrawn"
+      },
+      "change": {
+        "alterTopicConfigs": "Topic configs:",
+        "createTopic": "New topic — partitions: {{partitions}}, replication factor: {{rf}}",
+        "brokerDefault": "broker default",
+        "configs": "configs: {{configs}}",
+        "addPartitions": "Partitions: → {{newTotal}}",
+        "resetOffsets": "Group offsets: {{strategy}}, {{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "Hint: {{name}}",

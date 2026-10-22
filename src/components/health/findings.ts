@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { Annotation, Finding, HealthTarget, HealthView, Severity } from "../../api/types";
+import type { Annotation, Finding, HealthTarget, HealthView, Proposal, Severity } from "../../api/types";
 
 export const SEVERITY_RANK: Record<Severity, number> = { info: 0, warning: 1, critical: 2 };
 export const SEVERITIES: Severity[] = ["critical", "warning", "info"];
@@ -61,35 +61,42 @@ export function openNotes(view: HealthView | undefined): Annotation[] {
   return (view?.annotations ?? []).filter((a) => a.status === "open");
 }
 
-/** Что относится к объекту: видимые находки и открытые замечания. */
+export function openProposals(view: HealthView | undefined): Proposal[] {
+  return (view?.proposals ?? []).filter((p) => p.status === "open");
+}
+
+/** Что относится к объекту: видимые находки, открытые замечания и открытые предложения. */
 export function itemsFor(view: HealthView | undefined, match: (t: HealthTarget) => boolean) {
   return {
     findings: findingsOf(view, false).filter((f) => match(f.target)),
     notes: openNotes(view).filter((a) => match(a.target)),
+    proposals: openProposals(view).filter((p) => match(p.target)),
   };
 }
 
-/** Что посчитал значок: находка или открытое замечание уровня «критично» или «предупреждение». */
+/** Что посчитал значок: находка, открытое замечание или открытое предложение уровня «критично» или «предупреждение». */
 export type BadgeItem =
   | { kind: "finding"; severity: Severity; finding: Finding }
-  | { kind: "note"; severity: Severity; note: Annotation };
+  | { kind: "note"; severity: Severity; note: Annotation }
+  | { kind: "proposal"; severity: Severity; proposal: Proposal };
 
 export interface Badge {
   count: number;
   severity: Severity;
-  /** Самые строгие первыми; внутри строгости — сначала находки, затем замечания, порядок данных сохраняется. */
+  /** Самые строгие первыми; внутри строгости — сначала находки, затем замечания, затем предложения; порядок данных сохраняется. */
   items: BadgeItem[];
 }
 
 /** Сколько заголовков показывает подсказка значка; остальное сворачивается в «…». */
 export const BADGE_TITLES_MAX = 10;
 
-/** Значок: число видимых находок и открытых замечаний уровня «критично» и «предупреждение». */
+/** Значок: число видимых находок, открытых замечаний и предложений уровня «критично» и «предупреждение». */
 export function badgeFor(view: HealthView | undefined, match: (t: HealthTarget) => boolean): Badge | null {
-  const { findings, notes } = itemsFor(view, match);
+  const { findings, notes, proposals } = itemsFor(view, match);
   const items: BadgeItem[] = [
     ...findings.map((finding): BadgeItem => ({ kind: "finding", severity: finding.severity, finding })),
     ...notes.map((note): BadgeItem => ({ kind: "note", severity: note.severity, note })),
+    ...proposals.map((proposal): BadgeItem => ({ kind: "proposal", severity: proposal.severity, proposal })),
   ]
     .filter((i) => i.severity !== "info")
     // Сортировка стабильна: порядок внутри одной строгости остаётся прежним.
@@ -98,15 +105,17 @@ export function badgeFor(view: HealthView | undefined, match: (t: HealthTarget) 
   return { count: items.length, severity: items[0].severity, items };
 }
 
+const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+
 /**
  * Подсказка значка: первая строка — «Требуют внимания: N», далее заголовки учтённого (не больше 10, затем «…»).
  * Строки через перевод строки: нативная подсказка `title` его показывает. Пробелы и переводы строк
- * в заголовке замечания LLM схлопываются: одна строка подсказки — один заголовок.
+ * в заголовке замечания или предложения LLM схлопываются: одна строка подсказки — один заголовок.
  */
 export function badgeTooltip(badge: Badge, t: TFunction, lang: string): string {
   const titles = badge.items
     .slice(0, BADGE_TITLES_MAX)
-    .map((i) => (i.kind === "finding" ? findingTexts(i.finding, t, lang).title : i.note.title.replace(/\s+/g, " ").trim()));
+    .map((i) => (i.kind === "finding" ? findingTexts(i.finding, t, lang).title : i.kind === "note" ? oneLine(i.note.title) : oneLine(i.proposal.title)));
   if (badge.items.length > BADGE_TITLES_MAX) titles.push("…");
   return [t("health.badgeTitle", { count: badge.count }), ...titles].join("\n");
 }

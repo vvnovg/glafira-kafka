@@ -52,6 +52,7 @@ const view: HealthView = {
       status: "open",
     },
   ],
+  proposals: [],
 };
 
 const isTopic = (name: string) => (x: { kind: string; name?: string }) => x.kind === "topic" && x.name === name;

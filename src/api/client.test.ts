@@ -99,7 +99,7 @@ describe("api client", () => {
     invoke.mockResolvedValue([]);
     const offsets = [{ topic: "t", partition: 0, offset: 5 }];
     await api.resetOffsets("c1", "g", offsets, null);
-    expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null });
+    expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null, proposalId: null, request: null });
   });
   it("startConsumer передаёт параметры, Channel и подтверждение", async () => {
     invoke.mockResolvedValue("sid");

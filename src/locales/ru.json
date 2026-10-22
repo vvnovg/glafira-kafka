@@ -1215,7 +1215,7 @@
     "filterSource": "Источник",
     "allSources": "Все источники",
     "sourceRules": "Правила",
-    "sourceLlm": "Замечания LLM",
+    "sourceLlm": "Замечания и предложения LLM",
     "filterKind": "Объект",
     "allKinds": "Все объекты",
     "kind": {
@@ -1272,7 +1272,36 @@
     "allFindings": "Все замечания",
     "badgeTitle": "Требуют внимания: {{count}}",
     "allHidden": "Все находки скрыты. Их видно с флажком «Показать скрытые».",
-    "checkedAs": "проверено как {{env}}"
+    "checkedAs": "проверено как {{env}}",
+    "proposals": {
+      "title": "Предложения LLM",
+      "intro": "LLM-ассистенты, подключённые по MCP, могут предлагать здесь изменения. Ничего не применяется, пока вы не откроете предложение в форме и не подтвердите его.",
+      "none": "Предложений LLM нет.",
+      "by": "Предложение LLM · {{client}}",
+      "openForm": "Открыть в форме",
+      "readOnly": "Подключение только для чтения",
+      "reject": "Отклонить",
+      "reasonPlaceholder": "Причина (необязательно)",
+      "rejectConfirm": "Отклонить предложение",
+      "deleteAll": "Удалить все предложения LLM",
+      "deleteAllConfirm": "Удалить все предложения LLM у этого подключения?",
+      "applying": "Применяется предложение LLM: {{title}}",
+      "status": {
+        "applied": "применено {{when}}",
+        "appliedEdited": "применено с правками {{when}}",
+        "rejected": "отклонено",
+        "rejectedWithReason": "отклонено: {{reason}}",
+        "withdrawn": "отозвано"
+      },
+      "change": {
+        "alterTopicConfigs": "Конфиги топика:",
+        "createTopic": "Новый топик — партиций: {{partitions}}, фактор репликации: {{rf}}",
+        "brokerDefault": "по умолчанию брокера",
+        "configs": "конфиги: {{configs}}",
+        "addPartitions": "Партиций: → {{newTotal}}",
+        "resetOffsets": "Оффсеты группы: {{strategy}}, {{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "Подсказка: {{name}}",

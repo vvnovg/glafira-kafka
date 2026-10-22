@@ -1210,7 +1210,7 @@
     "filterSource": "Origine",
     "allSources": "Toutes les origines",
     "sourceRules": "Règles",
-    "sourceLlm": "Remarques LLM",
+    "sourceLlm": "Remarques et propositions LLM",
     "filterKind": "Objet",
     "allKinds": "Tous les objets",
     "kind": {
@@ -1267,7 +1267,36 @@
     "allFindings": "Tous les constats",
     "badgeTitle": "À examiner : {{count}}",
     "allHidden": "Tous les constats sont masqués. Pour les voir, cochez « Afficher les masqués ».",
-    "checkedAs": "vérifié comme {{env}}"
+    "checkedAs": "vérifié comme {{env}}",
+    "proposals": {
+      "title": "Propositions LLM",
+      "intro": "Les assistants LLM connectés via MCP peuvent proposer ici des modifications. Rien n’est appliqué tant que vous n’ouvrez pas une proposition dans un formulaire et ne la confirmez pas.",
+      "none": "Aucune proposition LLM.",
+      "by": "Proposition LLM · {{client}}",
+      "openForm": "Ouvrir dans le formulaire",
+      "readOnly": "La connexion est en lecture seule",
+      "reject": "Rejeter",
+      "reasonPlaceholder": "Motif (facultatif)",
+      "rejectConfirm": "Rejeter la proposition",
+      "deleteAll": "Supprimer toutes les propositions LLM",
+      "deleteAllConfirm": "Supprimer toutes les propositions LLM de cette connexion ?",
+      "applying": "Application de la proposition LLM : {{title}}",
+      "status": {
+        "applied": "appliquée {{when}}",
+        "appliedEdited": "appliquée avec des modifications {{when}}",
+        "rejected": "rejetée",
+        "rejectedWithReason": "rejetée : {{reason}}",
+        "withdrawn": "retirée"
+      },
+      "change": {
+        "alterTopicConfigs": "Configuration du topic :",
+        "createTopic": "Nouveau topic — partitions : {{partitions}}, facteur de réplication : {{rf}}",
+        "brokerDefault": "valeur par défaut du broker",
+        "configs": "configuration : {{configs}}",
+        "addPartitions": "Partitions : → {{newTotal}}",
+        "resetOffsets": "Offsets du groupe : {{strategy}}, {{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "Aide : {{name}}",

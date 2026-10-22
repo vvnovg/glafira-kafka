@@ -1200,7 +1200,7 @@
     "filterSource": "來源",
     "allSources": "所有來源",
     "sourceRules": "規則",
-    "sourceLlm": "LLM 註記",
+    "sourceLlm": "LLM 註記與建議",
     "filterKind": "物件",
     "allKinds": "所有物件",
     "kind": {
@@ -1257,7 +1257,36 @@
     "allFindings": "所有檢查結果",
     "badgeTitle": "需要注意：{{count}}",
     "allHidden": "所有檢查結果皆已隱藏。若要查看，請勾選「顯示已隱藏」。",
-    "checkedAs": "以 {{env}} 檢查"
+    "checkedAs": "以 {{env}} 檢查",
+    "proposals": {
+      "title": "LLM 建議",
+      "intro": "透過 MCP 連線的 LLM 助理可以在這裡提出變更建議。在你於表單中開啟建議並確認之前，不會套用任何變更。",
+      "none": "沒有 LLM 建議。",
+      "by": "LLM 建議 · {{client}}",
+      "openForm": "在表單中開啟",
+      "readOnly": "連線為唯讀",
+      "reject": "拒絕",
+      "reasonPlaceholder": "原因（選填）",
+      "rejectConfirm": "拒絕建議",
+      "deleteAll": "刪除所有 LLM 建議",
+      "deleteAllConfirm": "要刪除此連線的所有 LLM 建議嗎？",
+      "applying": "正在套用 LLM 建議：{{title}}",
+      "status": {
+        "applied": "已套用，{{when}}",
+        "appliedEdited": "已修改後套用，{{when}}",
+        "rejected": "已拒絕",
+        "rejectedWithReason": "已拒絕：{{reason}}",
+        "withdrawn": "已撤回"
+      },
+      "change": {
+        "alterTopicConfigs": "主題設定：",
+        "createTopic": "新主題 — 分區：{{partitions}}，複寫係數：{{rf}}",
+        "brokerDefault": "Broker 預設值",
+        "configs": "設定：{{configs}}",
+        "addPartitions": "分區：→ {{newTotal}}",
+        "resetOffsets": "群組偏移量：{{strategy}}，{{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "提示：{{name}}",

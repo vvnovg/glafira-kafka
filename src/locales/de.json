@@ -1205,7 +1205,7 @@
     "filterSource": "Quelle",
     "allSources": "Alle Quellen",
     "sourceRules": "Regeln",
-    "sourceLlm": "LLM-Anmerkungen",
+    "sourceLlm": "LLM-Anmerkungen und -Vorschläge",
     "filterKind": "Objekt",
     "allKinds": "Alle Objekte",
     "kind": {
@@ -1262,7 +1262,36 @@
     "allFindings": "Alle Befunde",
     "badgeTitle": "Erfordern Aufmerksamkeit: {{count}}",
     "allHidden": "Alle Befunde sind ausgeblendet. Um sie zu sehen, aktivieren Sie „Ausgeblendete anzeigen“.",
-    "checkedAs": "geprüft als {{env}}"
+    "checkedAs": "geprüft als {{env}}",
+    "proposals": {
+      "title": "LLM-Vorschläge",
+      "intro": "Über MCP verbundene LLM-Assistenten können hier Änderungen vorschlagen. Nichts wird angewendet, bis Sie einen Vorschlag im Formular öffnen und bestätigen.",
+      "none": "Keine LLM-Vorschläge.",
+      "by": "LLM-Vorschlag · {{client}}",
+      "openForm": "Im Formular öffnen",
+      "readOnly": "Die Verbindung ist schreibgeschützt",
+      "reject": "Ablehnen",
+      "reasonPlaceholder": "Grund (optional)",
+      "rejectConfirm": "Vorschlag ablehnen",
+      "deleteAll": "Alle LLM-Vorschläge löschen",
+      "deleteAllConfirm": "Alle LLM-Vorschläge dieser Verbindung löschen?",
+      "applying": "LLM-Vorschlag wird angewendet: {{title}}",
+      "status": {
+        "applied": "angewendet {{when}}",
+        "appliedEdited": "mit Änderungen angewendet {{when}}",
+        "rejected": "abgelehnt",
+        "rejectedWithReason": "abgelehnt: {{reason}}",
+        "withdrawn": "zurückgezogen"
+      },
+      "change": {
+        "alterTopicConfigs": "Topic-Konfiguration:",
+        "createTopic": "Neues Topic — Partitionen: {{partitions}}, Replikationsfaktor: {{rf}}",
+        "brokerDefault": "Broker-Standard",
+        "configs": "Konfiguration: {{configs}}",
+        "addPartitions": "Partitionen: → {{newTotal}}",
+        "resetOffsets": "Offsets der Gruppe: {{strategy}}, {{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "Hinweis: {{name}}",

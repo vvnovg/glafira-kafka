@@ -27,6 +27,7 @@ const checked = (findings: Finding[]): HealthView => ({
   },
   ignored: [],
   annotations: [],
+  proposals: [],
 });
 
 const problem: Finding = { key: "k1", ruleId: "topic.replicationFactorOne", severity: "critical", target: { kind: "topic", name: "orders" }, params: {} };
@@ -99,7 +100,7 @@ describe("CheckBar: ссылка «Все замечания»", () => {
   });
 
   it("пока проверок не было, ссылки нет", async () => {
-    vi.mocked(api.getHealth).mockResolvedValue({ lastCheck: null, ignored: [], annotations: [] });
+    vi.mocked(api.getHealth).mockResolvedValue({ lastCheck: null, ignored: [], annotations: [], proposals: [] });
     renderWithClient(<CheckBar connectionId="c1" allLink />);
     await screen.findByText("Кластер ещё не проверялся.");
     expect(screen.queryByRole("button", { name: "Все замечания" })).not.toBeInTheDocument();

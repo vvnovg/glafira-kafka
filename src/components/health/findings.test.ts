@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Annotation, Finding, HealthView } from "../../api/types";
+import type { Annotation, Finding, HealthView, Proposal } from "../../api/types";
 import { i18n } from "../../i18n";
 import { BADGE_TITLES_MAX, badgeFor, badgeTooltip, findingsOf, findingTexts, itemsFor, sameTarget } from "./findings";
 
@@ -37,6 +37,7 @@ function view(findings: Finding[], annotations: Annotation[] = [], ignored: stri
     },
     ignored,
     annotations,
+    proposals: [],
   };
 }
 
@@ -104,6 +105,29 @@ describe("selection and badges", () => {
     expect(badgeFor(view([info]), () => true)).toBeNull();
     expect(sameTarget({ kind: "cluster" }, { kind: "cluster", name: "x" })).toBe(true);
   });
+
+  it("counts open proposals like notes and names them in the tooltip", () => {
+    const proposal = (name: string, status: Proposal["status"], severity: Proposal["severity"] = "warning"): Proposal => ({
+      id: name + status,
+      severity,
+      title: `  Fix\n${name}  `,
+      rationale: "r",
+      target: { kind: "topic", name },
+      change: { kind: "addPartitions", topic: name, newTotal: 6 },
+      client: "claude-ai",
+      createdAtMs: 1,
+      updatedAtMs: 1,
+      status,
+    });
+    const v = { ...view([a], [note("warning", "a")]), proposals: [proposal("a", "open"), proposal("a", "applied"), proposal("a", "open", "info"), proposal("b", "open", "critical")] };
+    const isA = (x: Finding["target"]) => sameTarget(x, { kind: "topic", name: "a" });
+    expect(itemsFor(v, isA).proposals).toHaveLength(2);
+    const b = badgeFor(v, isA)!;
+    expect(b).toMatchObject({ count: 3, severity: "critical" });
+    expect(b.items.map((i) => i.kind)).toEqual(["finding", "note", "proposal"]);
+    expect(badgeTooltip(b, t, "ru").split("\n")[3]).toBe("Fix a");
+    expect(badgeFor(v, () => true)).toMatchObject({ count: 4 });
+  });
 });
 
 describe("badge tooltip", () => {
@@ -119,7 +143,7 @@ describe("badge tooltip", () => {
     const b = badgeFor(v, isTopic);
     expect(b).toMatchObject({ count: 4, severity: "critical" });
     // Внутри строгости: сначала находки, затем замечания; порядок как в данных.
-    expect(b?.items.map((i) => (i.kind === "finding" ? i.finding.target.name : i.note.title))).toEqual(["c1", "Critical note", "w1", "Warning note"]);
+    expect(b?.items.map((i) => (i.kind === "finding" ? i.finding.target.name : i.kind === "note" ? i.note.title : i.proposal.title))).toEqual(["c1", "Critical note", "w1", "Warning note"]);
     expect(badgeTooltip(b!, t, "ru")).toBe(
       ["Требуют внимания: 4", "Фактор репликации 1 у c1", "Critical note", "Фактор репликации 1 у w1", "Warning note"].join("\n"),
     );

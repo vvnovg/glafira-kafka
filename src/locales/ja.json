@@ -1200,7 +1200,7 @@
     "filterSource": "ソース",
     "allSources": "すべてのソース",
     "sourceRules": "ルール",
-    "sourceLlm": "LLMの注記",
+    "sourceLlm": "LLMの注記と提案",
     "filterKind": "オブジェクト",
     "allKinds": "すべてのオブジェクト",
     "kind": {
@@ -1257,7 +1257,36 @@
     "allFindings": "すべての検出事項",
     "badgeTitle": "要確認：{{count}}",
     "allHidden": "すべての検出事項が非表示です。見るには「非表示を表示」をオンにします。",
-    "checkedAs": "{{env}}として確認"
+    "checkedAs": "{{env}}として確認",
+    "proposals": {
+      "title": "LLMの提案",
+      "intro": "MCPで接続したLLMアシスタントはここに変更を提案できます。提案をフォームで開いて確認するまで、何も適用されません。",
+      "none": "LLMの提案はありません。",
+      "by": "LLMの提案 · {{client}}",
+      "openForm": "フォームで開く",
+      "readOnly": "接続は読み取り専用です",
+      "reject": "却下",
+      "reasonPlaceholder": "理由（任意）",
+      "rejectConfirm": "提案を却下",
+      "deleteAll": "LLMの提案をすべて削除",
+      "deleteAllConfirm": "この接続のLLMの提案をすべて削除しますか？",
+      "applying": "LLMの提案を適用中：{{title}}",
+      "status": {
+        "applied": "{{when}}に適用",
+        "appliedEdited": "{{when}}に修正して適用",
+        "rejected": "却下",
+        "rejectedWithReason": "却下：{{reason}}",
+        "withdrawn": "取り下げ"
+      },
+      "change": {
+        "alterTopicConfigs": "トピック設定：",
+        "createTopic": "新しいトピック — パーティション：{{partitions}}、レプリケーションファクター：{{rf}}",
+        "brokerDefault": "ブローカーのデフォルト",
+        "configs": "設定：{{configs}}",
+        "addPartitions": "パーティション：→ {{newTotal}}",
+        "resetOffsets": "グループのオフセット：{{strategy}}、{{scope}}"
+      }
+    }
   },
   "hints": {
     "label": "ヒント：{{name}}",

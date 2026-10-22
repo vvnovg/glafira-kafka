@@ -27,6 +27,19 @@ pub fn now_ms() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
 
+/// Снимает проверку с учёта `running` при любом выходе задачи, включая панику: иначе ждущие её
+/// вызовы другого окружения кружили бы по закрытому каналу, а того же — получали бы ошибку.
+struct Unregister {
+    service: Arc<HealthService>,
+    id: String,
+}
+
+impl Drop for Unregister {
+    fn drop(&mut self) {
+        self.service.running.lock_safe().remove(&self.id);
+    }
+}
+
 pub struct HealthService {
     pub store: HealthStore,
     /// Идущие проверки: окружение, под которым считается строгость, и канал результата.
@@ -157,6 +170,10 @@ impl HealthService {
                         let (trigger, src) = (trigger.clone(), src.clone());
                         // Проверка доводится до конца, даже если вызвавший перестал ждать.
                         tauri::async_runtime::spawn(async move {
+                            let _unregister = Unregister {
+                                service: this.clone(),
+                                id: id.clone(),
+                            };
                             let r = this
                                 .check(&id, generation, env, trigger, src, limits)
                                 .await
@@ -540,6 +557,68 @@ mod tests {
         // В файле — последняя (dev) проверка.
         let saved = svc.store.load("c1", now_ms()).unwrap().last_check.unwrap();
         assert_eq!(saved.run_id, dev.run_id);
+    }
+
+    /// Источник, у которого `metadata` паникует: задача проверки падает, не отправив результат.
+    struct Panicking;
+
+    impl Source for Panicking {
+        fn metadata(&self) -> Fut<Metadata> {
+            Box::pin(async { panic!("metadata exploded") })
+        }
+        fn broker_config(&self, _: i32) -> Fut<ConfigMap> {
+            Box::pin(async { unreachable!("metadata panics first") })
+        }
+        fn topic_configs(&self, _: Vec<String>) -> Fut<Vec<(String, Option<ConfigMap>)>> {
+            Box::pin(async { unreachable!("metadata panics first") })
+        }
+        fn list_groups(&self) -> Fut<(Vec<String>, usize)> {
+            Box::pin(async { unreachable!("metadata panics first") })
+        }
+        fn describe_groups(&self, _: Vec<String>) -> Fut<Vec<GroupRead>> {
+            Box::pin(async { unreachable!("metadata panics first") })
+        }
+        fn groups_lag(&self, _: Vec<String>) -> Fut<Vec<LagRead>> {
+            Box::pin(async { unreachable!("metadata panics first") })
+        }
+    }
+
+    #[tokio::test]
+    async fn panicking_check_does_not_trap_callers_of_another_environment() {
+        let dir = tempfile::tempdir().unwrap();
+        let svc = Arc::new(HealthService::open(dir.path()));
+        let prod = svc
+            .run_source(
+                "c1",
+                svc.generation("c1"),
+                Environment::Prod,
+                Trigger::Ui,
+                Arc::new(Panicking),
+                LIMITS,
+            )
+            .await;
+        assert_eq!(prod.unwrap_err().key, "errors.app.taskPanicked");
+        // Запись об упавшей проверке снята: вызов под другим окружением запускает свою проверку,
+        // а не кружит по закрытому каналу (без исправления тест упирается в таймаут).
+        let dev = tokio::time::timeout(
+            Duration::from_secs(5),
+            svc.run_source(
+                "c1",
+                svc.generation("c1"),
+                Environment::Dev,
+                Trigger::Ui,
+                Arc::new(Counting {
+                    lag: 1,
+                    ..Default::default()
+                }),
+                LIMITS,
+            ),
+        )
+        .await
+        .expect("run_source must finish")
+        .unwrap();
+        assert_eq!(dev.environment, Environment::Dev);
+        assert!(svc.running.lock_safe().is_empty());
     }
 
     #[tokio::test]

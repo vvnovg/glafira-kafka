@@ -53,10 +53,12 @@ pub fn english(f: &Finding) -> (String, String) {
     match f.rule_id.as_str() {
         "cluster.noController" => (
             "No active controller".into(),
-            format!(
-                "The cluster reports no controller and {} partition(s) have no leader: metadata changes, leader elections and topic operations will not work until a controller is elected.",
-                num(f, "leaderless")
-            ),
+            match f.param_i64("leaderless") {
+                Some(n) => format!(
+                    "The cluster reports no controller and {n} partition(s) have no leader: metadata changes, leader elections and topic operations will not work until a controller is elected."
+                ),
+                None => "The cluster reports no controller: metadata changes, leader elections and topic operations will not work until a controller is elected.".into(),
+            },
         ),
         "cluster.controllerUnknown" => (
             "Controller unknown".into(),
@@ -235,6 +237,29 @@ mod tests {
         assert_eq!(title, "Topic orders has offline partitions");
         assert!(details.starts_with("2 partition(s) have no leader"));
         assert!(details.contains("0, 3"));
+    }
+
+    #[test]
+    fn no_controller_text_with_and_without_leaderless() {
+        let with = Finding::new(
+            "cluster.noController",
+            Severity::Critical,
+            Target::cluster(),
+            None,
+            serde_json::json!({ "leaderless": 2 }),
+        );
+        assert!(english(&with).1.contains("2 partition(s) have no leader"));
+        // Находка, сохранённая до появления параметра: без двойных пробелов и пустого числа.
+        let without = Finding::new(
+            "cluster.noController",
+            Severity::Critical,
+            Target::cluster(),
+            None,
+            serde_json::json!({}),
+        );
+        let (_, details) = english(&without);
+        assert!(details.starts_with("The cluster reports no controller:"));
+        assert!(!details.contains("  "));
     }
 
     #[test]

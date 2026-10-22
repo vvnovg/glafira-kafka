@@ -1,11 +1,13 @@
 //! Реализация `glafira_mcp::Backend` (спец. G1 §2): существующие функции чтения и проверка
 //! `llmAccess` подключения при каждой операции. Функций, меняющих кластер, здесь нет и быть не
-//! должно; замечания LLM пишутся только в файл Glafira.
+//! должно; замечания и предложения LLM пишутся только в файл Glafira — предложение применяет
+//! человек формой (спец. G3 §6).
 
 use std::sync::Arc;
 
 use glafira_mcp::health as mh;
 use glafira_mcp::model as m;
+use glafira_mcp::proposals as mp;
 use glafira_mcp::{
     Backend, BackendError, BoxFuture, ReadOp, ReadOutput, SessionAccess, SessionView,
 };
@@ -15,10 +17,14 @@ use super::approvals::Approvals;
 use crate::commands::{blocking, pooled_configs};
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::health::model::{Finding, Severity, Target, TargetKind};
+use crate::health::proposals::{
+    Change, Facts, MAX_OPEN_PROPOSALS, MAX_RELATED_KEY_CHARS, Proposal, ProposalError,
+    ProposalStatus, TopicFact, validate,
+};
 use crate::health::service::now_ms;
 use crate::health::store::{
-    Annotated, AnnotationStatus, Author, CheckRun, MAX_TITLE_CHARS, NewAnnotation, Removed,
-    Trigger, sanitize,
+    Annotated, AnnotationStatus, Author, CheckRun, MAX_BODY_CHARS, MAX_TITLE_CHARS, NewAnnotation,
+    NewProposal, Proposed, Removed, Trigger, Withdrawn, sanitize,
 };
 use crate::health::{rules, texts};
 use crate::kafka::pool::KafkaHandles;
@@ -500,6 +506,213 @@ impl AppBackend {
     }
 }
 
+impl AppBackend {
+    /// Факты для проверки предложения (спец. G3 §5): метаданные всегда, ключи конфигов топика —
+    /// для `alterTopicConfigs` по существующему топику, список групп — для `resetOffsets`.
+    async fn facts(&self, connection_id: &str, change: &Change) -> Result<Facts, BackendError> {
+        let md = self
+            .on(connection_id.into(), cluster::cluster_metadata)
+            .await?;
+        let mut facts = Facts {
+            brokers: md.brokers.len(),
+            topics: md
+                .topics
+                .iter()
+                .map(|t| TopicFact {
+                    name: t.name.clone(),
+                    partitions: t.partitions.len(),
+                    internal: t.internal(),
+                })
+                .collect(),
+            config_keys: None,
+            groups: None,
+        };
+        match change {
+            Change::AlterTopicConfigs { topic, .. }
+                if facts.topics.iter().any(|t| &t.name == topic && !t.internal) =>
+            {
+                let entries = pooled_configs(
+                    &self.state,
+                    connection_id.into(),
+                    ResourceSpecifier::Topic(topic),
+                )
+                .await
+                .map_err(to_backend)?;
+                facts.config_keys = Some(entries.into_iter().map(|e| e.name).collect());
+            }
+            Change::ResetOffsets { .. } => {
+                let l = self
+                    .on(connection_id.into(), group_ops::list_groups)
+                    .await?;
+                facts.groups = Some(l.groups.into_iter().map(|g| g.group_id).collect());
+            }
+            _ => {}
+        }
+        Ok(facts)
+    }
+
+    async fn proposals_impl(&self, op: mp::ProposalOp) -> Result<mp::ProposalOutput, BackendError> {
+        // Поколение — до проверки доступа: запись в подключение, удалённое за это время, отклоняется.
+        let generation = self.state.health.generation(op.connection_id());
+        self.allowed(op.connection_id())?;
+        let st = self.state.clone();
+        match op {
+            mp::ProposalOp::Propose {
+                connection_id,
+                session,
+                proposal,
+            } => {
+                if let Some(r) = &proposal.related_rule_id
+                    && !rules::rule_ids().any(|id| id == r)
+                {
+                    return Err(BackendError::invalid_argument(format!(
+                        "relatedRuleId {r} is not a health_check rule"
+                    )));
+                }
+                if sanitize(&proposal.title, MAX_TITLE_CHARS).is_empty() {
+                    return Err(BackendError::invalid_argument("title must not be empty"));
+                }
+                if sanitize(&proposal.rationale, MAX_BODY_CHARS).is_empty() {
+                    return Err(BackendError::invalid_argument(
+                        "rationale must not be empty",
+                    ));
+                }
+                let change = to_change(&proposal.change)?.trimmed();
+                let facts = self.facts(&connection_id, &change).await?;
+                validate(&change, &facts).map_err(|e| match e {
+                    ProposalError::Invalid(m) => BackendError::invalid_argument(m),
+                    ProposalError::NotFound(m) => BackendError::not_found(m),
+                })?;
+                let read_only = st
+                    .connections
+                    .get(&connection_id)
+                    .map(|p| p.read_only)
+                    .unwrap_or(false);
+                let new = NewProposal {
+                    severity: to_severity(proposal.severity),
+                    title: proposal.title,
+                    rationale: proposal.rationale,
+                    change,
+                    related_rule_id: proposal.related_rule_id,
+                    related_finding_key: proposal
+                        .related_finding_key
+                        .map(|k| sanitize(&k, MAX_RELATED_KEY_CHARS))
+                        .filter(|k| !k.is_empty()),
+                    author: self.author(&session),
+                };
+                let (st2, id) = (st.clone(), connection_id.clone());
+                let r = blocking(move || {
+                    st2.health
+                        .write(&id, generation, |s| s.propose(&id, new, now_ms()))
+                })
+                .await
+                .map_err(health_to_backend)?;
+                let (proposal_id, created) = match r {
+                    Proposed::Created(id) => (id, true),
+                    Proposed::Updated(id) => (id, false),
+                    Proposed::LimitReached => {
+                        return Err(BackendError::new(
+                            "limit_reached",
+                            format!(
+                                "This connection already has {MAX_OPEN_PROPOSALS} open proposals; ask the user to apply, reject or delete some in Glafira"
+                            ),
+                        ));
+                    }
+                };
+                st.health.changed(&connection_id);
+                Ok(mp::ProposalOutput::Proposed {
+                    proposal_id,
+                    created,
+                    read_only,
+                })
+            }
+            mp::ProposalOp::List {
+                connection_id,
+                status,
+            } => {
+                let f = blocking(move || st.health.store.load(&connection_id, now_ms()))
+                    .await
+                    .map_err(health_to_backend)?;
+                let items = f
+                    .proposals
+                    .iter()
+                    .filter(|p| match status {
+                        mh::StatusFilter::Open => p.status == ProposalStatus::Open,
+                        mh::StatusFilter::Closed => p.status != ProposalStatus::Open,
+                        mh::StatusFilter::All => true,
+                    })
+                    .map(proposal_view)
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(mp::ProposalOutput::Proposals(items))
+            }
+            mp::ProposalOp::Withdraw {
+                connection_id,
+                session,
+                proposal_id,
+            } => {
+                let author = self.author(&session);
+                let (st2, id) = (st.clone(), connection_id.clone());
+                let r = blocking(move || {
+                    st2.health.write(&id, generation, |s| {
+                        s.withdraw_own(&id, &proposal_id, &author, now_ms())
+                    })
+                })
+                .await
+                .map_err(health_to_backend)?;
+                match r {
+                    Withdrawn::Withdrawn => {
+                        st.health.changed(&connection_id);
+                        Ok(mp::ProposalOutput::Withdrawn)
+                    }
+                    Withdrawn::NotFound => Err(BackendError::not_found(
+                        "The proposal was deleted or has expired",
+                    )),
+                    Withdrawn::NotOwner => Err(BackendError::new(
+                        "not_allowed",
+                        "Only proposals created by this client can be withdrawn",
+                    )),
+                    Withdrawn::Closed(status) => Err(BackendError::invalid_argument(format!(
+                        "The proposal is already {}",
+                        status.as_str()
+                    ))),
+                }
+            }
+        }
+    }
+}
+
+/// Вид изменения из крейта в вид приложения: одна и та же JSON-форма (спец. G3 §3).
+fn to_change(spec: &mp::ChangeSpec) -> Result<Change, BackendError> {
+    serde_json::to_value(spec)
+        .ok()
+        .and_then(|v| serde_json::from_value(v).ok())
+        .ok_or_else(|| BackendError::invalid_argument("change has an unexpected shape"))
+}
+
+fn proposal_view(p: &Proposal) -> Result<mp::ProposalView, BackendError> {
+    let change = serde_json::to_value(&p.change)
+        .ok()
+        .and_then(|v| serde_json::from_value(v).ok())
+        .ok_or_else(|| BackendError::new("internal", "Unexpected stored proposal shape"))?;
+    Ok(mp::ProposalView {
+        id: p.id.clone(),
+        severity: from_severity(p.severity),
+        title: p.title.clone(),
+        rationale: p.rationale.clone(),
+        target: from_target(&p.target),
+        change,
+        related_rule_id: p.related_rule_id.clone(),
+        related_finding_key: p.related_finding_key.clone(),
+        client: p.client.clone(),
+        status: p.status.as_str().into(),
+        created_at_ms: p.created_at_ms,
+        updated_at_ms: p.updated_at_ms,
+        closed_at_ms: p.closed_at_ms,
+        applied_as_proposed: p.applied_as_proposed,
+        reject_reason: p.reject_reason.clone(),
+    })
+}
+
 fn kind_name(k: mh::TargetKind) -> &'static str {
     match k {
         mh::TargetKind::Cluster => "cluster",
@@ -739,6 +952,13 @@ impl Backend for AppBackend {
 
     fn health(&self, op: mh::HealthOp) -> BoxFuture<'_, Result<mh::HealthOutput, BackendError>> {
         Box::pin(self.health_impl(op))
+    }
+
+    fn proposals(
+        &self,
+        op: mp::ProposalOp,
+    ) -> BoxFuture<'_, Result<mp::ProposalOutput, BackendError>> {
+        Box::pin(self.proposals_impl(op))
     }
 }
 
@@ -1050,6 +1270,27 @@ mod tests {
                 "{name}"
             );
         }
+        // Операции предложений, не ходящие в Kafka, — так же.
+        let ops = [
+            mp::ProposalOp::List {
+                connection_id: "open".into(),
+                status: mh::StatusFilter::All,
+            },
+            mp::ProposalOp::Withdraw {
+                connection_id: "open".into(),
+                session: claude.clone(),
+                proposal_id: "p1".into(),
+            },
+        ];
+        for op in ops {
+            let name = format!("{op:?}");
+            let e = b.proposals(op).await.unwrap_err();
+            assert_eq!(
+                (e.code.as_str(), e.message.as_str()),
+                ("internal", HEALTH_FILE_FAILED),
+                "{name}"
+            );
+        }
     }
 
     #[test]
@@ -1128,6 +1369,178 @@ mod tests {
             .name,
             None
         );
+    }
+
+    fn alter_spec(topic: &str) -> mp::ChangeSpec {
+        mp::ChangeSpec::AlterTopicConfigs {
+            topic: topic.into(),
+            changes: vec![mp::ConfigChangeSpec {
+                name: "min.insync.replicas".into(),
+                value: Some("2".into()),
+            }],
+        }
+    }
+
+    fn new_proposal(title: &str, related: Option<&str>) -> mp::NewProposal {
+        mp::NewProposal {
+            severity: mh::Severity::Warning,
+            title: title.into(),
+            rationale: "acks=all needs two in-sync replicas".into(),
+            change: alter_spec("orders"),
+            related_rule_id: related.map(String::from),
+            related_finding_key: Some(" topic.minIsrOne:topic:orders ".into()),
+        }
+    }
+
+    fn propose<'a>(
+        b: &'a AppBackend,
+        session: &SessionView,
+        title: &str,
+        related: Option<&str>,
+    ) -> BoxFuture<'a, Result<mp::ProposalOutput, BackendError>> {
+        b.proposals(mp::ProposalOp::Propose {
+            connection_id: "open".into(),
+            session: session.clone(),
+            proposal: new_proposal(title, related),
+        })
+    }
+
+    #[tokio::test]
+    async fn proposals_need_llm_access() {
+        let (_d, b) = backend();
+        for id in ["closed", "missing"] {
+            let e = b
+                .proposals(mp::ProposalOp::List {
+                    connection_id: id.into(),
+                    status: mh::StatusFilter::All,
+                })
+                .await
+                .unwrap_err();
+            assert_eq!(e.code, "not_allowed", "{id}");
+        }
+    }
+
+    #[tokio::test]
+    async fn proposal_is_validated_before_the_cluster_is_read() {
+        let (d, b) = backend();
+        let claude = view("s1", Some("claude-ai"));
+        let _ = b.approvals.access(&claude, 0);
+        let e = propose(&b, &claude, "t", Some("no.such.rule"))
+            .await
+            .unwrap_err();
+        assert_eq!(e.code, "invalid_argument", "{e:?}");
+        let e = propose(&b, &claude, "\u{1}", None).await.unwrap_err();
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("invalid_argument", "title must not be empty")
+        );
+        assert!(!d.path().join("health").join("open.json").exists());
+        // Дальше предложение сверяется с кластером: 127.0.0.1:1 не отвечает.
+        let e = propose(
+            &b,
+            &claude,
+            "Raise min.insync.replicas",
+            Some("topic.minIsrOne"),
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            ["CONNECTION_FAILED", "TIMEOUT"].contains(&e.code.as_str()),
+            "{e:?}"
+        );
+        assert!(
+            b.state
+                .health
+                .store
+                .load("open", now_ms())
+                .unwrap()
+                .proposals
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn proposals_are_listed_and_withdrawn_by_their_author() {
+        let (_d, b) = backend();
+        let claude = view("s1", Some("claude-ai"));
+        let _ = b.approvals.access(&claude, 0);
+        // Предложение записано в файл (сверка с кластером проверяется интеграционным тестом).
+        let Proposed::Created(id) = b
+            .state
+            .health
+            .store
+            .propose(
+                "open",
+                NewProposal {
+                    severity: Severity::Critical,
+                    title: "Raise min.insync.replicas".into(),
+                    rationale: "r".into(),
+                    change: to_change(&alter_spec("orders")).unwrap(),
+                    related_rule_id: Some("topic.minIsrOne".into()),
+                    related_finding_key: None,
+                    author: b.author(&claude),
+                },
+                now_ms(),
+            )
+            .unwrap()
+        else {
+            panic!()
+        };
+        let list = |status| {
+            b.proposals(mp::ProposalOp::List {
+                connection_id: "open".into(),
+                status,
+            })
+        };
+        let mp::ProposalOutput::Proposals(items) = list(mh::StatusFilter::Open).await.unwrap()
+        else {
+            panic!()
+        };
+        assert_eq!(items.len(), 1);
+        let p = &items[0];
+        assert_eq!(
+            (p.id.as_str(), p.status.as_str(), p.client.as_deref()),
+            (id.as_str(), "open", Some("claude-ai"))
+        );
+        assert_eq!(p.severity, mh::Severity::Critical);
+        assert_eq!(p.change, alter_spec("orders"));
+        assert_eq!(p.target.name.as_deref(), Some("orders"));
+        assert_eq!(p.related_rule_id.as_deref(), Some("topic.minIsrOne"));
+        let mp::ProposalOutput::Proposals(closed) = list(mh::StatusFilter::Closed).await.unwrap()
+        else {
+            panic!()
+        };
+        assert!(closed.is_empty());
+
+        let other = view("s2", Some("cursor"));
+        let _ = b.approvals.access(&other, 0);
+        let withdraw = |s: &SessionView, pid: &str| {
+            b.proposals(mp::ProposalOp::Withdraw {
+                connection_id: "open".into(),
+                session: s.clone(),
+                proposal_id: pid.into(),
+            })
+        };
+        assert_eq!(withdraw(&other, &id).await.unwrap_err().code, "not_allowed");
+        assert_eq!(
+            withdraw(&claude, "nope").await.unwrap_err().code,
+            "not_found"
+        );
+        assert_eq!(
+            withdraw(&claude, &id).await.unwrap(),
+            mp::ProposalOutput::Withdrawn
+        );
+        let e = withdraw(&claude, &id).await.unwrap_err();
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("invalid_argument", "The proposal is already withdrawn")
+        );
+        let mp::ProposalOutput::Proposals(closed) = list(mh::StatusFilter::Closed).await.unwrap()
+        else {
+            panic!()
+        };
+        assert_eq!(closed[0].status, "withdrawn");
+        assert!(closed[0].closed_at_ms.is_some());
     }
 
     #[tokio::test]

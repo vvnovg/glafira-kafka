@@ -1264,7 +1264,8 @@
     },
     "allFindings": "Tutti i rilievi",
     "badgeTitle": "Da esaminare: {{count}}",
-    "allHidden": "Tutti i rilievi sono nascosti. Per vederli attiva “Mostra nascosti”."
+    "allHidden": "Tutti i rilievi sono nascosti. Per vederli attiva “Mostra nascosti”.",
+    "checkedAs": "controllato come {{env}}"
   },
   "hints": {
     "label": "Suggerimento: {{name}}",

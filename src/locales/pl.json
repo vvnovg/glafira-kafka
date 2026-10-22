@@ -1269,7 +1269,8 @@
     },
     "allFindings": "Wszystkie ustalenia",
     "badgeTitle": "Wymagają uwagi: {{count}}",
-    "allHidden": "Wszystkie ustalenia są ukryte. Aby je zobaczyć, zaznacz opcję „Pokaż ukryte”."
+    "allHidden": "Wszystkie ustalenia są ukryte. Aby je zobaczyć, zaznacz opcję „Pokaż ukryte”.",
+    "checkedAs": "sprawdzono jako {{env}}"
   },
   "hints": {
     "label": "Podpowiedź: {{name}}",

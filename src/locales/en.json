@@ -1259,7 +1259,8 @@
     },
     "allFindings": "All findings",
     "badgeTitle": "Needs attention: {{count}}",
-    "allHidden": "All findings are hidden. To see them, turn on “Show hidden”."
+    "allHidden": "All findings are hidden. To see them, turn on “Show hidden”.",
+    "checkedAs": "checked as {{env}}"
   },
   "hints": {
     "label": "Hint: {{name}}",

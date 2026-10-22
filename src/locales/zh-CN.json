@@ -1254,7 +1254,8 @@
     },
     "allFindings": "全部检查结果",
     "badgeTitle": "需要关注：{{count}}",
-    "allHidden": "所有检查结果均已隐藏。要查看，请勾选“显示已隐藏”。"
+    "allHidden": "所有检查结果均已隐藏。要查看，请勾选“显示已隐藏”。",
+    "checkedAs": "按 {{env}} 检查"
   },
   "hints": {
     "label": "提示：{{name}}",

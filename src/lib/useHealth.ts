@@ -7,6 +7,8 @@ import type { AnnotationStatus, HealthView } from "../api/types";
 /** Событие из Rust (`crate::health::CHANGED_EVENT`): изменилась проверка или замечания подключения. */
 export const HEALTH_EVENT = "health://changed";
 export const healthKey = (connectionId: string) => ["health", connectionId] as const;
+/** Ключ мутации «Проверить кластер»: по нему все CheckBar подключения видят идущую проверку (`useIsMutating`). */
+export const healthCheckKey = (connectionId: string) => ["healthCheck", connectionId] as const;
 
 /**
  * Данные свежи минуту: значок стоит в каждой строке списка и появляется при прокрутке заново, а `get_health` —
@@ -43,7 +45,7 @@ export function useHealthActions(connectionId: string) {
   const qc = useQueryClient();
   const onSuccess = (v: HealthView) => qc.setQueryData(healthKey(connectionId), v);
   return {
-    run: useMutation({ mutationFn: () => api.runHealthCheck(connectionId), onSuccess }),
+    run: useMutation({ mutationKey: healthCheckKey(connectionId), mutationFn: () => api.runHealthCheck(connectionId), onSuccess }),
     ignore: useMutation({
       mutationFn: (p: { key: string; ignored: boolean }) => api.setFindingIgnored(connectionId, p.key, p.ignored),
       onSuccess,

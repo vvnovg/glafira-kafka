@@ -1264,7 +1264,8 @@
     },
     "allFindings": "Todas as constatações",
     "badgeTitle": "Exigem atenção: {{count}}",
-    "allHidden": "Todas as constatações estão ocultas. Para vê-las, marque “Mostrar ocultas”."
+    "allHidden": "Todas as constatações estão ocultas. Para vê-las, marque “Mostrar ocultas”.",
+    "checkedAs": "verificado como {{env}}"
   },
   "hints": {
     "label": "Dica: {{name}}",

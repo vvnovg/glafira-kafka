@@ -1254,7 +1254,8 @@
     },
     "allFindings": "모든 발견 사항",
     "badgeTitle": "확인 필요: {{count}}",
-    "allHidden": "모든 발견 사항이 숨겨져 있습니다. 보려면 '숨긴 항목 표시'를 켜세요."
+    "allHidden": "모든 발견 사항이 숨겨져 있습니다. 보려면 '숨긴 항목 표시'를 켜세요.",
+    "checkedAs": "점검 환경: {{env}}"
   },
   "hints": {
     "label": "도움말: {{name}}",

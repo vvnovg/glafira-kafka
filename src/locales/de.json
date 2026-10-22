@@ -1259,7 +1259,8 @@
     },
     "allFindings": "Alle Befunde",
     "badgeTitle": "Erfordern Aufmerksamkeit: {{count}}",
-    "allHidden": "Alle Befunde sind ausgeblendet. Um sie zu sehen, aktivieren Sie „Ausgeblendete anzeigen“."
+    "allHidden": "Alle Befunde sind ausgeblendet. Um sie zu sehen, aktivieren Sie „Ausgeblendete anzeigen“.",
+    "checkedAs": "geprüft als {{env}}"
   },
   "hints": {
     "label": "Hinweis: {{name}}",

@@ -1,7 +1,10 @@
+import { useIsMutating } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { CheckRun } from "../../api/types";
 import { currentLocale } from "../../i18n";
-import { useHealth, useHealthActions } from "../../lib/useHealth";
+import { ENV_LABELS } from "../../lib/env";
+import { useConnection } from "../../lib/useConnection";
+import { healthCheckKey, useHealth, useHealthActions } from "../../lib/useHealth";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
@@ -28,20 +31,26 @@ function useWho() {
 /**
  * Кнопка «Проверить кластер» и итог последней проверки: время, кто, число находок по строгости.
  * `allLink` — ссылка «Все замечания» на вкладку замечаний (на обзоре кластера; на самой вкладке не нужна).
+ * «Проверка…» общая для всех CheckBar подключения (обзор и вкладка «Замечания»): идущую мутацию
+ * видно по её ключу, а не по локальному `isPending`. Проверка, сделанная под другим окружением,
+ * чем у подключения сейчас, помечается: её строгость считалась иначе.
  */
 export function CheckBar({ connectionId, allLink = false }: { connectionId: string; allLink?: boolean }) {
   const { t } = useTranslation();
   const open = useWorkspace((s) => s.open);
   const health = useHealth(connectionId);
+  const connection = useConnection(connectionId);
   const { run } = useHealthActions(connectionId);
+  const checking = useIsMutating({ mutationKey: healthCheckKey(connectionId) }) > 0;
   const who = useWho();
   const last = health.data?.lastCheck ?? null;
   const visible = findingsOf(health.data, false);
+  const otherEnv = last !== null && connection !== undefined && last.environment !== connection.environment;
   return (
     <div className="check-bar">
       <div className="check-bar-row">
-        <button type="button" disabled={run.isPending} onClick={() => run.mutate()}>
-          {run.isPending ? t("health.checking") : t("health.check")}
+        <button type="button" disabled={checking} onClick={() => run.mutate()}>
+          {checking ? t("health.checking") : t("health.check")}
         </button>
         <Hint k="hints.health.check" label={t("health.check")} />
         {last ? (
@@ -64,6 +73,7 @@ export function CheckBar({ connectionId, allLink = false }: { connectionId: stri
               </>
             )}
             {last.incomplete && <span className="warn"> · {t("health.partial")}</span>}
+            {otherEnv && <span className="warn"> · {t("health.checkedAs", { env: ENV_LABELS[last.environment] })}</span>}
           </span>
         ) : (
           !health.isPending && <span className="muted">{t("health.never")}</span>

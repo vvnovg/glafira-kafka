@@ -1264,7 +1264,8 @@
     },
     "allFindings": "Todos los hallazgos",
     "badgeTitle": "Requieren atención: {{count}}",
-    "allHidden": "Todos los hallazgos están ocultos. Para verlos, activa “Mostrar ocultos”."
+    "allHidden": "Todos los hallazgos están ocultos. Para verlos, activa “Mostrar ocultos”.",
+    "checkedAs": "comprobado como {{env}}"
   },
   "hints": {
     "label": "Ayuda: {{name}}",

@@ -40,7 +40,7 @@ G2 — эта спека; G3 — предложения LLM, которые от
 
 - `src-tauri/src/health/mod.rs` — `Checker`: запуск проверки, ожидание уже идущей, дедлайн, событие.
 - `health/snapshot.rs` — `ClusterSnapshot` (только данные); сборка — `health/collect.rs` (трейт `Source`, лимиты и дедлайн)
-  и `health/kafka_source.rs` (через существующие `kafka::cluster`, `kafka::configs`, `kafka::group_ops`). Для конфигов топиков добавляется пакетный `kafka::configs::describe_configs_many`
+  и `health/kafka_source.rs` (через существующие `kafka::cluster`, `kafka::configs`, `kafka::group_ops`). Для конфигов топиков добавляется пакетный `kafka::configs::describe_topic_configs`
   (до 100 ресурсов за запрос); сейчас есть только вызов на один ресурс.
 - `health/rules/{brokers,topics,broker_configs,groups}.rs` — правила над `&ClusterSnapshot`; находки собирает
   `Findings::emit`, строгость берётся из таблицы по окружению. `health/rules/mod.rs` — таблица `RULES`, `rule_ids()`,
@@ -72,7 +72,8 @@ G2 — эта спека; G3 — предложения LLM, которые от
 - объект, данные которого не прочитаны (ошибка `DescribeConfigs` у топика, ошибка описания группы), считается
   непроверенным: правила по нему не срабатывают, находка `check.partial` называет число и причину. Ложных находок по
   непрочитанным данным нет;
-- чувствительные значения (`isSensitive`, маска по имени из G1 `rules::mask`) в снимок не попадают.
+- чувствительные значения в снимок не попадают: `kafka_source.rs` читает только ключи из белых списков
+  (`TOPIC_CONFIG_KEYS`, `DRIFT_KEYS`) и отбрасывает значение с `isSensitive`.
 
 ## 4. Каталог правил
 
@@ -82,7 +83,8 @@ G2 — эта спека; G3 — предложения LLM, которые от
 
 | `ruleId` | Объект | Условие | prod | stage | прочие |
 |---|---|---|---|---|---|
-| `cluster.noController` | cluster | контроллер неизвестен | К | К | К |
+| `cluster.noController` | cluster | контроллер неизвестен и есть партиции без лидера; в параметрах — их число (`leaderless`) | К | К | К |
+| `cluster.controllerUnknown` | cluster | контроллер неизвестен, но у всех партиций есть лидер — скорее всего, запрос id не успел за таймаут (G3 §9) | П | П | П |
 | `partition.offline` | topic | есть партиции без лидера; в параметрах — номера (до 20) | К | К | К |
 | `partition.underReplicated` | topic | есть партиции с ISR меньше реплик (кроме offline — у них своя находка); номера (до 20) | К | П | И |
 | `cluster.singleBroker` | cluster | ровно один брокер | К | П | — |
@@ -219,7 +221,7 @@ status, closedAtMs? }`:
 
 ## 8. Локализация и документация
 
-- Все строки — ключами во всех 12 словарях: интерфейс вкладки и блоков (раздел `health` после `mcp`), тексты 20 правил
+- Все строки — ключами во всех 12 словарях: интерфейс вкладки и блоков (раздел `health` после `mcp`), тексты 21 правила
   (`health.rules.<ruleId>.title|details|fix`), короткие имена правил для групп и фильтров (`health.ruleNames`),
   ошибки (`errors.health.*`), подсказки (`hints.health.*`).
 - Глоссарий (`docs/i18n/glossary.md`): «находка» (finding), «замечание» (annotation), «проверка кластера» (cluster check),

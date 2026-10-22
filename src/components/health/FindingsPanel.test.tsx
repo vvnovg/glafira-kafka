@@ -9,6 +9,7 @@ vi.mock("../../api/client", async (importOriginal) => {
   return {
     ...orig,
     api: {
+      listConnections: vi.fn().mockResolvedValue([]),
       getHealth: vi.fn(),
       runHealthCheck: vi.fn(),
       setFindingIgnored: vi.fn(),

@@ -5211,13 +5211,13 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `src/components/health/proposals.ts`, `src/components/health/proposals.test.ts`
-- Modify: `src/api/types.ts`, `src/api/client.ts`, `src/lib/useHealth.ts`, `src/components/health/findings.ts`, `src/components/health/findings.test.ts`, фикстуры `CheckBar.test.tsx`, `FindingsPanel.test.tsx`, `HealthBlock.test.tsx` (поле `proposals`), `src/locales/*.json` (`health.proposals.*`, обновлённый `health.sourceLlm`)
+- Modify: `src/api/types.ts`, `src/api/client.ts`, `src/lib/useHealth.ts`, `src/components/health/findings.ts`, `src/components/health/findings.test.ts`, `src/api/client.test.ts` (ожидание `resetOffsets`), фикстуры `CheckBar.test.tsx`, `FindingsPanel.test.tsx`, `HealthBlock.test.tsx` (поле `proposals`), `src/locales/*.json` (`health.proposals.*`, обновлённый `health.sourceLlm`)
 
 **Interfaces:**
 - Consumes: `formatAgo` из `CheckBar.tsx`, `ResetStrategy`/`ResetScope` из `types.ts`, ключи `groups.reset.*`, `common.config.defaultValue`.
 - Produces: типы `ProposalStatus`, `ConfigValueChange`, `ProposalChange`, `Proposal`, `HealthView.proposals`; `api.{setProposalStatus(connectionId, proposalId, status: "rejected" | "open", reason: string | null), deleteProposal, deleteAllProposals}`; `api.{createTopic, alterTopicConfigs, addPartitions}` с необязательным последним `proposalId: string | null = null`; `api.resetOffsets(connectionId, groupId, offsets, confirm, proposal: { id, request } | null = null)` → `proposalId`/`request` в IPC; `useHealthActions().{setProposalStatus({ id, status, reason? }), removeProposal, removeAllProposals}`; `findings.ts`: `openProposals(view)`, `itemsFor(...).proposals`, `BadgeItem` с `kind: "proposal"`, подсказка значка с заголовками предложений; `proposals.ts`: `strategyText`, `scopeText`, `changeSummary(change, t, lang)`, `proposalStatusText(p, t, nowMs, lang)`.
 
-Спец. G3 §7 (текст карточки) и §8 (API). Описание изменения строится из `change` словами формы сброса (`groups.reset.*`) и новыми ключами `health.proposals.change.*`; `common.config.defaultValue` — для `null`. Старые тесты форм и клиента в этой задаче не трогаются: новые параметры API необязательны. Фильтр «Источник» → «LLM» теперь означает «замечания и предложения» — ключ `health.sourceLlm` обновляется тем же spec-файлом.
+Спец. G3 §7 (текст карточки) и §8 (API). Описание изменения строится из `change` словами формы сброса (`groups.reset.*`) и новыми ключами `health.proposals.change.*`; `common.config.defaultValue` — для `null`. Старые тесты форм и клиента в этой задаче не трогаются (новые параметры API необязательны) — кроме одного ожидания в `src/api/client.test.ts`: `resetOffsets` всегда передаёт `proposalId: null, request: null`, и в тесте «сброс оффсетов передаёт план и подтверждение» эти два поля добавляются в ожидаемые аргументы. Фильтр «Источник» → «LLM» теперь означает «замечания и предложения» — ключ `health.sourceLlm` обновляется тем же spec-файлом.
 
 - [ ] **Step 1: Тесты.**
 
@@ -6127,12 +6127,12 @@ Run: `node /tmp/add-keys.mjs src/locales /tmp/g3-task7-health.json`
 
 - [ ] **Step 4: Тесты проходят.**
 
-Run: `pnpm vitest run src/components/health` — Expected: `Tests 32 passed` (5 файлов); `pnpm exec tsc --noEmit`, `pnpm i18n:check` — без замечаний.
+Run: `pnpm vitest run src/components/health` — Expected: `Tests 32 passed` (5 файлов); `pnpm test` — все файлы зелёные (ожидание `resetOffsets` в `client.test.ts` обновлено); `pnpm exec tsc --noEmit`, `pnpm i18n:check` — без замечаний.
 
 - [ ] **Step 5: Commit.**
 
 ````bash
-git add src/api/types.ts src/api/client.ts src/lib/useHealth.ts src/components/health/findings.ts src/components/health/findings.test.ts src/components/health/proposals.ts src/components/health/proposals.test.ts src/components/health/CheckBar.test.tsx src/components/health/FindingsPanel.test.tsx src/components/health/HealthBlock.test.tsx src/locales/*.json
+git add src/api/types.ts src/api/client.ts src/api/client.test.ts src/lib/useHealth.ts src/components/health/findings.ts src/components/health/findings.test.ts src/components/health/proposals.ts src/components/health/proposals.test.ts src/components/health/CheckBar.test.tsx src/components/health/FindingsPanel.test.tsx src/components/health/HealthBlock.test.tsx src/locales/*.json
 git commit -m "feat(ui): типы и API предложений, действия useHealth, предложения в значках, описание изменения, строки на 12 языках
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
@@ -6817,12 +6817,11 @@ diff --git a/src/api/client.test.ts b/src/api/client.test.ts
 index b300157..317e70e 100644
 --- a/src/api/client.test.ts
 +++ b/src/api/client.test.ts
-@@ -99,7 +99,11 @@ describe("api client", () => {
+@@ -99,7 +99,10 @@ describe("api client", () => {
      invoke.mockResolvedValue([]);
      const offsets = [{ topic: "t", partition: 0, offset: 5 }];
      await api.resetOffsets("c1", "g", offsets, null);
--    expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null });
-+    expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null, proposalId: null, request: null });
+     expect(invoke).toHaveBeenCalledWith("reset_offsets", { connectionId: "c1", groupId: "g", offsets, confirm: null, proposalId: null, request: null });
 +    // Из предложения LLM — его id и запрос предпросмотра для сравнения в Rust.
 +    const request = { groupId: "g", strategy: { type: "earliest" as const }, scope: { type: "all" as const } };
 +    await api.resetOffsets("c1", "g", offsets, "prod-1", { id: "p1", request });

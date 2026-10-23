@@ -77,4 +77,4 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 - `Glafira did not start the MCP server within 30 s`：請手動啟動 Glafira，並在「[[ui:settings.mcp.section]]」區段查看狀態；
 - `Invalid MCP token`：請在用戶端中重新啟動 MCP 伺服器，Glafira 每次啟動都會發出新的權杖。
 
-在 macOS 上，請先以一般方式開啟一次未簽署的 Beta build，否則系統可能不允許用戶端啟動它。請參閱[在 macOS 上安裝](getting-started.md#install-macos)。
+在 macOS 上，應用程式已簽署並經過公證，因此第一次啟動前不需要任何額外步驟。

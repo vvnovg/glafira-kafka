@@ -77,4 +77,4 @@ MCPを完全にオフにするには、[[ui:settings.mcp.enable]]のチェック
 - `Glafira did not start the MCP server within 30 s`：Glafiraを手動で起動し、「[[ui:settings.mcp.section]]」セクションでステータスを確認します。
 - `Invalid MCP token`：クライアントでMCPサーバーを再起動します。Glafiraは起動のたびに新しいトークンを発行します。
 
-macOSでは、署名されていないBetaビルドを一度通常の方法で開いてください。そうしないと、システムがクライアントによる起動を許可しないことがあります。[macOSへのインストール](getting-started.md#install-macos)を参照してください。
+macOSでは、アプリに署名と公証が行われているため、初回起動の前に追加の手順は必要ありません。

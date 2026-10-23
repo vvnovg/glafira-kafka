@@ -77,4 +77,4 @@ Der Client zeigt eine Meldung von Glafira:
 - `Glafira did not start the MCP server within 30 s` — starten Sie Glafira manuell und prüfen Sie den Status im Abschnitt [[ui:settings.mcp.section]];
 - `Invalid MCP token` — starten Sie den MCP-Server im Client neu: Glafira stellt bei jedem Start ein neues Token aus.
 
-Öffnen Sie unter macOS einen nicht signierten Beta-Build einmal auf dem üblichen Weg, sonst lässt das System den Start durch den Client möglicherweise nicht zu. Siehe [Installation unter macOS](getting-started.md#install-macos).
+Unter macOS ist die App signiert und notarisiert, daher ist vor dem ersten Start kein zusätzlicher Schritt nötig.

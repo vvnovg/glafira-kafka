@@ -77,4 +77,4 @@ MCP를 완전히 끄려면 [[ui:settings.mcp.enable]] 확인란의 선택을 해
 - `Glafira did not start the MCP server within 30 s` — Glafira를 직접 실행하고 [[ui:settings.mcp.section]] 섹션에서 상태를 확인하세요.
 - `Invalid MCP token` — 클라이언트에서 MCP 서버를 다시 시작하세요. Glafira는 실행할 때마다 새 토큰을 발급합니다.
 
-macOS에서는 서명되지 않은 Beta 빌드를 한 번 일반적인 방법으로 여세요. 그렇지 않으면 시스템이 클라이언트의 실행을 허용하지 않을 수 있습니다. [macOS에 설치](getting-started.md#install-macos)를 참고하세요.
+macOS에서는 앱이 서명 및 공증되어 있으므로 첫 실행 전에 추가 단계가 필요하지 않습니다.

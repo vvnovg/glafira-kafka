@@ -47,7 +47,7 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
   const [formError, setFormError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const preview = useMutation({
-    mutationFn: () => api.previewOffsetReset(connection.id, buildResetRequest(groupId, form)),
+    mutationFn: () => api.previewOffsetReset(connection.id, buildResetRequest(groupId, form, prefill)),
   });
   const queryClient = useQueryClient();
   // Форма открыта из предложения LLM: вместе с планом уходит его id и запрос, который показал предпросмотр
@@ -60,7 +60,7 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
         groupId,
         targets,
         confirm,
-        proposalId === null ? null : { id: proposalId, request: buildResetRequest(groupId, form) },
+        proposalId === null ? null : { id: proposalId, request: buildResetRequest(groupId, form, prefill) },
       ),
     onSuccess: (results) => {
       setConfirming(false);
@@ -83,7 +83,7 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
   };
   const runPreview = () => {
     try {
-      buildResetRequest(groupId, form);
+      buildResetRequest(groupId, form, prefill);
       setFormError(null);
       apply.reset();
       setConfirming(false);

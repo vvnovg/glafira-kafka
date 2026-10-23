@@ -1293,7 +1293,7 @@
         "createTopic": "Topic nuevo — particiones: {{partitions}}, factor de replicación: {{rf}}",
         "brokerDefault": "predeterminado del broker",
         "configs": "configuración: {{configs}}",
-        "addPartitions": "Particiones: → {{newTotal}}",
+        "addPartitions": "Particiones: hasta {{newTotal}}",
         "resetOffsets": "Offsets del grupo: {{strategy}}, {{scope}}"
       },
       "appliedAs": "Aplicado: {{change}}"

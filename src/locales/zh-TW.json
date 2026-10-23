@@ -1283,7 +1283,7 @@
         "createTopic": "新主題 — 分區：{{partitions}}，複寫係數：{{rf}}",
         "brokerDefault": "Broker 預設值",
         "configs": "設定：{{configs}}",
-        "addPartitions": "分區：→ {{newTotal}}",
+        "addPartitions": "分區數：增至 {{newTotal}}",
         "resetOffsets": "群組偏移量：{{strategy}}，{{scope}}"
       },
       "appliedAs": "已套用：{{change}}"

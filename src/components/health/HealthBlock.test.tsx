@@ -121,7 +121,7 @@ describe("HealthBlock: предложения LLM", () => {
     );
     const block = await screen.findByRole("region", { name: "Замечания" });
     expect(within(block).getByText("More partitions for orders")).toBeInTheDocument();
-    expect(within(block).getByText("Партиций: → 6")).toBeInTheDocument();
+    expect(within(block).getByText("Партиций: до 6")).toBeInTheDocument();
     expect(within(block).getAllByText(/More partitions/)).toHaveLength(1);
     expect(within(block).queryByText("More partitions for audit")).not.toBeInTheDocument();
     // Значок: находка k1 (критично), замечание n1 (предупреждение), предложение p1 (критично).

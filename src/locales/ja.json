@@ -1283,7 +1283,7 @@
         "createTopic": "新しいトピック — パーティション：{{partitions}}、レプリケーションファクター：{{rf}}",
         "brokerDefault": "ブローカーのデフォルト",
         "configs": "設定：{{configs}}",
-        "addPartitions": "パーティション：→ {{newTotal}}",
+        "addPartitions": "パーティション数：{{newTotal}}に増加",
         "resetOffsets": "グループのオフセット：{{strategy}}、{{scope}}"
       },
       "appliedAs": "適用済み：{{change}}"

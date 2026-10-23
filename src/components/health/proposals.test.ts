@@ -41,7 +41,7 @@ describe("changeSummary", () => {
   });
 
   it("describes partitions and offset resets with the words of the reset form", () => {
-    expect(changeSummary({ kind: "addPartitions", topic: "orders", newTotal: 6 }, t, "ru")).toBe("Партиций: → 6");
+    expect(changeSummary({ kind: "addPartitions", topic: "orders", newTotal: 6 }, t, "ru")).toBe("Партиций: до 6");
     expect(changeSummary({ kind: "resetOffsets", groupId: "billing", strategy: { type: "earliest" }, scope: { type: "all" } }, t, "ru")).toBe(
       "Оффсеты группы: С начала (earliest), Вся группа",
     );

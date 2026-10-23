@@ -33,7 +33,7 @@ export function defaultResetForm(prefill?: ResetPrefill): ResetForm {
 
 const tokens = (text: string) => text.split(/[\s,]+/).filter(Boolean);
 
-function parseStrategy(form: ResetForm): ResetStrategy {
+function parseStrategy(form: ResetForm, prefill?: ResetPrefill): ResetStrategy {
   const n = Number(form.value);
   switch (form.strategy) {
     case "earliest":
@@ -46,6 +46,11 @@ function parseStrategy(form: ResetForm): ResetStrategy {
       if (!Number.isSafeInteger(n) || n === 0) throw new Error(i18n.t("groups.reset.errShift"));
       return { type: "shift", delta: n };
     case "timestamp": {
+      // Поле из предложения LLM не правили — исходное время: datetime-local теряет миллисекунды, а в складке
+      // перевода часов местное время двузначно, и перечитанное значение отличалось бы от предложенного.
+      if (prefill && "strategy" in prefill && prefill.strategy.type === "timestamp" && form.value === toLocalInput(prefill.strategy.timestampMs)) {
+        return { type: "timestamp", timestampMs: prefill.strategy.timestampMs };
+      }
       const ms = new Date(form.value).getTime();
       if (!form.value || Number.isNaN(ms)) throw new Error(i18n.t("groups.reset.errTimestamp"));
       return { type: "timestamp", timestampMs: ms };
@@ -75,8 +80,9 @@ function parseScope(form: ResetForm): ResetScope {
   }
 }
 
-export function buildResetRequest(groupId: string, form: ResetForm): ResetRequest {
-  return { groupId, strategy: parseStrategy(form), scope: parseScope(form) };
+/** `prefill` — заполнение формы: неизменённое время из предложения LLM уходит в запрос как есть. */
+export function buildResetRequest(groupId: string, form: ResetForm, prefill?: ResetPrefill): ResetRequest {
+  return { groupId, strategy: parseStrategy(form, prefill), scope: parseScope(form) };
 }
 
 export function targetsFromPreview(rows: ResetPreviewRow[]): OffsetTarget[] {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ResetPrefill } from "../../state/workspace";
 import { buildResetRequest, defaultResetForm, targetsFromPreview, toLocalInput } from "./reset";
 
 describe("reset", () => {
@@ -60,6 +61,15 @@ describe("reset", () => {
     expect(form).toEqual({ strategy: "earliest", value: "", scope: "all", scopeText: "" });
     // Обратно получается тот же запрос, что предлагала модель.
     expect(buildResetRequest("g", form)).toEqual({ groupId: "g", strategy: { type: "earliest" }, scope: { type: "all" } });
+  });
+
+  it("время из предложения LLM: без правки поля — исходный timestampMs, после правки — из поля", () => {
+    const timestampMs = 1730000000123;
+    const prefill: ResetPrefill = { strategy: { type: "timestamp", timestampMs }, scope: { type: "all" }, proposalId: "p1", nonce: 1 };
+    const form = defaultResetForm(prefill);
+    expect(buildResetRequest("g", form, prefill).strategy).toEqual({ type: "timestamp", timestampMs });
+    const edited = { ...form, value: "2024-10-27T05:00:00" };
+    expect(buildResetRequest("g", edited, prefill).strategy).toEqual({ type: "timestamp", timestampMs: new Date("2024-10-27T05:00:00").getTime() });
   });
 
   it("применяются только строки без ошибок", () => {

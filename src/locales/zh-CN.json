@@ -1283,7 +1283,7 @@
         "createTopic": "新主题 — 分区：{{partitions}}，副本因子：{{rf}}",
         "brokerDefault": "Broker 默认值",
         "configs": "配置：{{configs}}",
-        "addPartitions": "分区：→ {{newTotal}}",
+        "addPartitions": "分区数：增至 {{newTotal}}",
         "resetOffsets": "组偏移量：{{strategy}}，{{scope}}"
       },
       "appliedAs": "已应用：{{change}}"

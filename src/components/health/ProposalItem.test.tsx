@@ -42,15 +42,15 @@ beforeEach(() => {
 describe("ProposalItem", () => {
   it("у применённого с правками показывает, что применено фактически", () => {
     renderItem(applied({ appliedChange: { kind: "addPartitions", topic: "smoke-g2", newTotal: 4 } }));
-    expect(screen.getByText("Партиций: → 3")).toBeInTheDocument();
-    const line = screen.getByText("Применено: Партиций: → 4");
+    expect(screen.getByText("Партиций: до 3")).toBeInTheDocument();
+    const line = screen.getByText("Применено: Партиций: до 4");
     expect(line).toHaveClass("proposal-change");
     expect(screen.getByText(/применено с правками/)).toBeInTheDocument();
   });
 
   it("без фактически применённого строки нет", () => {
     renderItem(applied());
-    expect(screen.getByText("Партиций: → 3")).toBeInTheDocument();
+    expect(screen.getByText("Партиций: до 3")).toBeInTheDocument();
     expect(screen.queryByText(/^Применено:/)).not.toBeInTheDocument();
   });
 });

@@ -1298,7 +1298,7 @@
         "createTopic": "Новый топик — партиций: {{partitions}}, фактор репликации: {{rf}}",
         "brokerDefault": "по умолчанию брокера",
         "configs": "конфиги: {{configs}}",
-        "addPartitions": "Партиций: → {{newTotal}}",
+        "addPartitions": "Партиций: до {{newTotal}}",
         "resetOffsets": "Оффсеты группы: {{strategy}}, {{scope}}"
       },
       "appliedAs": "Применено: {{change}}"

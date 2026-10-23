@@ -1283,7 +1283,7 @@
         "createTopic": "새 토픽 — 파티션: {{partitions}}, 복제 계수: {{rf}}",
         "brokerDefault": "브로커 기본값",
         "configs": "설정: {{configs}}",
-        "addPartitions": "파티션: → {{newTotal}}",
+        "addPartitions": "파티션 수: {{newTotal}}개로 증가",
         "resetOffsets": "그룹 오프셋: {{strategy}}, {{scope}}"
       },
       "appliedAs": "적용됨: {{change}}"

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionProfile } from "../../api/types";
@@ -68,6 +68,34 @@ describe("ResetOffsetsPanel", () => {
     expect(api.previewOffsetReset).toHaveBeenCalledWith("c", request);
     await user.click(await screen.findByRole("button", { name: "Применить (1)" }));
     expect(api.resetOffsets).toHaveBeenCalledWith("c", "g", [{ topic: "t", partition: 0, offset: 0 }], null, { id: "p1", request });
+  });
+
+  it("из предложения LLM со временем: без правки поля уходит исходный timestampMs, после правки — новое значение", async () => {
+    const user = userEvent.setup();
+    const dev = { ...prod, environment: "dev" as const };
+    // Миллисекунды поле datetime-local не показывает: перечитанное из поля время было бы другим.
+    const timestampMs = 1730000000123;
+    renderWithClient(
+      <ResetOffsetsPanel
+        connection={dev}
+        groupId="g"
+        prefill={{ strategy: { type: "timestamp", timestampMs }, scope: { type: "all" }, proposalId: "p1", nonce: 1 }}
+        onApplied={() => {}}
+        onClose={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    const request = { groupId: "g", strategy: { type: "timestamp", timestampMs }, scope: { type: "all" } };
+    expect(api.previewOffsetReset).toHaveBeenCalledWith("c", request);
+    await user.click(await screen.findByRole("button", { name: "Применить (1)" }));
+    expect(api.resetOffsets).toHaveBeenCalledWith("c", "g", [{ topic: "t", partition: 0, offset: 0 }], null, { id: "p1", request });
+    // Человек поправил время — в запросе то, что в поле.
+    fireEvent.change(screen.getByLabelText("Дата и время (локальное)"), { target: { value: "2024-10-27T05:00:00" } });
+    await user.click(screen.getByRole("button", { name: "Предпросмотр" }));
+    const edited = { ...request, strategy: { type: "timestamp", timestampMs: new Date("2024-10-27T05:00:00").getTime() } };
+    expect(api.previewOffsetReset).toHaveBeenLastCalledWith("c", edited);
+    await user.click(await screen.findByRole("button", { name: "Применить (1)" }));
+    expect(api.resetOffsets).toHaveBeenLastCalledWith("c", "g", [{ topic: "t", partition: 0, offset: 0 }], null, { id: "p1", request: edited });
   });
 
   it("blockedReason блокирует «Применить» и показывает подсказку", async () => {

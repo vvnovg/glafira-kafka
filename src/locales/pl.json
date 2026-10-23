@@ -1298,7 +1298,7 @@
         "createTopic": "Nowy topik — partycje: {{partitions}}, współczynnik replikacji: {{rf}}",
         "brokerDefault": "domyślny brokera",
         "configs": "konfiguracja: {{configs}}",
-        "addPartitions": "Partycje: → {{newTotal}}",
+        "addPartitions": "Partycje: do {{newTotal}}",
         "resetOffsets": "Offsety grupy: {{strategy}}, {{scope}}"
       },
       "appliedAs": "Zastosowano: {{change}}"

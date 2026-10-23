@@ -397,7 +397,8 @@ impl Applied {
             | (Applied::AddPartitions { topic: a, .. }, Change::AddPartitions { topic: b, .. }) => {
                 a == b
             }
-            (Applied::CreateTopic(_), Change::CreateTopic { .. }) => true,
+            // Топик под другим именем — другой объект, а не правка предложения.
+            (Applied::CreateTopic(spec), Change::CreateTopic { name, .. }) => &spec.name == name,
             (
                 Applied::ResetOffsets { group_id: a, .. },
                 Change::ResetOffsets { group_id: b, .. },
@@ -847,15 +848,17 @@ mod tests {
             topic: "orders".into(),
             new_total: 4
         }));
-        assert!(
+        let created = |name: &str| {
             Applied::CreateTopic(NewTopicSpec {
-                name: "x".into(),
+                name: name.into(),
                 partitions: 1,
                 replication_factor: 1,
-                configs: BTreeMap::new()
+                configs: BTreeMap::new(),
             })
-            .matches(&create("dlq", 1))
-        );
+        };
+        assert!(created("dlq").matches(&create("dlq", 1)));
+        // Топик под другим именем — другой объект.
+        assert!(!created("x").matches(&create("dlq", 1)));
         let reset = |group: &str| Applied::ResetOffsets {
             group_id: group.into(),
             request: None,

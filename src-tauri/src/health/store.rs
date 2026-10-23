@@ -1320,6 +1320,37 @@ mod tests {
     }
 
     #[test]
+    fn create_topic_under_another_name_is_skipped() {
+        let (_d, s) = store();
+        let change = Change::CreateTopic {
+            name: "orders.dlq".into(),
+            partitions: 3,
+            replication_factor: -1,
+            configs: BTreeMap::new(),
+        };
+        let id = proposed_id(
+            s.propose(ID, proposal(change, author(Some("c"), "s")), T0)
+                .unwrap(),
+        );
+        // В форме топик переименован: создан другой объект, предложение остаётся открытым.
+        let renamed = Applied::CreateTopic(crate::kafka::admin::NewTopicSpec {
+            name: "orders.dead".into(),
+            partitions: 3,
+            replication_factor: -1,
+            configs: BTreeMap::new(),
+        });
+        assert_eq!(
+            s.mark_applied(ID, &id, &renamed, T0 + 1).unwrap(),
+            MarkApplied::Skipped("proposal is about another change")
+        );
+        let p = &s.load(ID, T0).unwrap().proposals[0];
+        assert_eq!(
+            (p.status, p.closed_at_ms, p.applied_change.clone()),
+            (ProposalStatus::Open, None, None)
+        );
+    }
+
+    #[test]
     fn skipped_mark_applied_does_not_write_the_file() {
         let (d, s) = store();
         assert_eq!(

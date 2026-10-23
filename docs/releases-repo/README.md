@@ -7,18 +7,7 @@ User guide: [English](guide/en/getting-started.md) · [Русский](guide/ru/
 ## Unsigned builds (beta)
 Beta builds are not signed by Apple/Microsoft yet, so the OS warns on first launch.
 
-**macOS** — copy the app to Applications and try to open it once. Then go to System Settings → Privacy & Security
-and click "Open Anyway". On macOS 14 and earlier, right-click the app → Open → Open also works.
-
-If that doesn't help, remove the quarantine flag once:
-```bash
-xattr -dr com.apple.quarantine "/Applications/Glafira for Apache Kafka.app"
-```
-If the downloaded `.dmg` itself won't open, remove the flag from it first:
-```bash
-xattr -d com.apple.quarantine ~/Downloads/Glafira_for_Apache_Kafka_*.dmg
-```
-Updates installed from inside the app don't need this.
+**macOS** — open the `.dmg` and drag the app to Applications (or run the `.pkg`). The builds are signed by Apple and notarized, so the app opens right away. If macOS says the app is damaged or cannot be verified, the download is corrupted: download it again.
 
 **Windows** — in the SmartScreen dialog click "More info" → "Run anyway", or unblock the installer in PowerShell:
 ```powershell

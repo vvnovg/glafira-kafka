@@ -1288,7 +1288,7 @@
         "createTopic": "New topic — partitions: {{partitions}}, replication factor: {{rf}}",
         "brokerDefault": "broker default",
         "configs": "configs: {{configs}}",
-        "addPartitions": "Partitions: up to {{newTotal}}",
+        "addPartitions": "Partitions: increase to {{newTotal}}",
         "resetOffsets": "Group offsets: {{strategy}}, {{scope}}"
       },
       "appliedAs": "Applied: {{change}}"

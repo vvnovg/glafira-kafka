@@ -1288,7 +1288,7 @@
         "createTopic": "Neues Topic — Partitionen: {{partitions}}, Replikationsfaktor: {{rf}}",
         "brokerDefault": "Broker-Standard",
         "configs": "Konfiguration: {{configs}}",
-        "addPartitions": "Partitionen: bis {{newTotal}}",
+        "addPartitions": "Partitionen: auf {{newTotal}} erhöhen",
         "resetOffsets": "Offsets der Gruppe: {{strategy}}, {{scope}}"
       },
       "appliedAs": "Angewendet: {{change}}"

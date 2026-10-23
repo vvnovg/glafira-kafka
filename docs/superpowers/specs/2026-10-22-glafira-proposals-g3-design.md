@@ -235,7 +235,7 @@ Proposal {
 | `alterTopicConfigs` | `topic` | подвкладка «Конфигурация», редактор включён; `ConfigEditor` получает начальные правки (`value` → установить, `null` → вернуть значение по умолчанию) и `proposalId`; обзор «было → станет» перед применением — как сейчас |
 | `addPartitions` | `topic` | диалог добавления партиций открыт с `newTotal` в поле и `proposalId` |
 | `createTopic` | `topics` | `CreateTopicForm` открыта: имя, партиции, фактор репликации; конфиги — в поле дополнительных свойств строками `k=v` (`formatProps`), пресет «delete» (без своих конфигов), чтобы не дублировать; `proposalId` |
-| `resetOffsets` | `group` | `ResetOffsetsPanel` со стратегией и областью; `ResetPrefill` становится объединением прежнего вида (`{ topic, partition, offset }` из просмотра сообщений) и нового (`{ strategy, scope, proposalId }`); `timestampMs` переводится в значение `datetime-local` местного времени; `proposalId` |
+| `resetOffsets` | `group` | `ResetOffsetsPanel` со стратегией и областью; `ResetPrefill` становится объединением прежнего вида (`{ topic, partition, offset }` из просмотра сообщений) и нового (`{ strategy, scope, proposalId }`); `timestampMs` переводится в значение `datetime-local` местного времени; `proposalId`; если поле времени не менялось, в запрос уходит исходный `timestampMs` предложения (миллисекунды и DST не делают применение «с правками») |
 
 - Над формой строка «Применяется предложение LLM: <заголовок>» (muted). Человек может править любое поле.
 - Мутация формы передаёт `proposalId` (и для сброса — `request`) в команду; Rust ставит «применено» (§6);

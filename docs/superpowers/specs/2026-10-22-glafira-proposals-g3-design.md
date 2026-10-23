@@ -78,6 +78,7 @@ Proposal {
   createdAtMs, updatedAtMs,
   status: open | applied | rejected | withdrawn, closedAtMs?,
   appliedAsProposed?: bool,                 // только у applied: применено без правок (true) или с правками (false)
+  appliedChange?,                           // только у applied с правками: что применено фактически (форма change), §6
   rejectReason?: ≤ 300                      // только у rejected: необязательный комментарий человека
 }
 ```
@@ -108,7 +109,7 @@ Proposal {
 | Инструмент | Параметры | Ответ |
 |---|---|---|
 | `propose_change` | `connectionId`, `severity`, `title`, `rationale`, `change`, `relatedRuleId?`, `relatedFindingKey?` | `{ proposalId, created, readOnly }` |
-| `list_proposals` | `connectionId`, `status = open` (`open` / `closed` / `all`) | `{ items [{ id, severity, title, rationale, target, change, relatedRuleId?, relatedFindingKey?, client, status, createdAtMs, updatedAtMs, closedAtMs?, appliedAsProposed?, rejectReason? }], truncated, hint? }` |
+| `list_proposals` | `connectionId`, `status = open` (`open` / `closed` / `all`) | `{ items [{ id, severity, title, rationale, target, change, relatedRuleId?, relatedFindingKey?, client, status, createdAtMs, updatedAtMs, closedAtMs?, appliedAsProposed?, appliedChange?, rejectReason? }], truncated, hint? }` |
 | `withdraw_proposal` | `connectionId`, `proposalId` | `{ withdrawn: true }` |
 
 - `propose_change`: `relatedRuleId` — из `rule_ids()`, иначе `invalid_argument`; `relatedFindingKey` — любая строка
@@ -176,7 +177,9 @@ Proposal {
 2. сравнивает применённое с предложенным: `alterTopicConfigs` — множество пар `(name, value | null)` без учёта порядка;
    `createTopic` — имя, партиции, фактор репликации и конфиги; `addPartitions` — `newTotal`; `resetOffsets` —
    `request` со стратегией и областью (без `request` — считается «с правками»);
-3. записывает `status = applied`, `closedAtMs`, `appliedAsProposed`, шлёт `health://changed`.
+3. записывает `status = applied`, `closedAtMs`, `appliedAsProposed`, шлёт `health://changed`. Применение с правками
+   сохраняет и фактически применённое изменение `appliedChange` (та же форма, что у `change`; у `resetOffsets` без
+   `request` его нет): карточка показывает его строкой «Применено: …», `list_proposals` возвращает его LLM.
 Для `reset_offsets` отметка ставится, только если ни одна партиция не вернула ошибку; иначе предложение остаётся
 открытым. Ошибка записи файла после успешной операции не отменяет её: команда возвращает результат операции, а ошибку
 файла пишет в лог.

@@ -21,9 +21,10 @@ interface Props {
 }
 
 /**
- * Предложение LLM (спец. G3 §7): заголовок, обоснование как есть, описание изменения, подпись клиента
- * и статус. «Открыть в форме» открывает вкладку объекта с заполненной формой; для read-only
- * подключения кнопка неактивна. «Отклонить» спрашивает необязательную причину.
+ * Предложение LLM (спец. G3 §7): заголовок, обоснование как есть, описание изменения (у применённого
+ * с правками — и фактически применённого), подпись клиента и статус. «Открыть в форме» открывает
+ * вкладку объекта с заполненной формой; для read-only подключения кнопка неактивна. «Отклонить»
+ * спрашивает необязательную причину.
  */
 export function ProposalItem({ connectionId, proposal: p, busy, showTarget = true, onStatus, onDelete }: Props) {
   const { t } = useTranslation();
@@ -56,6 +57,11 @@ export function ProposalItem({ connectionId, proposal: p, busy, showTarget = tru
       </div>
       <p className="note-body">{p.rationale}</p>
       <p className="proposal-change">{changeSummary(p.change, t, lang)}</p>
+      {p.appliedChange && (
+        <p className="proposal-change">
+          {t("health.proposals.appliedAs", { change: changeSummary(p.appliedChange, t, lang) })}
+        </p>
+      )}
       <p className="muted">
         {t("health.proposals.by", { client })}
         {p.relatedRuleId && <> · {t(`health.ruleNames.${p.relatedRuleId}`)}</>}

@@ -690,8 +690,12 @@ fn check_note_texts(related_rule_id: Option<&str>, title: &str) -> Result<(), Ba
 }
 
 fn proposal_view(p: &Proposal) -> Result<mp::ProposalView, BackendError> {
-    let change = reshape(&p.change)
-        .ok_or_else(|| BackendError::new("internal", "Unexpected stored proposal shape"))?;
+    let unexpected = || BackendError::new("internal", "Unexpected stored proposal shape");
+    let change = reshape(&p.change).ok_or_else(unexpected)?;
+    let applied_change = match &p.applied_change {
+        Some(c) => Some(reshape(c).ok_or_else(unexpected)?),
+        None => None,
+    };
     Ok(mp::ProposalView {
         id: p.id.clone(),
         severity: from_severity(p.severity),
@@ -708,6 +712,7 @@ fn proposal_view(p: &Proposal) -> Result<mp::ProposalView, BackendError> {
         closed_at_ms: p.closed_at_ms,
         applied_as_proposed: p.applied_as_proposed,
         reject_reason: p.reject_reason.clone(),
+        applied_change,
     })
 }
 
@@ -1614,6 +1619,64 @@ mod tests {
         };
         assert_eq!(closed[0].status, "withdrawn");
         assert!(closed[0].closed_at_ms.is_some());
+    }
+
+    #[tokio::test]
+    async fn proposal_applied_with_edits_is_listed_with_the_applied_change() {
+        let (_d, b) = backend();
+        let claude = view("s1", Some("claude-ai"));
+        let _ = b.approvals.access(&claude, 0);
+        let store = &b.state.health.store;
+        let Proposed::Created(id) = store
+            .propose(
+                "open",
+                NewProposal {
+                    severity: Severity::Warning,
+                    title: "Raise min.insync.replicas".into(),
+                    rationale: "r".into(),
+                    change: to_change(&alter_spec("orders")).unwrap(),
+                    related_rule_id: None,
+                    related_finding_key: None,
+                    author: b.author(&claude),
+                },
+                now_ms(),
+            )
+            .unwrap()
+        else {
+            panic!()
+        };
+        // Человек поправил значение: 3 вместо предложенных 2.
+        let applied = crate::health::proposals::Applied::AlterTopicConfigs {
+            topic: "orders".into(),
+            changes: vec![crate::kafka::admin::ConfigChange::Set {
+                name: "min.insync.replicas".into(),
+                value: "3".into(),
+            }],
+        };
+        store.mark_applied("open", &id, &applied, now_ms()).unwrap();
+        let mp::ProposalOutput::Proposals(items) = b
+            .proposals(mp::ProposalOp::List {
+                connection_id: "open".into(),
+                status: mh::StatusFilter::Closed,
+            })
+            .await
+            .unwrap()
+        else {
+            panic!()
+        };
+        let p = &items[0];
+        assert_eq!(p.applied_as_proposed, Some(false));
+        assert_eq!(p.change, alter_spec("orders"));
+        assert_eq!(
+            p.applied_change,
+            Some(mp::ChangeSpec::AlterTopicConfigs {
+                topic: "orders".into(),
+                changes: vec![mp::ConfigChangeSpec {
+                    name: "min.insync.replicas".into(),
+                    value: Some("3".into()),
+                }],
+            })
+        );
     }
 
     #[tokio::test]

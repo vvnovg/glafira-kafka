@@ -1285,7 +1285,8 @@
         "configs": "設定：{{configs}}",
         "addPartitions": "分區：→ {{newTotal}}",
         "resetOffsets": "群組偏移量：{{strategy}}，{{scope}}"
-      }
+      },
+      "appliedAs": "已套用：{{change}}"
     }
   },
   "hints": {

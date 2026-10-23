@@ -159,7 +159,7 @@ impl GatewayServer {
     }
 
     #[tool(
-        description = "List the change proposals left in Glafira for a connection by any client, with the user's decision: open, applied (appliedAsProposed tells whether the user applied it unchanged), rejected (with rejectReason when the user gave one) or withdrawn. Check it after proposing instead of asking the user in the chat.",
+        description = "List the change proposals left in Glafira for a connection by any client, with the user's decision: open, applied (appliedAsProposed tells whether the user applied it unchanged), rejected (with rejectReason when the user gave one) or withdrawn. When the user applied it with edits, appliedChange holds what was actually applied, in the same shape as change. Check it after proposing instead of asking the user in the chat.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,

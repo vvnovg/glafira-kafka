@@ -1285,7 +1285,8 @@
         "configs": "設定：{{configs}}",
         "addPartitions": "パーティション：→ {{newTotal}}",
         "resetOffsets": "グループのオフセット：{{strategy}}、{{scope}}"
-      }
+      },
+      "appliedAs": "適用済み：{{change}}"
     }
   },
   "hints": {

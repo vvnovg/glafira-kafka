@@ -710,6 +710,8 @@ export interface Proposal {
   closedAtMs?: number;
   /** Только у applied: применено без правок (true) или с правками. */
   appliedAsProposed?: boolean;
+  /** Только у applied с правками: что применено фактически (та же форма, что у change). */
+  appliedChange?: ProposalChange;
   /** Только у rejected: комментарий человека. */
   rejectReason?: string;
 }

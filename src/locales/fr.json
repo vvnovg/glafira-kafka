@@ -1295,7 +1295,8 @@
         "configs": "configuration : {{configs}}",
         "addPartitions": "Partitions : → {{newTotal}}",
         "resetOffsets": "Offsets du groupe : {{strategy}}, {{scope}}"
-      }
+      },
+      "appliedAs": "Appliqué : {{change}}"
     }
   },
   "hints": {

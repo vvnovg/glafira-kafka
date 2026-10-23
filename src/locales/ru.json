@@ -1300,7 +1300,8 @@
         "configs": "конфиги: {{configs}}",
         "addPartitions": "Партиций: → {{newTotal}}",
         "resetOffsets": "Оффсеты группы: {{strategy}}, {{scope}}"
-      }
+      },
+      "appliedAs": "Применено: {{change}}"
     }
   },
   "hints": {

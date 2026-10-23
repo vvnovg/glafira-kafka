@@ -204,6 +204,7 @@ fn long_proposal(i: i64) -> ProposalView {
         closed_at_ms: None,
         applied_as_proposed: None,
         reject_reason: None,
+        applied_change: None,
     }
 }
 
@@ -535,6 +536,10 @@ impl Backend for Fake {
                     applied.status = "applied".into();
                     applied.closed_at_ms = Some(2);
                     applied.applied_as_proposed = Some(false);
+                    applied.applied_change = Some(ChangeSpec::AddPartitions {
+                        topic: "orders".into(),
+                        new_total: 8,
+                    });
                     Ok(ProposalOutput::Proposals(vec![applied]))
                 }
                 ProposalOp::Withdraw { proposal_id, .. } => match proposal_id.as_str() {
@@ -1723,6 +1728,11 @@ async fn proposals_are_listed_with_decisions_and_withdrawn() {
     );
     assert_eq!(item["change"]["kind"], "addPartitions");
     assert_eq!(item["change"]["newTotal"], 6);
+    // С правками: фактически применённое — в той же форме, что и change.
+    assert_eq!(
+        item["appliedChange"],
+        json!({ "kind": "addPartitions", "topic": "orders", "newTotal": 8 })
+    );
     assert!(item.get("rejectReason").is_none());
     assert!(matches!(
         fake.proposal_ops.lock().unwrap()[0],
@@ -1770,6 +1780,8 @@ async fn long_proposal_list_is_cut_to_the_newest() {
         .map(|i| i["id"].as_str().unwrap())
         .collect();
     assert!(!ids.is_empty() && ids.len() < 80, "{}", ids.len());
+    // Без фактически применённого поля нет.
+    assert!(v["items"][0].get("appliedChange").is_none());
     let expected: Vec<String> = (0..80)
         .rev()
         .take(ids.len())

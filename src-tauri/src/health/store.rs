@@ -566,6 +566,7 @@ impl HealthStore {
                 closed_at_ms: None,
                 applied_as_proposed: None,
                 reject_reason: None,
+                applied_change: None,
             });
             Proposed::Created(id)
         })
@@ -640,6 +641,12 @@ impl HealthStore {
             p.status = ProposalStatus::Applied;
             p.closed_at_ms = Some(now_ms);
             p.applied_as_proposed = Some(as_proposed);
+            // С правками — что применено фактически; как предложено — оно совпадает с `change`.
+            p.applied_change = if as_proposed {
+                None
+            } else {
+                applied.clone().into_change()
+            };
             (MarkApplied::Applied { as_proposed }, true)
         })
     }
@@ -1290,6 +1297,9 @@ mod tests {
             (p.status, p.closed_at_ms, p.applied_as_proposed),
             (ProposalStatus::Applied, Some(T0 + 1), Some(false))
         );
+        // Фактически применённое сохраняется рядом с предложенным.
+        assert_eq!(p.applied_change, Some(alter("t", "3")));
+        assert_eq!(p.change, alter("t", "2"));
         // Уже закрытое — пропуск.
         assert_eq!(
             s.mark_applied(ID, &id, &applied("t", "2"), T0 + 2).unwrap(),
@@ -1303,6 +1313,10 @@ mod tests {
             s.mark_applied(ID, &id2, &applied("u", "2"), T0).unwrap(),
             MarkApplied::Applied { as_proposed: true }
         );
+        // Как предложено — применённое не дублирует `change`.
+        let f = s.load(ID, T0).unwrap();
+        let p = f.proposals.iter().find(|p| p.id == id2).unwrap();
+        assert_eq!(p.applied_change, None);
     }
 
     #[test]

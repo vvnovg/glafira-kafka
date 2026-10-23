@@ -153,6 +153,10 @@ pub struct Proposal {
     /// Только у `applied`: человек применил без правок (`true`) или с правками.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub applied_as_proposed: Option<bool>,
+    /// Только у `applied` с правками: что применено фактически (у применённого как предложено —
+    /// `None`, чтобы не дублировать `change`; у сброса без стратегии и области из формы — тоже).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub applied_change: Option<Change>,
     /// Только у `rejected`: необязательный комментарий человека.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reject_reason: Option<String>,
@@ -399,6 +403,41 @@ impl Applied {
                 Change::ResetOffsets { group_id: b, .. },
             ) => a == b,
             _ => false,
+        }
+    }
+
+    /// Применённое в той же форме, что и предложение (`appliedChange`): сброс конфига —
+    /// `value: None`. Сброс оффсетов без стратегии и области из формы — `None`: что именно
+    /// применено, неизвестно.
+    pub fn into_change(self) -> Option<Change> {
+        match self {
+            Applied::AlterTopicConfigs { topic, changes } => Some(Change::AlterTopicConfigs {
+                topic,
+                changes: changes
+                    .into_iter()
+                    .map(|c| match c {
+                        ConfigChange::Set { name, value } => ConfigValueChange {
+                            name,
+                            value: Some(value),
+                        },
+                        ConfigChange::Delete { name } => ConfigValueChange { name, value: None },
+                    })
+                    .collect(),
+            }),
+            Applied::CreateTopic(spec) => Some(Change::CreateTopic {
+                name: spec.name,
+                partitions: spec.partitions,
+                replication_factor: spec.replication_factor,
+                configs: spec.configs,
+            }),
+            Applied::AddPartitions { topic, new_total } => {
+                Some(Change::AddPartitions { topic, new_total })
+            }
+            Applied::ResetOffsets { group_id, request } => request.map(|r| Change::ResetOffsets {
+                group_id,
+                strategy: r.strategy,
+                scope: r.scope,
+            }),
         }
     }
 }
@@ -929,5 +968,131 @@ mod tests {
         ));
         // Разные виды — никогда.
         assert!(!applied_as_proposed(&r, &same));
+    }
+
+    #[test]
+    fn applied_alter_configs_becomes_a_change_with_resets_as_null() {
+        let applied = Applied::AlterTopicConfigs {
+            topic: "orders".into(),
+            changes: vec![
+                ConfigChange::Set {
+                    name: "min.insync.replicas".into(),
+                    value: "3".into(),
+                },
+                ConfigChange::Delete {
+                    name: "retention.ms".into(),
+                },
+            ],
+        };
+        assert_eq!(
+            applied.into_change(),
+            Some(alter(
+                "orders",
+                vec![
+                    set("min.insync.replicas", Some("3")),
+                    set("retention.ms", None)
+                ]
+            ))
+        );
+    }
+
+    #[test]
+    fn applied_create_topic_becomes_a_change_with_all_fields() {
+        let applied = Applied::CreateTopic(NewTopicSpec {
+            name: "dlq".into(),
+            partitions: 6,
+            replication_factor: 3,
+            configs: BTreeMap::from([("cleanup.policy".to_string(), "compact".to_string())]),
+        });
+        assert_eq!(applied.into_change(), Some(create("dlq", 3)));
+    }
+
+    #[test]
+    fn applied_add_partitions_becomes_a_change() {
+        let applied = Applied::AddPartitions {
+            topic: "orders".into(),
+            new_total: 4,
+        };
+        assert_eq!(
+            applied.into_change(),
+            Some(Change::AddPartitions {
+                topic: "orders".into(),
+                new_total: 4
+            })
+        );
+    }
+
+    #[test]
+    fn applied_reset_becomes_a_change_only_with_a_request() {
+        let scope = ResetScope::Topics {
+            topics: vec!["orders".into()],
+        };
+        let applied = Applied::ResetOffsets {
+            group_id: "billing".into(),
+            request: Some(ResetRequest {
+                group_id: "billing".into(),
+                strategy: ResetStrategy::Latest,
+                scope: scope.clone(),
+            }),
+        };
+        assert_eq!(
+            applied.into_change(),
+            Some(Change::ResetOffsets {
+                group_id: "billing".into(),
+                strategy: ResetStrategy::Latest,
+                scope
+            })
+        );
+        // Форма не передала стратегию и область — фактически применённое неизвестно.
+        let unknown = Applied::ResetOffsets {
+            group_id: "billing".into(),
+            request: None,
+        };
+        assert_eq!(unknown.into_change(), None);
+    }
+
+    #[test]
+    fn applied_change_is_optional_in_the_file() {
+        let p = Proposal {
+            id: "p1".into(),
+            severity: Severity::Warning,
+            title: "t".into(),
+            rationale: "r".into(),
+            target: Target::topic("orders"),
+            change: Change::AddPartitions {
+                topic: "orders".into(),
+                new_total: 3,
+            },
+            related_rule_id: None,
+            related_finding_key: None,
+            client: None,
+            session_id: None,
+            created_at_ms: 1,
+            updated_at_ms: 1,
+            status: ProposalStatus::Applied,
+            closed_at_ms: Some(2),
+            applied_as_proposed: Some(false),
+            reject_reason: None,
+            applied_change: Some(Change::AddPartitions {
+                topic: "orders".into(),
+                new_total: 4,
+            }),
+        };
+        let mut v = serde_json::to_value(&p).unwrap();
+        assert_eq!(
+            v["appliedChange"],
+            serde_json::json!({ "kind": "addPartitions", "topic": "orders", "newTotal": 4 })
+        );
+        assert_eq!(serde_json::from_value::<Proposal>(v.clone()).unwrap(), p);
+        // Файл до этого поля читается: фактически применённого нет.
+        v.as_object_mut().unwrap().remove("appliedChange");
+        let old: Proposal = serde_json::from_value(v).unwrap();
+        assert_eq!(old.applied_change, None);
+        assert!(
+            serde_json::to_value(&old)
+                .unwrap()
+                .get("appliedChange")
+                .is_none()
+        );
     }
 }

@@ -178,6 +178,9 @@ pub struct ProposalView {
     /// Только у applied: применено без правок (`true`) или с правками.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub applied_as_proposed: Option<bool>,
+    /// What was actually applied when it differs from the proposal (present only with appliedAsProposed: false).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub applied_change: Option<ChangeSpec>,
     /// Только у rejected: комментарий человека, если он его оставил.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reject_reason: Option<String>,

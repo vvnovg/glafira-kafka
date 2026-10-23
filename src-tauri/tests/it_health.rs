@@ -6,13 +6,15 @@ mod common;
 use std::sync::Arc;
 use std::time::Duration;
 
-use glafira_mcp::health::Severity;
+use glafira_mcp::health::{Severity, StatusFilter};
 use glafira_mcp::proposals::{
     ChangeSpec, ConfigChangeSpec, NewProposal, ProposalOp, ProposalOutput,
 };
 use glafira_mcp::{Backend, SessionView};
-use kafka_explorer_lib::commands::topic_ops::{alter_topic_configs_impl, create_topic_impl};
-use kafka_explorer_lib::health::proposals::ProposalStatus;
+use kafka_explorer_lib::commands::topic_ops::{
+    add_partitions_impl, alter_topic_configs_impl, create_topic_impl,
+};
+use kafka_explorer_lib::health::proposals::{Change, ProposalStatus};
 use kafka_explorer_lib::health::service::now_ms;
 use kafka_explorer_lib::health::store::Trigger;
 use kafka_explorer_lib::kafka::admin::{ConfigChange, NewTopicSpec};
@@ -220,6 +222,8 @@ async fn proposal_is_checked_against_the_cluster_and_marked_applied() {
     let saved = f.proposals.iter().find(|p| p.id == proposal_id).unwrap();
     assert_eq!(saved.status, ProposalStatus::Applied);
     assert_eq!(saved.applied_as_proposed, Some(true));
+    // Как предложено — фактически применённое не дублируется.
+    assert_eq!(saved.applied_change, None);
 
     // Ошибка Kafka при применении с proposal_id: отметки нет, предложение остаётся открытым.
     // Значения конфигов проверка предложения не смотрит (это делает Kafka) — брокер отвергает «abc».
@@ -293,6 +297,57 @@ async fn proposal_is_checked_against_the_cluster_and_marked_applied() {
     .await
     .unwrap_err();
     assert!(e.message.contains("already exists"), "{e:?}");
+
+    // Партиции по предложению, но с правкой (4 вместо 3): фактически применённое сохраняется
+    // и доходит до LLM в list_proposals.
+    let ProposalOutput::Proposed { proposal_id, .. } = propose(ChangeSpec::AddPartitions {
+        topic: name.clone(),
+        new_total: 3,
+    })
+    .await
+    .unwrap() else {
+        panic!()
+    };
+    add_partitions_impl(
+        &st,
+        "it".into(),
+        name.clone(),
+        4,
+        None,
+        Some(proposal_id.clone()),
+    )
+    .await
+    .unwrap();
+    let f = st.health.store.load("it", now_ms()).unwrap();
+    let saved = f.proposals.iter().find(|p| p.id == proposal_id).unwrap();
+    assert_eq!(
+        (saved.applied_as_proposed, &saved.applied_change),
+        (
+            Some(false),
+            &Some(Change::AddPartitions {
+                topic: name.clone(),
+                new_total: 4
+            })
+        )
+    );
+    let ProposalOutput::Proposals(items) = backend
+        .proposals(ProposalOp::List {
+            connection_id: "it".into(),
+            status: StatusFilter::Closed,
+        })
+        .await
+        .unwrap()
+    else {
+        panic!()
+    };
+    let item = items.iter().find(|p| p.id == proposal_id).unwrap();
+    assert_eq!(
+        item.applied_change,
+        Some(ChangeSpec::AddPartitions {
+            topic: name.clone(),
+            new_total: 4
+        })
+    );
 
     // Read-only подключение: предложение принимается, модели сообщается readOnly.
     p.read_only = true;

@@ -1285,7 +1285,8 @@
         "configs": "설정: {{configs}}",
         "addPartitions": "파티션: → {{newTotal}}",
         "resetOffsets": "그룹 오프셋: {{strategy}}, {{scope}}"
-      }
+      },
+      "appliedAs": "적용됨: {{change}}"
     }
   },
   "hints": {

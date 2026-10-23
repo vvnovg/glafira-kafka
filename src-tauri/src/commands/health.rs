@@ -408,6 +408,14 @@ mod tests {
             (p.status, p.applied_as_proposed),
             (ProposalStatus::Applied, Some(false))
         );
+        // Фактически применённое доходит до фронтенда в `HealthView`.
+        assert_eq!(
+            p.applied_change,
+            Some(Change::AddPartitions {
+                topic: "orders".into(),
+                new_total: 8
+            })
+        );
         assert_eq!(n.load(Ordering::SeqCst), 1);
         // Неизвестное предложение и удалённое подключение — не ошибка (операция уже прошла).
         mark_applied(

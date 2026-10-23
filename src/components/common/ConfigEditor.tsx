@@ -128,7 +128,8 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
         </thead>
         <tbody>
           {visible.map((e) => (
-            <tr key={e.name}>
+            // Строка с правкой подсвечена, чтобы изменения (в т. ч. из предложения LLM) были видны без поиска.
+            <tr key={e.name} className={edits[e.name] ? "edited" : undefined}>
               <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>
                 {e.name}
                 {hints?.[e.name] && <Hint k={hints[e.name]} label={e.name} />}
@@ -140,6 +141,7 @@ export function ConfigEditor({ connection, topic, entries, onDone, onDirtyChange
                   value={e.isSensitive ? "••••••" : valueOf(e)}
                   placeholder={edits[e.name]?.kind === "reset" ? t("common.config.defaultValue") : undefined}
                   aria-invalid={invalidSet.has(e.name) || undefined}
+                  className={edits[e.name] ? "edited" : undefined}
                   onChange={(ev) => setEdits((s) => ({ ...s, [e.name]: { kind: "set", value: ev.target.value } }))}
                 />
                 {invalidSet.has(e.name) && <div className="warn">{t("common.config.emptyValue")}</div>}

@@ -49,6 +49,10 @@ describe("ConfigEditor", () => {
       />,
     );
     expect(screen.getByLabelText("Значение retention.ms")).toHaveValue("2000");
+    // Изменённое значение подсвечено, остальные — нет.
+    expect(screen.getByLabelText("Значение retention.ms")).toHaveClass("edited");
+    expect(screen.getByLabelText("Значение retention.ms").closest("tr")).toHaveClass("edited");
+    expect(screen.getByLabelText("Значение segment.bytes")).not.toHaveClass("edited");
     expect(screen.getByText("изменений: 1")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Проверить изменения" }));
     expect(screen.getByText("1000 → 2000")).toBeInTheDocument();

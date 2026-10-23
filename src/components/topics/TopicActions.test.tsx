@@ -119,7 +119,7 @@ describe("TopicActions", () => {
   it("purge недоступен для топика с cleanup.policy=compact", async () => {
     vi.mocked(api.getTopicPolicies).mockResolvedValueOnce([{ name: "orders", cleanupPolicy: "compact" }]);
     renderWithClient(<TopicActions connection={dev} topic={topic} onDeleted={() => {}} />);
-    const msg = "Очистка невозможна: у топика cleanup.policy=compact (нужно compact,delete или delete)";
+    const msg = "Очистка невозможна: у топика cleanup.policy=compact, нужна политика «delete» или «compact,delete»";
     await vi.waitFor(() => expect(screen.getByRole("button", { name: "Очистить" })).toBeDisabled());
     expect(screen.getByRole("button", { name: "Очистить" })).toHaveAttribute("title", msg);
     expect(screen.getByText(msg)).toBeInTheDocument();

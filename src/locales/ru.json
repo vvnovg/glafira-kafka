@@ -627,7 +627,7 @@
       "addPartitions": "Добавить партиции",
       "purge": "Очистить",
       "deleteTopic": "Удалить топик",
-      "purgeBlocked": "Очистка невозможна: у топика cleanup.policy={{policy}} (нужно compact,delete или delete)",
+      "purgeBlocked": "Очистка невозможна: у топика cleanup.policy={{policy}}, нужна политика «delete» или «compact,delete»",
       "newTotal": "Новое число партиций (сейчас {{current}})",
       "newTotalAria": "Новое число партиций",
       "addHint": "Уменьшить число партиций нельзя. Сообщения с одним ключом после увеличения могут попадать в другую партицию — порядок по ключу нарушится.",

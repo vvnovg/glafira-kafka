@@ -624,7 +624,7 @@
       "addPartitions": "新增分區",
       "purge": "清除",
       "deleteTopic": "刪除主題",
-      "purgeBlocked": "無法清除：主題的 cleanup.policy={{policy}}（需要 compact,delete 或 delete）",
+      "purgeBlocked": "無法清除：主題的 cleanup.policy={{policy}}，策略必須為「delete」或「compact,delete」",
       "newTotal": "新的分區數（目前為 {{current}}）",
       "newTotalAria": "新的分區數",
       "addHint": "分區數無法減少。增加後，相同鍵的訊息可能會進入其他分區，依鍵排序將被打亂。",

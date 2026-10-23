@@ -626,7 +626,7 @@
       "addPartitions": "Aggiungi partizioni",
       "purge": "Svuota",
       "deleteTopic": "Elimina topic",
-      "purgeBlocked": "Impossibile svuotare: il topic ha cleanup.policy={{policy}} (è richiesto compact,delete o delete)",
+      "purgeBlocked": "Impossibile svuotare: il topic ha cleanup.policy={{policy}}; la policy deve essere “delete” o “compact,delete”",
       "newTotal": "Nuovo numero di partizioni (attualmente {{current}})",
       "newTotalAria": "Nuovo numero di partizioni",
       "addHint": "Il numero di partizioni non può essere ridotto. Dopo un aumento, i messaggi con la stessa chiave possono finire in un’altra partizione — l’ordine per chiave non sarà più garantito.",

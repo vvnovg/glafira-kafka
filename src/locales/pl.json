@@ -627,7 +627,7 @@
       "addPartitions": "Dodaj partycje",
       "purge": "Wyczyść",
       "deleteTopic": "Usuń topik",
-      "purgeBlocked": "Czyszczenie jest niemożliwe: topik ma cleanup.policy={{policy}} (wymagane compact,delete lub delete)",
+      "purgeBlocked": "Czyszczenie jest niemożliwe: topik ma cleanup.policy={{policy}}; wymagana polityka „delete” lub „compact,delete”",
       "newTotal": "Nowa liczba partycji (obecnie {{current}})",
       "newTotalAria": "Nowa liczba partycji",
       "addHint": "Liczby partycji nie można zmniejszyć. Po zwiększeniu wiadomości z tym samym kluczem mogą trafić do innej partycji — kolejność według klucza zostanie zaburzona.",

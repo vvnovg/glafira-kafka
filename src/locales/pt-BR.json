@@ -626,7 +626,7 @@
       "addPartitions": "Adicionar partições",
       "purge": "Limpar",
       "deleteTopic": "Excluir tópico",
-      "purgeBlocked": "Não é possível limpar: o tópico tem cleanup.policy={{policy}} (é necessário compact,delete ou delete)",
+      "purgeBlocked": "Não é possível limpar: o tópico tem cleanup.policy={{policy}}; a política deve ser “delete” ou “compact,delete”",
       "newTotal": "Novo número de partições (atual: {{current}})",
       "newTotalAria": "Novo número de partições",
       "addHint": "Não é possível reduzir o número de partições. Depois do aumento, mensagens com a mesma chave podem ir para outra partição — a ordem por chave será perdida.",

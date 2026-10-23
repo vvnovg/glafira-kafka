@@ -625,7 +625,7 @@
       "addPartitions": "Partitionen hinzufügen",
       "purge": "Leeren",
       "deleteTopic": "Topic löschen",
-      "purgeBlocked": "Leeren nicht möglich: das Topic hat cleanup.policy={{policy}} (erforderlich ist compact,delete oder delete)",
+      "purgeBlocked": "Leeren nicht möglich: das Topic hat cleanup.policy={{policy}}; erforderlich ist „delete“ oder „compact,delete“",
       "newTotal": "Neue Anzahl der Partitionen (aktuell {{current}})",
       "newTotalAria": "Neue Anzahl der Partitionen",
       "addHint": "Die Anzahl der Partitionen kann nicht verringert werden. Nach einer Erhöhung können Nachrichten mit demselben Schlüssel in einer anderen Partition landen — die Reihenfolge nach Schlüssel geht verloren.",

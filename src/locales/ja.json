@@ -624,7 +624,7 @@
       "addPartitions": "パーティションを追加",
       "purge": "パージ",
       "deleteTopic": "トピックを削除",
-      "purgeBlocked": "パージできません。トピックのcleanup.policyは{{policy}}です（compact,deleteまたはdeleteが必要です）",
+      "purgeBlocked": "パージできません。トピックのcleanup.policyは{{policy}}です。ポリシーは「delete」または「compact,delete」である必要があります",
       "newTotal": "新しいパーティション数（現在{{current}}）",
       "newTotalAria": "新しいパーティション数",
       "addHint": "パーティション数は減らせません。増やすと、同じキーのメッセージが別のパーティションに入る可能性があり、キーごとの順序が崩れます。",

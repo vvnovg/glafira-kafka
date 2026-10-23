@@ -625,7 +625,7 @@
       "addPartitions": "Add partitions",
       "purge": "Purge",
       "deleteTopic": "Delete topic",
-      "purgeBlocked": "Purge is not possible: the topic has cleanup.policy={{policy}} (compact,delete or delete is required)",
+      "purgeBlocked": "Purge is not possible: the topic has cleanup.policy={{policy}}; the policy must be “delete” or “compact,delete”",
       "newTotal": "New number of partitions (currently {{current}})",
       "newTotalAria": "New number of partitions",
       "addHint": "The number of partitions cannot be decreased. After an increase, messages with the same key may land in a different partition — key ordering will break.",

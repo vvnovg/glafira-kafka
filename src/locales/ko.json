@@ -624,7 +624,7 @@
       "addPartitions": "파티션 추가",
       "purge": "비우기",
       "deleteTopic": "토픽 삭제",
-      "purgeBlocked": "비울 수 없습니다: 토픽의 cleanup.policy={{policy}}입니다(compact,delete 또는 delete 필요)",
+      "purgeBlocked": "비울 수 없습니다: 토픽의 cleanup.policy={{policy}}입니다. 정책은 “delete” 또는 “compact,delete”여야 합니다",
       "newTotal": "새 파티션 수(현재 {{current}})",
       "newTotalAria": "새 파티션 수",
       "addHint": "파티션 수는 줄일 수 없습니다. 늘린 후에는 같은 키를 가진 메시지가 다른 파티션에 들어갈 수 있어 키 순서가 깨집니다.",

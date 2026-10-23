@@ -5,7 +5,7 @@ import { useHealth, useHealthActions } from "../../lib/useHealth";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
 import { CheckBar } from "./CheckBar";
-import { findingsOf, SEVERITIES } from "./findings";
+import { findingsOf, SEVERITIES, newestClosedFirst } from "./findings";
 import { FindingItem, NoteItem, SeverityMark } from "./parts";
 import { ProposalItem } from "./ProposalItem";
 
@@ -39,10 +39,10 @@ export function FindingsPanel({ connectionId }: { connectionId: string }) {
   for (const f of findings) groups.set(f.ruleId, [...(groups.get(f.ruleId) ?? []), f]);
   const notes = source === "rules" ? [] : (view?.annotations ?? []).filter(matches);
   const open = notes.filter((a) => a.status === "open");
-  const closed = notes.filter((a) => a.status !== "open");
+  const closed = newestClosedFirst(notes.filter((a) => a.status !== "open"));
   const proposals = source === "rules" ? [] : (view?.proposals ?? []).filter(matches);
   const openProposals = proposals.filter((p) => p.status === "open");
-  const closedProposals = proposals.filter((p) => p.status !== "open");
+  const closedProposals = newestClosedFirst(proposals.filter((p) => p.status !== "open"));
   const busy =
     actions.ignore.isPending ||
     actions.setStatus.isPending ||

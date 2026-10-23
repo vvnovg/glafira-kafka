@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Annotation, Finding, HealthView, Proposal } from "../../api/types";
 import { i18n } from "../../i18n";
-import { BADGE_TITLES_MAX, badgeFor, badgeTooltip, findingsOf, findingTexts, itemsFor, sameTarget } from "./findings";
+import { BADGE_TITLES_MAX, badgeFor, badgeTooltip, findingsOf, findingTexts, itemsFor, sameTarget, newestClosedFirst } from "./findings";
 
 const t = i18n.getFixedT("ru");
 
@@ -195,5 +195,18 @@ describe("badge tooltip", () => {
   it("puts a multi-line note title on one line", () => {
     const b = badgeFor(view([], [note("warning", "orders", "open", "  Lag grows\non orders\r\n\tfast  ")]), isTopic)!;
     expect(badgeTooltip(b, t, "ru").split("\n")).toEqual(["Требуют внимания: 1", "Lag grows on orders fast"]);
+  });
+});
+
+describe("newestClosedFirst", () => {
+  it("закрытые — по времени закрытия, недавние сверху; без closedAtMs — по updatedAtMs", () => {
+    const items = [
+      { id: "a", updatedAtMs: 10, closedAtMs: 100 },
+      { id: "b", updatedAtMs: 300 },
+      { id: "c", updatedAtMs: 20, closedAtMs: 200 },
+    ];
+    expect(newestClosedFirst(items).map((i) => i.id)).toEqual(["b", "c", "a"]);
+    // Исходный массив не меняется.
+    expect(items.map((i) => i.id)).toEqual(["a", "b", "c"]);
   });
 });

@@ -61,6 +61,11 @@ export function openNotes(view: HealthView | undefined): Annotation[] {
   return (view?.annotations ?? []).filter((a) => a.status === "open");
 }
 
+/** Закрытые замечания и предложения — недавно закрытые сверху (по времени закрытия, иначе обновления). */
+export function newestClosedFirst<T extends { closedAtMs?: number; updatedAtMs: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => (b.closedAtMs ?? b.updatedAtMs) - (a.closedAtMs ?? a.updatedAtMs));
+}
+
 export function openProposals(view: HealthView | undefined): Proposal[] {
   return (view?.proposals ?? []).filter((p) => p.status === "open");
 }

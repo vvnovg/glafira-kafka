@@ -176,7 +176,7 @@ pub struct ObserveParams {
     pub interval_seconds: Option<u32>,
 }
 
-fn in_range(
+pub(super) fn in_range(
     v: Option<u32>,
     default: u32,
     min: u32,

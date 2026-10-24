@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{CallToolResult, ProgressNotificationParam};
@@ -14,9 +14,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use super::tools::in_range;
 use super::{GatewayServer, to_value};
 use crate::commits::{CommitHistory, MAX_METADATA_TEXT};
-use crate::mask::{DataFormat, MaskedData, Masker};
+use crate::mask::{DataFormat, MaskedData, Masker, cut_utf8};
 use crate::messages::*;
 use crate::model::BackendError;
 use crate::rules::{self, MAX_RESPONSE_BYTES};
@@ -28,7 +29,9 @@ use crate::summary::{
 /// Запас сверх бюджета просмотра: приложение закрывает консьюмер и возвращает собранное.
 const SCAN_GRACE: Duration = Duration::from_secs(5);
 
-const INCOMPLETE_HINT: &str = "The scan stopped at the time budget (40 s) or the record limit (1,000,000): the results cover only the scanned part (see scannedTo). Narrow the window, add filters or select partitions.";
+const INCOMPLETE_HINT: &str = "The scan stopped at the time budget or the record limit (1,000,000): the results cover only the scanned part (see scannedTo). Narrow the window, add filters or select partitions.";
+/// `topic` здесь не поможет: партиция `__consumer_offsets` читается целиком (спец. §6.3).
+const HISTORY_INCOMPLETE_HINT: &str = "The scan of __consumer_offsets stopped at the time budget or the record limit (1,000,000): later commits of the window may be missing. Narrow the window.";
 const PAGE_CUT_HINT: &str =
     "The page was cut to 100 KB: continue with nextCursor or lower maxValueBytes.";
 const SUMMARY_CUT_HINT: &str =
@@ -148,22 +151,6 @@ pub struct CommitHistoryParams {
     pub topic: Option<String>,
 }
 
-fn in_range(
-    v: Option<u32>,
-    default: u32,
-    min: u32,
-    max: u32,
-    name: &str,
-) -> Result<u32, BackendError> {
-    match v {
-        None => Ok(default),
-        Some(x) if (min..=max).contains(&x) => Ok(x),
-        Some(x) => Err(BackendError::invalid_argument(format!(
-            "{name} must be between {min} and {max}, got {x}"
-        ))),
-    }
-}
-
 fn window(from: &TimeArg, to: &TimeArg) -> Result<(i64, i64), BackendError> {
     let from = from.to_ms("from").map_err(BackendError::invalid_argument)?;
     let to = to.to_ms("to").map_err(BackendError::invalid_argument)?;
@@ -278,7 +265,14 @@ fn read_request(p: &ReadMessagesParams) -> Result<ReadRequest, BackendError> {
         p.key_format.unwrap_or_default(),
         p.value_format.unwrap_or_default(),
     );
-    let hash = selection_hash(&(&p.topic, &range, &filter, key_format, value_format));
+    let hash = selection_hash(&(
+        &p.connection_id,
+        &p.topic,
+        &range,
+        &filter,
+        key_format,
+        value_format,
+    ));
     let after = p
         .cursor
         .as_deref()
@@ -317,8 +311,15 @@ fn summarize_op(p: &SummarizeMessagesParams) -> Result<MessagesOp, BackendError>
     };
     let buckets = summary::bucket_count(from_ms, to_ms, bucket_ms);
     if buckets > MAX_BUCKETS {
+        let fix = if bucket_ms < i64::from(MAX_BUCKET_SECONDS) * 1000 {
+            "pass a larger bucketSeconds".to_string()
+        } else {
+            format!(
+                "bucketSeconds is already the largest ({MAX_BUCKET_SECONDS}), narrow the window"
+            )
+        };
         return Err(BackendError::invalid_argument(format!(
-            "the window gives {buckets} buckets, at most {MAX_BUCKETS}: pass a larger bucketSeconds"
+            "the window gives {buckets} buckets, at most {MAX_BUCKETS}: {fix}"
         )));
     }
     let top_keys = in_range(p.top_keys, DEFAULT_TOP_KEYS, 0, MAX_TOP_KEYS, "topKeys")?;
@@ -443,17 +444,6 @@ fn messages_of(b: &mut ReadBody) -> &mut Vec<MessageOut> {
     &mut b.messages
 }
 
-fn cut_text(s: String, max: usize) -> String {
-    if s.len() <= max {
-        return s;
-    }
-    let mut end = max;
-    while !s.is_char_boundary(end) {
-        end -= 1;
-    }
-    s[..end].to_string()
-}
-
 fn mask_message(m: RawMessage, masker: &Masker, max_value: usize) -> MessageOut {
     let mut n = 0;
     let binary = |d: &Option<RawData>| {
@@ -472,7 +462,7 @@ fn mask_message(m: RawMessage, masker: &Masker, max_value: usize) -> MessageOut 
         .headers
         .into_iter()
         .map(|(name, value)| HeaderOut {
-            value: value.map(|v| cut_text(masker.header(&name, &v, &mut n), MAX_HEADER_TEXT)),
+            value: value.map(|v| cut_utf8(masker.header(&name, &v, &mut n), MAX_HEADER_TEXT).0),
             name,
         })
         .collect();
@@ -523,14 +513,19 @@ fn read_body(req: &ReadRequest, out: MessagesOutput) -> Result<Value, BackendErr
             None,
         ),
         Range::Offsets {
-            partition, start, ..
+            partition,
+            start,
+            end,
         } => (
             "offsets",
             None,
             Some(RangeOut {
                 partition: *partition,
                 start_offset: stats.partitions.first().map_or(*start, |p| p.start_offset),
-                end_offset: stats.partitions.first().map_or(*start, |p| p.end_offset),
+                end_offset: stats
+                    .partitions
+                    .first()
+                    .map_or(end.unwrap_or(*start), |p| p.end_offset),
             }),
         ),
     };
@@ -825,25 +820,44 @@ struct HistoryBody {
     hint: Option<String>,
 }
 
-/// Отбрасывает самые старые `runs` (по десятой части у самой длинной партиции), пока ответ
-/// не уложится в 100 КБ. true — что-то отброшено.
-fn fit_runs(body: &mut HistoryBody) -> bool {
-    let mut cut = false;
-    while serde_json::to_vec(&*body).map_or(usize::MAX, |v| v.len()) > MAX_RESPONSE_BYTES {
-        let Some(p) = body
-            .partitions
-            .iter_mut()
-            .filter(|p| !p.runs.is_empty())
-            .max_by_key(|p| p.runs.len())
-        else {
-            break;
-        };
-        let n = (p.runs.len() / 10).max(1);
-        p.runs.drain(..n);
-        p.runs_truncated = true;
-        cut = true;
+fn fits(body: &HistoryBody) -> bool {
+    serde_json::to_vec(body).map_or(usize::MAX, |v| v.len()) <= MAX_RESPONSE_BYTES
+}
+
+/// Оставляет у каждой партиции не больше `k` самых новых `runs`; отброшенные (самые старые)
+/// копятся в `dropped` и возвращаются, если `k` растёт. `capped` — `runsTruncated` до обрезки.
+fn keep_newest(body: &mut HistoryBody, dropped: &mut [Vec<RunOut>], capped: &[bool], k: usize) {
+    for ((p, old), capped) in body.partitions.iter_mut().zip(dropped).zip(capped) {
+        old.append(&mut p.runs);
+        p.runs = old.split_off(old.len().saturating_sub(k));
+        p.runs_truncated = *capped || !old.is_empty();
     }
-    cut
+}
+
+/// Укладывает ответ в 100 КБ пропорционально: у каждой партиции остаются не больше `k` самых
+/// новых `runs` с наибольшим подходящим `k` (двоичный поиск, ~10 сериализаций), поэтому старые
+/// `runs` первыми теряют самые длинные партиции. true — что-то отброшено.
+fn fit_runs(body: &mut HistoryBody) -> bool {
+    let longest = body.partitions.iter().map(|p| p.runs.len()).max();
+    let Some(longest) = longest.filter(|n| *n > 0 && !fits(body)) else {
+        return false;
+    };
+    let capped: Vec<bool> = body.partitions.iter().map(|p| p.runs_truncated).collect();
+    let mut dropped: Vec<Vec<RunOut>> = body.partitions.iter().map(|_| Vec::new()).collect();
+    // Наибольший `k` в 0..longest, при котором ответ помещается; не помещается и без `runs` —
+    // остаётся 0, а обвязка ответит response_too_large.
+    let (mut lo, mut hi) = (0, longest - 1);
+    while lo < hi {
+        let mid = (lo + hi).div_ceil(2);
+        keep_newest(body, &mut dropped, &capped, mid);
+        if fits(body) {
+            lo = mid;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    keep_newest(body, &mut dropped, &capped, lo);
+    true
 }
 
 fn history_body(op: &MessagesOp, out: MessagesOutput) -> Result<Value, BackendError> {
@@ -879,7 +893,7 @@ fn history_body(op: &MessagesOp, out: MessagesOutput) -> Result<Value, BackendEr
                     last_at: iso(r.last_at_ms),
                     commits: r.commits,
                     metadata: (!r.metadata.is_empty()).then(|| {
-                        cut_text(masker.text(&r.metadata, &mut masked), MAX_METADATA_TEXT)
+                        cut_utf8(masker.text(&r.metadata, &mut masked), MAX_METADATA_TEXT).0
                     }),
                 })
                 .collect(),
@@ -910,7 +924,7 @@ fn history_body(op: &MessagesOp, out: MessagesOutput) -> Result<Value, BackendEr
     let cut = fit_runs(&mut body);
     body.truncated = cut;
     body.hint = hints(&[
-        (!body.complete).then_some(INCOMPLETE_HINT),
+        (!body.complete).then_some(HISTORY_INCOMPLETE_HINT),
         empty.then_some(NO_COMMITS_HINT),
         cut.then_some(RUNS_CUT_HINT),
     ]);
@@ -938,15 +952,23 @@ pub(super) fn audit_counts(tool: &str, v: &Value) -> Option<(u64, u64, u64)> {
 
 impl GatewayServer {
     /// Просмотр в приложении: одна длительная операция на сессию, слоты Kafka, бюджет, ход и отмена.
+    /// Дедлайн и страховочный таймаут отсчитываются от начала вызова, включая ожидание слотов.
     async fn scan(
         &self,
         op: MessagesOp,
         ctx: &RequestContext<RoleServer>,
     ) -> Result<MessagesOutput, BackendError> {
-        let _long = self.begin_long()?;
-        let _slots = self.slots().await?;
+        let started = Instant::now();
         let budget = self.shared.options.scan_deadline;
+        let safety = tokio::time::Instant::from_std(started + budget + SCAN_GRACE);
+        let timeout = || BackendError::new("TIMEOUT", "Reading messages did not finish in time");
+        let _long = self.begin_long()?;
+        let _slots = tokio::time::timeout_at(safety, self.slots())
+            .await
+            .map_err(|_| timeout())??;
         let mut scan = ScanCtx::new(budget);
+        scan.deadline = started + budget;
+        let cancel = scan.cancel.clone();
         let (tx, mut rx) = tokio::sync::watch::channel((0u64, 0u64));
         scan.progress = Arc::new(move |done, total| {
             let _ = tx.send((done, total));
@@ -963,20 +985,22 @@ impl GatewayServer {
             })
         });
         let watcher = {
-            let (cancel, ct) = (scan.cancel.clone(), ctx.ct.clone());
+            let (cancel, ct) = (cancel.clone(), ctx.ct.clone());
             tokio::spawn(async move {
                 ct.cancelled().await;
                 cancel.store(true, Ordering::Relaxed);
             })
         };
-        let result =
-            tokio::time::timeout(budget + SCAN_GRACE, self.shared.backend.messages(op, scan)).await;
+        let result = tokio::time::timeout_at(safety, self.shared.backend.messages(op, scan)).await;
         watcher.abort();
         if let Some(f) = forward {
             f.abort();
         }
-        result
-            .map_err(|_| BackendError::new("TIMEOUT", "Reading messages did not finish in time"))?
+        result.map_err(|_| {
+            // Приложение может читать в своём потоке и после того, как его future отброшена.
+            cancel.store(true, Ordering::Relaxed);
+            timeout()
+        })?
     }
 }
 
@@ -1061,5 +1085,91 @@ impl GatewayServer {
                 },
             )
             .await)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::commits::MAX_RUNS;
+
+    fn history(partitions: i32, runs: usize) -> HistoryBody {
+        let run = |offset: i64| RunOut {
+            offset,
+            first_at: iso(offset),
+            last_at: iso(offset),
+            commits: 1,
+            metadata: None,
+        };
+        HistoryBody {
+            group_id: "g".into(),
+            window: WindowOut {
+                from: iso(0),
+                to: iso(1),
+            },
+            time_zone: TimeZone {
+                utc_offset: utc_offset(0),
+            },
+            offsets_topic_partition: 0,
+            scanned: 0,
+            skipped_records: 0,
+            complete: true,
+            stopped_by: None,
+            partitions: (0..partitions)
+                .map(|partition| HistoryPartition {
+                    topic: "orders".into(),
+                    partition,
+                    before: None,
+                    runs: (0..runs as i64).map(run).collect(),
+                    runs_truncated: false,
+                    deleted_at: None,
+                })
+                .collect(),
+            masked: 0,
+            truncated: false,
+            hint: None,
+        }
+    }
+
+    #[test]
+    fn runs_are_cut_evenly_and_fast_keeping_the_newest() {
+        let mut body = history(60, MAX_RUNS);
+        body.partitions[0].runs.truncate(3);
+        let started = Instant::now();
+        assert!(fit_runs(&mut body));
+        let elapsed = started.elapsed();
+        // Обрезка по десятой части самой длинной партиции сериализует ответ в мегабайты тысячи раз.
+        assert!(elapsed < Duration::from_secs(2), "{elapsed:?}");
+        let size = serde_json::to_vec(&body).unwrap().len();
+        assert!(
+            size <= MAX_RESPONSE_BYTES && size > MAX_RESPONSE_BYTES * 9 / 10,
+            "{size}"
+        );
+        let short = &body.partitions[0];
+        assert_eq!(short.runs.len(), 3, "короткая партиция не теряет ничего");
+        assert!(!short.runs_truncated);
+        let k = body.partitions[1].runs.len();
+        assert!(k > 0 && k < MAX_RUNS, "{k}");
+        for p in &body.partitions[1..] {
+            assert_eq!(p.runs.len(), k, "длинные партиции — поровну");
+            assert!(p.runs_truncated);
+            assert_eq!(
+                p.runs[0].offset,
+                (MAX_RUNS - k) as i64,
+                "остались самые новые"
+            );
+            assert_eq!(p.runs[k - 1].offset, MAX_RUNS as i64 - 1);
+        }
+    }
+
+    #[test]
+    fn fitting_history_is_left_as_is() {
+        let mut body = history(2, 10);
+        assert!(!fit_runs(&mut body));
+        assert!(
+            body.partitions
+                .iter()
+                .all(|p| p.runs.len() == 10 && !p.runs_truncated)
+        );
     }
 }

@@ -19,8 +19,11 @@ pub const TARGET_BUCKETS: i64 = 60;
 pub const MAX_BUCKETS: i64 = 1000;
 pub const BUCKET_STEPS_S: [i64; 11] = [1, 5, 10, 30, 60, 300, 900, 1800, 3600, 21600, 86400];
 pub const MAX_BUCKET_SECONDS: u32 = 86400;
-/// Сколько байтов ключа хранится для показа в `top`.
+/// Ключ в `top` ответа — не длиннее (после маскировки).
 pub const KEY_PREFIX_BYTES: usize = 256;
+/// Сколько байтов ключа хранится для `top`: больше, чем уходит в ответ, чтобы секрет на границе
+/// префикса маскировался целиком.
+pub const KEY_STORED_BYTES: usize = 2 * KEY_PREFIX_BYTES;
 /// Сколько разных ключей считается точно; дальше `distinctCapped: true` (память ограничена).
 pub const MAX_TRACKED_KEYS: usize = 100_000;
 pub const MAX_HEADER_NAMES: usize = 50;
@@ -94,7 +97,7 @@ pub struct SummaryBuilder {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopKey {
-    /// Первые [`KEY_PREFIX_BYTES`] байтов ключа.
+    /// Первые [`KEY_STORED_BYTES`] байтов ключа.
     pub bytes: Vec<u8>,
     pub size: usize,
     pub format: DataFormat,
@@ -205,7 +208,7 @@ impl SummaryBuilder {
                         h,
                         KeyStat {
                             count: 1,
-                            prefix: bytes[..bytes.len().min(KEY_PREFIX_BYTES)].to_vec(),
+                            prefix: bytes[..bytes.len().min(KEY_STORED_BYTES)].to_vec(),
                             size: bytes.len(),
                             format,
                             first: seen,
@@ -413,15 +416,19 @@ mod tests {
     #[test]
     fn long_keys_keep_a_prefix_and_count_by_the_whole_key() {
         let mut b = SummaryBuilder::new(0, 999, 1000, 5);
-        let a = vec![b'a'; 300];
+        let a = vec![b'a'; 600];
         let mut c = a.clone();
-        c[299] = b'c';
+        c[599] = b'c';
         b.add(&rec(0, 0, 1, Some(&a), 1, &[]));
         b.add(&rec(0, 1, 2, Some(&c), 1, &[]));
         let s = b.finish(ScanStats::default());
         assert_eq!(s.distinct_keys, 2, "различаются по полному ключу");
-        assert_eq!(s.top_keys[0].bytes.len(), KEY_PREFIX_BYTES);
-        assert_eq!(s.top_keys[0].size, 300);
+        assert_eq!(
+            s.top_keys[0].bytes.len(),
+            KEY_STORED_BYTES,
+            "хранится больше, чем уходит в ответ"
+        );
+        assert_eq!(s.top_keys[0].size, 600);
     }
 
     #[test]

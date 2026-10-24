@@ -56,6 +56,8 @@ struct Fake {
     read_only: AtomicBool,
     /// Операции чтения сообщений, которые дошли до Backend.
     message_ops: Mutex<Vec<MessagesOp>>,
+    /// Просмотр `stuck` увидел флаг отмены (приложение закрыло бы консьюмер).
+    scan_stopped: Arc<AtomicBool>,
 }
 
 /// Считает одновременные операции чтения на любом выходе из `read`.
@@ -102,6 +104,7 @@ impl Fake {
             many_proposals: AtomicUsize::new(0),
             read_only: AtomicBool::new(false),
             message_ops: Mutex::new(Vec::new()),
+            scan_stopped: Arc::new(AtomicBool::new(false)),
         })
     }
 }
@@ -307,6 +310,11 @@ const T0: i64 = 1_792_841_520_000;
 
 /// Значение с полем из стандартного списка и номером карты в тексте.
 const ORDER_VALUE: &str = r#"{"email":"ann@example.com","note":"call 4111 1111 1111 1111"}"#;
+
+/// Ключ длиннее префикса в ответе обзора (256 байт): email пересекает его границу.
+fn long_key() -> String {
+    format!("{} ann@example.com", "x".repeat(245))
+}
 
 fn raw(partition: i32, offset: i64, ts: i64, value: &str, format: DataFormat) -> RawMessage {
     let key = format!("k{partition}-{offset}");
@@ -672,6 +680,32 @@ impl Backend for Fake {
                             }
                             Ok(read(vec![], ScanStats::default()))
                         }
+                        // Приложение не вернуло диапазонов партиций.
+                        "empty" => Ok(read(vec![], ScanStats::default())),
+                        // Остаток бюджета на входе в Backend, мс — в `scanned`.
+                        "deadline" => {
+                            let left = ctx
+                                .deadline
+                                .saturating_duration_since(std::time::Instant::now());
+                            Ok(read(
+                                vec![],
+                                ScanStats {
+                                    scanned: left.as_millis() as u64,
+                                    ..ScanStats::default()
+                                },
+                            ))
+                        }
+                        // Зависший просмотр: приложение читает в своём потоке и ждёт флаг отмены.
+                        "stuck" => {
+                            let (cancel, stopped) = (ctx.cancel.clone(), self.scan_stopped.clone());
+                            tokio::spawn(async move {
+                                while !cancel.load(Ordering::Relaxed) {
+                                    tokio::time::sleep(Duration::from_millis(10)).await;
+                                }
+                                stopped.store(true, Ordering::SeqCst);
+                            });
+                            std::future::pending().await
+                        }
                         "huge" => {
                             let blob = format!(r#"{{"blob":"{}"}}"#, "x".repeat(16_000));
                             let all = (0..300)
@@ -742,6 +776,7 @@ impl Backend for Fake {
                     }
                 }
                 MessagesOp::Summarize {
+                    topic,
                     from_ms,
                     to_ms,
                     bucket_ms,
@@ -749,11 +784,7 @@ impl Backend for Fake {
                     ..
                 } => {
                     let mut b = SummaryBuilder::new(from_ms, to_ms, bucket_ms, top_keys);
-                    for (offset, key) in [
-                        (0, &b"ann@example.com"[..]),
-                        (1, b"k2"),
-                        (2, b"ann@example.com"),
-                    ] {
+                    let mut add = |offset: i64, key: &[u8], header_names: &[&str]| {
                         b.add(&SummaryRecord {
                             partition: 0,
                             offset,
@@ -761,8 +792,33 @@ impl Backend for Fake {
                             timestamp_type: TimestampType::Create,
                             key: Some((key, DataFormat::String)),
                             value_size: 10,
-                            header_names: &["trace"],
-                        });
+                            header_names,
+                        })
+                    };
+                    match topic.as_str() {
+                        "long-key" => add(0, long_key().as_bytes(), &[]),
+                        // Больше 100 КБ: 50 длинных имён заголовков и 100 ключей из управляющих
+                        // символов (в JSON — по 6 байт на символ).
+                        "wide" => {
+                            let names: Vec<String> = (0..50)
+                                .map(|i| format!("h{i:02}-{}", "x".repeat(1500)))
+                                .collect();
+                            let names: Vec<&str> = names.iter().map(String::as_str).collect();
+                            for i in 0..100 {
+                                let mut key = format!("k{i:03}").into_bytes();
+                                key.extend([1u8; 300]);
+                                add(i, &key, &names);
+                            }
+                        }
+                        _ => {
+                            for (offset, key) in [
+                                (0, &b"ann@example.com"[..]),
+                                (1, b"k2"),
+                                (2, b"ann@example.com"),
+                            ] {
+                                add(offset, key, &["trace"]);
+                            }
+                        }
                     }
                     Ok(out(MessagesBody::Summarize(b.finish(ScanStats {
                         partitions: vec![range(0, 0, 10), range(1, 5, 5)],
@@ -779,27 +835,45 @@ impl Backend for Fake {
                     ..
                 } => {
                     let mut b = CommitHistoryBuilder::new(from_ms, to_ms, topic);
-                    if group_id != "nobody" {
-                        for (offset, at) in [
-                            (5, from_ms - 1000),
-                            (7, from_ms),
-                            (7, from_ms + 5000),
-                            (9, from_ms + 9000),
-                        ] {
-                            b.add(CommitRecord {
-                                topic: "orders".into(),
-                                partition: 0,
-                                offset: Some(offset),
-                                at_ms: at,
-                                metadata: "host=ann@example.com".into(),
-                            });
+                    match group_id.as_str() {
+                        "nobody" => {}
+                        // Больше 100 КБ: две партиции по 600 разных офсетов (остаются 500 `runs`)
+                        // с длинными метаданными и короткая партиция.
+                        "busy" => {
+                            for (partition, count) in [(0, 600), (1, 600), (2, 3)] {
+                                for offset in 0..count {
+                                    b.add(CommitRecord {
+                                        topic: "orders".into(),
+                                        partition,
+                                        offset: Some(offset),
+                                        at_ms: from_ms + offset,
+                                        metadata: "m".repeat(200),
+                                    });
+                                }
+                            }
+                        }
+                        _ => {
+                            for (offset, at) in [
+                                (5, from_ms - 1000),
+                                (7, from_ms),
+                                (7, from_ms + 5000),
+                                (9, from_ms + 9000),
+                            ] {
+                                b.add(CommitRecord {
+                                    topic: "orders".into(),
+                                    partition: 0,
+                                    offset: Some(offset),
+                                    at_ms: at,
+                                    metadata: "host=ann@example.com".into(),
+                                });
+                            }
                         }
                     }
                     Ok(out(MessagesBody::CommitHistory(b.finish(CommitStats {
                         offsets_partition: 17,
                         scanned: 40,
                         skipped_records: 1,
-                        stopped_by: None,
+                        stopped_by: (group_id == "partial").then_some(StopReason::TimeBudget),
                     }))))
                 }
             }
@@ -2199,7 +2273,8 @@ async fn read_messages_rejects_bad_arguments_before_the_backend() {
 
 #[tokio::test]
 async fn read_messages_pages_with_a_cursor() {
-    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
     let c = client(&e.ep).await;
     let mut seen = Vec::new();
     let mut cursor: Option<String> = None;
@@ -2239,6 +2314,18 @@ async fn read_messages_pages_with_a_cursor() {
         json!({"cursor": cur, "value": {"pattern": "x"}}),
     );
     assert!(err(&call(&c, "read_messages", other).await).contains("cursor does not match"));
+    // Подключение — тоже параметр отбора: курсор c1 на c2 отклоняется до Backend.
+    fake.message_ops.lock().unwrap().clear();
+    let foreign = with(
+        window_args("orders"),
+        json!({"cursor": cur, "connectionId": "c2"}),
+    );
+    let msg = err(&call(&c, "read_messages", foreign).await);
+    assert!(
+        msg.starts_with("invalid_argument:") && msg.contains("cursor does not match"),
+        "{msg}"
+    );
+    assert!(fake.message_ops.lock().unwrap().is_empty());
     let same = with(
         window_args("orders"),
         json!({"cursor": cur, "limit": 10, "maxValueBytes": 4096}),
@@ -2317,6 +2404,13 @@ async fn incomplete_scan_and_offsets_mode_are_reported() {
             ..
         }
     ));
+    // Без диапазонов от приложения — запрошенные границы.
+    let args = json!({"connectionId": "c1", "topic": "empty", "partition": 0, "startOffset": 3, "endOffset": 6});
+    let v = ok(call(&c, "read_messages", args).await);
+    assert_eq!(
+        v["range"],
+        json!({"partition": 0, "startOffset": 3, "endOffset": 6})
+    );
 }
 
 #[tokio::test]
@@ -2381,6 +2475,17 @@ async fn summarize_messages_merges_partitions_and_masks_keys() {
             with(window_args("orders"), json!({"topKeys": 101})),
             "topKeys must be between 0 and 100",
         ),
+        (
+            json!({"connectionId": "c1", "topic": "t", "from": 0, "to": 1001_i64 * 86_400_000}),
+            "narrow the window",
+        ),
+        (
+            with(
+                json!({"connectionId": "c1", "topic": "t", "from": 0, "to": 1001_i64 * 86_400_000}),
+                json!({"bucketSeconds": 3600}),
+            ),
+            "pass a larger bucketSeconds",
+        ),
     ] {
         let r = call(&c, "summarize_messages", args).await;
         if expected.is_empty() {
@@ -2437,11 +2542,156 @@ async fn commit_history_folds_runs_and_masks_metadata() {
             .unwrap()
             .contains("No commits of this group")
     );
+    let partial =
+        json!({"connectionId": "c1", "groupId": "partial", "from": T0, "to": T0 + 60_000});
+    let hint = ok(call(&c, "get_group_commit_history", partial).await)["hint"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert!(
+        hint.contains("__consumer_offsets")
+            && hint.contains("Narrow the window")
+            && !hint.contains("scannedTo")
+            && !hint.contains("40 s"),
+        "{hint}"
+    );
     let empty = json!({"connectionId": "c1", "groupId": " ", "from": T0, "to": T0});
     assert!(
         err(&call(&c, "get_group_commit_history", empty).await)
             .contains("groupId must not be empty")
     );
+}
+
+#[tokio::test]
+async fn summary_is_cut_header_names_first_then_top_keys() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let r = call(
+        &c,
+        "summarize_messages",
+        with(window_args("wide"), json!({"topKeys": 100})),
+    )
+    .await;
+    let size = text(&r).len();
+    let v = ok(r);
+    assert!(size <= glafira_mcp::rules::HARD_LIMIT_BYTES, "{size}");
+    assert_eq!(v["headerNames"], json!([]), "сначала — имена заголовков");
+    let top = v["keys"]["top"].as_array().unwrap();
+    assert!(!top.is_empty() && top.len() < 100, "{}", top.len());
+    assert!(top[0]["key"].as_str().unwrap().starts_with("k000"));
+    assert_eq!(v["keys"]["distinct"], 100);
+    assert_eq!(v["truncated"], true);
+    assert!(
+        v["hint"]
+            .as_str()
+            .unwrap()
+            .contains("headerNames and keys.top were shortened")
+    );
+}
+
+#[tokio::test]
+async fn summary_key_is_masked_before_the_output_cut() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(&c, "summarize_messages", window_args("long-key")).await);
+    assert_eq!(
+        v["keys"]["top"][0]["key"],
+        format!("{} [email]", "x".repeat(245)),
+        "email на границе 256 байт замаскирован целиком"
+    );
+    assert_eq!(v["masked"], 1);
+}
+
+#[tokio::test]
+async fn commit_history_cut_keeps_the_newest_runs_of_every_partition() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let args = json!({"connectionId": "c1", "groupId": "busy", "from": T0, "to": T0 + 60_000});
+    let r = call(&c, "get_group_commit_history", args).await;
+    let size = text(&r).len();
+    let v = ok(r);
+    assert!(size <= glafira_mcp::rules::HARD_LIMIT_BYTES, "{size}");
+    assert_eq!(v["truncated"], true);
+    assert!(
+        v["hint"]
+            .as_str()
+            .unwrap()
+            .contains("the oldest runs were dropped")
+    );
+    let p = v["partitions"].as_array().unwrap();
+    let k = p[0]["runs"].as_array().unwrap().len();
+    assert!(k > 0 && k < 500, "{k}");
+    for long in &p[..2] {
+        let runs = long["runs"].as_array().unwrap();
+        assert_eq!(runs.len(), k, "длинные партиции — поровну");
+        assert_eq!(long["runsTruncated"], true);
+        assert_eq!(runs[0]["offset"], 600 - k as i64, "остались самые новые");
+        assert_eq!(runs[k - 1]["offset"], 599);
+    }
+    assert_eq!(
+        p[2]["runs"].as_array().unwrap().len(),
+        3,
+        "короткая партиция не теряет ничего"
+    );
+    assert!(p[2].get("runsTruncated").is_none());
+    let audit = e.audit.recent(1);
+    assert_eq!(audit[0]["returned"].as_u64(), Some(2 * k as u64 + 3));
+}
+
+#[tokio::test]
+async fn scan_deadline_counts_from_the_start_of_the_call() {
+    let fake = Fake::new(SessionAccess::Approved);
+    *fake.overview_delay.lock().unwrap() = Duration::from_secs(1);
+    let e = env_with(fake.clone(), |o| o.scan_deadline = Duration::from_secs(3)).await;
+    let c = Arc::new(client(&e.ep).await);
+    // Оба слота сессии заняты обзорами кластера: просмотр ждёт их почти секунду.
+    let busy: Vec<_> = (0..2)
+        .map(|_| {
+            let c = c.clone();
+            tokio::spawn(async move {
+                ok(call(&c, "get_cluster_overview", json!({"connectionId": "c1"})).await)
+            })
+        })
+        .collect();
+    for _ in 0..100 {
+        if fake.active.load(Ordering::SeqCst) == 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+    assert_eq!(fake.active.load(Ordering::SeqCst), 2);
+    let v = ok(call(&c, "read_messages", window_args("deadline")).await);
+    let left = v["scanned"].as_u64().unwrap();
+    assert!(
+        left <= 2500,
+        "ожидание слотов входит в бюджет: осталось {left} мс"
+    );
+    for h in busy {
+        h.await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn timed_out_scan_is_told_to_stop() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env_with(fake.clone(), |o| {
+        o.scan_deadline = Duration::from_millis(50)
+    })
+    .await;
+    let c = client(&e.ep).await;
+    // Страховочный таймаут — бюджет + 5 с.
+    let msg = err(&call(&c, "read_messages", window_args("stuck")).await);
+    assert!(msg.starts_with("TIMEOUT:"), "{msg}");
+    let mut stopped = false;
+    for _ in 0..50 {
+        stopped = fake.scan_stopped.load(Ordering::SeqCst);
+        if stopped {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert!(stopped, "по таймауту выставлен флаг отмены");
+    ok(call(&c, "read_messages", window_args("orders")).await);
 }
 
 #[tokio::test]

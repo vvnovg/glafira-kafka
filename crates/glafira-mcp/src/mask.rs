@@ -306,8 +306,8 @@ fn patterns_in_place(run: &mut [u8], count: &mut usize) {
     }
 }
 
-/// Обрезает текст до `max` байтов по границе символа.
-fn cut(mut s: String, max: usize) -> (String, bool) {
+/// Обрезает текст до `max` байтов по границе символа; true — обрезан.
+pub(crate) fn cut_utf8(mut s: String, max: usize) -> (String, bool) {
     if s.len() <= max {
         return (s, false);
     }
@@ -465,7 +465,7 @@ impl Masker {
                         .flatten();
                 let text =
                     json.unwrap_or_else(|| self.text(&String::from_utf8_lossy(bytes), count));
-                let (text, cut_now) = cut(text, max_text);
+                let (text, cut_now) = cut_utf8(text, max_text);
                 (text, cut_now || partial)
             }
             DataFormat::Hex => {

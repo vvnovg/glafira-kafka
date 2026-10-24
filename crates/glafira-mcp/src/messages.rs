@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use base64::Engine;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -103,14 +103,19 @@ impl TimeArg {
     }
 }
 
+/// Дата и время без зоны в любой из привычных записей: пробел или `T`/`t` между датой и временем,
+/// запятая (log4j) или точка в дробной части, время до минут, только дата.
 fn has_no_zone(s: &str) -> bool {
-    [
-        "%Y-%m-%dT%H:%M:%S%.f",
-        "%Y-%m-%d %H:%M:%S%.f",
-        "%Y-%m-%dT%H:%M",
-    ]
-    .iter()
-    .any(|f| NaiveDateTime::parse_from_str(s, f).is_ok())
+    let s = s.replacen('t', "T", 1).replace(',', ".");
+    NaiveDate::parse_from_str(&s, "%Y-%m-%d").is_ok()
+        || [
+            "%Y-%m-%dT%H:%M:%S%.f",
+            "%Y-%m-%d %H:%M:%S%.f",
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%d %H:%M",
+        ]
+        .iter()
+        .any(|f| NaiveDateTime::parse_from_str(&s, f).is_ok())
 }
 
 /// ISO 8601 UTC с миллисекундами: `2026-10-24T11:32:05.123Z`.
@@ -378,7 +383,11 @@ mod tests {
             no_zone.starts_with("from: timestamp has no time zone"),
             "{no_zone}"
         );
-        assert!(t("2026-10-24 14:32").unwrap_err().contains("RFC 3339"));
+        assert!(
+            t("2026-10-24 14:32")
+                .unwrap_err()
+                .starts_with("from: timestamp has no time zone")
+        );
         assert!(t("yesterday").unwrap_err().contains("RFC 3339"));
         assert!(
             TimeArg::Millis(-1)
@@ -388,6 +397,36 @@ mod tests {
         );
         let parsed: TimeArg = serde_json::from_str("1792841520000").unwrap();
         assert_eq!(parsed, TimeArg::Millis(1_792_841_520_000));
+    }
+
+    #[test]
+    fn every_zone_less_form_asks_for_a_zone() {
+        let t = |s: &str| TimeArg::Text(s.into()).to_ms("to");
+        for s in [
+            "2026-10-24 14:32",
+            "2026-10-24T14:32",
+            "2026-10-24",
+            "2026-10-24 14:32:00",
+            "2026-10-24 14:32:00.123",
+            // log4j: запятая в дробной части
+            "2026-10-24 14:32:00,123",
+            "2026-10-24T14:32:00,123",
+            // строчная t
+            "2026-10-24t14:32:00",
+            " 2026-10-24 14:32:00,123456789 ",
+        ] {
+            let e = t(s).unwrap_err();
+            assert!(
+                e.starts_with("to: timestamp has no time zone"),
+                "{s:?}: {e}"
+            );
+        }
+        // С зоной и мусор — прежние ответы.
+        assert_eq!(t("2026-10-24 14:32:00.123+03:00"), Ok(1_792_841_520_123));
+        for s in ["yesterday", "14:32", "2026-13-45", "2026-10-24 25:00", ""] {
+            let e = t(s).unwrap_err();
+            assert!(e.contains("RFC 3339"), "{s:?}: {e}");
+        }
     }
 
     #[test]

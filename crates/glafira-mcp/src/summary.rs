@@ -12,8 +12,9 @@ use crate::messages::{ScanStats, TimestampType};
 
 pub const DEFAULT_TOP_KEYS: u32 = 20;
 pub const MAX_TOP_KEYS: u32 = 100;
-/// Шаг корзин по умолчанию — наименьший, при котором окно укладывается в `TARGET_BUCKETS` шагов
-/// (с круглым началом корзин их может выйти на одну больше).
+/// Шаг корзин по умолчанию — наименьший, при котором `to − from` не больше `TARGET_BUCKETS` шагов
+/// (окно включительное: «последний час» — шаг минута; с круглым началом корзин выходит на одну
+/// больше).
 pub const TARGET_BUCKETS: i64 = 60;
 pub const MAX_BUCKETS: i64 = 1000;
 pub const BUCKET_STEPS_S: [i64; 11] = [1, 5, 10, 30, 60, 300, 900, 1800, 3600, 21600, 86400];
@@ -38,7 +39,7 @@ pub fn default_bucket_ms(from_ms: i64, to_ms: i64) -> i64 {
     BUCKET_STEPS_S
         .iter()
         .map(|s| s * 1000)
-        .find(|ms| to_ms - from_ms < TARGET_BUCKETS * ms)
+        .find(|ms| to_ms - from_ms <= TARGET_BUCKETS * ms)
         .unwrap_or(86_400_000)
 }
 
@@ -67,6 +68,8 @@ struct PartStat {
     matched: u64,
     first_ts: Option<i64>,
     last_ts: Option<i64>,
+    /// Метка предыдущей записи партиции — для `outOfOrder`.
+    prev_ts: Option<i64>,
 }
 
 pub struct SummaryBuilder {
@@ -169,11 +172,12 @@ impl SummaryBuilder {
         let p = self.partitions.entry(r.partition).or_default();
         p.matched += 1;
         if let Some(ts) = r.timestamp {
-            if p.last_ts.is_some_and(|last| ts < last) {
+            if p.prev_ts.is_some_and(|prev| ts < prev) {
                 self.out_of_order += 1;
                 self.first_out_of_order
                     .get_or_insert((r.partition, r.offset));
             }
+            p.prev_ts = Some(ts);
             p.first_ts = Some(p.first_ts.map_or(ts, |f| f.min(ts)));
             p.last_ts = Some(p.last_ts.map_or(ts, |l| l.max(ts)));
             let i = (ts - self.origin).div_euclid(self.bucket_ms);
@@ -314,6 +318,36 @@ mod tests {
             default_bucket_ms(0, 400 * 86_400_000),
             86_400_000,
             "дальше суток не растёт"
+        );
+    }
+
+    #[test]
+    fn inclusive_window_fits_the_default_step() {
+        // «Последний час»: to − from = 3 600 000 → шаг 60 с, а не 300 с.
+        assert_eq!(default_bucket_ms(0, 3_600_000), 60_000);
+        assert_eq!(bucket_count(0, 3_600_000, 60_000), 61);
+        // На шаг больше — следующий шаг.
+        assert_eq!(default_bucket_ms(0, 3_600_001), 300_000);
+        assert_eq!(default_bucket_ms(0, 60_000), 1000);
+    }
+
+    #[test]
+    fn out_of_order_is_compared_with_the_previous_record() {
+        let mut b = SummaryBuilder::new(0, 29_999, 10_000, 2);
+        // Одна запись «из будущего» не делает неупорядоченными все следующие.
+        for (offset, ts) in [(20, 10_000), (21, 5_000), (22, 6_000), (23, 7_000)] {
+            b.add(&rec(0, offset, ts, None, 1, &[]));
+        }
+        // Равная метка — не нарушение; другая партиция считается отдельно.
+        b.add(&rec(1, 0, 9_000, None, 1, &[]));
+        b.add(&rec(1, 1, 9_000, None, 1, &[]));
+        b.add(&rec(1, 2, 9_500, None, 1, &[]));
+        let s = b.finish(ScanStats::default());
+        assert_eq!(s.out_of_order, 1);
+        assert_eq!(s.first_out_of_order, Some((0, 21)));
+        assert_eq!(
+            (s.partitions[0].first_ts, s.partitions[0].last_ts),
+            (Some(5_000), Some(10_000))
         );
     }
 

@@ -67,6 +67,11 @@ pub struct CommitHistory {
 struct PartState {
     before: Option<Commit>,
     runs: Vec<Run>,
+    /// Старые `runs` уже отброшены при просмотре.
+    runs_dropped: bool,
+    /// Последний tombstone окна: следующий коммит начнёт новый `run`.
+    after_delete: bool,
+    /// Время последнего удаления в окне, даже если после него были коммиты.
     deleted_at_ms: Option<i64>,
 }
 
@@ -103,23 +108,31 @@ impl CommitHistoryBuilder {
         }
         let Some(offset) = r.offset else {
             p.deleted_at_ms = Some(r.at_ms);
+            p.after_delete = true;
             return;
         };
-        p.deleted_at_ms = None;
         match p.runs.last_mut() {
-            Some(last) if last.offset == offset => {
+            Some(last) if last.offset == offset && !p.after_delete => {
                 last.last_at_ms = r.at_ms;
                 last.commits += 1;
                 last.metadata = r.metadata;
             }
-            _ => p.runs.push(Run {
-                offset,
-                first_at_ms: r.at_ms,
-                last_at_ms: r.at_ms,
-                commits: 1,
-                metadata: r.metadata,
-            }),
+            _ => {
+                p.runs.push(Run {
+                    offset,
+                    first_at_ms: r.at_ms,
+                    last_at_ms: r.at_ms,
+                    commits: 1,
+                    metadata: r.metadata,
+                });
+                // Память ограничена: при удвоенном пределе отбрасываем старые до предела.
+                if p.runs.len() >= 2 * MAX_RUNS {
+                    p.runs.drain(..p.runs.len() - MAX_RUNS);
+                    p.runs_dropped = true;
+                }
+            }
         }
+        p.after_delete = false;
     }
 
     pub fn finish(self, stats: CommitStats) -> CommitHistory {
@@ -133,7 +146,7 @@ impl CommitHistoryBuilder {
                     p.before.is_some() || !p.runs.is_empty() || p.deleted_at_ms.is_some()
                 })
                 .map(|((topic, partition), mut p)| {
-                    let runs_truncated = p.runs.len() > MAX_RUNS;
+                    let runs_truncated = p.runs_dropped || p.runs.len() > MAX_RUNS;
                     if runs_truncated {
                         p.runs.drain(..p.runs.len() - MAX_RUNS);
                     }
@@ -217,6 +230,49 @@ mod tests {
             (p.partition, p.deleted_at_ms, p.runs.len()),
             (1, Some(3_000), 1)
         );
+    }
+
+    #[test]
+    fn a_commit_after_a_tombstone_starts_a_new_run() {
+        let mut b = CommitHistoryBuilder::new(1_000, 9_000, None);
+        b.add(c("t", 0, Some(7), 1_500));
+        b.add(c("t", 0, None, 2_000));
+        b.add(c("t", 0, Some(7), 3_000)); // тот же офсет после удаления
+        let p = &b.finish(CommitStats::default()).partitions[0];
+        assert_eq!(
+            p.runs
+                .iter()
+                .map(|r| (r.offset, r.first_at_ms, r.commits))
+                .collect::<Vec<_>>(),
+            [(7, 1_500, 1), (7, 3_000, 1)]
+        );
+        assert_eq!(p.deleted_at_ms, Some(2_000), "коммиты после не стирают");
+
+        // Последнее удаление в окне, и новые коммиты после него сворачиваются как обычно.
+        let mut b = CommitHistoryBuilder::new(1_000, 9_000, None);
+        b.add(c("t", 0, None, 2_000));
+        b.add(c("t", 0, Some(8), 3_000));
+        b.add(c("t", 0, Some(8), 3_500));
+        b.add(c("t", 0, None, 4_000));
+        let p = &b.finish(CommitStats::default()).partitions[0];
+        assert_eq!(p.runs.len(), 1);
+        assert_eq!((p.runs[0].commits, p.deleted_at_ms), (2, Some(4_000)));
+    }
+
+    #[test]
+    fn runs_are_capped_during_the_scan() {
+        let total = 3 * MAX_RUNS as i64 + 7;
+        let mut b = CommitHistoryBuilder::new(0, i64::MAX, None);
+        for i in 0..total {
+            b.add(c("t", 0, Some(i), i));
+            let held = b.parts[&("t".to_string(), 0)].runs.len();
+            assert!(held < 2 * MAX_RUNS, "{held} runs after commit {i}");
+        }
+        let p = &b.finish(CommitStats::default()).partitions[0];
+        assert!(p.runs_truncated);
+        assert_eq!(p.runs.len(), MAX_RUNS);
+        assert_eq!(p.runs[0].offset, total - MAX_RUNS as i64);
+        assert_eq!(p.runs[MAX_RUNS - 1].offset, total - 1);
     }
 
     #[test]

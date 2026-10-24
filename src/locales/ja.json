@@ -164,8 +164,8 @@
       "timeoutTooSmall": "リクエストのタイムアウトは1000 ms以上にしてください",
       "notFound": "接続{{id}}が見つかりません",
       "saslPasswordMissing": "接続のSASLパスワードが設定されていません",
-      "maskFieldsTooMany": "マスクするフィールド名は最大 {{max}} 個です",
-      "maskFieldTooLong": "マスクするフィールド名が {{max}} 文字を超えています：{{name}}"
+      "maskFieldsTooMany": "マスクするフィールド名は最大{{max}}個です",
+      "maskFieldTooLong": "マスクするフィールド名が{{max}}文字を超えています：{{name}}"
     },
     "storage": {
       "writeFailed": "{{path}}を書き込めませんでした：{{error}}",

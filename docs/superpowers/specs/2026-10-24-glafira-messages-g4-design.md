@@ -276,8 +276,10 @@ exist, may store offsets elsewhere (assign() with external storage), or the hist
 
 **Уровень подключения:** `LlmAccess { Off, Metadata, Messages }`, JSON `"off"` / `"metadata"` / `"messages"`.
 `Messages` включает всё, что даёт `Metadata`. Версии до G4 читают `"messages"` как `off` (`#[serde(other)]` из G1):
-откат версии доступ только сужает. Методы `allows_metadata()`, `allows_messages()`;
-`effective(&PolicyStatus) -> LlmAccess` понижает `Messages` до `Metadata`, если `mcpMessagesEnabled = false`.
+откат версии доступ только сужает. Методы `is_off()` и `effective(messages_allowed: bool) -> LlmAccess`:
+`effective` понижает `Messages` до `Metadata`, если чтение сообщений не разрешено; «сообщения» проверяются сравнением
+`== LlmAccess::Messages`. Флаг всегда равен `PolicyStatus::messages_allowed()` (`mcpEnabled` и `mcpMessagesEnabled`;
+при нечитаемой политике оба сброшены), а не «сырому» `mcp_messages_enabled`.
 
 **Поле локальное**, как `llmAccess` в G1: экспорт его и `llmMaskFields` не пишет, импорт не переносит (новое
 подключение — `off` и стандартный список, обновлённое сохраняет свои значения), `same_settings` их не сравнивает.

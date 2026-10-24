@@ -262,8 +262,11 @@ pub fn parse_exchange(bytes: &[u8]) -> AppResult<ParsedExchange> {
                 continue;
             }
         };
-        // Неизвестные поля файла не переносятся в хранилище.
+        // Неизвестные и локальные поля файла (уровень LLM, маски) не переносятся в хранилище.
+        // Очищаются до проверки: поле, которого импорт не несёт, не должно отклонять подключение.
         c.profile.extra.clear();
+        c.profile.llm_mask_fields = None;
+        c.profile.llm_access = LlmAccess::Off;
         if let Err(e) = validate_profile(&c.profile) {
             skipped.push(Skipped {
                 name,
@@ -1011,6 +1014,28 @@ mod tests {
         same["llmMaskFields"] = serde_json::json!(["email"]);
         let p = plan(&data, &file(vec![], vec![same]), &opts(None));
         assert_eq!(preview_ids(&p.preview.unchanged), ["a"]);
+    }
+
+    #[test]
+    fn mask_limits_of_the_file_do_not_skip_the_connection() {
+        // Маски файла импорт не переносит, поэтому и не проверяет: подключение не пропускается.
+        let mut many = conn_json("many", "Many", None);
+        many["llmAccess"] = "messages".into();
+        many["llmMaskFields"] = (0..201).map(|i| format!("f{i}")).collect::<Vec<_>>().into();
+        let mut long = conn_json("long", "Long", None);
+        long["llmMaskFields"] = serde_json::json!(["x".repeat(65)]);
+        let parsed = parse_exchange(&file(vec![], vec![many, long])).unwrap();
+        assert!(parsed.skipped.is_empty(), "{:?}", parsed.skipped);
+        let p = plan_import(&StoreData::default(), &parsed, &opts(None), &all_exist).unwrap();
+        assert_eq!(p.preview.added.len(), 2);
+        for id in ["many", "long"] {
+            let c = conn(&p.next, id);
+            assert_eq!(
+                (c.llm_access, c.llm_mask_fields.clone()),
+                (LlmAccess::Off, None),
+                "{id}"
+            );
+        }
     }
 
     #[test]

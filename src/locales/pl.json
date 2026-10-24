@@ -165,7 +165,7 @@
       "notFound": "Nie znaleziono połączenia {{id}}",
       "saslPasswordMissing": "Nie ustawiono hasła SASL dla połączenia",
       "maskFieldsTooMany": "Najwyżej {{max}} nazw pól do maskowania",
-      "maskFieldTooLong": "Nazwa pola do maskowania jest dłuższa niż {{max}} znaków: {{name}}"
+      "maskFieldTooLong": "Nazwa pola do maskowania jest dłuższa od {{max}} znaków: {{name}}"
     },
     "storage": {
       "writeFailed": "Nie udało się zapisać {{path}}: {{error}}",

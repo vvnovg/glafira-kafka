@@ -245,6 +245,12 @@ mod tests {
             content.get("mcpEnabled").and_then(|v| v.as_boolean()),
             Some(false)
         );
+        assert_eq!(
+            content
+                .get("mcpMessagesEnabled")
+                .and_then(|v| v.as_boolean()),
+            Some(false)
+        );
 
         let reg = std::fs::read_to_string(format!("{base}/policy.reg")).unwrap();
         assert!(reg.contains(&format!(

@@ -864,6 +864,47 @@ mod tests {
     }
 
     #[test]
+    fn llm_access_as_str_matches_serde() {
+        // `as_str` уходит в `list_connections` для LLM, serde — в файл подключений: строки обязаны совпадать.
+        for v in [LlmAccess::Off, LlmAccess::Metadata, LlmAccess::Messages] {
+            assert_eq!(
+                serde_json::to_value(v).unwrap(),
+                serde_json::Value::from(v.as_str())
+            );
+        }
+    }
+
+    #[test]
+    fn mask_field_limits_count_characters_and_include_the_maximum() {
+        use glafira_mcp::mask::{MAX_MASK_FIELD_CHARS, MAX_MASK_FIELDS};
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let mut p = sample_profile("a");
+        // Ровно предельное число имён — допустимо.
+        p.llm_mask_fields = Some((0..MAX_MASK_FIELDS).map(|i| format!("f{i}")).collect());
+        assert_eq!(
+            store
+                .upsert(p.clone())
+                .unwrap()
+                .llm_mask_fields
+                .unwrap()
+                .len(),
+            MAX_MASK_FIELDS
+        );
+        // Предел длины считается в символах, а не в байтах: кириллица — 2 байта на символ.
+        let fits = "я".repeat(MAX_MASK_FIELD_CHARS);
+        assert!(fits.len() > MAX_MASK_FIELD_CHARS);
+        p.llm_mask_fields = Some(vec![fits.clone()]);
+        assert_eq!(
+            store.upsert(p.clone()).unwrap().llm_mask_fields,
+            Some(vec![fits])
+        );
+        p.llm_mask_fields = Some(vec!["я".repeat(MAX_MASK_FIELD_CHARS + 1)]);
+        let e = store.upsert(p).unwrap_err();
+        assert_eq!(e.key, "errors.connections.maskFieldTooLong");
+    }
+
+    #[test]
     fn mask_fields_are_cleaned_validated_and_written_only_when_set() {
         let dir = tempfile::tempdir().unwrap();
         let store = ConnectionStore::open(dir.path()).unwrap();

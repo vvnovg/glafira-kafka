@@ -169,6 +169,23 @@ pub trait Backend: Send + Sync + 'static {
         &self,
         op: crate::proposals::ProposalOp,
     ) -> BoxFuture<'_, Result<crate::proposals::ProposalOutput, BackendError>>;
+    /// Чтение сообщений (спец. G4 §3): просмотр окна в Kafka, данные без маскировки — маскирует
+    /// крейт. Реализация проверяет доступ (`llmAccess = messages`, политика) и останавливается
+    /// по дедлайну и отмене из `ctx`. По умолчанию — `not_supported`: реализации, которые
+    /// сообщения не читают (тестовые), его не переопределяют.
+    fn messages(
+        &self,
+        op: crate::messages::MessagesOp,
+        ctx: crate::messages::ScanCtx,
+    ) -> BoxFuture<'_, Result<crate::messages::MessagesOutput, BackendError>> {
+        let _ = (op, ctx);
+        Box::pin(async {
+            Err(BackendError::new(
+                "not_supported",
+                "Reading messages is not supported by this Glafira build",
+            ))
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

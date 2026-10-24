@@ -42,6 +42,13 @@ pub enum AuditEvent {
         code: Option<String>,
         bytes: usize,
         ms: u64,
+        /// Чтение сообщений (спец. G4 §7): просмотрено, отдано, замаскировано.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        scanned: Option<u64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        returned: Option<u64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        masked: Option<u64>,
     },
     #[serde(rename_all = "camelCase")]
     SessionStarted {
@@ -203,12 +210,19 @@ mod tests {
             code: None,
             bytes: 10,
             ms: 3,
+            scanned: None,
+            returned: None,
+            masked: None,
         });
         let r = log.recent(10);
         assert_eq!(r.len(), 2);
         assert_eq!(r[0]["event"], "call");
         assert_eq!(r[0]["connection"]["name"], "dev");
         assert_eq!(r[0]["outcome"], "ok");
+        assert!(
+            r[0].get("scanned").is_none(),
+            "у обычных инструментов полей чтения нет"
+        );
         assert!(r[0]["ts"].as_u64().unwrap() > 0);
         assert_eq!(r[1]["event"], "sessionStarted");
         assert_eq!(log.recent(1).len(), 1);

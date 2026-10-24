@@ -124,23 +124,26 @@ static PAIR: LazyLock<Regex> = LazyLock::new(|| {
 static VALUE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"^(?:"(?:[^"\\]|\\.)*"|'[^']*'|[^\s,;&}\]]+)"#).expect("value regex")
 });
-/// Учётные данные (b64token из RFC 6750) после известной схемы авторизации — и на следующей строке.
+/// Слово учётных данных после известной схемы авторизации — и на следующей строке.
 static CREDENTIAL: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^\s+[A-Za-z0-9._~+/-]+=*").expect("credential regex"));
-/// Учётные данные после любой другой схемы — только в той же строке.
-static SAME_LINE_CREDENTIAL: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^[ \t]+[A-Za-z0-9._~+/-]+=*").expect("same-line credential regex")
-});
+    LazyLock::new(|| Regex::new(r"^\s+[^\s,;&}\]]+").expect("credential regex"));
+/// Слово учётных данных после любой другой схемы — только в той же строке.
+static SAME_LINE_CREDENTIAL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s,;&}\]]+").expect("same-line credential regex"));
 /// Разделитель пары сразу за словом: слово — имя следующей пары.
 static NEXT_PAIR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s*[:=]").expect("next pair regex"));
+/// Слово начинается с пары `name=value`.
+static GLUED_PAIR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[A-Za-z_][\w.-]*=[^=]").expect("glued pair regex"));
 
 /// Сколько байтов `rest` занимают учётные данные, если значение пары — схема авторизации
 /// (`Authorization: Negotiate YII…`, иначе они остались бы за `***`): `Bearer`, `Basic`, `Digest`,
 /// `Token` — у любого имени из списка, токен может быть и на следующей строке; любая другая схема
-/// (токен RFC 7235) — только у имён, оканчивающихся на `authorization`, и в той же строке. Слово,
-/// за которым идёт `:` или `=` (`access_token: x` строкой ниже) или к `=` в конце которого
-/// вплотную примыкает значение (`user=ann`), — начало следующей пары, а не токен.
+/// (токен RFC 7235) — только у имён, оканчивающихся на `authorization`, и в той же строке.
+/// Учётные данные — слово целиком (`user:p4ss`, `abc@x`, `a=b`), но не имя следующей пары: слово
+/// с `:` в конце или перед `:`/`=` (`access_token: x`), а на следующей строке и слово,
+/// начинающееся с `name=value` (`user=ann`; в той же строке это параметр схемы).
 fn credential_len(name: &str, value: &str, rest: &str) -> usize {
     let re = if ["bearer", "basic", "digest", "token"]
         .iter()
@@ -159,10 +162,14 @@ fn credential_len(name: &str, value: &str, rest: &str) -> usize {
     let Some(cred) = re.find(rest) else {
         return 0;
     };
-    let after = &rest[cred.end()..];
-    let glued = cred.as_str().ends_with('=')
-        && after.starts_with(|c: char| !c.is_whitespace() && !",;&}]".contains(c));
-    if glued || NEXT_PAIR.is_match(after) {
+    let word = cred.as_str().trim_start();
+    let next_line = !cred.as_str()[..cred.len() - word.len()]
+        .bytes()
+        .all(|b| b == b' ' || b == b'\t');
+    if word.ends_with(':')
+        || NEXT_PAIR.is_match(&rest[cred.end()..])
+        || (next_line && GLUED_PAIR.is_match(word))
+    {
         0
     } else {
         cred.end()
@@ -204,10 +211,11 @@ fn card_shaped(lens: &[usize]) -> bool {
     }
 }
 
-/// Номера карт (диапазоны байтов) среди групп цифр: в каждой серии — все окна из подряд идущих
-/// целых групп в форме номера карты ([`card_shaped`]), прошедшие [`is_card`]; пересекающиеся окна
-/// объединяются. Соседние числа (`… 12/25`, `qty 2 …`, `630000 4111 …`) остаются на виду и не
-/// мешают, списки чисел картой не считаются, а группа не делится: 23 цифры подряд — не карта.
+/// Номера карт (диапазоны байтов) среди групп цифр: в каждой серии — вся серия из 13–19 цифр при
+/// любой группировке и все окна из подряд идущих целых групп в форме номера карты
+/// ([`card_shaped`]), прошедшие [`is_card`]; пересекающиеся окна объединяются. Соседние числа
+/// (`… 12/25`, `qty 2 …`, `630000 4111 …`) остаются на виду и не мешают, списки чисел (серии
+/// длиннее) картой не считаются, а группа не делится: 23 цифры подряд — не карта.
 fn card_spans(text: &str) -> Vec<(usize, usize)> {
     let mut spans: Vec<(usize, usize)> = Vec::new();
     for run in DIGIT_RUN.find_iter(text) {
@@ -226,6 +234,10 @@ fn card_spans(text: &str) -> Vec<(usize, usize)> {
         }
         groups.push((start, run.end(), start - run.start() - groups.len()));
         let lens: Vec<usize> = groups.iter().map(|&(s, e, _)| e - s).collect();
+        // Вся серия из 13–19 цифр — при любой группировке; начинается раньше любого окна.
+        if is_card(&digits) {
+            spans.push((run.start(), run.end()));
+        }
         for (i, &(first, _, from)) in groups.iter().enumerate() {
             for (j, &(_, end, at)) in groups.iter().enumerate().skip(i).take(5) {
                 if !card_shaped(&lens[i..=j]) || !is_card(&digits[from..at + lens[j]]) {
@@ -844,6 +856,14 @@ mod tests {
                 // Окна только в форме номера карты: Amex 4-6-5, Diners 4-6-4; списки чисел — не карты.
                 ("amex 3782 822463 10005", "amex [card]", 1),
                 ("diners 3056 930902 5904", "diners [card]", 1),
+                // Отдельная серия из 13–19 цифр — карта при любой группировке.
+                ("4111 1111 1111 116", "[card]", 1),
+                ("4222 222 222 222", "[card]", 1),
+                ("622126 1234567890129", "[card]", 1),
+                ("41 11 11 11 11 11 11 11", "[card]", 1),
+                ("411 111 111 111 1111", "[card]", 1),
+                ("4111 1111 11111111", "[card]", 1),
+                ("41111111 11111111", "[card]", 1),
                 (
                     "scores 3 1 4 1 5 9 2 6 5 3 5 8 9 7 9 3 2 3 8 4 6",
                     "scores 3 1 4 1 5 9 2 6 5 3 5 8 9 7 9 3 2 3 8 4 6",
@@ -954,6 +974,38 @@ mod tests {
                     2,
                 ),
                 ("token: Bearer\nuser=ann", "token: ***\nuser=ann", 1),
+                // Токен — слово целиком: с `:`, `@` и `=` внутри.
+                (
+                    "Authorization: Basic dXNlcg== from 10.0.0.1",
+                    "Authorization: *** from 10.0.0.1",
+                    1,
+                ),
+                (
+                    "Authorization: Basic user:p4ssw0rd",
+                    "Authorization: ***",
+                    1,
+                ),
+                (
+                    "Authorization: Basic alice:hunter2 from 10.0.0.1",
+                    "Authorization: *** from 10.0.0.1",
+                    1,
+                ),
+                ("token: Token id42:s3cr3tKEY", "token: ***", 1),
+                (
+                    "Authorization: ApiKey key-id:s3cr3t",
+                    "Authorization: ***",
+                    1,
+                ),
+                (
+                    "Authorization: Bearer abcdefgh=ijklmnop",
+                    "Authorization: ***",
+                    1,
+                ),
+                (
+                    "Authorization: Bearer abc@d3fs3cr3t",
+                    "Authorization: ***",
+                    1,
+                ),
             ],
         );
         let own = Masker::new(&MaskConfig {

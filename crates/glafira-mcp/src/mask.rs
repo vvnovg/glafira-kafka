@@ -110,17 +110,38 @@ static BEARER: LazyLock<Regex> =
 static EMAIL: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}").expect("email regex")
 });
-/// Кандидат в номер карты: 13–19 цифр, между ними одиночные пробелы или дефисы.
-static CARD: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\b\d(?:[ -]?\d){12,18}\b").expect("card regex"));
-/// Пара `name=value`, `name: value`, `"name": value` в тексте. Значение после схемы авторизации
-/// (`Authorization: Bearer …`) берётся вместе с ней, иначе токен остался бы за `***`.
+/// Серия групп цифр (кандидаты в номер карты): между группами одиночный пробел или дефис.
+static DIGIT_RUN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\b[0-9]+(?:[ -][0-9]+)*\b").expect("digit run regex"));
+/// Имя пары `name=value`, `name: value`, `"name": value` в тексте вместе с разделителем.
 static PAIR: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[A-Za-z_][A-Za-z0-9_.\-]{0,63}))\s*[:=]\s*(?P<v>"(?:[^"\\]|\\.)*"|'[^']*'|(?i:bearer|basic|digest|token)\s+[^\s,;&}\]]+|[^\s,;&}\]]+)"#,
+        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[A-Za-z_][A-Za-z0-9_.\-]{0,63}))\s*[:=]\s*"#,
     )
     .expect("pair regex")
 });
+/// Значение пары: строка в кавычках целиком или до `,`, `;`, `&`, `}`, `]` или пробела.
+static VALUE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"^(?:"(?:[^"\\]|\\.)*"|'[^']*'|[^\s,;&}\]]+)"#).expect("value regex")
+});
+/// Учётные данные после схемы авторизации — в той же строке.
+static CREDENTIAL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s,;&}\]]+").expect("credential regex"));
+
+/// Значение пары — схема авторизации, и за ней берутся учётные данные (`Authorization: Negotiate
+/// YII…`, иначе они остались бы за `***`): у имён, оканчивающихся на `authorization`, — любая
+/// схема (токен RFC 7235), у остальных — только `Bearer`, `Basic`, `Digest`, `Token`.
+fn takes_credential(name: &str, value: &str) -> bool {
+    if normalize(name).ends_with("authorization") {
+        value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+    } else {
+        ["bearer", "basic", "digest", "token"]
+            .iter()
+            .any(|s| value.eq_ignore_ascii_case(s))
+    }
+}
 
 /// Цифры номера карты: проверка Луна и первая цифра 2–6 (Мир, Visa, Mastercard, Amex,
 /// Discover). Метки времени в миллисекундах до 2033 года начинаются с 1 — они не номера карт.
@@ -145,6 +166,47 @@ fn is_card(candidate: &str) -> bool {
     sum.is_multiple_of(10)
 }
 
+/// Номера карт (диапазоны байтов) среди групп цифр: в каждой серии — окно из подряд идущих целых
+/// групп с 13–19 цифрами, прошедшее [`is_card`], с самым левым началом, при нём самое длинное;
+/// дальше поиск идёт со следующей за окном группы. Соседние числа (`… 12/25`, `qty 2 …`) не
+/// мешают, а группа не делится: 23 цифры подряд — не карта.
+fn card_spans(text: &str) -> Vec<(usize, usize)> {
+    let mut spans = Vec::new();
+    for run in DIGIT_RUN.find_iter(text) {
+        let mut groups = Vec::new();
+        let mut start = run.start();
+        for (i, b) in run.as_str().bytes().enumerate() {
+            if !b.is_ascii_digit() {
+                groups.push((start, run.start() + i));
+                start = run.start() + i + 1;
+            }
+        }
+        groups.push((start, run.end()));
+        let mut i = 0;
+        while i < groups.len() {
+            let mut digits = 0;
+            let mut found = None;
+            for (j, &(s, e)) in groups.iter().enumerate().skip(i) {
+                digits += e - s;
+                if digits > 19 {
+                    break;
+                }
+                if digits >= 13 && is_card(&text[groups[i].0..e]) {
+                    found = Some(j);
+                }
+            }
+            match found {
+                Some(j) => {
+                    spans.push((groups[i].0, groups[j].1));
+                    i = j + 1;
+                }
+                None => i += 1,
+            }
+        }
+    }
+    spans
+}
+
 /// Шаблоны в тексте: метки без данных.
 fn patterns(text: &str, count: &mut usize) -> String {
     let mut n = 0;
@@ -160,16 +222,17 @@ fn patterns(text: &str, count: &mut usize) -> String {
         n += 1;
         "[email]"
     });
-    let s = CARD.replace_all(&s, |c: &Captures| {
-        if is_card(&c[0]) {
-            n += 1;
-            "[card]".to_string()
-        } else {
-            c[0].to_string()
-        }
-    });
+    let mut out = String::with_capacity(s.len());
+    let mut last = 0;
+    for (start, end) in card_spans(&s) {
+        out.push_str(&s[last..start]);
+        out.push_str("[card]");
+        last = end;
+        n += 1;
+    }
+    out.push_str(&s[last..]);
     *count += n;
-    s.into_owned()
+    out
 }
 
 /// Шаблоны в печатном фрагменте двоичных данных: совпавшие байты становятся `*` той же длины.
@@ -181,11 +244,7 @@ fn patterns_in_place(run: &mut [u8], count: &mut usize) {
     for re in [&*JWT, &*BEARER, &*EMAIL] {
         spans.extend(re.find_iter(text).map(|m| (m.start(), m.end())));
     }
-    spans.extend(
-        CARD.find_iter(text)
-            .filter(|m| is_card(m.as_str()))
-            .map(|m| (m.start(), m.end())),
-    );
+    spans.extend(card_spans(text));
     spans.sort_unstable();
     let mut covered = 0;
     for (start, end) in spans {
@@ -241,38 +300,56 @@ impl Masker {
         !n.is_empty() && self.fields.iter().any(|p| glob(p, &n))
     }
 
-    /// Текстовый режим: значения пар `name=value` из списка → `***`, затем шаблоны.
+    /// Текстовый режим: значения пар `name=value` из списка → `***`, затем шаблоны. Значение пары
+    /// с именем не из списка просматривается дальше — в нём бывают свои пары
+    /// (`url=…?password=x`, `note: token=y`).
     pub fn text(&self, s: &str, count: &mut usize) -> String {
-        let mut n = 0;
-        let paired = PAIR.replace_all(s, |c: &Captures| {
+        let mut out = String::with_capacity(s.len());
+        let mut pos = 0;
+        while let Some(c) = PAIR.captures_at(s, pos) {
+            let head = c.get(0).expect("match").end();
+            out.push_str(&s[pos..head]);
+            pos = head;
             let name = c
                 .name("n1")
                 .or_else(|| c.name("n2"))
                 .or_else(|| c.name("n3"))
                 .map_or("", |m| m.as_str());
             if !self.field_matches(name) {
-                return c[0].to_string();
+                continue;
             }
-            n += 1;
-            let v = c.name("v").expect("value group");
-            let whole = &c[0];
-            let head = &whole[..v.start() - c.get(0).expect("match").start()];
+            let Some(v) = VALUE.find(&s[head..]) else {
+                continue;
+            };
+            *count += 1;
+            pos = head + v.end();
             let quote = v
                 .as_str()
                 .chars()
                 .next()
                 .filter(|q| *q == '"' || *q == '\'');
             match quote {
-                Some(q) => format!("{head}{q}{MASK}{q}"),
-                None => format!("{head}{MASK}"),
+                Some(q) => {
+                    out.push(q);
+                    out.push_str(MASK);
+                    out.push(q);
+                }
+                None => {
+                    out.push_str(MASK);
+                    if takes_credential(name, v.as_str())
+                        && let Some(cred) = CREDENTIAL.find(&s[pos..])
+                    {
+                        pos += cred.end();
+                    }
+                }
             }
-        });
-        *count += n;
-        patterns(&paired, count)
+        }
+        out.push_str(&s[pos..]);
+        patterns(&out, count)
     }
 
-    /// JSON-режим: значение члена объекта из списка (любого типа) → `"***"`, шаблоны в остальных
-    /// строках, именах членов и числах-картах. `None`, если это не JSON.
+    /// JSON-режим: значение члена объекта из списка (любого типа) → `"***"`, остальные строки —
+    /// текстовый режим, имена членов — шаблоны, числа-карты → `"[card]"`. `None`, если это не JSON.
     pub fn json(&self, bytes: &[u8], count: &mut usize) -> Option<String> {
         let mut node: Node = serde_json::from_slice(bytes).ok()?;
         self.node(&mut node, count);
@@ -281,7 +358,7 @@ impl Masker {
 
     fn node(&self, node: &mut Node, count: &mut usize) {
         match node {
-            Node::String(s) => *s = patterns(s, count),
+            Node::String(s) => *s = self.text(s, count),
             Node::Number(n) => {
                 let digits = n.to_string();
                 if digits.bytes().all(|b| b.is_ascii_digit()) && is_card(&digits) {
@@ -326,7 +403,8 @@ impl Masker {
     }
 
     /// Ключ или значение сообщения: `bytes` — первые байты (до [`MASK_PARSE_LIMIT`]), `size` —
-    /// исходный размер. Маскировка до обрезки до `max_text` байтов текста.
+    /// исходный размер. Маскировка до обрезки до `max_text` байтов текста; у `hex` и `base64`
+    /// маскируются все переданные байты, потом кодируется видимая часть.
     pub fn data(
         &self,
         bytes: &[u8],
@@ -349,14 +427,14 @@ impl Masker {
             }
             DataFormat::Hex => {
                 let take = bytes.len().min(max_text / 2);
-                let masked = self.binary(&bytes[..take], count);
-                (hex::encode(masked), take < size)
+                let masked = self.binary(bytes, count);
+                (hex::encode(&masked[..take]), take < size)
             }
             DataFormat::Base64 => {
                 let take = bytes.len().min(max_text / 4 * 3);
-                let masked = self.binary(&bytes[..take], count);
+                let masked = self.binary(bytes, count);
                 (
-                    base64::engine::general_purpose::STANDARD.encode(masked),
+                    base64::engine::general_purpose::STANDARD.encode(&masked[..take]),
                     take < size,
                 )
             }
@@ -484,6 +562,19 @@ mod tests {
     fn text(m: &Masker, s: &str) -> (String, usize) {
         let mut n = 0;
         (m.text(s, &mut n), n)
+    }
+
+    /// Текстовый режим для набора случаев: в сообщении об ошибке — каждый несовпавший.
+    fn texts(m: &Masker, cases: &[(&str, &str, usize)]) {
+        let wrong: Vec<String> = cases
+            .iter()
+            .filter_map(|&(input, want, want_n)| {
+                let (got, n) = text(m, input);
+                (got != want || n != want_n)
+                    .then(|| format!("{input:?} → {got:?} ({n}), ждали {want:?} ({want_n})"))
+            })
+            .collect();
+        assert!(wrong.is_empty(), "\n{}", wrong.join("\n"));
     }
 
     #[test]
@@ -654,6 +745,150 @@ mod tests {
         assert_eq!((d.text.as_str(), d.truncated), ("QUI=", false));
         let d = m.data(b"to:ann@example.com", 18, DataFormat::Hex, 2048, &mut n);
         assert_eq!(hex::decode(&d.text).unwrap(), b"to:***************");
+        // Маскируются исходные байты, потом обрезка: секрет на границе видимой части не виден.
+        let jwt: &[u8] = b"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln";
+        let cases: [(&[u8], DataFormat, usize, &[u8]); 3] = [
+            (
+                b"\x00\x01to:ann@example.com",
+                DataFormat::Hex,
+                22,
+                b"\x00\x01to:******",
+            ),
+            (
+                b"\x00\x01card=4111111111111111;",
+                DataFormat::Hex,
+                32,
+                b"\x00\x01card=*********",
+            ),
+            (jwt, DataFormat::Base64, 40, &[b'*'; 30]),
+        ];
+        let wrong: Vec<String> = cases
+            .iter()
+            .filter_map(|&(bytes, format, max_text, want)| {
+                let mut n = 0;
+                let d = m.data(bytes, bytes.len(), format, max_text, &mut n);
+                let got = match format {
+                    DataFormat::Hex => hex::decode(&d.text).unwrap(),
+                    _ => base64::engine::general_purpose::STANDARD
+                        .decode(&d.text)
+                        .unwrap(),
+                };
+                (got != want || !d.truncated || n != 1).then(|| {
+                    format!(
+                        "{:?} → {:?} ({n}, {})",
+                        String::from_utf8_lossy(bytes),
+                        String::from_utf8_lossy(&got),
+                        d.truncated
+                    )
+                })
+            })
+            .collect();
+        assert!(wrong.is_empty(), "\n{}", wrong.join("\n"));
+    }
+
+    #[test]
+    fn cards_are_found_among_neighbouring_digit_groups() {
+        texts(
+            &standard(),
+            &[
+                ("4111 1111 1111 1111 12/25", "[card] 12/25", 1),
+                ("4111111111111111 123", "[card] 123", 1),
+                ("qty 2 4111111111111111", "qty 2 [card]", 1),
+                ("1 4111111111111111 2025", "1 [card] 2025", 1),
+                // Самое длинное окно с верной суммой при самом левом начале.
+                ("4111 1111 1111 1111 003", "[card]", 1),
+                ("5555555555554444 4111111111111111", "[card] [card]", 2),
+                (
+                    "2026-10-24 12:00 +7 912 345-67-89",
+                    "2026-10-24 12:00 +7 912 345-67-89",
+                    0,
+                ),
+            ],
+        );
+        let mut n = 0;
+        let out = standard().binary(b"\x00pay 1 4111111111111111 2025\x00", &mut n);
+        assert_eq!(
+            (String::from_utf8_lossy(&out), n),
+            ("\0pay 1 **************** 2025\0".into(), 1)
+        );
+    }
+
+    #[test]
+    fn pairs_inside_values_of_other_pairs_are_found() {
+        texts(
+            &standard(),
+            &[
+                ("note: password=hunter2", "note: password=***", 1),
+                (
+                    "url=https://x/?password=hunter2&a=1",
+                    "url=https://x/?password=***&a=1",
+                    1,
+                ),
+                ("redirect=/cb?token=abc123", "redirect=/cb?token=***", 1),
+                // Значение без кавычек идёт до разделителя — закрывающая кавычка уходит с ним.
+                (
+                    r#"msg="see password=hunter2" ok"#,
+                    r#"msg="see password=*** ok"#,
+                    1,
+                ),
+            ],
+        );
+    }
+
+    #[test]
+    fn any_authorization_scheme_is_masked_with_its_credential() {
+        texts(
+            &standard(),
+            &[
+                (
+                    "Authorization: Negotiate YIIabcdefSECRET",
+                    "Authorization: ***",
+                    1,
+                ),
+                (
+                    "authorization=ApiKey s3cr3tKEY, next",
+                    "authorization=***, next",
+                    1,
+                ),
+                // Только в той же строке; у других имён следующее слово остаётся.
+                (
+                    "Authorization: Negotiate\nYIIabc",
+                    "Authorization: ***\nYIIabc",
+                    1,
+                ),
+                ("password=hunter2 user=ann", "password=*** user=ann", 1),
+                ("X-Auth-Token: Bearer abcdefgh12345", "X-Auth-Token: ***", 1),
+            ],
+        );
+        let own = Masker::new(&MaskConfig {
+            fields: Some(vec!["*authorization".into()]),
+        });
+        texts(
+            &own,
+            &[(
+                "Proxy-Authorization: Custom abc123\nok",
+                "Proxy-Authorization: ***\nok",
+                1,
+            )],
+        );
+    }
+
+    #[test]
+    fn json_string_values_go_through_text_mode() {
+        let (out, n) = json(
+            &standard(),
+            r#"{"log":"login user=ann password=hunter2","n":["token: abc"]}"#,
+        );
+        assert_eq!(
+            (out.as_str(), n),
+            (
+                r#"{"log":"login user=ann password=***","n":["token: ***"]}"#,
+                2
+            )
+        );
+        // Имена членов — только шаблоны.
+        let (out, n) = json(&standard(), r#"{"note=ann pwd=x":1}"#);
+        assert_eq!((out.as_str(), n), (r#"{"note=ann pwd=x":1}"#, 0));
     }
 
     #[test]

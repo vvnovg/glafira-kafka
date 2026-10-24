@@ -6,6 +6,7 @@ pub mod approvals;
 pub mod backend;
 pub mod controller;
 pub mod files;
+pub mod messages;
 pub mod shim;
 
 use std::ffi::OsString;

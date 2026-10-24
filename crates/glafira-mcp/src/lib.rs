@@ -10,6 +10,7 @@ pub mod endpoint;
 pub mod handshake;
 pub mod health;
 pub mod limits;
+pub mod mask;
 pub mod model;
 pub mod observe;
 pub mod proposals;

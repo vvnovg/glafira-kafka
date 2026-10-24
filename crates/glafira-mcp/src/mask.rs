@@ -124,22 +124,31 @@ static PAIR: LazyLock<Regex> = LazyLock::new(|| {
 static VALUE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"^(?:"(?:[^"\\]|\\.)*"|'[^']*'|[^\s,;&}\]]+)"#).expect("value regex")
 });
-/// Учётные данные после схемы авторизации — в той же строке.
+/// Учётные данные после известной схемы авторизации — и на следующей строке.
 static CREDENTIAL: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s,;&}\]]+").expect("credential regex"));
+    LazyLock::new(|| Regex::new(r"^\s+[^\s,;&}\]]+").expect("credential regex"));
+/// Учётные данные после любой другой схемы — только в той же строке.
+static SAME_LINE_CREDENTIAL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s,;&}\]]+").expect("same-line credential regex"));
 
-/// Значение пары — схема авторизации, и за ней берутся учётные данные (`Authorization: Negotiate
-/// YII…`, иначе они остались бы за `***`): у имён, оканчивающихся на `authorization`, — любая
-/// схема (токен RFC 7235), у остальных — только `Bearer`, `Basic`, `Digest`, `Token`.
-fn takes_credential(name: &str, value: &str) -> bool {
-    if normalize(name).ends_with("authorization") {
-        value
+/// Если значение пары — схема авторизации, за ней берутся учётные данные (`Authorization:
+/// Negotiate YII…`, иначе они остались бы за `***`): `Bearer`, `Basic`, `Digest`, `Token` — у
+/// любого имени из списка, токен может быть и на следующей строке; любая другая схема (токен
+/// RFC 7235) — только у имён, оканчивающихся на `authorization`, и в той же строке.
+fn credential(name: &str, value: &str) -> Option<&'static Regex> {
+    if ["bearer", "basic", "digest", "token"]
+        .iter()
+        .any(|s| value.eq_ignore_ascii_case(s))
+    {
+        Some(&*CREDENTIAL)
+    } else if normalize(name).ends_with("authorization")
+        && value
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+    {
+        Some(&*SAME_LINE_CREDENTIAL)
     } else {
-        ["bearer", "basic", "digest", "token"]
-            .iter()
-            .any(|s| value.eq_ignore_ascii_case(s))
+        None
     }
 }
 
@@ -166,12 +175,12 @@ fn is_card(candidate: &str) -> bool {
     sum.is_multiple_of(10)
 }
 
-/// Номера карт (диапазоны байтов) среди групп цифр: в каждой серии — окно из подряд идущих целых
-/// групп с 13–19 цифрами, прошедшее [`is_card`], с самым левым началом, при нём самое длинное;
-/// дальше поиск идёт со следующей за окном группы. Соседние числа (`… 12/25`, `qty 2 …`) не
-/// мешают, а группа не делится: 23 цифры подряд — не карта.
+/// Номера карт (диапазоны байтов) среди групп цифр: в каждой серии — все окна из подряд идущих
+/// целых групп с 13–19 цифрами, прошедшие [`is_card`]; пересекающиеся окна объединяются. Соседние
+/// числа (`… 12/25`, `qty 2 …`) не мешают, число перед картой (`630000 4111 …`) не оставляет на
+/// виду её хвост, а группа не делится: 23 цифры подряд — не карта.
 fn card_spans(text: &str) -> Vec<(usize, usize)> {
-    let mut spans = Vec::new();
+    let mut spans: Vec<(usize, usize)> = Vec::new();
     for run in DIGIT_RUN.find_iter(text) {
         let mut groups = Vec::new();
         let mut start = run.start();
@@ -182,25 +191,20 @@ fn card_spans(text: &str) -> Vec<(usize, usize)> {
             }
         }
         groups.push((start, run.end()));
-        let mut i = 0;
-        while i < groups.len() {
+        for (i, &(first, _)) in groups.iter().enumerate() {
             let mut digits = 0;
-            let mut found = None;
-            for (j, &(s, e)) in groups.iter().enumerate().skip(i) {
+            for &(s, e) in &groups[i..] {
                 digits += e - s;
                 if digits > 19 {
                     break;
                 }
-                if digits >= 13 && is_card(&text[groups[i].0..e]) {
-                    found = Some(j);
+                if digits >= 13 && is_card(&text[first..e]) {
+                    // Окна идут по возрастанию начала: пересекается только с последним диапазоном.
+                    match spans.last_mut() {
+                        Some((_, end)) if *end > first => *end = (*end).max(e),
+                        _ => spans.push((first, e)),
+                    }
                 }
-            }
-            match found {
-                Some(j) => {
-                    spans.push((groups[i].0, groups[j].1));
-                    i = j + 1;
-                }
-                None => i += 1,
             }
         }
     }
@@ -336,8 +340,8 @@ impl Masker {
                 }
                 None => {
                     out.push_str(MASK);
-                    if takes_credential(name, v.as_str())
-                        && let Some(cred) = CREDENTIAL.find(&s[pos..])
+                    if let Some(re) = credential(name, v.as_str())
+                        && let Some(cred) = re.find(&s[pos..])
                     {
                         pos += cred.end();
                     }
@@ -803,6 +807,13 @@ mod tests {
                     "2026-10-24 12:00 +7 912 345-67-89",
                     0,
                 ),
+                // Пересекающиеся окна объединяются: число перед картой не оставляет её хвост.
+                ("6 4111 1111 1111 1111", "[card]", 1),
+                ("22 4111 1111 1111 1111", "[card]", 1),
+                ("30 4111 1111 1111 1111", "[card]", 1),
+                ("20000 4111 1111 1111 1111", "[card]", 1),
+                ("20004 4111 1111 1111 1111", "[card]", 1),
+                ("630000 4111 1111 1111 1111", "[card]", 1),
             ],
         );
         let mut n = 0;
@@ -810,6 +821,12 @@ mod tests {
         assert_eq!(
             (String::from_utf8_lossy(&out), n),
             ("\0pay 1 **************** 2025\0".into(), 1)
+        );
+        let mut n = 0;
+        let out = standard().binary(b"\x00630000 4111 1111 1111 1111\x00", &mut n);
+        assert_eq!(
+            (String::from_utf8_lossy(&out), n),
+            (format!("\0{}\0", "*".repeat(26)).into(), 1)
         );
     }
 
@@ -858,6 +875,13 @@ mod tests {
                 ),
                 ("password=hunter2 user=ann", "password=*** user=ann", 1),
                 ("X-Auth-Token: Bearer abcdefgh12345", "X-Auth-Token: ***", 1),
+                // Известная схема — токен берётся и со следующей строки, как раньше.
+                (
+                    "Authorization: Bearer\nabcdefgh12345\nok",
+                    "Authorization: ***\nok",
+                    1,
+                ),
+                ("token: Bearer\nabcdefgh12345", "token: ***", 1),
             ],
         );
         let own = Masker::new(&MaskConfig {

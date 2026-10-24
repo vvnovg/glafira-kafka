@@ -95,9 +95,15 @@ impl AppBackend {
         }
     }
 
+    /// Чтение сообщений разрешено политикой (спец. G4 §9).
+    fn messages_allowed(&self) -> bool {
+        self.state.policy.status.messages_allowed()
+    }
+
     /// Подключения, которые видит LLM.
     pub fn connections(&self) -> Vec<m::Connection> {
         let store = &self.state.connections;
+        let messages_allowed = self.messages_allowed();
         store
             .list()
             .into_iter()
@@ -112,6 +118,7 @@ impl AppBackend {
                     .ok()
                     .and_then(|v| v.as_str().map(String::from))
                     .unwrap_or_default(),
+                llm_access: p.llm_access.effective(messages_allowed).as_str().into(),
                 id: p.id,
                 name: p.name,
                 read_only: p.read_only,
@@ -1003,7 +1010,29 @@ mod tests {
             (list[0].id.as_str(), list[0].environment.as_str()),
             ("open", "dev")
         );
+        assert_eq!(list[0].llm_access, "metadata");
         assert_eq!(b.connection_name("open").as_deref(), Some("dev"));
+    }
+
+    #[test]
+    fn messages_level_is_listed_with_the_policy_applied() {
+        let (_d, b) = backend();
+        let mut p = sample_profile("msgs");
+        p.llm_access = LlmAccess::Messages;
+        b.state.connections.upsert(p).unwrap();
+        let level = |b: &AppBackend| {
+            b.connections()
+                .into_iter()
+                .find(|c| c.id == "msgs")
+                .map(|c| c.llm_access)
+        };
+        assert_eq!(level(&b).as_deref(), Some("messages"));
+        let mut st = b.state.clone();
+        let mut policy = (*st.policy).clone();
+        policy.status.mcp_messages_enabled = false;
+        st.policy = Arc::new(policy);
+        let b = AppBackend::new(st, b.approvals.clone(), Arc::new(|_| {}));
+        assert_eq!(level(&b).as_deref(), Some("metadata"));
     }
 
     #[tokio::test]

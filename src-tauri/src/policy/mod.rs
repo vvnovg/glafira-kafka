@@ -12,6 +12,7 @@ pub const KEY_UPDATES_ENABLED: &str = "updatesEnabled";
 pub const KEY_UPDATE_URL: &str = "updateUrl";
 pub const KEY_LANGUAGE: &str = "language";
 pub const KEY_MCP_ENABLED: &str = "mcpEnabled";
+pub const KEY_MCP_MESSAGES_ENABLED: &str = "mcpMessagesEnabled";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PolicyValue {
@@ -72,7 +73,16 @@ pub struct PolicyStatus {
     pub language: Option<String>,
     /// `false` — MCP-шлюз запрещён администратором (спец. G1 §9).
     pub mcp_enabled: bool,
+    /// `false` — чтение сообщений через MCP запрещено администратором (спец. G4 §9).
+    pub mcp_messages_enabled: bool,
     pub errors: Vec<LocalizedText>,
+}
+
+impl PolicyStatus {
+    /// Чтение сообщений через MCP разрешено: и MCP, и сообщения.
+    pub fn messages_allowed(&self) -> bool {
+        self.mcp_enabled && self.mcp_messages_enabled
+    }
 }
 
 impl Default for PolicyStatus {
@@ -84,6 +94,7 @@ impl Default for PolicyStatus {
             update_url: None,
             language: None,
             mcp_enabled: true,
+            mcp_messages_enabled: true,
             errors: Vec::new(),
         }
     }
@@ -106,6 +117,7 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
                     source: Some(source.to_string()),
                     updates_enabled: false,
                     mcp_enabled: false,
+                    mcp_messages_enabled: false,
                     errors: vec![ltext!(
                         "errors.policy.unreadable",
                         "Policy cannot be read: {{reason}}",
@@ -156,6 +168,15 @@ pub fn resolve(source: &str, raw: RawPolicy) -> Policy {
             // Непонятое значение запрещает MCP, но обновления не выключает.
             (KEY_MCP_ENABLED, other) => {
                 status.mcp_enabled = false;
+                status.errors.push(other.invalid(&key));
+            }
+            (KEY_MCP_MESSAGES_ENABLED, PolicyValue::Bool(b)) => status.mcp_messages_enabled = b,
+            (KEY_MCP_MESSAGES_ENABLED, PolicyValue::Int(i @ (0 | 1))) => {
+                status.mcp_messages_enabled = i == 1
+            }
+            // Как у mcpEnabled: непонятое значение запрещает чтение сообщений, обновления не трогает.
+            (KEY_MCP_MESSAGES_ENABLED, other) => {
+                status.mcp_messages_enabled = false;
                 status.errors.push(other.invalid(&key));
             }
             (KEY_UPDATES_ENABLED | KEY_UPDATE_URL, other) => {
@@ -250,6 +271,41 @@ mod tests {
                 .status
                 .mcp_enabled
         );
+    }
+
+    #[test]
+    fn mcp_messages_policy() {
+        let absent = resolve("src", RawPolicy::Absent).status;
+        assert!(absent.mcp_messages_enabled && absent.messages_allowed());
+        for (v, enabled) in [
+            (PolicyValue::Bool(false), false),
+            (PolicyValue::Bool(true), true),
+            (PolicyValue::Int(0), false),
+            (PolicyValue::Int(1), true),
+        ] {
+            let p = resolve("src", values(&[("mcpMessagesEnabled", v)]));
+            assert_eq!(p.status.mcp_messages_enabled, enabled);
+            assert!(p.status.mcp_enabled, "MCP целиком не запрещается");
+            assert!(p.status.errors.is_empty());
+        }
+        let p = resolve(
+            "src",
+            values(&[("mcpMessagesEnabled", PolicyValue::Int(2))]),
+        );
+        assert!(!p.status.mcp_messages_enabled);
+        assert!(p.status.updates_enabled && p.status.mcp_enabled);
+        assert_eq!(p.status.errors[0].params["key"], "mcpMessagesEnabled");
+        // Запрет MCP целиком запрещает и сообщения, даже если ключ разрешает.
+        let p = resolve(
+            "src",
+            values(&[
+                ("mcpEnabled", PolicyValue::Bool(false)),
+                ("mcpMessagesEnabled", PolicyValue::Bool(true)),
+            ]),
+        );
+        assert!(!p.status.messages_allowed());
+        let unreadable = resolve("src", RawPolicy::Unreadable("x".into())).status;
+        assert!(!unreadable.mcp_messages_enabled && !unreadable.messages_allowed());
     }
 
     #[test]

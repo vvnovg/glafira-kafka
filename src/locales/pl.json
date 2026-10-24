@@ -163,7 +163,9 @@
       "secretInExtraProperties": "W dodatkowych właściwościach nie można przechowywać sekretów: {{key}}",
       "timeoutTooSmall": "Limit czasu żądania musi wynosić co najmniej 1000 ms",
       "notFound": "Nie znaleziono połączenia {{id}}",
-      "saslPasswordMissing": "Nie ustawiono hasła SASL dla połączenia"
+      "saslPasswordMissing": "Nie ustawiono hasła SASL dla połączenia",
+      "maskFieldsTooMany": "Najwyżej {{max}} nazw pól do maskowania",
+      "maskFieldTooLong": "Nazwa pola do maskowania jest dłuższa niż {{max}} znaków: {{name}}"
     },
     "storage": {
       "writeFailed": "Nie udało się zapisać {{path}}: {{error}}",

@@ -196,6 +196,8 @@ pub struct Connection {
     pub environment: String,
     pub folder_path: Vec<String>,
     pub read_only: bool,
+    /// `metadata` или `messages` — с учётом политики (спец. G4 §3.5).
+    pub llm_access: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

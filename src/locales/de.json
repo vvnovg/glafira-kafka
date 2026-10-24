@@ -163,7 +163,9 @@
       "secretInExtraProperties": "Geheimnisse dürfen nicht in zusätzlichen Eigenschaften gespeichert werden: {{key}}",
       "timeoutTooSmall": "Das Anfrage-Timeout muss mindestens 1000 ms betragen",
       "notFound": "Verbindung {{id}} nicht gefunden",
-      "saslPasswordMissing": "Das SASL-Passwort für die Verbindung ist nicht festgelegt"
+      "saslPasswordMissing": "Das SASL-Passwort für die Verbindung ist nicht festgelegt",
+      "maskFieldsTooMany": "Höchstens {{max}} Feldnamen zum Maskieren",
+      "maskFieldTooLong": "Ein Feldname zum Maskieren ist länger als {{max}} Zeichen: {{name}}"
     },
     "storage": {
       "writeFailed": "{{path}} konnte nicht geschrieben werden: {{error}}",

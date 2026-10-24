@@ -101,6 +101,8 @@ DNS, TCP, ID, MCP, LLM, stdio, Claude Desktop, Claude Code, Cursor, Build (сб�
 | open in form (кнопка предложения) | открыть в форме | im Formular öffnen | ouvrir dans le formulaire | abrir en el formulario | apri nel modulo | otwórz w formularzu | abrir no formulário | 在表单中打开 | 在表單中開啟 | フォームで開く | 양식에서 열기 |
 | applied / applied with edits (статус предложения) | применено / применено с правками | angewendet / mit Änderungen angewendet | appliquée / appliquée avec des modifications | aplicada / aplicada con cambios | applicata / applicata con modifiche | zastosowano / zastosowano ze zmianami | aplicada / aplicada com alterações | 已应用 / 已修改后应用 | 已套用 / 已修改後套用 | 適用 / 修正して適用 | 적용됨 / 수정하여 적용됨 |
 | reject / withdraw (предложение) | отклонить / отозвать | ablehnen / zurückziehen | rejeter / retirer | rechazar / retirar | rifiuta / ritira | odrzuć / wycofaj | rejeitar / retirar | 拒绝 / 撤回 | 拒絕 / 撤回 | 却下 / 取り下げ | 거부 / 철회 |
+| mask / masking (значения сообщений для LLM) | маскировать / маскирование | maskieren / Maskierung | masquer / masquage | enmascarar / enmascaramiento | mascherare / mascheramento | maskować / maskowanie | mascarar / mascaramento | 脱敏 | 遮罩 | マスク / マスキング | 마스킹 |
+| LLM access: off / metadata only / metadata and messages | нет / только метаданные / метаданные и сообщения | aus / nur Metadaten / Metadaten und Nachrichten | désactivé / métadonnées uniquement / métadonnées et messages | desactivado / solo metadatos / metadatos y mensajes | disattivato / solo metadati / metadati e messaggi | wyłączony / tylko metadane / metadane i wiadomości | desativado / somente metadados / metadados e mensagens | 关闭 / 仅元数据 / 元数据和消息 | 關閉 / 僅中繼資料 / 中繼資料和訊息 | オフ / メタデータのみ / メタデータとメッセージ | 끔 / 메타데이터만 / 메타데이터 및 메시지 |
 
 ## Частые слова интерфейса
 

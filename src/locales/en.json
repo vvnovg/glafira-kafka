@@ -163,7 +163,9 @@
       "secretInExtraProperties": "Secrets cannot be stored in extra properties: {{key}}",
       "timeoutTooSmall": "Request timeout must be at least 1000 ms",
       "notFound": "Connection {{id}} not found",
-      "saslPasswordMissing": "The SASL password for the connection is not set"
+      "saslPasswordMissing": "The SASL password for the connection is not set",
+      "maskFieldsTooMany": "At most {{max}} field names to mask",
+      "maskFieldTooLong": "A field name to mask is longer than {{max}} characters: {{name}}"
     },
     "storage": {
       "writeFailed": "Failed to write {{path}}: {{error}}",

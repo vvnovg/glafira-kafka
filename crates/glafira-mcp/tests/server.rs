@@ -391,6 +391,7 @@ impl Backend for Fake {
                     environment: "dev".into(),
                     folder_path: vec!["Team".into()],
                     read_only: false,
+                    llm_access: "messages".into(),
                 }]),
                 ReadOp::ClusterOverview { .. } => ReadOutput::Cluster({
                     pause(&self.overview_delay).await;
@@ -2203,6 +2204,14 @@ async fn read_messages_masks_values_and_orders_by_time() {
         ),
         (Some(7), Some(7), Some(21))
     );
+}
+
+#[tokio::test]
+async fn connections_show_the_access_level() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(&c, "list_connections", json!({})).await);
+    assert_eq!(v["connections"][0]["llmAccess"], "messages");
 }
 
 #[tokio::test]

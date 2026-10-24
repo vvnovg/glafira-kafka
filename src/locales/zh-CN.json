@@ -163,7 +163,9 @@
       "secretInExtraProperties": "额外属性中不能存储机密信息：{{key}}",
       "timeoutTooSmall": "请求超时至少为 1000 ms",
       "notFound": "未找到连接 {{id}}",
-      "saslPasswordMissing": "未设置该连接的 SASL 密码"
+      "saslPasswordMissing": "未设置该连接的 SASL 密码",
+      "maskFieldsTooMany": "最多 {{max}} 个脱敏字段名",
+      "maskFieldTooLong": "脱敏字段名超过 {{max}} 个字符：{{name}}"
     },
     "storage": {
       "writeFailed": "无法写入 {{path}}：{{error}}",

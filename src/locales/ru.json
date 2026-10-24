@@ -163,7 +163,9 @@
       "secretInExtraProperties": "Секреты нельзя хранить в доп. свойствах: {{key}}",
       "timeoutTooSmall": "Таймаут запроса должен быть не меньше 1000 мс",
       "notFound": "Подключение {{id}} не найдено",
-      "saslPasswordMissing": "Не задан пароль SASL для подключения"
+      "saslPasswordMissing": "Не задан пароль SASL для подключения",
+      "maskFieldsTooMany": "Не больше {{max}} имён полей для маскирования",
+      "maskFieldTooLong": "Имя поля для маскирования длиннее {{max}} символов: {{name}}"
     },
     "storage": {
       "writeFailed": "Не удалось записать {{path}}: {{error}}",

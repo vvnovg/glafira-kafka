@@ -381,7 +381,7 @@ impl GatewayServer {
 #[tool_router(vis = "pub(crate)")]
 impl GatewayServer {
     #[tool(
-        description = "List Kafka connections that the user allowed for LLM access: id, name, environment (local/dev/test/stage/prod), folder path, read-only flag. Use the id in every other tool.",
+        description = "List Kafka connections that the user allowed for LLM access: id, name, environment (local/dev/test/stage/prod), folder path, read-only flag and llmAccess — metadata, or messages when message contents can be read too. Use the id in every other tool.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,

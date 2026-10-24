@@ -163,7 +163,9 @@
       "secretInExtraProperties": "Les secrets ne peuvent pas être stockés dans les propriétés supplémentaires : {{key}}",
       "timeoutTooSmall": "Le délai de requête doit être d’au moins 1000 ms",
       "notFound": "Connexion {{id}} introuvable",
-      "saslPasswordMissing": "Le mot de passe SASL de la connexion n’est pas défini"
+      "saslPasswordMissing": "Le mot de passe SASL de la connexion n’est pas défini",
+      "maskFieldsTooMany": "Au plus {{max}} noms de champs à masquer",
+      "maskFieldTooLong": "Un nom de champ à masquer dépasse {{max}} caractères : {{name}}"
     },
     "storage": {
       "writeFailed": "Impossible d’écrire {{path}} : {{error}}",

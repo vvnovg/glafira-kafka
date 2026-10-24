@@ -163,7 +163,9 @@
       "secretInExtraProperties": "Segredos não podem ser armazenados nas propriedades adicionais: {{key}}",
       "timeoutTooSmall": "O tempo limite da solicitação deve ser de pelo menos 1000 ms",
       "notFound": "Conexão {{id}} não encontrada",
-      "saslPasswordMissing": "A senha SASL da conexão não foi definida"
+      "saslPasswordMissing": "A senha SASL da conexão não foi definida",
+      "maskFieldsTooMany": "No máximo {{max}} nomes de campos para mascarar",
+      "maskFieldTooLong": "Um nome de campo para mascarar tem mais de {{max}} caracteres: {{name}}"
     },
     "storage": {
       "writeFailed": "Não foi possível gravar {{path}}: {{error}}",

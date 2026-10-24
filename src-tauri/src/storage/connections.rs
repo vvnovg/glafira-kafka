@@ -104,12 +104,14 @@ impl SecurityConfig {
     }
 }
 
-/// Доступ LLM к подключению через MCP (спец. G1 §4). Неизвестное значение из более новой
-/// версии читается как `Off`: старая версия доступ только сужает.
+/// Доступ LLM к подключению через MCP (спец. G1 §4, G4 §4). `Messages` включает всё, что даёт
+/// `Metadata`. Неизвестное значение из более новой версии читается как `Off`: старая версия
+/// доступ только сужает (версии до G4 так читают `messages`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LlmAccess {
     Metadata,
+    Messages,
     #[default]
     #[serde(other)]
     Off,
@@ -118,6 +120,24 @@ pub enum LlmAccess {
 impl LlmAccess {
     pub fn is_off(&self) -> bool {
         *self == LlmAccess::Off
+    }
+
+    /// Уровень с учётом политики: при запрете чтения сообщений `Messages` действует как
+    /// `Metadata` (сохранённое значение не меняется).
+    pub fn effective(self, messages_allowed: bool) -> Self {
+        if self == LlmAccess::Messages && !messages_allowed {
+            LlmAccess::Metadata
+        } else {
+            self
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            LlmAccess::Metadata => "metadata",
+            LlmAccess::Messages => "messages",
+            LlmAccess::Off => "off",
+        }
     }
 }
 
@@ -142,6 +162,10 @@ pub struct ConnectionProfile {
     /// Локальное поле, как папка и порядок: экспорт его не пишет, импорт не переносит.
     #[serde(default, skip_serializing_if = "LlmAccess::is_off")]
     pub llm_access: LlmAccess,
+    /// Имена полей для маскировки сообщений (спец. G4 §5): `None` — стандартный список.
+    /// Локальное поле, как `llm_access`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_mask_fields: Option<Vec<String>>,
     /// Поля из более новой версии Glafira: сохраняются при записи как есть.
     /// `ConnectionStore::upsert` входящий `extra` не принимает: у существующего профиля
     /// остаётся сохранённый, новый получает пустой.
@@ -341,7 +365,48 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
             "Request timeout must be at least 1000 ms"
         ));
     }
+    if let Some(fields) = &p.llm_mask_fields {
+        validate_mask_fields(fields)?;
+    }
     Ok(())
+}
+
+/// Список полей маскировки: не больше 200 имён по 64 символа (пределы крейта MCP).
+fn validate_mask_fields(fields: &[String]) -> AppResult<()> {
+    use glafira_mcp::mask::{MAX_MASK_FIELD_CHARS, MAX_MASK_FIELDS};
+    if fields.len() > MAX_MASK_FIELDS {
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.maskFieldsTooMany",
+            "At most {{max}} field names to mask",
+            max = MAX_MASK_FIELDS
+        ));
+    }
+    if let Some(long) = fields
+        .iter()
+        .find(|f| f.chars().count() > MAX_MASK_FIELD_CHARS)
+    {
+        return Err(app_err!(
+            ErrorCode::InvalidInput,
+            "errors.connections.maskFieldTooLong",
+            "A field name to mask is longer than {{max}} characters: {{name}}",
+            max = MAX_MASK_FIELD_CHARS,
+            name = long
+        ));
+    }
+    Ok(())
+}
+
+/// Имена полей из формы: пробелы по краям убираются, пустые строки отбрасываются.
+fn clean_mask_fields(profile: &mut ConnectionProfile) {
+    if let Some(fields) = profile.llm_mask_fields.as_mut() {
+        *fields = fields
+            .iter()
+            .map(|f| f.trim())
+            .filter(|f| !f.is_empty())
+            .map(str::to_string)
+            .collect();
+    }
 }
 
 pub(crate) fn connection_not_found(id: &str) -> AppError {
@@ -695,6 +760,7 @@ impl ConnectionStore {
     /// игнорируется всегда: неизвестные поля пишет только сама Glafira (существующий профиль
     /// сохраняет свои, новый получает пустые), поэтому через них нельзя записать секрет в файл.
     pub fn upsert(&self, mut profile: ConnectionProfile) -> AppResult<ConnectionProfile> {
+        clean_mask_fields(&mut profile);
         validate_profile(&profile)?;
         self.update(|data| {
             match data.connections.iter_mut().find(|c| c.id == profile.id) {
@@ -758,6 +824,7 @@ pub fn sample_profile(id: &str) -> ConnectionProfile {
         folder_id: None,
         order: 0,
         llm_access: LlmAccess::Off,
+        llm_mask_fields: None,
         extra: Default::default(),
     }
 }
@@ -777,10 +844,56 @@ mod tests {
         let p: ConnectionProfile = serde_json::from_value(v.clone()).unwrap();
         assert_eq!(p.llm_access, LlmAccess::Metadata);
         assert_eq!(serde_json::to_value(&p).unwrap()["llmAccess"], "metadata");
-        // Значение из более новой версии (G4) старая версия читает как Off.
-        v["llmAccess"] = "samples".into();
+        v["llmAccess"] = "messages".into();
+        let p: ConnectionProfile = serde_json::from_value(v.clone()).unwrap();
+        assert_eq!(p.llm_access, LlmAccess::Messages);
+        assert_eq!(serde_json::to_value(&p).unwrap()["llmAccess"], "messages");
+        // Значение из более новой версии старая версия читает как Off.
+        v["llmAccess"] = "everything".into();
         let p: ConnectionProfile = serde_json::from_value(v).unwrap();
         assert_eq!(p.llm_access, LlmAccess::Off);
+    }
+
+    #[test]
+    fn messages_access_needs_the_policy() {
+        assert_eq!(LlmAccess::Messages.effective(true), LlmAccess::Messages);
+        assert_eq!(LlmAccess::Messages.effective(false), LlmAccess::Metadata);
+        assert_eq!(LlmAccess::Metadata.effective(false), LlmAccess::Metadata);
+        assert_eq!(LlmAccess::Off.effective(true), LlmAccess::Off);
+        assert_eq!(LlmAccess::Messages.as_str(), "messages");
+    }
+
+    #[test]
+    fn mask_fields_are_cleaned_validated_and_written_only_when_set() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let v = serde_json::to_value(sample_profile("a")).unwrap();
+        assert!(
+            v.get("llmMaskFields").is_none(),
+            "стандартный список не пишется"
+        );
+        let mut p = sample_profile("a");
+        p.llm_mask_fields = Some(vec![" email ".into(), "".into(), "inn".into()]);
+        let saved = store.upsert(p.clone()).unwrap();
+        assert_eq!(
+            saved.llm_mask_fields,
+            Some(vec!["email".into(), "inn".into()])
+        );
+        assert_eq!(
+            serde_json::to_value(&saved).unwrap()["llmMaskFields"],
+            serde_json::json!(["email", "inn"])
+        );
+        p.llm_mask_fields = Some(vec![]);
+        assert_eq!(
+            store.upsert(p.clone()).unwrap().llm_mask_fields,
+            Some(vec![])
+        );
+        p.llm_mask_fields = Some((0..=200).map(|i| format!("f{i}")).collect());
+        let e = store.upsert(p.clone()).unwrap_err();
+        assert_eq!(e.key, "errors.connections.maskFieldsTooMany");
+        p.llm_mask_fields = Some(vec!["x".repeat(65)]);
+        let e = store.upsert(p).unwrap_err();
+        assert_eq!(e.key, "errors.connections.maskFieldTooLong");
     }
 
     #[test]

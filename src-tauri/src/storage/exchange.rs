@@ -134,8 +134,9 @@ pub fn build_export(
         .filter(|p| in_scope(p.folder_id.as_deref()))
         .map(|mut profile| {
             profile.extra.clear();
-            // Доступ LLM — локальное решение получателя (спец. G1 §4): Off в файл не пишется.
+            // Доступ LLM и маски — локальное решение получателя (спец. G1 §4, G4 §4): в файл не пишутся.
             profile.llm_access = LlmAccess::Off;
+            profile.llm_mask_fields = None;
             // Профили с диска не валидируются: секреты в дополнительных свойствах не выносим.
             profile
                 .extra_properties
@@ -407,6 +408,7 @@ fn same_settings(a: &ConnectionProfile, b: &ConnectionProfile) -> bool {
         folder_id: None,
         order: 0,
         llm_access: LlmAccess::Off,
+        llm_mask_fields: None,
         extra: Default::default(),
         ..p.clone()
     };
@@ -489,6 +491,7 @@ pub(crate) fn plan_import(
             profile.folder_id = slot.folder_id.clone();
             profile.order = slot.order;
             profile.llm_access = slot.llm_access;
+            profile.llm_mask_fields = slot.llm_mask_fields.take();
             profile.extra = std::mem::take(&mut slot.extra);
             missing_files += usize::from(misses_files(&profile, file_exists));
             updated.push((TreeItemKind::Connection, profile.id.clone()));
@@ -526,6 +529,7 @@ pub(crate) fn plan_import(
         profile.folder_id = folder;
         profile.name = name;
         profile.llm_access = LlmAccess::Off;
+        profile.llm_mask_fields = None;
         profile.extra = Default::default();
         missing_files += usize::from(misses_files(&profile, file_exists));
         if needs.sasl || needs.truststore || needs.keystore || needs.key {
@@ -955,45 +959,56 @@ mod tests {
     }
 
     #[test]
-    fn llm_access_is_never_exported_or_imported() {
+    fn llm_access_and_masks_are_never_exported_or_imported() {
         let (_d, s) = store();
         let mut open = sample_profile("a");
-        open.llm_access = LlmAccess::Metadata;
+        open.llm_access = LlmAccess::Messages;
+        open.llm_mask_fields = Some(vec!["inn".into()]);
         s.upsert(open).unwrap();
         let out = build_export(&s, &MemoryStore::default(), None, "1", "now").unwrap();
         let json = serde_json::to_value(&out).unwrap();
         assert!(json["connections"][0].get("llmAccess").is_none(), "{json}");
+        assert!(
+            json["connections"][0].get("llmMaskFields").is_none(),
+            "{json}"
+        );
 
         let mut local = sample_profile("a");
-        local.llm_access = LlmAccess::Metadata;
+        local.llm_access = LlmAccess::Messages;
+        local.llm_mask_fields = Some(vec!["inn".into()]);
         let data = StoreData {
             connections: vec![local],
             ..Default::default()
         };
         let mut incoming_a = conn_json("a", "conn-a", None);
         incoming_a["llmAccess"] = "off".into();
+        incoming_a["llmMaskFields"] = serde_json::json!([]);
         incoming_a["bootstrapServers"] = "other:9092".into();
         let mut incoming_b = conn_json("b", "conn-b", None);
-        incoming_b["llmAccess"] = "metadata".into();
+        incoming_b["llmAccess"] = "messages".into();
+        incoming_b["llmMaskFields"] = serde_json::json!([]);
         let p = plan(
             &data,
             &file(vec![], vec![incoming_a, incoming_b]),
             &opts(None),
         );
+        let a = conn(&p.next, "a");
         assert_eq!(
-            conn(&p.next, "a").llm_access,
-            LlmAccess::Metadata,
+            (a.llm_access, a.llm_mask_fields.clone()),
+            (LlmAccess::Messages, Some(vec!["inn".to_string()])),
             "своё решение сохраняется"
         );
+        let b = conn(&p.next, "b");
         assert_eq!(
-            conn(&p.next, "b").llm_access,
-            LlmAccess::Off,
-            "файл не открывает доступ"
+            (b.llm_access, b.llm_mask_fields.clone()),
+            (LlmAccess::Off, None),
+            "файл не открывает доступ и не убирает маски"
         );
 
-        // Отличие только в llmAccess — «без изменений».
+        // Отличие только в llmAccess и масках — «без изменений».
         let mut same = conn_json("a", "conn-a", None);
         same["llmAccess"] = "off".into();
+        same["llmMaskFields"] = serde_json::json!(["email"]);
         let p = plan(&data, &file(vec![], vec![same]), &opts(None));
         assert_eq!(preview_ids(&p.preview.unchanged), ["a"]);
     }

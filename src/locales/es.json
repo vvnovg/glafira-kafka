@@ -163,7 +163,9 @@
       "secretInExtraProperties": "Los secretos no se pueden guardar en las propiedades adicionales: {{key}}",
       "timeoutTooSmall": "El tiempo de espera de solicitud debe ser de al menos 1000 ms",
       "notFound": "No se encontró la conexión {{id}}",
-      "saslPasswordMissing": "La contraseña SASL de la conexión no está establecida"
+      "saslPasswordMissing": "La contraseña SASL de la conexión no está establecida",
+      "maskFieldsTooMany": "Como máximo {{max}} nombres de campos para enmascarar",
+      "maskFieldTooLong": "Un nombre de campo para enmascarar supera los {{max}} caracteres: {{name}}"
     },
     "storage": {
       "writeFailed": "No se pudo escribir {{path}}: {{error}}",

@@ -163,7 +163,9 @@
       "secretInExtraProperties": "額外屬性中不能儲存機密資訊：{{key}}",
       "timeoutTooSmall": "要求逾時至少為 1000 ms",
       "notFound": "找不到連線 {{id}}",
-      "saslPasswordMissing": "未設定此連線的 SASL 密碼"
+      "saslPasswordMissing": "未設定此連線的 SASL 密碼",
+      "maskFieldsTooMany": "最多 {{max}} 個遮罩欄位名稱",
+      "maskFieldTooLong": "遮罩欄位名稱超過 {{max}} 個字元：{{name}}"
     },
     "storage": {
       "writeFailed": "無法寫入 {{path}}：{{error}}",

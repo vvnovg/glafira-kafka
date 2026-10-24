@@ -2,5 +2,6 @@
   "updatesEnabled": false,
   "updateUrl": "https://mirror.example.corp/glafira-kafka/latest.json",
   "language": "en",
-  "mcpEnabled": false
+  "mcpEnabled": false,
+  "mcpMessagesEnabled": false
 }

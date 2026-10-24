@@ -163,7 +163,9 @@
       "secretInExtraProperties": "추가 속성에는 비밀 정보를 저장할 수 없습니다: {{key}}",
       "timeoutTooSmall": "요청 제한 시간은 1000 ms 이상이어야 합니다",
       "notFound": "연결을 찾을 수 없습니다: {{id}}",
-      "saslPasswordMissing": "연결의 SASL 비밀번호가 설정되지 않았습니다"
+      "saslPasswordMissing": "연결의 SASL 비밀번호가 설정되지 않았습니다",
+      "maskFieldsTooMany": "마스킹할 필드 이름은 최대 {{max}}개입니다",
+      "maskFieldTooLong": "마스킹할 필드 이름이 {{max}}자를 초과합니다: {{name}}"
     },
     "storage": {
       "writeFailed": "{{path}}에 쓰지 못했습니다: {{error}}",

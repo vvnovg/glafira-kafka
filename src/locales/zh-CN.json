@@ -196,6 +196,7 @@
       "targetNegative": "{{topic}}/{{partition}} 的偏移量为负数",
       "targetDuplicate": "分区 {{topic}}/{{partition}} 被指定了两次",
       "resetNotEmpty": "只能为没有成员的组重置偏移量（当前状态：{{state}}）",
+      "resetRefusedNotEmpty": "Broker 拒绝重置偏移量：在此期间有成员加入了该组，偏移量均未更改",
       "deleteNotEmpty": "只能删除没有成员的组（当前状态：{{state}}）",
       "stateFailed": "无法获取组“{{group}}”的状态",
       "notFound": "未找到组“{{group}}”",

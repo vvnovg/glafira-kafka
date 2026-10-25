@@ -196,6 +196,7 @@
       "targetNegative": "Ujemny offset dla {{topic}}/{{partition}}",
       "targetDuplicate": "Partycja {{topic}}/{{partition}} została podana dwukrotnie",
       "resetNotEmpty": "Offsety można zresetować tylko dla grupy bez członków (obecny stan: {{state}})",
+      "resetRefusedNotEmpty": "Broker odmówił zresetowania offsetów: w międzyczasie do grupy dołączyli członkowie, więc żaden offset nie został zmieniony",
       "deleteNotEmpty": "Można usunąć tylko grupę bez członków (obecny stan: {{state}})",
       "stateFailed": "Nie udało się pobrać stanu grupy „{{group}}”",
       "notFound": "Nie znaleziono grupy „{{group}}”",

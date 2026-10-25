@@ -196,6 +196,7 @@
       "targetNegative": "Offset negativo para {{topic}}/{{partition}}",
       "targetDuplicate": "A partição {{topic}}/{{partition}} foi informada duas vezes",
       "resetNotEmpty": "Só é possível redefinir offsets de um grupo sem membros (estado atual: {{state}})",
+      "resetRefusedNotEmpty": "O broker recusou a redefinição dos offsets: nesse meio-tempo, membros entraram no grupo, então nenhum offset foi alterado",
       "deleteNotEmpty": "Só é possível excluir um grupo sem membros (estado atual: {{state}})",
       "stateFailed": "Não foi possível obter o estado do grupo “{{group}}”",
       "notFound": "Grupo “{{group}}” não encontrado",

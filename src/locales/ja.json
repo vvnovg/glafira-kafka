@@ -196,6 +196,7 @@
       "targetNegative": "{{topic}}/{{partition}}のオフセットが負の値です",
       "targetDuplicate": "パーティション{{topic}}/{{partition}}が二重に指定されています",
       "resetNotEmpty": "オフセットをリセットできるのはメンバーがいないグループのみです（現在の状態：{{state}}）",
+      "resetRefusedNotEmpty": "ブローカーがオフセットのリセットを拒否しました。その間にグループにメンバーが参加したため、オフセットは変更されていません",
       "deleteNotEmpty": "削除できるのはメンバーがいないグループのみです（現在の状態：{{state}}）",
       "stateFailed": "グループ「{{group}}」の状態を取得できませんでした",
       "notFound": "グループ「{{group}}」が見つかりません",

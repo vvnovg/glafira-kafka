@@ -12,7 +12,7 @@ use crate::i18n::LocalizedText;
 use crate::kafka::admin::topic_partition_ids;
 use crate::kafka::admin_ext;
 use crate::kafka::context::CapturingContext;
-use crate::kafka::errors::{admin_error, item_error};
+use crate::kafka::errors::{admin_error, item_error, means_group_not_empty};
 use crate::kafka::groups::*;
 use crate::kafka::pool::KafkaHandles;
 use crate::kafka::topics::{PartitionBoundsMap, fetch_bounds};
@@ -387,6 +387,32 @@ pub fn reset_offsets(
         }
         Err(e) => return Err(h.kafka_err(started, e)),
     };
+    reset_outcome(targets, applied)
+}
+
+/// Итог сброса по ответу брокера: строка на каждую партицию плана.
+pub fn reset_outcome(
+    targets: &[OffsetTarget],
+    applied: Vec<admin_ext::RawPartition>,
+) -> AppResult<Vec<ResetResult>> {
+    // Коммит админ-клиента в группу с участниками брокер отвергает целиком (построчно, у каждой
+    // партиции). Это тот же отказ «группа не пуста», что и перепроверка выше, только участник вошёл
+    // уже после неё. Если хоть одна партиция записана — построчный итог, частичное изменение видно.
+    if applied.iter().all(|p| p.error.is_some())
+        && let Some(e) = applied
+            .iter()
+            .filter_map(|p| p.error.as_ref())
+            .find(|e| means_group_not_empty(e.code))
+    {
+        return Err(item_error(
+            e.code,
+            "",
+            ltext!(
+                "errors.groups.resetRefusedNotEmpty",
+                "The broker refused the reset: members joined the group in the meantime, so no offsets were changed"
+            ),
+        ));
+    }
     let by_key: BTreeMap<Key, Option<LocalizedText>> = applied
         .into_iter()
         .map(|p| {
@@ -433,7 +459,81 @@ pub async fn delete_group(h: &Arc<KafkaHandles>, group: &str) -> AppResult<()> {
 
 #[cfg(test)]
 mod tests {
+    use rdkafka::types::RDKafkaErrorCode as C;
+
     use super::*;
+    use crate::kafka::admin_ext::{ItemError, RawPartition};
+
+    fn plan(partitions: i32) -> Vec<OffsetTarget> {
+        (0..partitions)
+            .map(|partition| OffsetTarget {
+                topic: "t".into(),
+                partition,
+                offset: 0,
+            })
+            .collect()
+    }
+
+    fn part(partition: i32, code: Option<C>) -> RawPartition {
+        RawPartition {
+            topic: "t".into(),
+            partition,
+            offset: 0,
+            error: code.map(|code| ItemError {
+                message: code.to_string(),
+                code,
+            }),
+        }
+    }
+
+    #[test]
+    fn broker_refusal_for_members_reads_as_group_not_empty() {
+        for code in [C::UnknownMemberId, C::RebalanceInProgress, C::NonEmptyGroup] {
+            let e = reset_outcome(&plan(2), vec![part(0, Some(code)), part(1, Some(code))])
+                .unwrap_err();
+            assert_eq!(
+                (e.code, e.key.as_str()),
+                (
+                    ErrorCode::GroupNotEmpty,
+                    "errors.groups.resetRefusedNotEmpty"
+                )
+            );
+            // Код брокера — в подробностях, не в тексте.
+            assert!(e.details.unwrap().contains(&code.to_string()));
+        }
+        // Ничего не записано, у одной партиции своя ошибка: причина отказа всё равно участники.
+        let e = reset_outcome(
+            &plan(2),
+            vec![
+                part(0, Some(C::UnknownTopicOrPartition)),
+                part(1, Some(C::UnknownMemberId)),
+            ],
+        )
+        .unwrap_err();
+        assert_eq!(e.code, ErrorCode::GroupNotEmpty);
+    }
+
+    #[test]
+    fn other_outcomes_stay_per_partition() {
+        // Хоть одна партиция записана — построчный итог, чтобы не скрыть частичное изменение.
+        let rows = reset_outcome(
+            &plan(2),
+            vec![part(0, None), part(1, Some(C::UnknownMemberId))],
+        )
+        .unwrap();
+        assert!(rows[0].error.is_none());
+        assert!(rows[1].error.is_some());
+        // Ошибка не про участников — построчно, как раньше.
+        let rows =
+            reset_outcome(&plan(1), vec![part(0, Some(C::UnknownTopicOrPartition))]).unwrap();
+        assert!(rows[0].error.is_some());
+        // Партиция без ответа брокера.
+        let rows = reset_outcome(&plan(2), vec![part(0, None)]).unwrap();
+        assert_eq!(
+            rows[1].error.as_ref().unwrap().key,
+            "errors.groups.partitionNotConfirmed"
+        );
+    }
 
     #[test]
     fn remaining_is_none_after_deadline() {

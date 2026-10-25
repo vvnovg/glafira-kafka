@@ -67,6 +67,9 @@ export function ResetOffsetsPanel({ connection, groupId, prefill, blockedReason 
       invalidateGroup();
       if (results.every((r) => !r.error)) onApplied();
     },
+    // Отказ (например, GROUP_NOT_EMPTY: в группу вошёл консьюмер) — тоже повод перечитать группу,
+    // чтобы блокировка «Применить» показала нынешнее состояние, а не то, что было при открытии формы.
+    onError: () => invalidateGroup(),
   });
   const invalidateGroup = () => {
     const c = connection.id;

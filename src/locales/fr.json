@@ -464,7 +464,11 @@
         "openArgsCut": "Indisponible : les arguments de l’appel sont tronqués dans le journal",
         "openNoConnection": "Indisponible : la connexion n’existe plus",
         "openNotMessages": "Indisponible : l’accès LLM de la connexion n’est pas « Métadonnées et messages »",
-        "openPolicy": "Indisponible : la lecture des messages est désactivée par votre organisation"
+        "openPolicy": "Indisponible : la lecture des messages est désactivée par votre organisation",
+        "scanDetailsSummary": "{{target}} : intervalles : {{returned}}, analysés : {{scanned}}, masqués : {{masked}}",
+        "scanDetailsSummaryNoTarget": "intervalles : {{returned}}, analysés : {{scanned}}, masqués : {{masked}}",
+        "scanDetailsHistory": "{{target}} : séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}",
+        "scanDetailsHistoryNoTarget": "séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}"
       },
       "openCounts": "Ouvertes au LLM : {{n}}, dont avec messages : {{m}}",
       "messagesPolicy": "La lecture des messages est désactivée par votre organisation"

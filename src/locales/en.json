@@ -464,7 +464,11 @@
         "openArgsCut": "Unavailable: the call's arguments in the log are cut",
         "openNoConnection": "Unavailable: the connection is gone",
         "openNotMessages": "Unavailable: the connection's LLM access is not “Metadata and messages”",
-        "openPolicy": "Unavailable: reading messages is disabled by your organization"
+        "openPolicy": "Unavailable: reading messages is disabled by your organization",
+        "scanDetailsSummary": "{{target}}: buckets: {{returned}}, scanned: {{scanned}}, masked: {{masked}}",
+        "scanDetailsSummaryNoTarget": "buckets: {{returned}}, scanned: {{scanned}}, masked: {{masked}}",
+        "scanDetailsHistory": "{{target}}: commit runs: {{returned}}, records scanned: {{scanned}}, masked: {{masked}}",
+        "scanDetailsHistoryNoTarget": "commit runs: {{returned}}, records scanned: {{scanned}}, masked: {{masked}}"
       },
       "openCounts": "Open to LLM: {{n}}, with messages: {{m}}",
       "messagesPolicy": "Reading messages is disabled by your organization"

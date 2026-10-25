@@ -464,7 +464,11 @@
         "openArgsCut": "Недоступно: аргументы вызова в журнале усечены",
         "openNoConnection": "Недоступно: подключения больше нет",
         "openNotMessages": "Недоступно: у подключения уровень не «Метаданные и сообщения»",
-        "openPolicy": "Недоступно: чтение сообщений отключено вашей организацией"
+        "openPolicy": "Недоступно: чтение сообщений отключено вашей организацией",
+        "scanDetailsSummary": "{{target}}: корзин: {{returned}}, просмотрено: {{scanned}}, замаскировано: {{masked}}",
+        "scanDetailsSummaryNoTarget": "корзин: {{returned}}, просмотрено: {{scanned}}, замаскировано: {{masked}}",
+        "scanDetailsHistory": "{{target}}: серий коммитов: {{returned}}, просмотрено записей: {{scanned}}, замаскировано: {{masked}}",
+        "scanDetailsHistoryNoTarget": "серий коммитов: {{returned}}, просмотрено записей: {{scanned}}, замаскировано: {{masked}}"
       },
       "openCounts": "Открыто для LLM: {{n}}, из них с сообщениями: {{m}}",
       "messagesPolicy": "Чтение сообщений отключено вашей организацией"

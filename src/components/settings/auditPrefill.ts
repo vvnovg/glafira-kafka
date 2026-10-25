@@ -34,21 +34,21 @@ const sameFlags = (a: TextMatchArg, b: TextMatchArg) => !!a.regex === !!b.regex 
  * Значение datetime-local, которое форма прочитает не позже `ms` (dir −1, начало окна) или не раньше (dir 1, конец).
  * В повторяющемся часе перевода часов местное время двузначно, и разбор берёт один из проходов (V8 — первый, другой
  * движок может взять второй): тогда граница отодвигается наружу на величину сдвига, чтобы окно формы по-прежнему
- * содержало окно вызова. `format` и `parse` — как в форме (местное время); в тестах — модель часового пояса.
+ * содержало окно вызова. `toLocal` и `parse` — как в форме (местное время); в тестах — модель часового пояса.
  */
 export function outwardLocal(
   ms: number,
   dir: 1 | -1,
-  format: (ms: number) => string = toLocalInput,
+  toLocal: (ms: number) => string = toLocalInput,
   parse: (s: string) => number = (s) => new Date(s).getTime(),
 ): string {
   let at = ms;
-  let s = format(at);
+  let s = toLocal(at);
   for (let i = 0; i < 3; i++) {
     const back = parse(s);
     if (!(dir * (ms - back) > 0)) break;
     at += at - back;
-    s = format(at);
+    s = toLocal(at);
   }
   return s;
 }

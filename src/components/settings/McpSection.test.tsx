@@ -118,6 +118,40 @@ describe("McpSection", () => {
     expect(tab.kind === "topic" && tab.browsePrefill?.form.startType).toBe("timestamp");
   });
 
+  // У каждого инструмента свой шаблон: у обзора отдаются корзины, у истории — серии коммитов, а не сообщения.
+  it.each([
+    ["read_messages", { topic: "orders" }, "orders: 3 из 10, замаскировано: 2", "3 из 10, замаскировано: 2"],
+    [
+      "summarize_messages",
+      { topic: "orders" },
+      "orders: корзин: 3, просмотрено: 10, замаскировано: 2",
+      "корзин: 3, просмотрено: 10, замаскировано: 2",
+    ],
+    [
+      "get_group_commit_history",
+      { groupId: "billing" },
+      "billing: серий коммитов: 3, просмотрено записей: 10, замаскировано: 2",
+      "серий коммитов: 3, просмотрено записей: 10, замаскировано: 2",
+    ],
+  ])("журнал: подробности %s — с целью и без неё (аргументы усечены)", async (tool, args, withTarget, withoutTarget) => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.listConnections).mockResolvedValue(connections);
+    vi.mocked(api.getMcpAudit).mockResolvedValue([
+      read("c1", "", { tool, args: { connectionId: "c1", from: 0, to: 1000, ...args } }),
+      read("c1", "", { tool, args: '{"connectionId":"c1"…' }),
+    ]);
+    renderWithClient(<McpSection />);
+    await screen.findAllByText(tool);
+    // Колонка «Подробности» — последняя; у чтения и обзора за текстом идёт кнопка.
+    const details = screen
+      .getAllByRole("row")
+      .map((r) => within(r).queryAllByRole("cell").slice(-1)[0]?.textContent ?? "")
+      .filter((text) => text !== "");
+    expect(details).toHaveLength(2);
+    expect(details[0].slice(0, withTarget.length)).toBe(withTarget);
+    expect(details[1].slice(0, withoutTarget.length)).toBe(withoutTarget);
+  });
+
   it("журнал: чтение сообщений отключено организацией — своя подсказка у кнопки", async () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
     vi.mocked(api.listConnections).mockResolvedValue(connections);

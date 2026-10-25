@@ -464,7 +464,11 @@
         "openArgsCut": "사용할 수 없음: 로그의 호출 인수가 잘렸습니다",
         "openNoConnection": "사용할 수 없음: 연결이 더 이상 없습니다",
         "openNotMessages": "사용할 수 없음: 연결의 LLM 접근이 '메타데이터 및 메시지'가 아닙니다",
-        "openPolicy": "사용할 수 없음: 조직에서 메시지 읽기를 비활성화했습니다"
+        "openPolicy": "사용할 수 없음: 조직에서 메시지 읽기를 비활성화했습니다",
+        "scanDetailsSummary": "{{target}}: 구간: {{returned}}, 검사: {{scanned}}, 마스킹: {{masked}}",
+        "scanDetailsSummaryNoTarget": "구간: {{returned}}, 검사: {{scanned}}, 마스킹: {{masked}}",
+        "scanDetailsHistory": "{{target}}: 커밋 묶음: {{returned}}, 검사한 레코드: {{scanned}}, 마스킹: {{masked}}",
+        "scanDetailsHistoryNoTarget": "커밋 묶음: {{returned}}, 검사한 레코드: {{scanned}}, 마스킹: {{masked}}"
       },
       "openCounts": "LLM에 열림: {{n}}, 그중 메시지 포함: {{m}}",
       "messagesPolicy": "조직에서 메시지 읽기를 비활성화했습니다"

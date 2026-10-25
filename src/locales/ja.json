@@ -464,7 +464,11 @@
         "openArgsCut": "利用できません：ログ内の呼び出し引数が切り詰められています",
         "openNoConnection": "利用できません：接続が存在しません",
         "openNotMessages": "利用できません：接続のLLMアクセスが「メタデータとメッセージ」ではありません",
-        "openPolicy": "利用できません：メッセージの読み取りは組織によって無効にされています"
+        "openPolicy": "利用できません：メッセージの読み取りは組織によって無効にされています",
+        "scanDetailsSummary": "{{target}}：区間：{{returned}}、スキャン済み：{{scanned}}、マスク済み：{{masked}}",
+        "scanDetailsSummaryNoTarget": "区間：{{returned}}、スキャン済み：{{scanned}}、マスク済み：{{masked}}",
+        "scanDetailsHistory": "{{target}}：コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}",
+        "scanDetailsHistoryNoTarget": "コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}"
       },
       "openCounts": "LLMに開放：{{n}}件、うちメッセージあり：{{m}}件",
       "messagesPolicy": "メッセージの読み取りは組織によって無効にされています"

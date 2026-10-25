@@ -464,7 +464,11 @@
         "openArgsCut": "Non disponibile: gli argomenti della chiamata nel log sono troncati",
         "openNoConnection": "Non disponibile: la connessione non esiste più",
         "openNotMessages": "Non disponibile: l’accesso LLM della connessione non è “Metadati e messaggi”",
-        "openPolicy": "Non disponibile: la lettura dei messaggi è disattivata dalla tua organizzazione"
+        "openPolicy": "Non disponibile: la lettura dei messaggi è disattivata dalla tua organizzazione",
+        "scanDetailsSummary": "{{target}}: intervalli: {{returned}}, analizzati: {{scanned}}, mascherati: {{masked}}",
+        "scanDetailsSummaryNoTarget": "intervalli: {{returned}}, analizzati: {{scanned}}, mascherati: {{masked}}",
+        "scanDetailsHistory": "{{target}}: serie di commit: {{returned}}, record analizzati: {{scanned}}, mascherati: {{masked}}",
+        "scanDetailsHistoryNoTarget": "serie di commit: {{returned}}, record analizzati: {{scanned}}, mascherati: {{masked}}"
       },
       "openCounts": "Aperte agli LLM: {{n}}, di cui con messaggi: {{m}}",
       "messagesPolicy": "La lettura dei messaggi è disattivata dalla tua organizzazione"

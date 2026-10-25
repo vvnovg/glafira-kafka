@@ -464,7 +464,11 @@
         "openArgsCut": "不可用：日志中的调用参数已被截断",
         "openNoConnection": "不可用：连接已不存在",
         "openNotMessages": "不可用：该连接的 LLM 访问不是“元数据和消息”",
-        "openPolicy": "不可用：读取消息已被你的组织禁用"
+        "openPolicy": "不可用：读取消息已被你的组织禁用",
+        "scanDetailsSummary": "{{target}}：时间段：{{returned}}，已扫描：{{scanned}}，已脱敏：{{masked}}",
+        "scanDetailsSummaryNoTarget": "时间段：{{returned}}，已扫描：{{scanned}}，已脱敏：{{masked}}",
+        "scanDetailsHistory": "{{target}}：提交序列：{{returned}}，已扫描记录：{{scanned}}，已脱敏：{{masked}}",
+        "scanDetailsHistoryNoTarget": "提交序列：{{returned}}，已扫描记录：{{scanned}}，已脱敏：{{masked}}"
       },
       "openCounts": "已向 LLM 开放：{{n}}，其中可读取消息：{{m}}",
       "messagesPolicy": "读取消息已被你的组织禁用"

@@ -31,6 +31,17 @@ const EVENT_KEYS: Record<string, string> = {
 
 const AUDIT_LIMIT = 200;
 
+/**
+ * Подробности вызова чтения по инструменту (G4): `returned` — сообщения у `read_messages`, корзины обзора у
+ * `summarize_messages`, серии коммитов (подряд идущие коммиты одного оффсета) у `get_group_commit_history`.
+ * Без цели — для усечённых аргументов.
+ */
+const DETAILS_KEYS: Record<string, { target: string; noTarget: string }> = {
+  read_messages: { target: "settings.mcp.audit.scanDetails", noTarget: "settings.mcp.audit.scanDetailsNoTarget" },
+  summarize_messages: { target: "settings.mcp.audit.scanDetailsSummary", noTarget: "settings.mcp.audit.scanDetailsSummaryNoTarget" },
+  get_group_commit_history: { target: "settings.mcp.audit.scanDetailsHistory", noTarget: "settings.mcp.audit.scanDetailsHistoryNoTarget" },
+};
+
 function CopyBlock({ id, label, text }: { id: string; label: string; text: string }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -85,15 +96,16 @@ function openBlocked(
   return conn.llmAccess === "messages" ? null : "settings.mcp.audit.openNotMessages";
 }
 
-/** Подробности вызова чтения сообщений (G4): цель, отдано из просмотренных, замаскировано. */
+/** Подробности вызова чтения сообщений (G4): цель, отдано (по шаблону инструмента), просмотрено, замаскировано. */
 function AuditDetails({ e, s, connections }: { e: McpAuditEntry; s: McpStatus; connections: ConnectionProfile[] | undefined }) {
   const { t } = useTranslation();
   const open = useWorkspace((st) => st.open);
   if (e.scanned === undefined) return null;
   const counts = { returned: formatCount(e.returned ?? 0), scanned: formatCount(e.scanned), masked: formatCount(e.masked ?? 0) };
+  const keys = DETAILS_KEYS[e.tool ?? ""] ?? DETAILS_KEYS.read_messages;
   // У усечённых аргументов цели нет — строка без неё, а не «: 3 из 10».
   const target = auditTarget(e);
-  const details = target ? t("settings.mcp.audit.scanDetails", { target, ...counts }) : t("settings.mcp.audit.scanDetailsNoTarget", counts);
+  const details = target ? t(keys.target, { target, ...counts }) : t(keys.noTarget, counts);
   if (!isBrowsable(e)) return <>{details}</>;
   const prefill = browsePrefillFromAudit(e);
   const blocked = openBlocked(prefill !== null, e, s, connections);

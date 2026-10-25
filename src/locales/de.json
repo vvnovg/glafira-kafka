@@ -464,7 +464,11 @@
         "openArgsCut": "Nicht verfügbar: Die Aufrufargumente im Protokoll sind gekürzt",
         "openNoConnection": "Nicht verfügbar: Die Verbindung gibt es nicht mehr",
         "openNotMessages": "Nicht verfügbar: Der LLM-Zugriff der Verbindung ist nicht „Metadaten und Nachrichten“",
-        "openPolicy": "Nicht verfügbar: Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert"
+        "openPolicy": "Nicht verfügbar: Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert",
+        "scanDetailsSummary": "{{target}}: Intervalle: {{returned}}, gescannt: {{scanned}}, maskiert: {{masked}}",
+        "scanDetailsSummaryNoTarget": "Intervalle: {{returned}}, gescannt: {{scanned}}, maskiert: {{masked}}",
+        "scanDetailsHistory": "{{target}}: Commit-Serien: {{returned}}, gescannte Datensätze: {{scanned}}, maskiert: {{masked}}",
+        "scanDetailsHistoryNoTarget": "Commit-Serien: {{returned}}, gescannte Datensätze: {{scanned}}, maskiert: {{masked}}"
       },
       "openCounts": "Für LLM freigegeben: {{n}}, davon mit Nachrichten: {{m}}",
       "messagesPolicy": "Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert"

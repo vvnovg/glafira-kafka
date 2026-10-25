@@ -464,7 +464,11 @@
         "openArgsCut": "Indisponível: os argumentos da chamada estão truncados no log",
         "openNoConnection": "Indisponível: a conexão não existe mais",
         "openNotMessages": "Indisponível: o acesso para LLM da conexão não é “Metadados e mensagens”",
-        "openPolicy": "Indisponível: a leitura de mensagens está desativada pela sua organização"
+        "openPolicy": "Indisponível: a leitura de mensagens está desativada pela sua organização",
+        "scanDetailsSummary": "{{target}}: intervalos: {{returned}}, verificadas: {{scanned}}, mascarados: {{masked}}",
+        "scanDetailsSummaryNoTarget": "intervalos: {{returned}}, verificadas: {{scanned}}, mascarados: {{masked}}",
+        "scanDetailsHistory": "{{target}}: séries de commits: {{returned}}, registros verificados: {{scanned}}, mascarados: {{masked}}",
+        "scanDetailsHistoryNoTarget": "séries de commits: {{returned}}, registros verificados: {{scanned}}, mascarados: {{masked}}"
       },
       "openCounts": "Abertas para LLM: {{n}}, com mensagens: {{m}}",
       "messagesPolicy": "A leitura de mensagens está desativada pela sua organização"

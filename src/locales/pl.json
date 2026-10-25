@@ -464,7 +464,11 @@
         "openArgsCut": "Niedostępne: argumenty wywołania w logu są obcięte",
         "openNoConnection": "Niedostępne: połączenia już nie ma",
         "openNotMessages": "Niedostępne: dostęp dla LLM tego połączenia to nie „Metadane i wiadomości”",
-        "openPolicy": "Niedostępne: odczyt wiadomości jest wyłączony przez organizację"
+        "openPolicy": "Niedostępne: odczyt wiadomości jest wyłączony przez organizację",
+        "scanDetailsSummary": "{{target}}: przedziały: {{returned}}, przeskanowano: {{scanned}}, zamaskowano: {{masked}}",
+        "scanDetailsSummaryNoTarget": "przedziały: {{returned}}, przeskanowano: {{scanned}}, zamaskowano: {{masked}}",
+        "scanDetailsHistory": "{{target}}: serie zatwierdzeń: {{returned}}, przeskanowano rekordów: {{scanned}}, zamaskowano: {{masked}}",
+        "scanDetailsHistoryNoTarget": "serie zatwierdzeń: {{returned}}, przeskanowano rekordów: {{scanned}}, zamaskowano: {{masked}}"
       },
       "openCounts": "Otwarte dla LLM: {{n}}, w tym z wiadomościami: {{m}}",
       "messagesPolicy": "Odczyt wiadomości jest wyłączony przez organizację"

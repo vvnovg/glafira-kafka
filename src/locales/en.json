@@ -1040,6 +1040,7 @@
       "check": "Check for updates",
       "upToDate": "You have the latest version",
       "available": "Version {{version}} is available",
+      "notesAria": "What's new in version {{version}}",
       "confirmAria": "Confirm update",
       "stopAndUpdate": "Stop sessions and update",
       "install": "Install and restart",

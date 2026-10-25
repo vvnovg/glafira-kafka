@@ -57,7 +57,7 @@ pub fn item_error(code: RDKafkaErrorCode, message: &str, context: LocalizedText)
         | C::GroupAuthorizationFailed
         | C::ClusterAuthorizationFailed => ErrorCode::NotAuthorized,
         C::UnknownTopicOrPartition | C::GroupIdNotFound => ErrorCode::NotFound,
-        C::NonEmptyGroup | C::UnknownMemberId | C::RebalanceInProgress => ErrorCode::GroupNotEmpty,
+        c if means_group_not_empty(c) => ErrorCode::GroupNotEmpty,
         C::RequestTimedOut | C::OperationTimedOut => ErrorCode::Timeout,
         _ => classify_message(message).unwrap_or(ErrorCode::Internal),
     };
@@ -67,6 +67,16 @@ pub fn item_error(code: RDKafkaErrorCode, message: &str, context: LocalizedText)
         format!("{code}: {message}")
     };
     AppError::localized(app_code, context).with_details(details)
+}
+
+/// Брокер отказал из-за участников группы: она не пуста или идёт ребалансировка (удаление группы,
+/// запись оффсетов от админ-клиента).
+pub fn means_group_not_empty(code: RDKafkaErrorCode) -> bool {
+    use RDKafkaErrorCode as C;
+    matches!(
+        code,
+        C::NonEmptyGroup | C::UnknownMemberId | C::RebalanceInProgress
+    )
 }
 
 /// Колбэки ошибок admin-клиента в rust-rdkafka не доставляются, поэтому причину (TLS/SASL)

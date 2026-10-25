@@ -4,9 +4,10 @@ use std::sync::Arc;
 
 use common::TestMsg;
 use kafka_explorer_lib::error::ErrorCode;
+use kafka_explorer_lib::kafka::admin_ext;
 use kafka_explorer_lib::kafka::group_ops::{
     delete_group, describe_group, group_offsets, groups_lag, list_groups, preview_reset,
-    reset_offsets, topic_groups,
+    reset_offsets, reset_outcome, topic_groups,
 };
 use kafka_explorer_lib::kafka::groups::{
     OffsetTarget, ResetRequest, ResetScope, ResetStrategy, check_deletable,
@@ -182,6 +183,31 @@ async fn active_group_cannot_be_reset_or_deleted() {
         let e = reset_offsets(&h2, &g, &target).unwrap_err();
         assert_eq!(e.code, ErrorCode::GroupNotEmpty);
         assert!(e.details.unwrap().contains("it-member"));
+        // Консьюмер вошёл уже после перепроверки: запись идёт прямо к брокеру, и его построчный
+        // отказ читается так же — «группа не пуста», ничего не записано.
+        let parts = admin_ext::alter_consumer_group_offsets(
+            &h2.admin,
+            h2.timeout,
+            &g,
+            &[(t.clone(), 0, 0)],
+        )
+        .unwrap()
+        .unwrap();
+        let e = reset_outcome(&target, parts).unwrap_err();
+        assert_eq!(
+            (e.code, e.key.as_str()),
+            (
+                ErrorCode::GroupNotEmpty,
+                "errors.groups.resetRefusedNotEmpty"
+            )
+        );
+        assert!(e.details.unwrap().contains("UnknownMemberId"));
+        let committed: Vec<_> = group_offsets(&h2, &g)
+            .unwrap()
+            .iter()
+            .map(|r| r.committed)
+            .collect();
+        assert_eq!(committed, [Some(2), Some(3)]);
         let d = describe_group(&h2, &g).unwrap();
         assert_eq!(
             check_deletable(&d).unwrap_err().code,

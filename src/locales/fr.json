@@ -456,7 +456,11 @@
         "rejected": "Client rejeté",
         "revoked": "Accès du client révoqué",
         "serverStarted": "Serveur démarré",
-        "serverStopped": "Serveur arrêté"
+        "serverStopped": "Serveur arrêté",
+        "colDetails": "Détails",
+        "scanDetails": "{{target}} : {{returned}} sur {{scanned}}, masqués : {{masked}}",
+        "openInBrowse": "Ouvrir dans « Messages »",
+        "openUnavailable": "Indisponible : les arguments de l’appel sont tronqués dans le journal, la connexion n’existe plus ou son accès LLM n’est pas « Métadonnées et messages »"
       },
       "openCounts": "Ouvertes au LLM : {{n}}, dont avec messages : {{m}}",
       "messagesPolicy": "La lecture des messages est désactivée par votre organisation"
@@ -800,7 +804,8 @@
       "reading": "lecture…",
       "finishLimit": "limite atteinte",
       "finishEnd": "fin du topic atteinte",
-      "finishCancelled": "arrêté"
+      "finishCancelled": "arrêté",
+      "prefillInexact": "Filtres repris de façon approximative : dans le formulaire, les options regex et casse sont communes à la clé et à la valeur"
     },
     "table": {
       "colTime": "Heure",

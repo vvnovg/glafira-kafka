@@ -634,6 +634,12 @@ export interface McpAuditEntry {
   outcome?: "ok" | "error";
   code?: string | null;
   ms?: number;
+  /** Аргументы вызова; длиннее 1 КБ — усечённая строка. */
+  args?: unknown;
+  /** Чтение сообщений (G4): просмотрено, отдано, замаскировано. */
+  scanned?: number;
+  returned?: number;
+  masked?: number;
 }
 
 // ---- Проверка кластера и замечания (G2) ----

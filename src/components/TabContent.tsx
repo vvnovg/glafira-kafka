@@ -53,7 +53,7 @@ export function TabContent({ tab }: { tab: Tab }) {
     case "topics":
       return <TopicList connectionId={tab.connectionId} proposal={tab.proposal} />;
     case "topic":
-      return <TopicDetails connectionId={tab.connectionId} topic={tab.topic} proposal={tab.proposal} />;
+      return <TopicDetails connectionId={tab.connectionId} topic={tab.topic} proposal={tab.proposal} browsePrefill={tab.browsePrefill} />;
     case "groups":
       return <GroupList connectionId={tab.connectionId} />;
     case "findings":

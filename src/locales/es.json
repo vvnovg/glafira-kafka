@@ -456,7 +456,11 @@
         "rejected": "Cliente rechazado",
         "revoked": "Acceso del cliente revocado",
         "serverStarted": "Servidor iniciado",
-        "serverStopped": "Servidor detenido"
+        "serverStopped": "Servidor detenido",
+        "colDetails": "Detalles",
+        "scanDetails": "{{target}}: {{returned}} de {{scanned}}, enmascarados: {{masked}}",
+        "openInBrowse": "Abrir en “Mensajes”",
+        "openUnavailable": "No disponible: los argumentos de la llamada están truncados en el registro, la conexión ya no existe o su acceso para LLM no es “Metadatos y mensajes”"
       },
       "openCounts": "Abiertas a LLM: {{n}}, con mensajes: {{m}}",
       "messagesPolicy": "La lectura de mensajes está desactivada por tu organización"
@@ -800,7 +804,8 @@
       "reading": "leyendo…",
       "finishLimit": "límite alcanzado",
       "finishEnd": "se alcanzó el final del topic",
-      "finishCancelled": "detenido"
+      "finishCancelled": "detenido",
+      "prefillInexact": "Los filtros se trasladaron de forma aproximada: en el formulario, las opciones de regex y mayúsculas son comunes para la clave y el valor"
     },
     "table": {
       "colTime": "Fecha/hora",

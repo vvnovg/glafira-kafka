@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
-import type { McpAuditEntry, McpServerState, McpStatus } from "../../api/types";
+import type { ConnectionProfile, McpAuditEntry, McpServerState, McpStatus } from "../../api/types";
 import { tr } from "../../i18n/text";
 import { formatTimestamp } from "../../lib/format";
 import { MCP_STATUS_KEY, useMcpStatus } from "../../lib/useMcpStatus";
+import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
+import { auditTarget, browsePrefillFromAudit } from "./auditPrefill";
 
 const STATE_KEYS: Record<McpServerState, string> = {
   off: "settings.mcp.state.off",
@@ -64,12 +66,44 @@ function auditWhat(e: McpAuditEntry, t: (k: string) => string): string {
   return key ? t(key) : e.event;
 }
 
+/** Подробности вызова чтения сообщений (G4): цель, отдано из просмотренных, замаскировано. */
+function AuditDetails({ e, s, connections }: { e: McpAuditEntry; s: McpStatus; connections: ConnectionProfile[] | undefined }) {
+  const { t } = useTranslation();
+  const open = useWorkspace((st) => st.open);
+  if (e.scanned === undefined) return null;
+  const target = browsePrefillFromAudit(e);
+  const conn = connections?.find((c) => c.id === e.connection?.id);
+  const canOpen = !!target && conn?.llmAccess === "messages" && s.messagesAllowed;
+  return (
+    <>
+      {t("settings.mcp.audit.scanDetails", { target: auditTarget(e), returned: e.returned ?? 0, scanned: e.scanned, masked: e.masked ?? 0 })}
+      {target && (
+        <>
+          {" "}
+          <button
+            type="button"
+            className="link"
+            disabled={!canOpen}
+            title={canOpen ? undefined : t("settings.mcp.audit.openUnavailable")}
+            onClick={() =>
+              open({ kind: "topic", connectionId: target.connectionId, topic: target.topic, browsePrefill: { ...target.prefill, nonce: Date.now() } })
+            }
+          >
+            {t("settings.mcp.audit.openInBrowse")}
+          </button>
+        </>
+      )}
+    </>
+  );
+}
+
 export function McpSection() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const status = useMcpStatus();
   const configs = useQuery({ queryKey: ["mcp-configs"], queryFn: api.getMcpClientConfigs, staleTime: Infinity });
   const audit = useQuery({ queryKey: ["mcp-audit"], queryFn: () => api.getMcpAudit(AUDIT_LIMIT) });
+  const connections = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const apply = (s: McpStatus) => qc.setQueryData(MCP_STATUS_KEY, s);
   const toggle = useMutation({ mutationFn: (enabled: boolean) => api.setMcpEnabled(enabled), onSuccess: apply });
   const refreshAudit = () => void qc.invalidateQueries({ queryKey: ["mcp-audit"] });
@@ -224,6 +258,7 @@ export function McpSection() {
               <th>{t("settings.mcp.audit.colConnection")}</th>
               <th>{t("settings.mcp.audit.colResult")}</th>
               <th>{t("settings.mcp.audit.colMs")}</th>
+              <th>{t("settings.mcp.audit.colDetails")}</th>
             </tr>
           </thead>
           <tbody>
@@ -235,6 +270,9 @@ export function McpSection() {
                 <td>{e.connection?.name ?? ""}</td>
                 <td>{e.outcome === "error" ? e.code ?? t("settings.mcp.audit.error") : e.outcome === "ok" ? t("settings.mcp.audit.ok") : ""}</td>
                 <td>{e.ms ?? ""}</td>
+                <td>
+                  <AuditDetails e={e} s={s} connections={connections.data} />
+                </td>
               </tr>
             ))}
           </tbody>

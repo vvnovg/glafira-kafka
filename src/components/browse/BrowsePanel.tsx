@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BrowsedMessage } from "../../api/types";
+import type { BrowsePrefill } from "../../state/workspace";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -13,9 +14,18 @@ import { useBrowseSession } from "./useBrowseSession";
 
 const FINISH_KEYS = { limit: "browse.panel.finishLimit", endOfTopic: "browse.panel.finishEnd", cancelled: "browse.panel.finishCancelled" } as const;
 
-export function BrowsePanel({ connectionId, topic }: { connectionId: string; topic: string }) {
+export function BrowsePanel({ connectionId, topic, prefill }: { connectionId: string; topic: string; prefill?: BrowsePrefill }) {
   const { t } = useTranslation();
   const [form, setForm] = useState(defaultBrowseForm);
+  const [inexact, setInexact] = useState(false);
+  // Заполнение из журнала MCP (G4): чтение начинается по кнопке, как обычно. Ключ — nonce.
+  const nonce = prefill?.nonce;
+  useEffect(() => {
+    if (!prefill) return;
+    setForm({ ...defaultBrowseForm, ...prefill.form });
+    setInexact(prefill.inexact);
+    // Зависимость только от nonce — повторное открытие из журнала заполняет форму заново.
+  }, [nonce]);
   const [formError, setFormError] = useState<string | null>(null);
   const [selected, setSelected] = useState<BrowsedMessage | null>(null);
   const [utc, setUtc] = useState(false);
@@ -36,6 +46,7 @@ export function BrowsePanel({ connectionId, topic }: { connectionId: string; top
   return (
     <div className="browse">
       <BrowseForm form={form} onChange={setForm} />
+      {inexact && <p className="hint">{t("browse.panel.prefillInexact")}</p>}
       <div className="toolbar">
         <button type="button" className="primary" onClick={onStart}>
           {running ? t("browse.panel.restart") : t("browse.panel.read")}

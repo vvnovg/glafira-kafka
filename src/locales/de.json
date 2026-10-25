@@ -456,7 +456,11 @@
         "rejected": "Client abgelehnt",
         "revoked": "Zugriff des Clients widerrufen",
         "serverStarted": "Server gestartet",
-        "serverStopped": "Server beendet"
+        "serverStopped": "Server beendet",
+        "colDetails": "Einzelheiten",
+        "scanDetails": "{{target}}: {{returned}} von {{scanned}}, maskiert: {{masked}}",
+        "openInBrowse": "In „Nachrichten“ öffnen",
+        "openUnavailable": "Nicht verfügbar: Die Aufrufargumente im Protokoll sind gekürzt, die Verbindung gibt es nicht mehr oder ihr LLM-Zugriff ist nicht „Metadaten und Nachrichten“"
       },
       "openCounts": "Für LLM freigegeben: {{n}}, davon mit Nachrichten: {{m}}",
       "messagesPolicy": "Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert"
@@ -798,7 +802,8 @@
       "reading": "wird gelesen…",
       "finishLimit": "Limit erreicht",
       "finishEnd": "Ende des Topics erreicht",
-      "finishCancelled": "gestoppt"
+      "finishCancelled": "gestoppt",
+      "prefillInexact": "Filter wurden ungenau übernommen: Im Formular gelten Regex und Groß-/Kleinschreibung gemeinsam für Schlüssel und Wert"
     },
     "table": {
       "colTime": "Zeit",

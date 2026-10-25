@@ -456,7 +456,11 @@
         "rejected": "Client rifiutato",
         "revoked": "Accesso del client revocato",
         "serverStarted": "Server avviato",
-        "serverStopped": "Server arrestato"
+        "serverStopped": "Server arrestato",
+        "colDetails": "Dettagli",
+        "scanDetails": "{{target}}: {{returned}} su {{scanned}}, mascherati: {{masked}}",
+        "openInBrowse": "Apri in “Messaggi”",
+        "openUnavailable": "Non disponibile: gli argomenti della chiamata nel registro sono troncati, la connessione non esiste più o il suo accesso LLM non è “Metadati e messaggi”"
       },
       "openCounts": "Aperte agli LLM: {{n}}, di cui con messaggi: {{m}}",
       "messagesPolicy": "La lettura dei messaggi è disattivata dalla tua organizzazione"
@@ -800,7 +804,8 @@
       "reading": "lettura…",
       "finishLimit": "limite raggiunto",
       "finishEnd": "raggiunta la fine del topic",
-      "finishCancelled": "interrotto"
+      "finishCancelled": "interrotto",
+      "prefillInexact": "Filtri riportati in modo approssimativo: nel modulo le opzioni regex e maiuscole sono comuni a chiave e valore"
     },
     "table": {
       "colTime": "Data/ora",

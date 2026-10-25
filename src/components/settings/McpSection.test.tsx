@@ -16,11 +16,15 @@ vi.mock("../../api/client", async (importOriginal) => {
       getMcpAudit: vi.fn(),
       getMcpClientConfigs: vi.fn(),
       revealMcpAudit: vi.fn(),
+      listConnections: vi.fn(),
     },
   };
 });
 
 import { api } from "../../api/client";
+import type { McpAuditEntry } from "../../api/types";
+import { useWorkspace } from "../../state/workspace";
+import { newProfile } from "../connections/profile";
 import { McpSection } from "./McpSection";
 
 const configs = {
@@ -35,6 +39,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(api.getMcpClientConfigs).mockResolvedValue(configs);
   vi.mocked(api.getMcpAudit).mockResolvedValue([]);
+  vi.mocked(api.listConnections).mockResolvedValue([]);
 });
 
 describe("McpSection", () => {
@@ -63,6 +68,45 @@ describe("McpSection", () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
     renderWithClient(<McpSection />);
     expect(await screen.findByText("Чтение сообщений отключено вашей организацией")).toBeInTheDocument();
+  });
+
+  it("журнал: подробности чтения сообщений и «Открыть в „Сообщениях“»", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.listConnections).mockResolvedValue([
+      { ...newProfile(), id: "c1", name: "dev", llmAccess: "messages" },
+      { ...newProfile(), id: "c2", name: "meta", llmAccess: "metadata" },
+    ]);
+    const read = (id: string, topic: string, patch: Partial<McpAuditEntry> = {}): McpAuditEntry => ({
+      ts: 2,
+      event: "call",
+      tool: "read_messages",
+      outcome: "ok",
+      connection: { id, name: id },
+      args: { connectionId: id, topic, from: 0, to: 1000 },
+      scanned: 10,
+      returned: 3,
+      masked: 2,
+      ms: 5,
+      ...patch,
+    });
+    vi.mocked(api.getMcpAudit).mockResolvedValue([
+      read("c1", "orders"),
+      read("c2", "payments"),
+      read("c1", "big", { args: '{"topic":"big"…' }),
+    ]);
+    useWorkspace.setState({ tabs: [], activeId: null });
+    const user = userEvent.setup();
+    renderWithClient(<McpSection />);
+    expect(await screen.findByText(/orders: 3 из 10, замаскировано: 2/)).toBeInTheDocument();
+    const buttons = await screen.findAllByRole("button", { name: "Открыть в «Сообщениях»" });
+    expect(buttons).toHaveLength(2);
+    await waitFor(() => expect(buttons[0]).toBeEnabled());
+    expect(buttons[1]).toBeDisabled();
+    expect(buttons[1]).toHaveAttribute("title", expect.stringContaining("Недоступно"));
+    await user.click(buttons[0]);
+    const tab = useWorkspace.getState().tabs[0];
+    expect(tab).toMatchObject({ kind: "topic", connectionId: "c1", topic: "orders" });
+    expect(tab.kind === "topic" && tab.browsePrefill?.form.startType).toBe("timestamp");
   });
 
   it("политика запрещает MCP", async () => {

@@ -456,7 +456,11 @@
         "rejected": "클라이언트 거부됨",
         "revoked": "클라이언트 접근 취소됨",
         "serverStarted": "서버 시작됨",
-        "serverStopped": "서버 중지됨"
+        "serverStopped": "서버 중지됨",
+        "colDetails": "세부 정보",
+        "scanDetails": "{{target}}: {{scanned}}개 중 {{returned}}개, 마스킹: {{masked}}",
+        "openInBrowse": "'메시지'에서 열기",
+        "openUnavailable": "사용할 수 없음: 로그의 호출 인수가 잘렸거나, 연결이 없거나, LLM 접근이 '메타데이터 및 메시지'가 아닙니다"
       },
       "openCounts": "LLM에 열림: {{n}}, 그중 메시지 포함: {{m}}",
       "messagesPolicy": "조직에서 메시지 읽기를 비활성화했습니다"
@@ -796,7 +800,8 @@
       "reading": "읽는 중…",
       "finishLimit": "제한에 도달함",
       "finishEnd": "토픽 끝에 도달함",
-      "finishCancelled": "중지됨"
+      "finishCancelled": "중지됨",
+      "prefillInexact": "필터가 정확히 옮겨지지 않았습니다: 양식에서는 정규식과 대소문자 설정을 키와 값이 함께 씁니다"
     },
     "table": {
       "colTime": "시간",

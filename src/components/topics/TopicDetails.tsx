@@ -7,7 +7,7 @@ import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { useConnection } from "../../lib/useConnection";
 import { useHelpChapter } from "../../state/helpContext";
-import { newConsumerKey, type ProposalPrefill, tabId, useWorkspace } from "../../state/workspace";
+import { type BrowsePrefill, newConsumerKey, type ProposalPrefill, tabId, useWorkspace } from "../../state/workspace";
 import { BrowsePanel } from "../browse/BrowsePanel";
 import { ConfigEditor } from "../common/ConfigEditor";
 import type { ConfigEdit } from "../common/configDiff";
@@ -39,7 +39,17 @@ function partitionsProposal(prefill: ProposalPrefill | undefined, topic: string)
   return c?.kind === "addPartitions" && c.topic === topic ? prefill : undefined;
 }
 
-export function TopicDetails({ connectionId, topic, proposal }: { connectionId: string; topic: string; proposal?: ProposalPrefill }) {
+export function TopicDetails({
+  connectionId,
+  topic,
+  proposal,
+  browsePrefill,
+}: {
+  connectionId: string;
+  topic: string;
+  proposal?: ProposalPrefill;
+  browsePrefill?: BrowsePrefill;
+}) {
   const { t: tt } = useTranslation();
   const forConfigs = configProposal(proposal, topic);
   // Активное предложение по конфигам хранится здесь, а не в TopicConfigs: подвкладка размонтируется при переключении,
@@ -51,6 +61,11 @@ export function TopicDetails({ connectionId, topic, proposal }: { connectionId: 
   useEffect(() => {
     if (configsNonce !== undefined) setSub("configs");
   }, [configsNonce]);
+  // Повтор чтения LLM из журнала MCP (G4) открывает подвкладку «Сообщения».
+  const browseNonce = browsePrefill?.nonce;
+  useEffect(() => {
+    if (browseNonce !== undefined) setSub("messages");
+  }, [browseNonce]);
   useHelpChapter(tabId({ kind: "topic", connectionId, topic }), sub === "messages" ? "browse" : "topics");
   const q = useQuery({ queryKey: ["topic", connectionId, topic], queryFn: () => api.getTopic(connectionId, topic) });
 
@@ -123,7 +138,7 @@ export function TopicDetails({ connectionId, topic, proposal }: { connectionId: 
       </div>
       {/* Сообщения не размонтируем при переключении, чтобы не терять результаты browse. */}
       <div style={{ flex: 1, display: sub === "messages" ? "flex" : "none", flexDirection: "column" }}>
-        <BrowsePanel connectionId={connectionId} topic={topic} />
+        <BrowsePanel connectionId={connectionId} topic={topic} prefill={browsePrefill} />
       </div>
       {sub === "partitions" && <PartitionsTable topic={t} />}
       {sub === "configs" && <TopicConfigs connectionId={connectionId} topic={topic} proposal={activeConfigs} onProposalDone={clearConfigs} />}

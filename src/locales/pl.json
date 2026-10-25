@@ -456,7 +456,11 @@
         "rejected": "Klient odrzucony",
         "revoked": "Dostęp klienta odwołany",
         "serverStarted": "Serwer uruchomiony",
-        "serverStopped": "Serwer zatrzymany"
+        "serverStopped": "Serwer zatrzymany",
+        "colDetails": "Szczegóły",
+        "scanDetails": "{{target}}: {{returned}} z {{scanned}}, zamaskowano: {{masked}}",
+        "openInBrowse": "Otwórz w „Wiadomościach”",
+        "openUnavailable": "Niedostępne: argumenty wywołania w dzienniku są obcięte, połączenia już nie ma lub jego dostęp dla LLM to nie „Metadane i wiadomości”"
       },
       "openCounts": "Otwarte dla LLM: {{n}}, w tym z wiadomościami: {{m}}",
       "messagesPolicy": "Odczyt wiadomości jest wyłączony przez organizację"
@@ -802,7 +806,8 @@
       "reading": "odczytywanie…",
       "finishLimit": "osiągnięto limit",
       "finishEnd": "osiągnięto koniec topiku",
-      "finishCancelled": "zatrzymano"
+      "finishCancelled": "zatrzymano",
+      "prefillInexact": "Filtry przeniesiono niedokładnie: w formularzu opcje regex i wielkości liter są wspólne dla klucza i wartości"
     },
     "table": {
       "colTime": "Czas",

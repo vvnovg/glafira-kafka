@@ -456,7 +456,11 @@
         "rejected": "Client rejected",
         "revoked": "Client access revoked",
         "serverStarted": "Server started",
-        "serverStopped": "Server stopped"
+        "serverStopped": "Server stopped",
+        "colDetails": "Details",
+        "scanDetails": "{{target}}: {{returned}} of {{scanned}}, masked: {{masked}}",
+        "openInBrowse": "Open in Messages",
+        "openUnavailable": "Unavailable: the call's arguments in the log are cut, the connection is gone or its LLM access is not “Metadata and messages”"
       },
       "openCounts": "Open to LLM: {{n}}, with messages: {{m}}",
       "messagesPolicy": "Reading messages is disabled by your organization"
@@ -798,7 +802,8 @@
       "reading": "reading…",
       "finishLimit": "limit reached",
       "finishEnd": "reached end of topic",
-      "finishCancelled": "stopped"
+      "finishCancelled": "stopped",
+      "prefillInexact": "Filters were carried over approximately: in the form, the regex and case settings are shared by the key and the value"
     },
     "table": {
       "colTime": "Time",

@@ -2,6 +2,10 @@
 
 Deutsche Fassung von [CHANGELOG.md](../../CHANGELOG.md), dort stehen auch frühere Versionen. Der Abschnitt einer Version wird unter „Über Glafira“ als Versionshinweise zum Update angezeigt.
 
+## 0.5.1
+- Versionshinweise unter „Über Glafira“ → „Updates“ erscheinen in der Sprache der Oberfläche (ohne Übersetzung auf Englisch) und als formatierter Text statt als rohes Markdown. Das gilt für Updates, die ab Version 0.5.1 angeboten werden; frühere Versionen zeigen die Hinweise als einfachen englischen Text.
+- Das Änderungsprotokoll wird jetzt auf Englisch geführt (`CHANGELOG.md`); die Fassungen in den anderen Oberflächensprachen liegen in `docs/changelog/`.
+
 ## 0.5.0
 - Nachrichten lesen durch einen LLM-Assistenten. Eine Verbindung hat drei Stufen des LLM-Zugriffs: „Aus“, „Nur Metadaten“, „Metadaten und Nachrichten“. Auf der dritten Stufe kann der Assistent über MCP:
   - Nachrichten in einem Zeitfenster oder nach Offsets lesen, mit denselben Filtern wie auf dem Tab „Nachrichten“ (`read_messages`);

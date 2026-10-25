@@ -2,6 +2,10 @@
 
 Versão em português de [CHANGELOG.md](../../CHANGELOG.md), onde também estão as versões anteriores. A seção de uma versão aparece em “Sobre” como notas da atualização.
 
+## 0.5.1
+- As notas da atualização em “Sobre” → “Atualizações” aparecem no idioma da interface (em inglês, se não houver tradução) e como texto formatado em vez de Markdown bruto. Isso vale para as atualizações oferecidas à versão 0.5.1 e posteriores; as versões anteriores mostram as notas como texto simples em inglês.
+- O registro de alterações agora é mantido em inglês (`CHANGELOG.md`); as versões nos outros idiomas da interface ficam em `docs/changelog/`.
+
 ## 0.5.0
 - Leitura de mensagens por um assistente LLM. Uma conexão tem três níveis de acesso para LLM: “Desativado”, “Somente metadados”, “Metadados e mensagens”. No terceiro nível, o assistente pode, via MCP:
   - ler mensagens de uma janela de tempo ou por offsets, com os mesmos filtros da aba “Mensagens” (`read_messages`);

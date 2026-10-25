@@ -2,6 +2,10 @@
 
 Polska wersja [CHANGELOG.md](../../CHANGELOG.md), gdzie są też wcześniejsze wersje. Sekcja wersji jest wyświetlana w „O programie” jako informacje o aktualizacji.
 
+## 0.5.1
+- Informacje o aktualizacji w „O programie” → „Aktualizacje” są wyświetlane w języku interfejsu (bez tłumaczenia — po angielsku) i jako sformatowany tekst zamiast surowego Markdownu. Dotyczy to aktualizacji proponowanych dla wersji 0.5.1 i nowszych; wcześniejsze wersje pokazują informacje jako zwykły tekst po angielsku.
+- Lista zmian jest teraz prowadzona po angielsku (`CHANGELOG.md`); jej wersje w pozostałych językach interfejsu znajdują się w `docs/changelog/`.
+
 ## 0.5.0
 - Odczyt wiadomości przez asystenta LLM. Połączenie ma trzy poziomy dostępu dla LLM: „Wyłączony”, „Tylko metadane”, „Metadane i wiadomości”. Na trzecim poziomie asystent może przez MCP:
   - czytać wiadomości z okna czasu lub według offsetów, z tymi samymi filtrami co na karcie „Wiadomości” (`read_messages`);

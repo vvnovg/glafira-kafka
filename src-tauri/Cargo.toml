@@ -1,6 +1,6 @@
 [package]
 name = "kafka-explorer"
-version = "0.5.0"
+version = "0.5.1"
 description = "Glafira for Apache Kafka — desktop-клиент для Apache Kafka"
 authors = ["Glafira for Apache Kafka contributors"]
 edition = "2024"

@@ -2,6 +2,10 @@
 
 Versions in the other interface languages are in [docs/changelog](docs/changelog/). The section of a version is shown in About as the update notes, in the interface language.
 
+## 0.5.1
+- Update notes in “About” → “Updates” are shown in the interface language (in English if there is no translation) and as formatted text instead of raw Markdown. This applies to updates offered to version 0.5.1 and later; earlier versions show the notes as plain English text.
+- The changelog is now in English (`CHANGELOG.md`); its versions in the other interface languages are in `docs/changelog/`.
+
 ## 0.5.0
 - Reading messages by an LLM assistant. A connection has three levels of LLM access: “Off”, “Metadata only”, “Metadata and messages”. At the third level, the assistant can use MCP to:
   - read messages within a time window or by offsets, with the same filters as on the “Messages” tab (`read_messages`);

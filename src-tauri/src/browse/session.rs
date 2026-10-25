@@ -222,6 +222,19 @@ pub(crate) fn create_consumer(
     role: &str,
     tune: impl FnOnce(&mut ClientConfig),
 ) -> AppResult<BaseConsumer<CapturingContext>> {
+    consumer_config(p, secrets, role, tune)?
+        .create_with_context(ctx.clone())
+        .map_err(|e| from_kafka(&e, None))
+}
+
+/// Настройки консьюмера чтения: общие (`build_client_config`, последними в нём — `extraProperties`
+/// подключения), затем служебные, затем `tune` — его значения важнее всех остальных.
+pub(crate) fn consumer_config(
+    p: &ConnectionProfile,
+    secrets: &dyn SecretStore,
+    role: &str,
+    tune: impl FnOnce(&mut ClientConfig),
+) -> AppResult<ClientConfig> {
     let mut cfg = build_client_config(p, secrets)?;
     // group.id обязателен для librdkafka-консьюмера, но мы не подписываемся и не коммитим:
     // партиции назначаются через assign, поэтому группа на брокере не появляется.
@@ -238,8 +251,7 @@ pub(crate) fn create_consumer(
     .set("enable.partition.eof", "true")
     .set("auto.offset.reset", "earliest");
     tune(&mut cfg);
-    cfg.create_with_context(ctx.clone())
-        .map_err(|e| from_kafka(&e, None))
+    Ok(cfg)
 }
 
 /// Границы выбранных партиций топика (`partitions` пусто или `None` — все).
@@ -250,6 +262,17 @@ pub(crate) fn load_bounds(
     timeout: Duration,
     kerr: &impl Fn(KafkaError) -> AppError,
 ) -> AppResult<Vec<PartitionBounds>> {
+    let selected = topic_partitions(consumer, topic, partitions, timeout)?;
+    partition_bounds(consumer, topic, &selected, timeout, kerr)
+}
+
+/// Выбранные партиции топика по метаданным (`partitions` пусто или `None` — все).
+pub(crate) fn topic_partitions(
+    consumer: &BaseConsumer<CapturingContext>,
+    topic: &str,
+    partitions: Option<&[i32]>,
+    timeout: Duration,
+) -> AppResult<Vec<i32>> {
     let md = fetch_metadata_fast_fail(consumer, Some(topic), timeout)?;
     let (_, topics) = convert(&md);
     let found = topics
@@ -257,7 +280,7 @@ pub(crate) fn load_bounds(
         .find(|t| t.name == topic && !t.partitions.is_empty())
         .ok_or_else(|| crate::kafka::admin::topic_not_found(topic))?;
     let all: Vec<i32> = found.partitions.iter().map(|p| p.id).collect();
-    let selected = match partitions {
+    match partitions {
         Some(list) if !list.is_empty() => {
             if let Some(bad) = list.iter().find(|p| !all.contains(p)) {
                 return Err(app_err!(
@@ -267,14 +290,24 @@ pub(crate) fn load_bounds(
                     partition = bad
                 ));
             }
-            list.to_vec()
+            Ok(list.to_vec())
         }
-        _ => all,
-    };
+        _ => Ok(all),
+    }
+}
+
+/// Границы `low`/`high` партиций `selected`: ошибка любой из них — ошибка всего чтения.
+pub(crate) fn partition_bounds(
+    consumer: &BaseConsumer<CapturingContext>,
+    topic: &str,
+    selected: &[i32],
+    timeout: Duration,
+    kerr: &impl Fn(KafkaError) -> AppError,
+) -> AppResult<Vec<PartitionBounds>> {
     let keys: Vec<(String, i32)> = selected.iter().map(|p| (topic.to_string(), *p)).collect();
     let bounds = fetch_bounds(consumer, &keys, timeout).map_err(kerr)?;
     let mut out = Vec::with_capacity(selected.len());
-    for p in &selected {
+    for p in selected {
         match bounds.get(&(topic.to_string(), *p)) {
             Some(Ok((low, high))) => out.push(PartitionBounds {
                 partition: *p,

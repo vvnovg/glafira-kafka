@@ -369,14 +369,19 @@ M считается с учётом политики.
 момент планирования. Итог зажимается в `[low, high]`. Партиции с пустым диапазоном попадают в ответ с
 `startOffset = endOffset` и не читаются. Режим «офсеты»: `[max(startOffset, low), min(endOffset ?? high, high))`.
 Чтение партиции заканчивается на `endOffset` или по EOF (`enable.partition.eof`), как `EndTracker` в `browse::plan`.
+Законченная так партиция (или та, где пришла запись за `endOffset`) пройдена до `endOffset`, даже если хвост не
+доставлен (маркеры транзакций, пропуски после сжатия), — `scannedTo` у неё нет.
 
 ### 6.2. Консьюмер
 
 Отдельный `BaseConsumer` на каждый вызов, как в `browse::session`: `assign` без подписки, служебный `group.id` без
-коммитов, `enable.auto.commit = false`, `enable.partition.eof = true`, `isolation.level = read_committed`. Отличие —
-`client.id`: значение из `extraProperties` подключения, если задано, иначе `glafira-kafka-mcp`, чтобы трафик LLM был
-виден в логах и квотах брокера. Консьюмер закрывается в конце вызова, при отмене и по дедлайну. Пул клиентов
-интерфейса не используется: долгий просмотр не должен занимать общие клиенты.
+коммитов, `enable.auto.commit = false`, `enable.partition.eof = true`, `isolation.level = read_committed` (задаётся
+поверх `extraProperties` подключения, их значение его не меняет). Отличие — `client.id`: значение из `extraProperties`
+подключения, если задано, иначе `glafira-kafka-mcp`, чтобы трафик LLM был виден в логах и квотах брокера. Консьюмер
+закрывается в конце вызова, при отмене и по дедлайну. Планирование тоже соблюдает дедлайн и отмену: каждый его запрос
+(метаданные, границы, `offsets_for_times`) ждёт не дольше таймаута запроса подключения и не дольше остатка бюджета,
+перед каждым проверяются отмена и дедлайн; наступили до начала чтения — ответ ошибкой `TIMEOUT` («The operation timed
+out»), а не частичный. Пул клиентов интерфейса не используется: долгий просмотр не должен занимать общие клиенты.
 
 ### 6.3. `__consumer_offsets`
 
@@ -398,13 +403,16 @@ M считается с учётом политики.
 | 3 | `int64 offset`, `int32 leaderEpoch`, `string metadata`, `int64 commitTimestamp` |
 | 4 | flexible: `int64 offset`, `int32 leaderEpoch`, compact string `metadata` (unsigned varint длина + 1), `int64 commitTimestamp`, tagged fields (пропускаются) |
 
-Неизвестная версия значения или битая запись — пропуск со счётом в `skippedRecords`. Время коммита —
+Неизвестная версия значения или битая запись нашей группы — пропуск со счётом в `skippedRecords`; запись с нечитаемым
+ключом ни к какой группе не относится и не считается. Время коммита —
 `commitTimestamp`, при значении < 0 — метка времени записи Kafka. Модуль — чистые функции над байтами, без `rdkafka`.
 
-**Чтение:** диапазон партиции — от `offsets_for_times(from − COMMIT_LOOKBACK)` до `offsets_for_times(to + 1)` или
-high watermark; отбираются записи с `group == groupId` (и `topic`, если задан); свёртка — `commits.rs`.
+**Чтение:** `n` — из метаданных `__consumer_offsets`, границы запрашиваются только у партиции группы; диапазон
+партиции — от `offsets_for_times(from − COMMIT_LOOKBACK)` до `offsets_for_times(to + 1)` или high watermark; отбираются
+записи с `group == groupId` (и `topic`, если задан); свёртка — `commits.rs`.
 Нет права на чтение `__consumer_offsets` → ошибка Kafka (`TOPIC_AUTHORIZATION_FAILED`) с подсказкой «Reading
-__consumer_offsets requires the Read permission on this internal topic».
+__consumer_offsets requires the Read permission on this internal topic» — и когда нет даже права Describe: тогда отказ
+приходит уже в метаданных топика и не превращается в «топика нет».
 
 ## 7. Лимиты, ошибки, журнал
 

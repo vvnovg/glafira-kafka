@@ -1625,6 +1625,34 @@ mod tests {
         );
     }
 
+    #[test]
+    fn planning_stopped_by_cancel_or_deadline_is_a_timeout() {
+        let e = scan_to_backend(crate::mcp::messages::planning_stopped(), false);
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("TIMEOUT", "The operation timed out")
+        );
+    }
+
+    #[test]
+    fn offsets_topic_without_describe_gets_the_read_hint() {
+        // Нет никаких ACL на `__consumer_offsets`: ошибка уже в метаданных, до чтения.
+        let denied = crate::mcp::messages::offsets_partition_count(
+            Some(rdkafka::types::RDKafkaErrorCode::TopicAuthorizationFailed),
+            0,
+        )
+        .unwrap_err();
+        let e = scan_to_backend(denied, true);
+        assert_eq!(e.code, "NOT_AUTHORIZED");
+        assert!(
+            e.message.ends_with(
+                ". Reading __consumer_offsets requires the Read permission on this internal topic"
+            ),
+            "{}",
+            e.message
+        );
+    }
+
     #[tokio::test]
     async fn proposals_need_llm_access() {
         let (_d, b) = backend();

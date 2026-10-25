@@ -14,20 +14,23 @@ use glafira_mcp::messages::{
 };
 use glafira_mcp::summary::{SummaryBuilder, SummaryRecord};
 use glafira_mcp::topn::TopN;
+use rdkafka::ClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaError;
 use rdkafka::message::{BorrowedMessage, Message, Timestamp};
+use rdkafka::types::RDKafkaErrorCode;
 
 use crate::browse::filter::{CompiledFilter, FilterSpec, HeaderMatch, TextMatch};
 use crate::browse::format::DataFormat;
 use crate::browse::plan::{EndTracker, PartitionBounds, PartitionPlan};
 use crate::browse::session::{
-    POLL_TIMEOUT, assign, create_consumer, load_bounds, offsets_for_timestamp, to_browsed,
+    POLL_TIMEOUT, assign, create_consumer, offsets_for_timestamp, partition_bounds, to_browsed,
+    topic_partitions,
 };
-use crate::browse::types::BrowsedMessage;
-use crate::error::{AppError, AppResult};
+use crate::browse::types::{BrowsedMessage, HeaderView};
+use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::context::CapturingContext;
-use crate::kafka::errors::op_error;
+use crate::kafka::errors::{fetch_metadata_fast_fail, item_error, op_error};
 use crate::kafka::offsets_log::{self, OFFSETS_TOPIC, OffsetsRecord};
 use crate::kafka::recovery::{PROBE_TIMEOUT, RecoveryMonitor, is_transient};
 use crate::secrets::SecretStore;
@@ -40,6 +43,50 @@ const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
 /// `client.id` для консьюмера MCP: свой у подключения (квоты и ACL организации) важнее.
 pub fn mcp_client_id(profile: &ConnectionProfile) -> Option<&'static str> {
     (!profile.extra_properties.contains_key("client.id")).then_some(MCP_CLIENT_ID)
+}
+
+/// Настройки консьюмера MCP поверх общих (спец. §6.2). `create_consumer` применяет их последними,
+/// после `extraProperties` подключения: `read_committed` они не ослабят, а свой `client.id`
+/// подключения сохраняется — `mcp_client_id` тогда ничего не ставит.
+fn mcp_tune(profile: &ConnectionProfile) -> impl FnOnce(&mut ClientConfig) {
+    let client_id = mcp_client_id(profile);
+    move |cfg| {
+        cfg.set("isolation.level", "read_committed");
+        if let Some(id) = client_id {
+            cfg.set("client.id", id);
+        }
+    }
+}
+
+/// Число партиций `__consumer_offsets` по его метаданным: ошибка топика и число партиций
+/// (спец. §6.3). Без права Describe брокер отвечает `TOPIC_AUTHORIZATION_FAILED` без партиций —
+/// это отказ в правах (вызывающий добавит подсказку про Read), а не «топика нет».
+pub(crate) fn offsets_partition_count(
+    error: Option<RDKafkaErrorCode>,
+    partitions: usize,
+) -> AppResult<i32> {
+    match error {
+        Some(code @ RDKafkaErrorCode::TopicAuthorizationFailed) => Err(item_error(
+            code,
+            "",
+            ltext!(
+                "errors.kafka.notAuthorized",
+                "Not authorized to perform the operation"
+            ),
+        )),
+        _ if partitions == 0 => Err(crate::kafka::admin::topic_not_found(OFFSETS_TOPIC)),
+        _ => Ok(partitions as i32),
+    }
+}
+
+/// Отмена или дедлайн до конца планирования: прочитать ещё ничего не успели, поэтому ошибка,
+/// а не частичный ответ (спец. §6.2).
+pub(crate) fn planning_stopped() -> AppError {
+    app_err!(
+        ErrorCode::Timeout,
+        "errors.kafka.timeout",
+        "The operation timed out"
+    )
 }
 
 /// План окна: начало — первый офсет не раньше `from`, конец — первый офсет позже `to` или high
@@ -142,7 +189,18 @@ fn raw_data(bytes: &[u8], format: DataFormat) -> RawData {
     }
 }
 
+/// Заголовки для крейта: не больше [`MAX_HEADERS`] и признак, что часть отброшена.
+fn raw_headers(headers: &[HeaderView]) -> (Vec<(String, Option<String>)>, bool) {
+    let kept = headers
+        .iter()
+        .take(MAX_HEADERS)
+        .map(|h| (h.name.clone(), h.value.clone()))
+        .collect();
+    (kept, headers.len() > MAX_HEADERS)
+}
+
 fn raw_message(msg: &BorrowedMessage<'_>, m: &BrowsedMessage) -> RawMessage {
+    let (headers, headers_truncated) = raw_headers(&m.headers);
     RawMessage {
         partition: m.partition,
         offset: m.offset,
@@ -156,13 +214,8 @@ fn raw_message(msg: &BorrowedMessage<'_>, m: &BrowsedMessage) -> RawMessage {
             .payload()
             .zip(m.value.as_ref())
             .map(|(v, d)| raw_data(v, d.format)),
-        headers: m
-            .headers
-            .iter()
-            .take(MAX_HEADERS)
-            .map(|h| (h.name.clone(), h.value.clone()))
-            .collect(),
-        headers_truncated: m.headers.len() > MAX_HEADERS,
+        headers,
+        headers_truncated,
     }
 }
 
@@ -171,6 +224,52 @@ struct Scan<'a> {
     consumer: BaseConsumer<CapturingContext>,
     ctx: &'a ScanCtx,
     timeout: Duration,
+}
+
+/// Ход чтения по партициям: что ещё читать (`EndTracker`) и следующий офсет каждой партиции.
+/// Законченная партиция — EOF или запись за концом диапазона — пройдена до `end`, даже если
+/// хвост диапазона не доставлен (маркеры транзакций при `read_committed`, пропуски после сжатия).
+struct Positions {
+    tracker: EndTracker,
+    ends: HashMap<i32, i64>,
+    next: HashMap<i32, i64>,
+}
+
+impl Positions {
+    fn new(plans: &[PartitionPlan]) -> Self {
+        Self {
+            tracker: EndTracker::new(plans),
+            ends: plans.iter().map(|p| (p.partition, p.end)).collect(),
+            next: plans.iter().map(|p| (p.partition, p.start)).collect(),
+        }
+    }
+
+    /// Запись партиции: true — она в диапазоне, её нужно просмотреть.
+    fn record(&mut self, partition: i32, offset: i64) -> bool {
+        let inside = self.tracker.observe(partition, offset);
+        if inside {
+            self.next.insert(partition, offset + 1);
+        } else if self.ends.get(&partition).is_some_and(|end| offset >= *end) {
+            self.finish(partition);
+        }
+        inside
+    }
+
+    /// Конец партиции (EOF).
+    fn eof(&mut self, partition: i32) {
+        self.tracker.mark_done(partition);
+        self.finish(partition);
+    }
+
+    fn finish(&mut self, partition: i32) {
+        if let Some(end) = self.ends.get(&partition) {
+            self.next.insert(partition, *end);
+        }
+    }
+
+    fn all_done(&self) -> bool {
+        self.tracker.all_done()
+    }
 }
 
 /// Итог цикла чтения: просмотрено, где остановились и почему.
@@ -204,12 +303,7 @@ impl<'a> Scan<'a> {
         ctx: &'a ScanCtx,
     ) -> AppResult<Self> {
         let capturing = CapturingContext::default();
-        let client_id = mcp_client_id(profile);
-        let consumer = create_consumer(profile, secrets, &capturing, "mcp", |cfg| {
-            if let Some(id) = client_id {
-                cfg.set("client.id", id);
-            }
-        })?;
+        let consumer = create_consumer(profile, secrets, &capturing, "mcp", mcp_tune(profile))?;
         Ok(Self {
             consumer,
             ctx,
@@ -222,13 +316,40 @@ impl<'a> Scan<'a> {
         move |e| op_error(&self.consumer, started, e)
     }
 
+    /// Ожидание одного запроса планирования: таймаут запроса подключения, но не дольше остатка
+    /// бюджета. Отменённый или просроченный вызов дальше не планируется (спец. §6.2): консьюмер
+    /// закрывается вместе с `Scan`, когда ошибка выходит из `scan`.
+    fn wait(&self) -> AppResult<Duration> {
+        let left = self.ctx.deadline.saturating_duration_since(Instant::now());
+        if self.ctx.cancelled() || left.is_zero() {
+            return Err(planning_stopped());
+        }
+        Ok(self.timeout.min(left))
+    }
+
     fn bounds(&self, topic: &str, partitions: Option<&[i32]>) -> AppResult<Vec<PartitionBounds>> {
-        load_bounds(
+        let selected = topic_partitions(&self.consumer, topic, partitions, self.wait()?)?;
+        self.partition_bounds(topic, &selected)
+    }
+
+    fn partition_bounds(&self, topic: &str, selected: &[i32]) -> AppResult<Vec<PartitionBounds>> {
+        partition_bounds(
             &self.consumer,
             topic,
-            partitions,
-            self.timeout,
+            selected,
+            self.wait()?,
             &self.kerr(Instant::now()),
+        )
+    }
+
+    /// Число партиций `__consumer_offsets` по метаданным — с ошибкой топика, которую
+    /// `topic_partitions` не различает (нет права Describe выглядит как «топика нет»).
+    fn offsets_partitions(&self) -> AppResult<i32> {
+        let md = fetch_metadata_fast_fail(&self.consumer, Some(OFFSETS_TOPIC), self.wait()?)?;
+        let topic = md.topics().iter().find(|t| t.name() == OFFSETS_TOPIC);
+        offsets_partition_count(
+            topic.and_then(|t| t.error()).map(RDKafkaErrorCode::from),
+            topic.map_or(0, |t| t.partitions().len()),
         )
     }
 
@@ -243,7 +364,7 @@ impl<'a> Scan<'a> {
             topic,
             bounds,
             ts,
-            self.timeout,
+            self.wait()?,
             &self.kerr(Instant::now()),
         )
     }
@@ -271,13 +392,12 @@ impl<'a> Scan<'a> {
     ) -> AppResult<Ran> {
         assign(&self.consumer, topic, plans, false).map_err(self.kerr(Instant::now()))?;
         let total: u64 = plans.iter().map(|p| (p.end - p.start).max(0) as u64).sum();
-        let mut tracker = EndTracker::new(plans);
-        let mut next: HashMap<i32, i64> = plans.iter().map(|p| (p.partition, p.start)).collect();
+        let mut pos = Positions::new(plans);
         let mut recovery = RecoveryMonitor::default();
         let mut scanned = 0u64;
         let mut last_progress = Instant::now();
         let stopped_by = loop {
-            if tracker.all_done() {
+            if pos.all_done() {
                 break None;
             }
             // Отменённый вызов LLM уже не ждёт: собранное уходит только в журнал.
@@ -303,7 +423,7 @@ impl<'a> Scan<'a> {
                 None => {}
                 Some(Err(KafkaError::PartitionEOF(p))) => {
                     recovery.on_progress();
-                    tracker.mark_done(p);
+                    pos.eof(p);
                 }
                 Some(Err(e)) if is_transient(&e) => {
                     tracing::warn!(
@@ -314,9 +434,8 @@ impl<'a> Scan<'a> {
                 Some(Err(e)) => return Err(self.kerr(polled_at)(e)),
                 Some(Ok(msg)) => {
                     recovery.on_progress();
-                    if tracker.observe(msg.partition(), msg.offset()) {
+                    if pos.record(msg.partition(), msg.offset()) {
                         scanned += 1;
-                        next.insert(msg.partition(), msg.offset() + 1);
                         visit(&msg);
                     }
                 }
@@ -329,7 +448,7 @@ impl<'a> Scan<'a> {
         (self.ctx.progress)(scanned, total);
         Ok(Ran {
             scanned,
-            next,
+            next: pos.next,
             stopped_by,
         })
     }
@@ -452,12 +571,9 @@ pub fn scan(
             ..
         } => {
             let s = Scan::open(profile, secrets, ctx)?;
-            let all = s.bounds(OFFSETS_TOPIC, None)?;
-            let partition = offsets_log::partition_for(&group_id, all.len() as i32);
-            let bounds: Vec<PartitionBounds> = all
-                .into_iter()
-                .filter(|b| b.partition == partition)
-                .collect();
+            // Границы — только у партиции группы: сбой чужой партиции не мешает чтению.
+            let partition = offsets_log::partition_for(&group_id, s.offsets_partitions()?);
+            let bounds = s.partition_bounds(OFFSETS_TOPIC, &[partition])?;
             let lookback = (from_ms - COMMIT_LOOKBACK_MS).max(0);
             let starts = s.offsets_at(OFFSETS_TOPIC, &bounds, lookback)?;
             let ends = s.offsets_at(OFFSETS_TOPIC, &bounds, to_ms.saturating_add(1))?;
@@ -513,7 +629,13 @@ pub fn local_utc_offset_minutes() -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use std::io::{Read, Write};
+    use std::net::{SocketAddr, TcpListener};
+    use std::sync::atomic::Ordering;
+
     use super::*;
+    use crate::browse::session::consumer_config;
+    use crate::secrets::MemoryStore;
     use crate::storage::connections::sample_profile;
 
     fn b(partition: i32, low: i64, high: i64) -> PartitionBounds {
@@ -606,5 +728,249 @@ mod tests {
         assert_eq!((spec.from_timestamp, spec.to_timestamp), (None, None));
         assert_eq!(mask_format(DataFormat::Auto), mm::DataFormat::String);
         assert_eq!(data_format(FormatArg::Hex), DataFormat::Hex);
+    }
+
+    #[test]
+    fn mcp_consumer_reads_committed_even_if_extra_properties_say_otherwise() {
+        let mut p = sample_profile("a");
+        p.extra_properties
+            .insert("isolation.level".into(), "read_uncommitted".into());
+        let cfg = consumer_config(&p, &MemoryStore::default(), "mcp", mcp_tune(&p)).unwrap();
+        assert_eq!(cfg.get("isolation.level"), Some("read_committed"));
+    }
+
+    #[test]
+    fn mcp_consumer_client_id_is_the_connection_one_or_its_own() {
+        let mut p = sample_profile("a");
+        let secrets = MemoryStore::default();
+        let cfg = consumer_config(&p, &secrets, "mcp", mcp_tune(&p)).unwrap();
+        assert_eq!(cfg.get("client.id"), Some(MCP_CLIENT_ID));
+        let prefix = format!("{}-mcp-", crate::product::KAFKA_CLIENT_PREFIX);
+        assert!(cfg.get("group.id").is_some_and(|g| g.starts_with(&prefix)));
+        p.extra_properties
+            .insert("client.id".into(), "corp-approved".into());
+        let cfg = consumer_config(&p, &secrets, "mcp", mcp_tune(&p)).unwrap();
+        assert_eq!(cfg.get("client.id"), Some("corp-approved"));
+    }
+
+    fn plan(partition: i32, start: i64, end: i64) -> PartitionPlan {
+        PartitionPlan {
+            partition,
+            start,
+            end,
+        }
+    }
+
+    #[test]
+    fn scanned_to_is_reported_only_for_unfinished_partitions() {
+        let plans = [
+            plan(0, 0, 10),
+            plan(1, 0, 10),
+            plan(2, 5, 5),
+            plan(3, 0, 10),
+        ];
+        let mut pos = Positions::new(&plans);
+        assert!(pos.record(0, 3));
+        // Хвост партиции 1 — маркер транзакции: последняя доставленная запись 8, затем EOF.
+        assert!(pos.record(1, 8));
+        pos.eof(1);
+        // В партиции 3 после 4 — пропуск после сжатия: следующая запись уже за концом диапазона.
+        assert!(pos.record(3, 4));
+        assert!(!pos.record(3, 12));
+        assert!(!pos.all_done(), "партиция 0 не дочитана");
+        let ran = Ran {
+            scanned: 3,
+            next: pos.next,
+            stopped_by: Some(StopReason::TimeBudget),
+        };
+        let scanned_to: Vec<(i32, Option<i64>)> = ran
+            .ranges(&plans)
+            .iter()
+            .map(|r| (r.partition, r.scanned_to))
+            .collect();
+        assert_eq!(
+            scanned_to,
+            [(0, Some(4)), (1, None), (2, None), (3, None)],
+            "законченная и пустая партиции пройдены до конца"
+        );
+        let ran = Ran {
+            stopped_by: None,
+            ..ran
+        };
+        assert!(
+            ran.ranges(&plans).iter().all(|r| r.scanned_to.is_none()),
+            "без остановки по бюджету `scannedTo` нет"
+        );
+    }
+
+    #[test]
+    fn headers_are_capped_at_max_headers() {
+        let headers: Vec<HeaderView> = (0..=MAX_HEADERS)
+            .map(|i| HeaderView {
+                name: format!("h{i}"),
+                value: Some(i.to_string()),
+            })
+            .collect();
+        let (kept, truncated) = raw_headers(&headers);
+        assert_eq!((kept.len(), truncated), (MAX_HEADERS, true));
+        assert_eq!(kept[MAX_HEADERS - 1].0, format!("h{}", MAX_HEADERS - 1));
+        let (kept, truncated) = raw_headers(&headers[..MAX_HEADERS]);
+        assert_eq!((kept.len(), truncated), (MAX_HEADERS, false));
+    }
+
+    #[test]
+    fn offsets_topic_without_describe_is_an_authorization_error() {
+        // Без права Describe брокер отвечает TOPIC_AUTHORIZATION_FAILED без партиций.
+        let e = offsets_partition_count(Some(RDKafkaErrorCode::TopicAuthorizationFailed), 0)
+            .unwrap_err();
+        assert_eq!(e.code, ErrorCode::NotAuthorized);
+        assert_eq!(offsets_partition_count(None, 50).ok(), Some(50));
+        assert_eq!(
+            offsets_partition_count(None, 0).map_err(|e| e.code),
+            Err(ErrorCode::NotFound)
+        );
+    }
+
+    /// Брокер, который отвечает только на ApiVersions (соединение готово), а метаданные и
+    /// ListOffsets оставляет без ответа: каждый запрос планирования ждёт свой таймаут целиком.
+    /// Недоступный адрес для этого не годится: `fetch_metadata` без готового брокера сразу
+    /// после первой порции ожидания отвечает «Broker transport failure».
+    fn stalled_broker() -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        std::thread::spawn(move || {
+            for conn in listener.incoming() {
+                let Ok(mut conn) = conn else { return };
+                std::thread::spawn(move || {
+                    let mut size = [0u8; 4];
+                    while conn.read_exact(&mut size).is_ok() {
+                        let mut req = vec![0u8; u32::from_be_bytes(size) as usize];
+                        if conn.read_exact(&mut req).is_err() {
+                            return;
+                        }
+                        // Заголовок запроса: api_key (18 — ApiVersions), версия, correlation_id.
+                        if req.len() >= 8 && req[..2] == [0, 18] {
+                            let _ = conn.write_all(&api_versions_reply(&req[4..8]));
+                        }
+                    }
+                });
+            }
+        });
+        addr
+    }
+
+    /// Ответ ApiVersions v3 (заголовок ответа v0): брокер знает только ApiVersions и Metadata.
+    fn api_versions_reply(correlation_id: &[u8]) -> Vec<u8> {
+        let mut body = correlation_id.to_vec();
+        body.extend(0i16.to_be_bytes()); // error_code
+        body.push(3); // compact array: 2 элемента + 1
+        for (api_key, max_version) in [(18i16, 3i16), (3, 12)] {
+            body.extend(api_key.to_be_bytes());
+            body.extend(0i16.to_be_bytes());
+            body.extend(max_version.to_be_bytes());
+            body.push(0); // tagged fields
+        }
+        body.extend(0i32.to_be_bytes()); // throttle_time_ms
+        body.push(0); // tagged fields
+        let mut out = (body.len() as u32).to_be_bytes().to_vec();
+        out.extend(body);
+        out
+    }
+
+    fn profile_at(broker: SocketAddr, request_timeout_ms: u64) -> ConnectionProfile {
+        let mut p = sample_profile("a");
+        p.bootstrap_servers = broker.to_string();
+        p.request_timeout_ms = request_timeout_ms;
+        p
+    }
+
+    fn read(range: Range) -> MessagesOp {
+        MessagesOp::Read {
+            connection_id: "a".into(),
+            topic: "orders".into(),
+            range,
+            filter: MessageFilter::default(),
+            key_format: FormatArg::Auto,
+            value_format: FormatArg::Auto,
+            limit: 50,
+            after: None,
+        }
+    }
+
+    fn window() -> Range {
+        Range::Window {
+            from_ms: 0,
+            to_ms: 1_000,
+            partitions: None,
+        }
+    }
+
+    fn commits() -> MessagesOp {
+        MessagesOp::CommitHistory {
+            connection_id: "a".into(),
+            group_id: "g".into(),
+            from_ms: 0,
+            to_ms: 1_000,
+            topic: None,
+        }
+    }
+
+    #[test]
+    fn planning_stops_on_cancel_and_expired_deadline() {
+        let p = profile_at(stalled_broker(), 5_000);
+        let expired = ScanCtx::new(Duration::ZERO);
+        let cancelled = ScanCtx::new(Duration::from_secs(40));
+        cancelled.cancel.store(true, Ordering::Relaxed);
+        let summarize = MessagesOp::Summarize {
+            connection_id: "a".into(),
+            topic: "orders".into(),
+            from_ms: 0,
+            to_ms: 1_000,
+            partitions: None,
+            filter: MessageFilter::default(),
+            key_format: FormatArg::Auto,
+            value_format: FormatArg::Auto,
+            bucket_ms: 60_000,
+            top_keys: 10,
+        };
+        let offsets = Range::Offsets {
+            partition: 0,
+            start: 0,
+            end: None,
+        };
+        let cases = [
+            ("read window, expired", read(window()), &expired),
+            ("read offsets, cancelled", read(offsets), &cancelled),
+            ("summarize, expired", summarize, &expired),
+            ("commits, expired", commits(), &expired),
+            ("commits, cancelled", commits(), &cancelled),
+        ];
+        for (name, op, ctx) in cases {
+            let started = Instant::now();
+            let e = scan(&p, &MemoryStore::default(), op, ctx).expect_err(name);
+            let took = started.elapsed();
+            assert!(took < Duration::from_secs(3), "{name}: {took:?}");
+            assert_eq!(
+                (e.code, e.key.as_str()),
+                (ErrorCode::Timeout, "errors.kafka.timeout"),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    fn planning_waits_no_longer_than_the_budget() {
+        let p = profile_at(stalled_broker(), 30_000);
+        let started = Instant::now();
+        let e = scan(
+            &p,
+            &MemoryStore::default(),
+            read(window()),
+            &ScanCtx::new(Duration::from_secs(1)),
+        )
+        .expect_err("брокер не отвечает на метаданные");
+        let took = started.elapsed();
+        assert!(took < Duration::from_secs(8), "{took:?}");
+        assert_eq!(e.code, ErrorCode::Timeout);
     }
 }

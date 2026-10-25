@@ -20,8 +20,9 @@ pub const MAX_MASK_FIELD_CHARS: usize = 64;
 /// Печатный фрагмент двоичных данных, к которому применяются шаблоны.
 pub const MIN_PRINTABLE_RUN: usize = 6;
 
-/// Стандартный список (`llmMaskFields = None`): обновляется вместе с Glafira.
-pub const STANDARD_FIELDS: [&str; 21] = [
+/// Стандартный список (`llmMaskFields = None`): обновляется вместе с Glafira. Форма показывает тот же список
+/// (`STANDARD_MASK_FIELDS` во фронтенде), совпадение проверяет тест приложения.
+pub const STANDARD_FIELDS: [&str; 22] = [
     "*password*",
     "passwd",
     "pwd",
@@ -43,6 +44,7 @@ pub const STANDARD_FIELDS: [&str; 21] = [
     "inn",
     "snils",
     "*birth*",
+    "proxyauthorization",
 ];
 
 /// Формат текста в ответе — определённый приложением (`auto` уже разрешён).
@@ -1019,6 +1021,29 @@ mod tests {
                 1,
             )],
         );
+    }
+
+    #[test]
+    fn proxy_authorization_is_in_the_standard_list() {
+        let m = standard();
+        texts(
+            &m,
+            &[(
+                "Proxy-Authorization: Basic dXNlcjpwNHNz\nok",
+                "Proxy-Authorization: ***\nok",
+                1,
+            )],
+        );
+        let (out, n) = json(
+            &m,
+            r#"{"Proxy-Authorization":"Basic dXNlcjpwNHNz","via":"proxy"}"#,
+        );
+        assert_eq!(
+            (out.as_str(), n),
+            (r#"{"Proxy-Authorization":"***","via":"proxy"}"#, 1)
+        );
+        // Отдельное имя, а не `*authorization`: другие имена с этим окончанием в список не попадают.
+        assert!(!m.field_matches("preauthorization"));
     }
 
     #[test]

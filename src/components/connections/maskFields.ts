@@ -1,4 +1,4 @@
-/** Стандартный список полей маскирования — как `glafira_mcp::mask::STANDARD_FIELDS` (спец. G4 §5). */
+/** Стандартный список полей маскирования — как `glafira_mcp::mask::STANDARD_FIELDS` (спец. G4 §5); совпадение проверяет тест `standard_mask_fields_match_the_form` в src-tauri. */
 export const STANDARD_MASK_FIELDS = [
   "*password*",
   "passwd",
@@ -21,4 +21,5 @@ export const STANDARD_MASK_FIELDS = [
   "inn",
   "snils",
   "*birth*",
+  "proxyauthorization",
 ];

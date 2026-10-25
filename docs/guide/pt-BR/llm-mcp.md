@@ -1,6 +1,6 @@
 # Assistentes LLM (MCP)
 
-O Glafira pode funcionar como gateway para um assistente LLM: Claude Desktop, Claude Code, Cursor ou outro cliente com suporte a MCP (Model Context Protocol). O assistente lê os metadados dos clusters que você abrir para ele e ajuda a encontrar problemas: partições sub-replicadas, lag, rebalanceamentos constantes, configurações inadequadas. Pelo Glafira ele não pode alterar nada em um cluster: as alterações você mesmo faz na interface.
+O Glafira pode funcionar como gateway para um assistente LLM: Claude Desktop, Claude Code, Cursor ou outro cliente com suporte a MCP (Model Context Protocol). O assistente lê os metadados dos clusters que você abrir para ele (e as mensagens, onde você permitir) e ajuda a encontrar problemas: partições sub-replicadas, lag, rebalanceamentos constantes, configurações inadequadas. Pelo Glafira ele não pode alterar nada em um cluster: as alterações você mesmo faz na interface.
 
 ## Como funciona {#how-it-works}
 
@@ -77,7 +77,7 @@ Enquanto um cliente está conectado, na parte inferior do painel esquerdo aparec
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]] encerra as sessões do cliente, e na próxima conexão ele pede aprovação de novo.
 - Um nível alterado em [[ui:connections.form.llmAccess]] vale imediatamente, sem reconectar.
 - [[ui:settings.mcp.audit.title]] — cada solicitação: data/hora, cliente, ferramenta, conexão, resultado. O conteúdo das respostas não é gravado. [[ui:settings.mcp.audit.reveal]] abre o arquivo `mcp-audit.jsonl`.
-- Nas leituras de mensagens, o log mostra também o tópico ou o grupo, quantos registros foram retornados dos examinados e quantos valores foram mascarados. Nas chamadas bem-sucedidas de `read_messages` e `summarize_messages`, [[ui:settings.mcp.audit.openInBrowse]] preenche o formulário da aba [[ui:topics.details.tabMessages]] do tópico com os parâmetros da chamada; clique em [[ui:browse.panel.read]] para ler as mensagens novamente, sem mascaramento, e compará-las com o que o assistente recebeu. Se os filtros ou o limite não puderam ser transferidos com exatidão, o formulário avisa; se o botão estiver desativado, aponte para ele para ver o motivo.
+- Nas leituras de mensagens, o log mostra também o tópico ou o grupo, quantos itens foram retornados, quantos registros foram verificados e quantos valores foram mascarados. Os itens são mensagens, intervalos do resumo em `summarize_messages` ou séries de commits (commits consecutivos do mesmo offset) em `get_group_commit_history`. Nas chamadas bem-sucedidas de `read_messages` e `summarize_messages`, [[ui:settings.mcp.audit.openInBrowse]] preenche o formulário da aba [[ui:topics.details.tabMessages]] do tópico com os parâmetros da chamada; clique em [[ui:browse.panel.read]] para ler as mensagens novamente, sem mascaramento, e compará-las com o que o assistente recebeu. Se os filtros ou o limite não puderam ser transferidos com exatidão, o formulário avisa; se o botão estiver desativado, aponte para ele para ver o motivo.
 
 Para desativar o MCP por completo, desmarque [[ui:settings.mcp.enable]]: os clientes são desconectados.
 

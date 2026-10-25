@@ -1,6 +1,6 @@
 # LLM 어시스턴트(MCP)
 
-Glafira는 LLM 어시스턴트의 게이트웨이 역할을 할 수 있습니다. 대상은 Claude Desktop, Claude Code, Cursor 또는 MCP(Model Context Protocol)를 지원하는 다른 클라이언트입니다. 어시스턴트는 열어 준 클러스터의 메타데이터를 읽고 문제를 찾도록 돕습니다. 예를 들어 복제 부족 파티션, 랙, 계속되는 리밸런싱, 부적절한 설정이 있습니다. Glafira를 통해서는 클러스터에서 아무것도 변경할 수 없습니다. 변경은 직접 인터페이스에서 합니다.
+Glafira는 LLM 어시스턴트의 게이트웨이 역할을 할 수 있습니다. 대상은 Claude Desktop, Claude Code, Cursor 또는 MCP(Model Context Protocol)를 지원하는 다른 클라이언트입니다. 어시스턴트는 열어 준 클러스터의 메타데이터를 읽고, 허용한 연결에서는 메시지도 읽으며, 문제를 찾도록 돕습니다. 예를 들어 복제 부족 파티션, 랙, 계속되는 리밸런싱, 부적절한 설정이 있습니다. Glafira를 통해서는 클러스터에서 아무것도 변경할 수 없습니다. 변경은 직접 인터페이스에서 합니다.
 
 ## 작동 방식 {#how-it-works}
 
@@ -77,7 +77,7 @@ Glafira가 실행 중이 아니면 클라이언트가 직접 실행하고 최대
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]]는 클라이언트의 세션을 닫으며, 클라이언트는 다음에 연결할 때 다시 승인을 요청합니다.
 - [[ui:connections.form.llmAccess]] 항목에서 수준을 바꾸면 바로 적용되며 다시 연결할 필요가 없습니다.
 - [[ui:settings.mcp.audit.title]] — 모든 요청: 시간, 클라이언트, 도구, 연결, 결과. 응답 내용은 기록되지 않습니다. [[ui:settings.mcp.audit.reveal]]를 클릭하면 `mcp-audit.jsonl` 파일이 열립니다.
-- 메시지 읽기의 경우 로그에는 토픽 또는 그룹, 스캔한 레코드 중 반환한 개수, 마스킹한 값의 개수도 표시됩니다. 성공한 `read_messages` 및 `summarize_messages` 호출에서 [[ui:settings.mcp.audit.openInBrowse]] 버튼을 클릭하면 토픽의 [[ui:topics.details.tabMessages]] 탭에 있는 양식이 호출의 매개변수로 채워집니다. [[ui:browse.panel.read]] 버튼을 클릭하면 메시지를 마스킹 없이 다시 읽어 어시스턴트가 받은 내용과 비교할 수 있습니다. 필터나 제한을 정확히 옮기지 못한 경우 양식에 표시되며, 버튼이 비활성화되어 있으면 버튼에 포인터를 올려 이유를 볼 수 있습니다.
+- 메시지 읽기의 경우 로그에는 토픽 또는 그룹, 반환한 항목 수, 스캔한 레코드 수, 마스킹한 값의 개수도 표시됩니다. 반환하는 항목은 메시지이며, `summarize_messages`에서는 개요의 구간, `get_group_commit_history`에서는 커밋 묶음(같은 오프셋에 대한 연속 커밋)입니다. 성공한 `read_messages` 및 `summarize_messages` 호출에서 [[ui:settings.mcp.audit.openInBrowse]] 버튼을 클릭하면 토픽의 [[ui:topics.details.tabMessages]] 탭에 있는 양식이 호출의 매개변수로 채워집니다. [[ui:browse.panel.read]] 버튼을 클릭하면 메시지를 마스킹 없이 다시 읽어 어시스턴트가 받은 내용과 비교할 수 있습니다. 필터나 제한을 정확히 옮기지 못한 경우 양식에 표시되며, 버튼이 비활성화되어 있으면 버튼에 포인터를 올려 이유를 볼 수 있습니다.
 
 MCP를 완전히 끄려면 [[ui:settings.mcp.enable]] 확인란의 선택을 해제하세요. 클라이언트의 연결이 끊어집니다.
 

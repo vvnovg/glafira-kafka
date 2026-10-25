@@ -1,6 +1,6 @@
 # LLM assistants (MCP)
 
-Glafira can act as a gateway for an LLM assistant: Claude Desktop, Claude Code, Cursor or another client that supports MCP (Model Context Protocol). The assistant reads the metadata of the clusters you open for it and helps you find problems: under-replicated partitions, lag, constant rebalances, poor settings. It cannot change anything in a cluster through Glafira: you make changes yourself in the interface.
+Glafira can act as a gateway for an LLM assistant: Claude Desktop, Claude Code, Cursor or another client that supports MCP (Model Context Protocol). The assistant reads the metadata of the clusters you open for it (and messages, where you allow it) and helps you find problems: under-replicated partitions, lag, constant rebalances, poor settings. It cannot change anything in a cluster through Glafira: you make changes yourself in the interface.
 
 ## How it works {#how-it-works}
 
@@ -77,7 +77,7 @@ While a client is connected, an `LLM` indicator with the client name is shown at
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]] closes the client's sessions, and it asks for approval again the next time.
 - A changed level in [[ui:connections.form.llmAccess]] takes effect at once, without reconnecting.
 - [[ui:settings.mcp.audit.title]] — every request: time, client, tool, connection, result. Response contents are not recorded. [[ui:settings.mcp.audit.reveal]] opens the `mcp-audit.jsonl` file.
-- For message reads, the log also shows the topic or group, how many records were returned of those scanned and how many values were masked. For successful `read_messages` and `summarize_messages` calls, [[ui:settings.mcp.audit.openInBrowse]] fills in the form on the topic's [[ui:topics.details.tabMessages]] tab with the call's parameters; click [[ui:browse.panel.read]] to read the messages again, without masking, and compare them with what the assistant received. If the filters or the limit could not be carried over exactly, the form says so; if the button is disabled, point at it to see the reason.
+- For message reads, the log also shows the topic or group, how many items were returned, how many records were scanned and how many values were masked. The items are messages, summary buckets for `summarize_messages` or commit runs (consecutive commits of one offset) for `get_group_commit_history`. For successful `read_messages` and `summarize_messages` calls, [[ui:settings.mcp.audit.openInBrowse]] fills in the form on the topic's [[ui:topics.details.tabMessages]] tab with the call's parameters; click [[ui:browse.panel.read]] to read the messages again, without masking, and compare them with what the assistant received. If the filters or the limit could not be carried over exactly, the form says so; if the button is disabled, point at it to see the reason.
 
 To turn MCP off completely, clear [[ui:settings.mcp.enable]]: clients are disconnected.
 

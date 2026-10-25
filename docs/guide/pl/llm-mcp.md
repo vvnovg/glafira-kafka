@@ -1,6 +1,6 @@
 # Asystenci LLM (MCP)
 
-Glafira może pełnić rolę bramki dla asystenta LLM: Claude Desktop, Claude Code, Cursor lub innego klienta obsługującego MCP (Model Context Protocol). Asystent odczytuje metadane klastrów, które zostały dla niego otwarte, i pomaga znaleźć problemy: niedoreplikowane partycje, lag, ciągłe rebalansy, niefortunne ustawienia. Przez Glafira nie może niczego zmienić w klastrze: zmiany wprowadza się samodzielnie w interfejsie.
+Glafira może pełnić rolę bramki dla asystenta LLM: Claude Desktop, Claude Code, Cursor lub innego klienta obsługującego MCP (Model Context Protocol). Asystent odczytuje metadane klastrów, które zostały dla niego otwarte (a tam, gdzie jest to dozwolone, także wiadomości), i pomaga znaleźć problemy: niedoreplikowane partycje, lag, ciągłe rebalansy, niefortunne ustawienia. Przez Glafira nie może niczego zmienić w klastrze: zmiany wprowadza się samodzielnie w interfejsie.
 
 ## Jak to działa {#how-it-works}
 
@@ -77,7 +77,7 @@ Dopóki klient jest połączony, na dole lewego panelu widać wskaźnik `LLM` z 
 - [[ui:settings.mcp.clients]]: przycisk [[ui:settings.mcp.revoke]] zamyka sesje klienta, a przy następnym połączeniu znów poprosi on o zatwierdzenie.
 - Zmiana poziomu w [[ui:connections.form.llmAccess]] działa od razu, ponowne łączenie nie jest potrzebne.
 - [[ui:settings.mcp.audit.title]] — każde żądanie: czas, klient, narzędzie, połączenie, wynik. Treść odpowiedzi nie jest zapisywana. Przycisk [[ui:settings.mcp.audit.reveal]] otwiera plik `mcp-audit.jsonl`.
-- Przy odczycie wiadomości log pokazuje też topik lub grupę, ile rekordów zwrócono z przejrzanych i ile wartości zamaskowano. Przy udanych wywołaniach `read_messages` i `summarize_messages` przycisk [[ui:settings.mcp.audit.openInBrowse]] wypełnia formularz na karcie [[ui:topics.details.tabMessages]] topiku parametrami wywołania; po kliknięciu przycisku [[ui:browse.panel.read]] wiadomości są odczytywane ponownie, bez maskowania, i można je porównać z tym, co otrzymał asystent. Jeśli filtrów lub limitu nie udało się przenieść dokładnie, formularz to sygnalizuje; gdy przycisk jest nieaktywny, po najechaniu na niego widać przyczynę.
+- Przy odczycie wiadomości log pokazuje też topik lub grupę, ile elementów zwrócono, ile rekordów przeskanowano i ile wartości zamaskowano. Elementy to wiadomości, przy `summarize_messages` przedziały przeglądu, a przy `get_group_commit_history` serie zatwierdzeń (kolejne zatwierdzenia tego samego offsetu). Przy udanych wywołaniach `read_messages` i `summarize_messages` przycisk [[ui:settings.mcp.audit.openInBrowse]] wypełnia formularz na karcie [[ui:topics.details.tabMessages]] topiku parametrami wywołania; po kliknięciu przycisku [[ui:browse.panel.read]] wiadomości są odczytywane ponownie, bez maskowania, i można je porównać z tym, co otrzymał asystent. Jeśli filtrów lub limitu nie udało się przenieść dokładnie, formularz to sygnalizuje; gdy przycisk jest nieaktywny, po najechaniu na niego widać przyczynę.
 
 Aby całkowicie wyłączyć MCP, należy odznaczyć opcję [[ui:settings.mcp.enable]]: klienci zostaną rozłączeni.
 

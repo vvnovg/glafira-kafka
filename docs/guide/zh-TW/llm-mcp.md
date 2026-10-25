@@ -1,6 +1,6 @@
 # LLM 助理（MCP）
 
-Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor，或其他支援 MCP（Model Context Protocol）的用戶端。助理會讀取你為其開放的叢集的中繼資料，協助你找出問題：複本不足的分區、消費延遲、持續發生的重新平衡、不理想的設定。助理無法透過 Glafira 變更叢集中的任何內容：變更由你自己在介面中進行。
+Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor，或其他支援 MCP（Model Context Protocol）的用戶端。助理會讀取你為其開放的叢集的中繼資料（在你允許的連線中還會讀取訊息），協助你找出問題：複本不足的分區、消費延遲、持續發生的重新平衡、不理想的設定。助理無法透過 Glafira 變更叢集中的任何內容：變更由你自己在介面中進行。
 
 ## 運作方式 {#how-it-works}
 
@@ -77,7 +77,7 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 - [[ui:settings.mcp.clients]]：[[ui:settings.mcp.revoke]]會關閉該用戶端的工作階段，該用戶端下次連線時會再次要求核准。
 - 在「[[ui:connections.form.llmAccess]]」中變更層級會立即生效，不需要重新連線。
 - [[ui:settings.mcp.audit.title]]：記錄每一次請求的時間、用戶端、工具、連線和結果。回應的內容不會被記錄。[[ui:settings.mcp.audit.reveal]]會開啟檔案 `mcp-audit.jsonl`。
-- 對於讀取訊息的呼叫，日誌還會顯示主題或群組、在掃描的記錄中傳回了多少則，以及遮罩了多少個值。對於成功的 `read_messages` 和 `summarize_messages` 呼叫，按一下[[ui:settings.mcp.audit.openInBrowse]]會以呼叫的參數填寫該主題[[ui:topics.details.tabMessages]]分頁中的表單；再按[[ui:browse.panel.read]]即可重新讀取訊息（不做遮罩），並與助理收到的內容比較。如果篩選條件或上限無法準確轉換，表單會註明；如果按鈕已停用，將指標停在按鈕上即可查看原因。
+- 對於讀取訊息的呼叫，日誌還會顯示主題或群組、傳回了多少項、掃描了多少筆記錄，以及遮罩了多少個值。傳回的是訊息；`summarize_messages` 傳回概覽的時間區段，`get_group_commit_history` 傳回提交序列（同一偏移量的連續提交）。對於成功的 `read_messages` 和 `summarize_messages` 呼叫，按一下[[ui:settings.mcp.audit.openInBrowse]]會以呼叫的參數填寫該主題[[ui:topics.details.tabMessages]]分頁中的表單；再按[[ui:browse.panel.read]]即可重新讀取訊息（不做遮罩），並與助理收到的內容比較。如果篩選條件或上限無法準確轉換，表單會註明；如果按鈕已停用，將指標停在按鈕上即可查看原因。
 
 若要完全關閉 MCP，請取消勾選[[ui:settings.mcp.enable]]：用戶端會被中斷連線。
 

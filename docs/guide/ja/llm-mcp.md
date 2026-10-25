@@ -1,6 +1,6 @@
 # LLMアシスタント（MCP）
 
-Glafiraは、LLMアシスタントのゲートウェイとして動作できます。対象は、Claude Desktop、Claude Code、Cursor、およびMCP（Model Context Protocol）に対応するその他のクライアントです。アシスタントは、開放した接続のクラスターのメタデータを読み取り、問題の発見を手伝います。たとえば、レプリカ不足のパーティション、ラグ、頻発するリバランス、不適切な設定などです。Glafira経由でクラスターの内容を変更することはできません。変更はご自身でインターフェイスから行います。
+Glafiraは、LLMアシスタントのゲートウェイとして動作できます。対象は、Claude Desktop、Claude Code、Cursor、およびMCP（Model Context Protocol）に対応するその他のクライアントです。アシスタントは、開放した接続のクラスターのメタデータ（許可した接続ではメッセージも）を読み取り、問題の発見を手伝います。たとえば、レプリカ不足のパーティション、ラグ、頻発するリバランス、不適切な設定などです。Glafira経由でクラスターの内容を変更することはできません。変更はご自身でインターフェイスから行います。
 
 ## 仕組み {#how-it-works}
 
@@ -77,7 +77,7 @@ Glafiraが起動していない場合は、クライアントがGlafiraを起動
 - [[ui:settings.mcp.clients]]：[[ui:settings.mcp.revoke]]はそのクライアントのセッションを閉じ、次回の接続時には再び承認が求められます。
 - 「[[ui:connections.form.llmAccess]]」でレベルを変更すると、すぐに反映されます。再接続は不要です。
 - [[ui:settings.mcp.audit.title]]：すべてのリクエストについて、時刻、クライアント、ツール、接続、結果を記録します。レスポンスの内容は記録されません。[[ui:settings.mcp.audit.reveal]]を使うと、`mcp-audit.jsonl`ファイルが開きます。
-- メッセージの読み取りでは、ログにトピックまたはグループ、スキャンしたレコードのうち返した件数、マスクした値の数も表示されます。成功した`read_messages`と`summarize_messages`の呼び出しでは、[[ui:settings.mcp.audit.openInBrowse]]ボタンを使うと、トピックの[[ui:topics.details.tabMessages]]タブのフォームに呼び出しのパラメーターが入力されます。[[ui:browse.panel.read]]をクリックするとメッセージがマスキングなしで改めて読み取られ、アシスタントが受け取った内容と比較できます。フィルターや上限を正確に引き継げなかった場合はフォームにその旨が表示され、ボタンが無効な場合はボタンにポインターを合わせると理由が表示されます。
+- メッセージの読み取りでは、ログにトピックまたはグループ、返した件数、スキャンしたレコード数、マスクした値の数も表示されます。返すのはメッセージで、`summarize_messages`では概要の区間、`get_group_commit_history`ではコミット系列（同じオフセットへの連続したコミット）です。成功した`read_messages`と`summarize_messages`の呼び出しでは、[[ui:settings.mcp.audit.openInBrowse]]ボタンを使うと、トピックの[[ui:topics.details.tabMessages]]タブのフォームに呼び出しのパラメーターが入力されます。[[ui:browse.panel.read]]をクリックするとメッセージがマスキングなしで改めて読み取られ、アシスタントが受け取った内容と比較できます。フィルターや上限を正確に引き継げなかった場合はフォームにその旨が表示され、ボタンが無効な場合はボタンにポインターを合わせると理由が表示されます。
 
 MCPを完全にオフにするには、[[ui:settings.mcp.enable]]のチェックを外します。クライアントは切断されます。
 

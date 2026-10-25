@@ -1,6 +1,6 @@
 # Assistants LLM (MCP)
 
-Glafira peut servir de passerelle à un assistant LLM : Claude Desktop, Claude Code, Cursor ou un autre client compatible avec MCP (Model Context Protocol). L’assistant lit les métadonnées des clusters que vous lui ouvrez et vous aide à repérer des problèmes : partitions sous-répliquées, lag, rééquilibrages continus, paramètres mal choisis. Il ne peut rien modifier dans un cluster via Glafira : vous effectuez vous-même les modifications dans l’interface.
+Glafira peut servir de passerelle à un assistant LLM : Claude Desktop, Claude Code, Cursor ou un autre client compatible avec MCP (Model Context Protocol). L’assistant lit les métadonnées des clusters que vous lui ouvrez (et les messages, là où vous l’autorisez) et vous aide à repérer des problèmes : partitions sous-répliquées, lag, rééquilibrages continus, paramètres mal choisis. Il ne peut rien modifier dans un cluster via Glafira : vous effectuez vous-même les modifications dans l’interface.
 
 ## Fonctionnement {#how-it-works}
 
@@ -77,7 +77,7 @@ Tant qu’un client est connecté, un indicateur `LLM` avec le nom du client s�
 - [[ui:settings.mcp.clients]] : [[ui:settings.mcp.revoke]] ferme les sessions du client, qui demandera de nouveau une approbation à la prochaine connexion.
 - Un niveau modifié sous [[ui:connections.form.llmAccess]] prend effet immédiatement, sans reconnexion.
 - [[ui:settings.mcp.audit.title]] — chaque requête : heure, client, outil, connexion, résultat. Le contenu des réponses n’est pas enregistré. [[ui:settings.mcp.audit.reveal]] ouvre le fichier `mcp-audit.jsonl`.
-- Pour la lecture des messages, le journal indique en plus le topic ou le groupe, combien d’enregistrements ont été renvoyés sur ceux parcourus et combien de valeurs ont été masquées. Pour les appels `read_messages` et `summarize_messages` réussis, le bouton [[ui:settings.mcp.audit.openInBrowse]] remplit le formulaire de l’onglet [[ui:topics.details.tabMessages]] du topic avec les paramètres de l’appel ; cliquez sur [[ui:browse.panel.read]] pour relire les messages, sans masquage, et les comparer avec ce que l’assistant a reçu. Si les filtres ou la limite n’ont pas pu être repris exactement, le formulaire le signale ; si le bouton est désactivé, survolez-le pour voir la raison.
+- Pour la lecture des messages, le journal indique en plus le topic ou le groupe, combien d’éléments ont été renvoyés, combien d’enregistrements ont été analysés et combien de valeurs ont été masquées. Les éléments sont des messages, des intervalles du résumé pour `summarize_messages` ou des séries de commits (commits consécutifs d’un même offset) pour `get_group_commit_history`. Pour les appels `read_messages` et `summarize_messages` réussis, le bouton [[ui:settings.mcp.audit.openInBrowse]] remplit le formulaire de l’onglet [[ui:topics.details.tabMessages]] du topic avec les paramètres de l’appel ; cliquez sur [[ui:browse.panel.read]] pour relire les messages, sans masquage, et les comparer avec ce que l’assistant a reçu. Si les filtres ou la limite n’ont pas pu être repris exactement, le formulaire le signale ; si le bouton est désactivé, survolez-le pour voir la raison.
 
 Pour désactiver complètement MCP, décochez [[ui:settings.mcp.enable]] : les clients sont déconnectés.
 

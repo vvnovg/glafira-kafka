@@ -470,7 +470,7 @@
         "scanDetailsHistory": "{{target}} : séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}",
         "scanDetailsHistoryNoTarget": "séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}"
       },
-      "openCounts": "Ouvertes au LLM : {{n}}, dont avec messages : {{m}}",
+      "openCounts": "Connexions ouvertes au LLM : {{n}}, dont {{m}} avec messages",
       "messagesPolicy": "La lecture des messages est désactivée par votre organisation"
     }
   },
@@ -1349,7 +1349,7 @@
       "mtls": "Nécessaire si les brokers authentifient les clients par certificat. Le certificat et la clé sont délivrés par les administrateurs Kafka.",
       "alias": "Nom de l’entrée de la clé dans le fichier JKS ou PKCS#12. Nécessaire uniquement si le fichier contient plusieurs clés.",
       "keyPassword": "Uniquement si la clé a son propre mot de passe : différent de celui du keystore, ou clé PEM chiffrée.",
-      "mask": "Les valeurs des champs JSON, des en-têtes et des paires name=value portant ces noms sont remplacées par ***. La casse et les caractères _, - et . sont ignorés ; * correspond à n’importe quels caractères."
+      "mask": "Les valeurs des champs JSON, des en-têtes et des paires name=value portant ces noms sont remplacées par ***. La casse et les caractères _, - et . sont ignorés ; * correspond à n’importe quels caractères. Jusqu’à 200 noms, de 64 caractères au plus chacun."
     },
     "topics": {
       "partitions": "Les partitions sont lues en parallèle ; l’ordre n’est garanti qu’au sein d’une même partition. Leur nombre peut être augmenté plus tard, mais jamais réduit.",

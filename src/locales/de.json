@@ -1344,7 +1344,7 @@
       "mtls": "Erforderlich, wenn die Broker Clients per Zertifikat authentifizieren. Zertifikat und Schlüssel stellen Ihre Kafka-Administratoren aus.",
       "alias": "Name des Schlüsseleintrags in der JKS- oder PKCS#12-Datei. Nur nötig, wenn die Datei mehrere Schlüssel enthält.",
       "keyPassword": "Nur wenn der Schlüssel ein eigenes Passwort hat: abweichend vom Keystore-Passwort oder bei einem verschlüsselten PEM-Schlüssel.",
-      "mask": "Werte von JSON-Feldern, Headern und name=value-Paaren mit diesen Namen werden durch *** ersetzt. Groß-/Kleinschreibung und die Zeichen _, - und . spielen keine Rolle; * steht für beliebige Zeichen."
+      "mask": "Werte von JSON-Feldern, Headern und name=value-Paaren mit diesen Namen werden durch *** ersetzt. Groß-/Kleinschreibung und die Zeichen _, - und . spielen keine Rolle; * steht für beliebige Zeichen. Bis zu 200 Namen mit je höchstens 64 Zeichen."
     },
     "topics": {
       "partitions": "Partitionen werden parallel gelesen; die Reihenfolge ist nur innerhalb einer Partition garantiert. Die Anzahl lässt sich später erhöhen, aber nie verringern.",

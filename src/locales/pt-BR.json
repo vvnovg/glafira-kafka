@@ -1349,7 +1349,7 @@
       "mtls": "Necessário se os brokers autenticam os clientes por certificado. O certificado e a chave são emitidos pelos administradores do Kafka.",
       "alias": "Nome da entrada da chave no arquivo JKS ou PKCS#12. Necessário apenas se o arquivo contiver várias chaves.",
       "keyPassword": "Somente se a chave tiver senha própria: diferente da senha do keystore, ou uma chave PEM criptografada.",
-      "mask": "Valores de campos JSON, cabeçalhos e pares name=value com esses nomes são substituídos por ***. Maiúsculas e os caracteres _, - e . não importam; * corresponde a quaisquer caracteres."
+      "mask": "Valores de campos JSON, cabeçalhos e pares name=value com esses nomes são substituídos por ***. Maiúsculas e os caracteres _, - e . não importam; * corresponde a quaisquer caracteres. Até 200 nomes, cada um com até 64 caracteres."
     },
     "topics": {
       "partitions": "As partições são lidas em paralelo; a ordem só é garantida dentro de uma partição. O número pode ser aumentado depois, mas nunca reduzido.",

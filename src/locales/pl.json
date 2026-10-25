@@ -1354,7 +1354,7 @@
       "mtls": "Wymagany, jeśli brokery uwierzytelniają klientów certyfikatem. Certyfikat i klucz wydają administratorzy Kafki.",
       "alias": "Nazwa wpisu klucza w pliku JKS lub PKCS#12. Potrzebna tylko wtedy, gdy plik zawiera kilka kluczy.",
       "keyPassword": "Tylko jeśli klucz ma własne hasło: inne niż hasło magazynu kluczy albo zaszyfrowany klucz PEM.",
-      "mask": "Wartości pól JSON, nagłówków i par name=value o tych nazwach są zastępowane przez ***. Wielkość liter i znaki _, - i . nie mają znaczenia; * oznacza dowolne znaki."
+      "mask": "Wartości pól JSON, nagłówków i par name=value o tych nazwach są zastępowane przez ***. Wielkość liter i znaki _, - i . nie mają znaczenia; * oznacza dowolne znaki. Do 200 nazw, każda do 64 znaków."
     },
     "topics": {
       "partitions": "Partycje są odczytywane równolegle; kolejność jest gwarantowana tylko w obrębie jednej partycji. Liczbę można później zwiększyć, ale nigdy zmniejszyć.",

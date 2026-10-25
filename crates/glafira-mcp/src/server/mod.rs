@@ -619,4 +619,27 @@ impl ServerHandler for GatewayServer {
         let _ = self.shared.backend.access(&view);
         self.negotiate_initialize(&request)
     }
+
+    /// Клиент протокола 2026-07-28 не шлёт `initialize`, а список инструментов просит сразу после
+    /// подключения: клиент — из `_meta` запроса, подтверждение — здесь, как при `initialize`.
+    /// Тело — как у `#[tool_handler]`.
+    async fn list_tools(
+        &self,
+        _request: Option<rmcp::model::PaginatedRequestParams>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<rmcp::model::ListToolsResult, ErrorData> {
+        let view = self.identify(context.client_info());
+        let _ = self.shared.backend.access(&view);
+        let supports_cache_hints = context
+            .protocol_version()
+            .is_some_and(|version| version >= rmcp::model::ProtocolVersion::V_2026_07_28);
+        Ok(rmcp::model::ListToolsResult {
+            result_type: Some(rmcp::model::ResultType::COMPLETE),
+            tools: self.tool_router.list_all(),
+            meta: None,
+            next_cursor: None,
+            ttl_ms: supports_cache_hints.then_some(0),
+            cache_scope: supports_cache_hints.then_some(rmcp::model::CacheScope::Public),
+        })
+    }
 }

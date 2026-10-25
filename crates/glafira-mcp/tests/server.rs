@@ -1175,6 +1175,47 @@ async fn pending_client_gets_a_hint_then_works_after_approval() {
 }
 
 #[tokio::test]
+async fn client_without_initialize_is_identified_and_asked_on_the_tool_list() {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    let fake = Fake::new(SessionAccess::Pending);
+    let e = env(fake.clone()).await;
+    // Протокол 2026-07-28: без initialize, клиент — в _meta каждого запроса.
+    let mut s = endpoint::connect(&e.ep).await.unwrap();
+    handshake::client(&mut s, TOKEN).await.unwrap();
+    let list = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/list",
+        "params": {"_meta": {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {"name": "claude-code", "version": "2.1.310"},
+        }},
+    });
+    s.write_all(format!("{list}\n").as_bytes()).await.unwrap();
+    s.flush().await.unwrap();
+    let mut line = String::new();
+    BufReader::new(&mut s).read_line(&mut line).await.unwrap();
+    let r: Value = serde_json::from_str(&line).unwrap();
+    assert!(
+        r["result"]["tools"].as_array().unwrap().len() >= 22,
+        "{line}"
+    );
+    let seen = fake.seen.lock().unwrap().clone();
+    assert_eq!(
+        seen.first()
+            .and_then(|v| v.client.as_ref())
+            .map(|c| (c.name.as_str(), c.version.as_str())),
+        Some(("claude-code", "2.1.310")),
+        "подтверждение запрошено при списке инструментов, с клиентом из _meta"
+    );
+    assert_eq!(
+        e.handle.sessions()[0].client_name.as_deref(),
+        Some("claude-code")
+    );
+}
+
+#[tokio::test]
 async fn client_name_is_trimmed_and_capped() {
     let fake = Fake::new(SessionAccess::Approved);
     let e = env(fake.clone()).await;

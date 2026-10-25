@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { McpAuditEntry } from "../../api/types";
-import { auditTarget, browsePrefillFromAudit, isBrowsable } from "./auditPrefill";
+import { auditTarget, browsePrefillFromAudit, isBrowsable, outwardLocal } from "./auditPrefill";
 
 const call = (args: unknown, patch: Partial<McpAuditEntry> = {}): McpAuditEntry => ({
   ts: 1,
@@ -83,6 +83,9 @@ describe("browsePrefillFromAudit", () => {
     ]) {
       expect(browsePrefillFromAudit(call({ ...range, ...filter }))?.prefill.inexact).toEqual(["limit"]);
     }
+    // Без endOffset лимит не переносится — и пометки о нём нет.
+    const open = { topic: "orders", partition: 1, startOffset: 10, value: { pattern: "FAILED" } };
+    expect(browsePrefillFromAudit(call(open))?.prefill.inexact).toEqual([]);
     // Пустые фильтры сервер отбрасывает — они не в счёт.
     const empty = { value: { pattern: "" }, header: { name: " ", value: { pattern: "x" } }, jsonPath: " " };
     expect(browsePrefillFromAudit(call({ ...range, ...empty }))?.prefill.inexact).toEqual([]);
@@ -156,30 +159,94 @@ describe("browsePrefillFromAudit", () => {
   });
 });
 
-describe("browsePrefillFromAudit: повторяющийся час перевода часов", () => {
-  // Часовой пояс — на время блока: vi.stubEnv присваивает process.env.TZ, Node при этом перечитывает пояс, а Vitest
-  // (пул forks) запускает файл в отдельном процессе. Первый тест блока проверяет, что пояс действительно сменился.
+/**
+ * Модель Берлина 25.10.2026 без часового пояса машины: до 01:00Z — UTC+2 (CEST), с 01:00Z — UTC+1 (CET), поэтому
+ * местное 02:00–02:59:59 называет два момента. `pass` — какой из них возвращает разбор строки.
+ */
+const SHIFT = Date.UTC(2026, 9, 25, 1, 0);
+const HOUR = 3_600_000;
+const berlinFormat = (ms: number) => new Date(ms + (ms < SHIFT ? 2 : 1) * HOUR).toISOString().slice(0, 19);
+const berlinParse = (pass: "first" | "later") => (s: string) => {
+  const wall = Date.parse(`${s}Z`);
+  const instants = [wall - 2 * HOUR, wall - HOUR].filter((ms) => berlinFormat(ms) === s);
+  return (pass === "first" ? instants[0] : instants[instants.length - 1]) ?? Number.NaN;
+};
+const at = (h: number, m: number, s = 0) => Date.UTC(2026, 9, 25, h, m, s);
+
+describe("outwardLocal: повторяющийся час на модели Берлина", () => {
+  it("модель: местное 02:10 — два момента, 03:20 — один", () => {
+    expect(berlinFormat(at(0, 10))).toBe("2026-10-25T02:10:00");
+    expect(berlinFormat(at(1, 10))).toBe("2026-10-25T02:10:00");
+    expect(berlinParse("first")("2026-10-25T02:10:00")).toBe(at(0, 10));
+    expect(berlinParse("later")("2026-10-25T02:10:00")).toBe(at(1, 10));
+    expect(berlinParse("later")("2026-10-25T03:20:00")).toBe(at(2, 20));
+  });
+
+  it("разбор берёт первый проход (V8): конец окна во втором проходе отодвигается на час позже", () => {
+    const parse = berlinParse("first");
+    expect(outwardLocal(at(1, 20, 1), 1, berlinFormat, parse)).toBe("2026-10-25T03:20:01");
+    // Начало во втором проходе и так читается раньше — без поправки.
+    expect(outwardLocal(at(1, 10), -1, berlinFormat, parse)).toBe("2026-10-25T02:10:00");
+  });
+
+  it("разбор берёт второй проход (возможно, JavaScriptCore в WKWebView): начало в первом проходе — на час раньше", () => {
+    const parse = berlinParse("later");
+    expect(outwardLocal(at(0, 10), -1, berlinFormat, parse)).toBe("2026-10-25T01:10:00");
+    // Конец в первом проходе и так читается позже — без поправки.
+    expect(outwardLocal(at(0, 20, 1), 1, berlinFormat, parse)).toBe("2026-10-25T02:20:01");
+  });
+
+  it("при любом разборе граница снаружи и не дальше сдвига часов, вне складки — точно", () => {
+    const points = [Date.UTC(2026, 9, 24, 23, 30), at(0, 10), at(0, 59, 59), at(1, 0), at(1, 20, 1), at(1, 59, 59), at(2, 0), at(2, 20, 1)];
+    for (const pass of ["first", "later"] as const) {
+      const parse = berlinParse(pass);
+      for (const ms of points) {
+        for (const dir of [1, -1] as const) {
+          const back = parse(outwardLocal(ms, dir, berlinFormat, parse));
+          expect(dir * (back - ms), `${pass} ${new Date(ms).toISOString()} dir ${dir}`).toBeGreaterThanOrEqual(0);
+          expect(Math.abs(back - ms)).toBeLessThanOrEqual(HOUR);
+        }
+      }
+      expect(outwardLocal(at(2, 20, 1), 1, berlinFormat, parse)).toBe("2026-10-25T03:20:01");
+      expect(outwardLocal(at(2, 20, 1), -1, berlinFormat, parse)).toBe("2026-10-25T03:20:01");
+    }
+  });
+});
+
+/** Платформа процесса Vitest; в проекте нет @types/node. */
+const PLATFORM = (globalThis as { process?: { platform?: string } }).process?.platform;
+
+describe("browsePrefillFromAudit: повторяющийся час в часовом поясе машины", () => {
+  // Сквозная проверка с настоящими toLocalInput и new Date. vi.stubEnv присваивает process.env.TZ; на macOS и Linux
+  // Node при этом перечитывает пояс (Vitest, пул forks, запускает файл в отдельном процессе), на Windows — нет:
+  // там пояс берётся из системы, и тесты блока пропускаются (логику проверяет блок с моделью выше).
   // 25.10.2026 в Берлине 03:00 CEST → 02:00 CET: местное 02:00–02:59:59 повторяется.
+  let zoneSwitched = false;
   beforeAll(() => {
     vi.stubEnv("TZ", "Europe/Berlin");
+    zoneSwitched =
+      new Date(Date.UTC(2026, 9, 25, 0, 30)).getTimezoneOffset() === -120 &&
+      new Date(Date.UTC(2026, 9, 25, 1, 30)).getTimezoneOffset() === -60;
   });
   afterAll(() => {
     vi.unstubAllEnvs();
   });
 
-  it("часовой пояс действует", () => {
-    expect(new Date(Date.UTC(2026, 9, 25, 0, 30)).getTimezoneOffset()).toBe(-120);
-    expect(new Date(Date.UTC(2026, 9, 25, 1, 30)).getTimezoneOffset()).toBe(-60);
+  it("на macOS и Linux пояс сменился", ({ skip }) => {
+    skip(PLATFORM === "win32", "Windows: Node не перечитывает process.env.TZ");
+    expect(zoneSwitched).toBe(true);
   });
 
-  it("окно во втором проходе 02:xx остаётся снаружи", () => {
+  it("окно во втором проходе 02:xx остаётся снаружи", ({ skip }) => {
+    skip(!zoneSwitched, "часовой пояс не сменился");
     const from = Date.UTC(2026, 9, 25, 1, 10, 0, 400);
     const to = Date.UTC(2026, 9, 25, 1, 20, 0, 900);
     const r = browsePrefillFromAudit(call({ topic: "t", from: new Date(from).toISOString(), to }));
     expectOutward(r?.prefill.form ?? {}, from, to);
   });
 
-  it("начало в первом проходе, конец во втором: конец не попадает внутрь окна", () => {
+  it("начало в первом проходе, конец во втором: конец не попадает внутрь окна", ({ skip }) => {
+    skip(!zoneSwitched, "часовой пояс не сменился");
     const from = Date.UTC(2026, 9, 25, 0, 50);
     const to = Date.UTC(2026, 9, 25, 1, 30);
     const r = browsePrefillFromAudit(call({ topic: "t", from, to }));
@@ -190,7 +257,8 @@ describe("browsePrefillFromAudit: повторяющийся час перево
     expect(back(form.toTime) - to).toBeLessThanOrEqual(3_600_000);
   });
 
-  it("обычное время рядом с переводом — до секунды", () => {
+  it("обычное время рядом с переводом — до секунды", ({ skip }) => {
+    skip(!zoneSwitched, "часовой пояс не сменился");
     const from = Date.UTC(2026, 9, 25, 2, 10, 0, 1);
     const to = Date.UTC(2026, 9, 25, 2, 20, 0, 1);
     const form = browsePrefillFromAudit(call({ topic: "t", from, to }))?.prefill.form ?? {};

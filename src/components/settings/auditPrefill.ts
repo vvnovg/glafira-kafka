@@ -32,17 +32,23 @@ const sameFlags = (a: TextMatchArg, b: TextMatchArg) => !!a.regex === !!b.regex 
 
 /**
  * Значение datetime-local, которое форма прочитает не позже `ms` (dir −1, начало окна) или не раньше (dir 1, конец).
- * В повторяющемся часе перевода часов местное время двузначно, и `new Date(s)` берёт один из проходов: тогда граница
- * отодвигается наружу на величину сдвига, чтобы окно формы по-прежнему содержало окно вызова.
+ * В повторяющемся часе перевода часов местное время двузначно, и разбор берёт один из проходов (V8 — первый, другой
+ * движок может взять второй): тогда граница отодвигается наружу на величину сдвига, чтобы окно формы по-прежнему
+ * содержало окно вызова. `format` и `parse` — как в форме (местное время); в тестах — модель часового пояса.
  */
-function outwardLocal(ms: number, dir: 1 | -1): string {
+export function outwardLocal(
+  ms: number,
+  dir: 1 | -1,
+  format: (ms: number) => string = toLocalInput,
+  parse: (s: string) => number = (s) => new Date(s).getTime(),
+): string {
   let at = ms;
-  let s = toLocalInput(at);
+  let s = format(at);
   for (let i = 0; i < 3; i++) {
-    const back = new Date(s).getTime();
+    const back = parse(s);
     if (!(dir * (ms - back) > 0)) break;
     at += at - back;
-    s = toLocalInput(at);
+    s = format(at);
   }
   return s;
 }
@@ -92,9 +98,11 @@ export function browsePrefillFromAudit(
     form.startType = "offset";
     form.offset = start;
     form.partitions = String(partition);
-    if (typeof a.endOffset === "number" && a.endOffset > start) form.limit = Math.min(a.endOffset - start, MAX_LIMIT);
-    // В вызове диапазон офсетов ограничивает просмотр, в форме лимит считает найденные сообщения.
-    if (texts.length > 0 || headerName.trim() || jsonPath.trim()) inexact.push("limit");
+    if (typeof a.endOffset === "number" && a.endOffset > start) {
+      form.limit = Math.min(a.endOffset - start, MAX_LIMIT);
+      // В вызове диапазон офсетов ограничивает просмотр, в форме лимит считает найденные сообщения.
+      if (texts.length > 0 || headerName.trim() || jsonPath.trim()) inexact.push("limit");
+    }
   } else {
     const from = timeMs(a.from);
     const to = timeMs(a.to);

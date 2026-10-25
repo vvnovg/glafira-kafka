@@ -1138,8 +1138,9 @@ mod tests {
         let started = Instant::now();
         assert!(fit_runs(&mut body));
         let elapsed = started.elapsed();
-        // Обрезка по десятой части самой длинной партиции сериализует ответ в мегабайты тысячи раз.
-        assert!(elapsed < Duration::from_secs(2), "{elapsed:?}");
+        // Обрезка по десятой части самой длинной партиции сериализует ответ в мегабайты тысячи раз (минуты в debug);
+        // двоичный поиск — около десятка сериализаций. Граница с запасом на медленный раннер CI.
+        assert!(elapsed < Duration::from_secs(10), "{elapsed:?}");
         let size = serde_json::to_vec(&body).unwrap().len();
         assert!(
             size <= MAX_RESPONSE_BYTES && size > MAX_RESPONSE_BYTES * 9 / 10,

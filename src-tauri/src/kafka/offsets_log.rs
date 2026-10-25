@@ -191,6 +191,17 @@ mod tests {
         v
     }
 
+    /// Unsigned varint, как в compact-строках Kafka.
+    fn uvarint(mut n: u64) -> Vec<u8> {
+        let mut v = Vec::new();
+        while n >= 0x80 {
+            v.push((n as u8 & 0x7f) | 0x80);
+            n >>= 7;
+        }
+        v.push(n as u8);
+        v
+    }
+
     fn value(version: i16, offset: i64, metadata: &str, ts: i64) -> Vec<u8> {
         let mut v = version.to_be_bytes().to_vec();
         v.extend(offset.to_be_bytes());
@@ -211,7 +222,7 @@ mod tests {
             }
             4 => {
                 v.extend(7i32.to_be_bytes());
-                v.push(metadata.len() as u8 + 1);
+                v.extend(uvarint(metadata.len() as u64 + 1));
                 v.extend_from_slice(metadata.as_bytes());
                 v.extend(ts.to_be_bytes());
                 // Один tagged field (topicId, tag 0): 16 байтов UUID.
@@ -253,6 +264,27 @@ mod tests {
     }
 
     #[test]
+    fn v4_metadata_length_can_take_several_varint_bytes() {
+        let metadata = "m".repeat(200);
+        let v = value(4, 42, &metadata, 1_000);
+        // Длина compact-строки 200 + 1 = 201 — два байта varint после version, offset и leaderEpoch.
+        assert_eq!(v[14..16], [0xC9, 0x01]);
+        assert_eq!(
+            decode(&key(1, "g", "t", 0), Some(&v)).unwrap(),
+            OffsetsRecord::Commit {
+                group: "g".into(),
+                topic: "t".into(),
+                partition: 0,
+                value: Some(CommitValue {
+                    offset: 42,
+                    metadata,
+                    commit_timestamp: 1_000
+                }),
+            }
+        );
+    }
+
+    #[test]
     fn tombstones_other_records_and_errors() {
         assert_eq!(
             decode(&key(1, "g", "t", 0), None).unwrap(),
@@ -285,6 +317,12 @@ mod tests {
             decode(&key(1, "g", "t", 0), Some(&cut[..cut.len() - 3])),
             Err(DecodeError::Truncated)
         );
+        // v4, срез внутри 16 байтов tagged field.
+        let cut = value(4, 1, "meta", 1);
+        assert_eq!(
+            decode(&key(1, "g", "t", 0), Some(&cut[..cut.len() - 5])),
+            Err(DecodeError::Truncated)
+        );
         assert_eq!(decode(&[0, 1, 0], None), Err(DecodeError::Truncated));
         let mut not_utf8 = 1i16.to_be_bytes().to_vec();
         not_utf8.extend([0, 1, 0xff]);
@@ -300,6 +338,9 @@ mod tests {
         assert_eq!(partition_for("hello", 50), 22);
         assert_eq!(partition_for("группа", 50), 8);
         assert_eq!(partition_for("order-service", 50), 26);
+        // Отрицательный hashCode: модуль до деления (остаток со знаком дал бы −12, rem_euclid — 38).
+        assert_eq!(java_hash("my-group"), -1_906_497_762);
+        assert_eq!(partition_for("my-group", 50), 12);
         // hashCode == Integer.MIN_VALUE: Utils.abs даёт 0.
         assert_eq!(java_hash("polygenelubricants"), i32::MIN);
         assert_eq!(partition_for("polygenelubricants", 50), 0);

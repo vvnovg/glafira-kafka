@@ -447,6 +447,20 @@ mod tests {
         assert_eq!(decode_cursor(&c, a), Ok((i64::MIN, 2, 40)));
         assert!(decode_cursor(&c, b).unwrap_err().contains("does not match"));
         assert!(decode_cursor("not base64!", a).is_err());
+        let other_version = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(
+            serde_json::to_vec(&CursorBody {
+                v: 2,
+                h: a,
+                after: (1, 2, 40),
+            })
+            .unwrap(),
+        );
+        assert!(
+            decode_cursor(&other_version, a)
+                .unwrap_err()
+                .contains("does not match"),
+            "курсор другой версии не принимается"
+        );
         assert_eq!(
             selection_hash(&("orders", 1, 2)),
             a,

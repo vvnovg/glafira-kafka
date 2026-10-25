@@ -970,7 +970,12 @@ mod tests {
         )
         .expect_err("брокер не отвечает на метаданные");
         let took = started.elapsed();
+        // Главное — время: 30-секундный таймаут подключения не применяется. На нагруженном раннере соединение с
+        // фальшивым брокером может не успеть подняться за бюджет, тогда ошибка — транспортная, а не таймаут.
         assert!(took < Duration::from_secs(8), "{took:?}");
-        assert_eq!(e.code, ErrorCode::Timeout);
+        assert!(
+            matches!(e.code, ErrorCode::Timeout | ErrorCode::ConnectionFailed),
+            "{e:?}"
+        );
     }
 }

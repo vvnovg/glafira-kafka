@@ -875,6 +875,22 @@ mod tests {
     }
 
     #[test]
+    fn standard_mask_fields_match_the_form() {
+        // Форма показывает и подставляет STANDARD_MASK_FIELDS, крейт маскирует по STANDARD_FIELDS: списки одинаковы.
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../src/components/connections/maskFields.ts"
+        );
+        let ts = std::fs::read_to_string(path).unwrap();
+        let start = ts
+            .find("STANDARD_MASK_FIELDS = [")
+            .expect("массив в maskFields.ts");
+        let list = &ts[start..start + ts[start..].find(']').expect("конец массива")];
+        let form: Vec<&str> = list.split('"').skip(1).step_by(2).collect();
+        assert_eq!(form, glafira_mcp::mask::STANDARD_FIELDS);
+    }
+
+    #[test]
     fn mask_field_limits_count_characters_and_include_the_maximum() {
         use glafira_mcp::mask::{MAX_MASK_FIELD_CHARS, MAX_MASK_FIELDS};
         let dir = tempfile::tempdir().unwrap();

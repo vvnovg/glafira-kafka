@@ -12,11 +12,11 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 
 1. 開啟[[ui:sidebar.settings]]，進入「[[ui:settings.mcp.section]]」區段。
 2. 勾選[[ui:settings.mcp.enable]]。狀態會變成[[ui:settings.mcp.state.running]]。
-3. 在連線表單中，勾選「[[ui:connections.form.llmAccess]]」並儲存。助理看不到沒有勾選此核取方塊的連線。在連線清單中，已開啟的連線會標示 `LLM`。
+3. 在連線表單的「[[ui:connections.form.llmAccess]]」中選擇層級並儲存：「[[ui:connections.form.llmLevel.metadata]]」或「[[ui:connections.form.llmLevel.messages]]」（請參閱[讀取訊息](llm-mcp.md#messages)）。層級為「[[ui:connections.form.llmLevel.off]]」的連線，助理看不到。在連線清單中，已開啟的連線會標示 `LLM`；可讀取訊息的連線，標示為實心。
 
 如果管理員停用了 MCP，核取方塊會無法使用，旁邊會顯示「[[ui:settings.mcp.policy]]」。
 
-存取核取方塊不會隨連線的匯出和匯入一起轉移：在另一台電腦上，需要重新勾選。
+存取層級和遮罩清單不會隨連線的匯出和匯入一起轉移：在另一台電腦上，需要重新設定。
 
 ## 連接用戶端 {#connect-client}
 
@@ -38,18 +38,36 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 
 助理能看到：
 
-- 勾選了「[[ui:connections.form.llmAccess]]」的連線：名稱、環境、資料夾；
+- 存取層級為「[[ui:connections.form.llmLevel.metadata]]」或「[[ui:connections.form.llmLevel.messages]]」的連線：名稱、環境、資料夾和存取層級；
 - Broker 的主機和連接埠，以及控制器；
 - 主題、分區、複本、ISR、偏移量、訊息的大致數量；
 - Broker 和主題的設定，其中密碼和其他機密值會被隱藏；
 - 消費者群組：狀態、通訊協定、協調器、成員（含 client id、主機和 `group.instance.id`）、指派、已提交的偏移量和延遲；
 - 自己的建議以及你對它們的決定：已套用（原樣或已修改）、已拒絕（附你的原因）、已撤回。
 
-助理看不到主題中的訊息、連線的 Bootstrap 伺服器位址和安全性設定、密碼、憑證、librdkafka 的額外屬性、傳送歷程記錄和範本。
+沒有「[[ui:connections.form.llmLevel.messages]]」層級時，助理看不到主題中的訊息。連線的 Bootstrap 伺服器位址和安全性設定、密碼、憑證、librdkafka 的額外屬性、傳送歷程記錄和範本，助理在任何情況下都看不到。
 
 為了排查持續發生的重新平衡，助理最多可以觀察某個群組 50 秒：誰離開、誰加入、頻率如何、來自哪台主機。消費者本身的設定和日誌無法透過 Glafira 取得，助理會向你索取。
 
 主題、群組和 client id 的名稱可以由任何有權存取叢集的人設定。Glafira 會提醒助理：這些資料不是給它的指令。
+
+## 讀取訊息 {#messages}
+
+在「[[ui:connections.form.llmLevel.messages]]」層級下，助理還能讀取訊息內容。例如，當你的服務在日誌中記錄了錯誤時，可以查明當時寫入主題的內容，以及消費者群組處理到了哪裡：
+
+- `summarize_messages`：時間範圍概覽，不含訊息內容：依分區和時間統計的訊息數量、常見和重複的鍵、順序錯亂的時間戳記；
+- `read_messages`：時間範圍或偏移量範圍內的訊息，在所有分區中依時間排序，篩選條件與[[ui:topics.details.tabMessages]]分頁相同；
+- `get_group_commit_history`：消費者群組在何時提交了哪些偏移量，資料來自內部主題 `__consumer_offsets`。
+
+例如，可以這樣問：「14:32 訂單服務在日誌中記錄了訂單 123 的錯誤，查一下當時 orders 主題裡有什麼，以及 order-service 群組處理到了哪裡。」請告訴助理你的日誌所用的時區：Glafira 不接受沒有時區的時間。
+
+在資料傳送給助理之前，Glafira 會先進行遮罩。「[[ui:connections.form.mask]]」清單中的欄位的值會在 JSON、標頭和 `name=value` 配對中被替換為 `***`；標準清單涵蓋密碼、權杖、電子郵件、電話號碼、卡號和護照號碼。電子郵件、卡號、JWT 和 Bearer 權杖在任何文字中都會被替換。遮罩可降低風險，但無法辨識人名、地址以及名稱陌生的欄位中的資料，Avro、Protobuf 等二進位格式也只能部分遮罩。篩選條件作用於未遮罩的資料，因此助理可以依據日誌中的值找到訊息。對於 `prod` 連線，表單會顯示警告。
+
+讀取提交記錄需要對 `__consumer_offsets` 擁有 Read 權限。Compaction 會刪除舊的提交記錄，較新的記錄通常還在。
+
+讀取有限制：每個工作階段同時只能進行一項長時間作業，每次呼叫最多 40 秒、1,000,000 筆記錄；達到限制時，助理會縮小時間範圍。Glafira 不使用消費者群組讀取，也不提交任何偏移量；`client.id` 為 `glafira-kafka-mcp`，除非連線設定了自己的值。
+
+管理員可以透過原則鍵 `mcpMessagesEnabled` 禁止讀取訊息：「[[ui:connections.form.llmLevel.messages]]」層級將無法使用，使用該層級的連線會以「[[ui:connections.form.llmLevel.metadata]]」運作。
 
 ## 工作階段、撤銷和日誌 {#sessions-log}
 
@@ -57,8 +75,9 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 
 - [[ui:settings.mcp.sessions]]：[[ui:settings.mcp.disconnect]]會關閉一個工作階段，[[ui:settings.mcp.disconnectAll]]會關閉所有工作階段。
 - [[ui:settings.mcp.clients]]：[[ui:settings.mcp.revoke]]會關閉該用戶端的工作階段，該用戶端下次連線時會再次要求核准。
-- 取消勾選「[[ui:connections.form.llmAccess]]」會立即生效，不需要重新連線。
+- 在「[[ui:connections.form.llmAccess]]」中變更層級會立即生效，不需要重新連線。
 - [[ui:settings.mcp.audit.title]]：記錄每一次請求的時間、用戶端、工具、連線和結果。回應的內容不會被記錄。[[ui:settings.mcp.audit.reveal]]會開啟檔案 `mcp-audit.jsonl`。
+- 對於讀取訊息的呼叫，日誌還會顯示主題或群組、在掃描的記錄中傳回了多少則，以及遮罩了多少個值。點按[[ui:settings.mcp.audit.openInBrowse]]，會在該主題的[[ui:topics.details.tabMessages]]分頁中開啟同一時間範圍，不做遮罩：你看到的就是助理看到的內容。
 
 若要完全關閉 MCP，請取消勾選[[ui:settings.mcp.enable]]：用戶端會被中斷連線。
 

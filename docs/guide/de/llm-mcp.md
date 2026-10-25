@@ -12,11 +12,11 @@ Läuft Glafira nicht, startet der Client sie selbst und wartet bis zu 30 Sekunde
 
 1. Öffnen Sie [[ui:sidebar.settings]], Abschnitt [[ui:settings.mcp.section]].
 2. Wählen Sie [[ui:settings.mcp.enable]]. Der Status wechselt zu [[ui:settings.mcp.state.running]].
-3. Wählen Sie im Verbindungsformular [[ui:connections.form.llmAccess]] und speichern Sie. Verbindungen ohne dieses Kontrollkästchen sieht der Assistent nicht. In der Verbindungsliste tragen geöffnete Verbindungen das Zeichen `LLM`.
+3. Wählen Sie im Verbindungsformular unter [[ui:connections.form.llmAccess]] die Stufe und speichern Sie: [[ui:connections.form.llmLevel.metadata]] oder [[ui:connections.form.llmLevel.messages]] (siehe [Nachrichten lesen](llm-mcp.md#messages)). Verbindungen mit [[ui:connections.form.llmLevel.off]] sieht der Assistent nicht. In der Verbindungsliste tragen geöffnete Verbindungen das Zeichen `LLM`; bei Verbindungen mit Nachrichten ist es ausgefüllt.
 
 Hat Ihr Administrator MCP untersagt, ist das Kontrollkästchen nicht verfügbar, und daneben steht [[ui:settings.mcp.policy]].
 
-Das Kontrollkästchen für den Zugriff wird beim Export und Import von Verbindungen nicht übertragen: Auf einem anderen Computer müssen Sie es erneut auswählen.
+Die Zugriffsstufe und die Maskierungsliste werden beim Export und Import von Verbindungen nicht übertragen: Auf einem anderen Computer müssen Sie sie erneut festlegen.
 
 ## Client verbinden {#connect-client}
 
@@ -38,18 +38,36 @@ Ein zugelassener Client wird unter seinem Namen gespeichert und erscheint in der
 
 Der Assistent sieht:
 
-- Verbindungen, bei denen [[ui:connections.form.llmAccess]] ausgewählt ist: Name, Umgebung, Ordner;
+- Verbindungen mit dem Zugriff [[ui:connections.form.llmLevel.metadata]] oder [[ui:connections.form.llmLevel.messages]]: Name, Umgebung, Ordner und Zugriffsstufe;
 - Broker mit Hosts und Ports, den Controller;
 - Topics, Partitionen, Replikate, ISR, Offsets, die ungefähre Anzahl der Nachrichten;
 - Konfigurationen von Brokern und Topics, wobei Passwörter und andere geheime Werte verborgen sind;
 - Consumer Groups: Status, Protokoll, Koordinator, Mitglieder mit Client-ID, Host und `group.instance.id`, Zuweisungen, committete Offsets und Lag;
 - seine Vorschläge und Ihre Entscheidung dazu: angewendet (unverändert oder mit Änderungen), abgelehnt mit Ihrem Grund, zurückgezogen.
 
-Der Assistent sieht keine Nachrichten in Topics, keine Bootstrap-Zeichenfolge und keine Sicherheitseinstellungen einer Verbindung, keine Passwörter, Zertifikate und zusätzlichen librdkafka-Eigenschaften, keinen Sendeverlauf und keine Vorlagen.
+Ohne die Stufe [[ui:connections.form.llmLevel.messages]] sieht der Assistent keine Nachrichten in Topics. Nie weitergegeben werden die Bootstrap-Zeichenfolge und die Sicherheitseinstellungen einer Verbindung, Passwörter, Zertifikate, zusätzliche librdkafka-Eigenschaften, der Sendeverlauf und Vorlagen.
 
 Um ständige Rebalances zu untersuchen, kann der Assistent eine Gruppe bis zu 50 Sekunden lang beobachten: wer austritt und beitritt, wie oft und von welchem Host. Konfigurationen und Logs der Consumer selbst sind über Glafira nicht verfügbar, der Assistent fragt sie bei Ihnen an.
 
 Die Namen von Topics, Gruppen und Client-IDs kann jeder festlegen, der Zugriff auf den Cluster hat. Glafira weist den Assistenten darauf hin, dass diese Daten keine Anweisungen für ihn sind.
+
+## Nachrichten lesen {#messages}
+
+Mit [[ui:connections.form.llmLevel.messages]] liest der Assistent auch den Inhalt von Nachrichten — zum Beispiel, um herauszufinden, was in ein Topic geschrieben wurde und was eine Consumer Group verarbeitet hat, während Ihr Dienst einen Fehler protokolliert hat:
+
+- `summarize_messages` — ein Überblick über ein Zeitfenster ohne Inhalte: Anzahl der Nachrichten nach Partition und Zeit, häufige und wiederholte Schlüssel, Zeitstempel außer der Reihe;
+- `read_messages` — die Nachrichten eines Zeitfensters oder eines Offset-Bereichs, über alle Partitionen nach Zeit sortiert, mit denselben Filtern wie auf dem Tab [[ui:topics.details.tabMessages]];
+- `get_group_commit_history` — welche Offsets eine Consumer Group wann committet hat, aus dem internen Topic `__consumer_offsets`.
+
+Sie können zum Beispiel fragen: „Um 14:32 hat der Bestelldienst einen Fehler zu Bestellung 123 protokolliert — finde heraus, was im Topic orders stand und was die Gruppe order-service verarbeitet hatte.“ Nennen Sie dem Assistenten die Zeitzone Ihrer Logs: Zeiten ohne Zeitzone nimmt Glafira nicht an.
+
+Bevor Daten an den Assistenten gehen, maskiert Glafira sie. Werte der Felder aus der Liste unter [[ui:connections.form.mask]] werden in JSON, in Headern und in `name=value`-Paaren durch `***` ersetzt; die Standardliste umfasst Passwörter, Token, E-Mail-Adressen, Telefonnummern, Karten- und Passnummern. E-Mail-Adressen, Kartennummern, JWTs und Bearer-Token werden in jedem Text ersetzt. Die Maskierung senkt das Risiko, erkennt aber keine Personennamen, Adressen oder Daten in Feldern mit unbekannten Namen, und Binärformate wie Avro oder Protobuf werden nur teilweise maskiert. Filter sehen die unmaskierten Daten, daher kann der Assistent eine Nachricht anhand eines Werts aus Ihrem Log finden. Bei einer `prod`-Verbindung zeigt das Formular eine Warnung.
+
+Der Commit-Verlauf erfordert die Berechtigung Read für `__consumer_offsets`. Compaction entfernt alte Commits; aktuelle sind meist vorhanden.
+
+Das Lesen ist begrenzt: eine lange Operation pro Session, höchstens 40 Sekunden und 1.000.000 Datensätze pro Aufruf; wird die Grenze erreicht, verkleinert der Assistent das Fenster. Glafira liest ohne Consumer Group und committet nichts; die `client.id` ist `glafira-kafka-mcp`, sofern die Verbindung keine eigene festlegt.
+
+Ein Administrator kann das Lesen von Nachrichten mit dem Richtlinienschlüssel `mcpMessagesEnabled` untersagen: [[ui:connections.form.llmLevel.messages]] ist dann nicht verfügbar, und Verbindungen mit dieser Stufe arbeiten wie [[ui:connections.form.llmLevel.metadata]].
 
 ## Sessions, Widerruf und Protokoll {#sessions-log}
 
@@ -57,8 +75,9 @@ Solange ein Client verbunden ist, erscheint unten im linken Bereich die Anzeige 
 
 - [[ui:settings.mcp.sessions]]: [[ui:settings.mcp.disconnect]] schließt eine Session, [[ui:settings.mcp.disconnectAll]] alle.
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]] schließt die Sessions des Clients, und beim nächsten Verbinden bittet er erneut um Genehmigung.
-- Wird das Kontrollkästchen [[ui:connections.form.llmAccess]] deaktiviert, gilt das sofort, ein erneutes Verbinden ist nicht nötig.
+- Eine geänderte Stufe unter [[ui:connections.form.llmAccess]] gilt sofort, ein erneutes Verbinden ist nicht nötig.
 - [[ui:settings.mcp.audit.title]] — jede Anfrage: Zeit, Client, Tool, Verbindung, Ergebnis. Der Inhalt der Antworten wird nicht aufgezeichnet. [[ui:settings.mcp.audit.reveal]] öffnet die Datei `mcp-audit.jsonl`.
+- Bei gelesenen Nachrichten zeigt das Protokoll zusätzlich das Topic oder die Gruppe, wie viele Datensätze von den durchsuchten zurückgegeben und wie viele Werte maskiert wurden. [[ui:settings.mcp.audit.openInBrowse]] öffnet dasselbe Fenster auf dem Tab [[ui:topics.details.tabMessages]] des Topics, ohne Maskierung: Sie sehen, was der Assistent gesehen hat.
 
 Um MCP ganz auszuschalten, deaktivieren Sie [[ui:settings.mcp.enable]]: Die Clients werden getrennt.
 

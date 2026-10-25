@@ -12,11 +12,11 @@ If Glafira is not running, the client starts it and waits up to 30 seconds.
 
 1. Open [[ui:sidebar.settings]], section [[ui:settings.mcp.section]].
 2. Select [[ui:settings.mcp.enable]]. The status changes to [[ui:settings.mcp.state.running]].
-3. In the connection form, select [[ui:connections.form.llmAccess]] and save. The assistant does not see connections without this checkbox. In the connection tree, open connections have an `LLM` badge.
+3. In the connection form, choose the level in [[ui:connections.form.llmAccess]] and save: [[ui:connections.form.llmLevel.metadata]] or [[ui:connections.form.llmLevel.messages]] (see [Reading messages](llm-mcp.md#messages)). The assistant does not see connections with [[ui:connections.form.llmLevel.off]]. In the connection tree, open connections have an `LLM` badge; for connections with messages it is filled.
 
 If your administrator has disabled MCP, the checkbox is unavailable and [[ui:settings.mcp.policy]] is shown next to it.
 
-The access checkbox is not carried over when connections are exported and imported: on another computer, select it again.
+The access level and the masking list are not carried over when connections are exported and imported: on another computer, set them again.
 
 ## Connect a client {#connect-client}
 
@@ -38,18 +38,36 @@ An allowed client is remembered by name and appears in [[ui:settings.mcp.clients
 
 The assistant sees:
 
-- connections with [[ui:connections.form.llmAccess]] selected: name, environment, folder;
+- connections with [[ui:connections.form.llmLevel.metadata]] or [[ui:connections.form.llmLevel.messages]] access: name, environment, folder and access level;
 - brokers with hosts and ports, the controller;
 - topics, partitions, replicas, ISR, offsets, approximate message counts;
 - broker and topic configs, with passwords and other secret values hidden;
 - consumer groups: state, protocol, coordinator, members with client id, host and `group.instance.id`, assignments, committed offsets and lag;
 - its proposals and your decision on them: applied (unchanged or with edits), rejected with your reason, withdrawn.
 
-The assistant does not see topic messages, the bootstrap string or the security settings of a connection, passwords, certificates, additional librdkafka properties, the send history or templates.
+Without the [[ui:connections.form.llmLevel.messages]] level, the assistant does not see topic messages. It never sees the bootstrap string or the security settings of a connection, passwords, certificates, additional librdkafka properties, the send history or templates.
 
 To investigate constant rebalances, the assistant can watch a group for up to 50 seconds: who leaves and joins, how often, from which host. The configs and logs of the consumers themselves are not available through Glafira; the assistant will ask you for them.
 
 Names of topics, groups and client ids can be set by anyone with access to the cluster. Glafira warns the assistant that this data is not instructions for it.
+
+## Reading messages {#messages}
+
+With [[ui:connections.form.llmLevel.messages]], the assistant can also read message contents — for example, to find out what was written to a topic and what a consumer group processed while your service was logging an error:
+
+- `summarize_messages` — an overview of a time window without contents: message counts by partition and by time, frequent and repeated keys, timestamps out of order;
+- `read_messages` — the messages of a time window or of an offset range, ordered by time across partitions, with the same filters as on the [[ui:topics.details.tabMessages]] tab;
+- `get_group_commit_history` — which offsets a consumer group committed and when, from the internal topic `__consumer_offsets`.
+
+You can ask, for example: “At 14:32 the orders service logged an error for order 123 — find out what was in the orders topic and what the order-service group had processed.” Tell the assistant the time zone of your logs: Glafira does not accept times without one.
+
+Before data reaches the assistant, Glafira masks it. Values of the fields listed under [[ui:connections.form.mask]] are replaced with `***` in JSON, in headers and in `name=value` pairs; the standard list covers passwords, tokens, emails, phone numbers, card and passport numbers. Emails, card numbers, JWTs and Bearer tokens are replaced in any text. Masking lowers the risk but does not recognize people's names, addresses or data in fields with unfamiliar names, and binary formats such as Avro or Protobuf are masked only partially. Filters see unmasked data, so the assistant can find a message by a value from your log. For a `prod` connection, the form shows a warning.
+
+The commit history needs the Read permission on `__consumer_offsets`. Compaction removes old commits; recent ones are usually there.
+
+Reading is limited: one long operation per session, at most 40 seconds and 1,000,000 records per call; when it hits the limit, the assistant narrows the window. Glafira reads without a consumer group and commits nothing; the `client.id` is `glafira-kafka-mcp` unless the connection sets its own.
+
+An administrator can disable reading messages with the `mcpMessagesEnabled` policy key: [[ui:connections.form.llmLevel.messages]] becomes unavailable, and connections with this level work as [[ui:connections.form.llmLevel.metadata]].
 
 ## Sessions, revoking and the log {#sessions-log}
 
@@ -57,8 +75,9 @@ While a client is connected, an `LLM` indicator with the client name is shown at
 
 - [[ui:settings.mcp.sessions]]: [[ui:settings.mcp.disconnect]] closes one session, [[ui:settings.mcp.disconnectAll]] closes all.
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]] closes the client's sessions, and it asks for approval again the next time.
-- Clearing [[ui:connections.form.llmAccess]] takes effect at once, without reconnecting.
+- A changed level in [[ui:connections.form.llmAccess]] takes effect at once, without reconnecting.
 - [[ui:settings.mcp.audit.title]] — every request: time, client, tool, connection, result. Response contents are not recorded. [[ui:settings.mcp.audit.reveal]] opens the `mcp-audit.jsonl` file.
+- For message reads, the log also shows the topic or group, how many records were returned of those scanned and how many values were masked. [[ui:settings.mcp.audit.openInBrowse]] opens the same window on the topic's [[ui:topics.details.tabMessages]] tab, without masking: you see what the assistant saw.
 
 To turn MCP off completely, clear [[ui:settings.mcp.enable]]: clients are disconnected.
 

@@ -8,22 +8,28 @@ use std::time::Duration;
 
 use glafira_mcp::health::{Severity, StatusFilter};
 use glafira_mcp::proposals::{
-    ChangeSpec, ConfigChangeSpec, NewProposal, ProposalOp, ProposalOutput,
+    ChangeSpec, ConfigChangeSpec, NewProposal, ProposalOp, ProposalOutput, ResetScopeSpec,
+    ResetStrategySpec,
 };
 use glafira_mcp::{Backend, SessionView};
+use kafka_explorer_lib::commands::groups::reset_offsets_impl;
 use kafka_explorer_lib::commands::topic_ops::{
     add_partitions_impl, alter_topic_configs_impl, create_topic_impl,
 };
+use kafka_explorer_lib::error::ErrorCode;
 use kafka_explorer_lib::health::proposals::{Change, ProposalStatus};
 use kafka_explorer_lib::health::service::now_ms;
 use kafka_explorer_lib::health::store::Trigger;
 use kafka_explorer_lib::kafka::admin::{ConfigChange, NewTopicSpec};
+use kafka_explorer_lib::kafka::group_ops::{describe_group, group_offsets, preview_reset};
+use kafka_explorer_lib::kafka::groups::{OffsetTarget, ResetRequest, ResetScope, ResetStrategy};
 use kafka_explorer_lib::mcp::approvals::Approvals;
 use kafka_explorer_lib::mcp::backend::AppBackend;
 use kafka_explorer_lib::secrets::MemoryStore;
 use kafka_explorer_lib::state::AppState;
 use kafka_explorer_lib::storage::connections::{Environment, LlmAccess};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
+use rdkafka::consumer::Consumer;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn check_finds_problems_on_prod() {
@@ -361,4 +367,176 @@ async fn proposal_is_checked_against_the_cluster_and_marked_applied() {
         panic!()
     };
     assert!(read_only);
+}
+
+/// Предложение сброса оффсетов, пока человек смотрел предпросмотр, устарело: в группу вошёл
+/// консьюмер. Применение перепроверяет состав группы — отказ GROUP_NOT_EMPTY, коммиты не тронуты,
+/// предложение остаётся открытым; после ухода консьюмера тот же план применяется и закрывает его.
+#[tokio::test(flavor = "multi_thread")]
+async fn reset_proposal_is_refused_while_the_group_has_members() {
+    let Some(bs) = common::bootstrap() else {
+        return;
+    };
+    let topic = common::TempTopic::create(&bs, "it-proposal-reset", 2).await;
+    let msgs: Vec<common::TestMsg> = (0..8)
+        .map(|i| common::TestMsg {
+            partition: if i < 5 { 0 } else { 1 },
+            key: None,
+            value: "v",
+            headers: &[],
+        })
+        .collect();
+    common::produce(&bs, &topic, &msgs).await;
+    let group = common::TempGroup::new(&bs, "it-proposal-reset");
+    common::commit_group_offsets(&bs, &group, &topic, &[(0, 2), (1, 3)]);
+
+    let dir = tempfile::tempdir().unwrap();
+    let st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
+    let mut p = common::plaintext_profile(&bs);
+    p.environment = Environment::Dev;
+    p.llm_access = LlmAccess::Metadata;
+    st.connections.upsert(p).unwrap();
+    let backend = AppBackend::new(
+        st.clone(),
+        Arc::new(Approvals::new(st.settings.clone())),
+        Arc::new(|_| {}),
+    );
+    let ProposalOutput::Proposed { proposal_id, .. } = backend
+        .proposals(ProposalOp::Propose {
+            connection_id: "it".into(),
+            session: SessionView {
+                id: "s1".into(),
+                client: None,
+            },
+            proposal: NewProposal {
+                severity: Severity::Warning,
+                title: "Replay the group from the beginning".into(),
+                rationale: "The group is empty, so its offsets can be reset".into(),
+                change: ChangeSpec::ResetOffsets {
+                    group_id: group.to_string(),
+                    strategy: ResetStrategySpec::Earliest,
+                    scope: ResetScopeSpec::All,
+                },
+                related_rule_id: None,
+                related_finding_key: None,
+            },
+        })
+        .await
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    // Предпросмотр, пока группа пуста: этот план человек и применит.
+    let request = ResetRequest {
+        group_id: group.to_string(),
+        strategy: ResetStrategy::Earliest,
+        scope: ResetScope::All,
+    };
+    let h = st.handles("it").unwrap();
+    let (h1, r1) = (h.clone(), request.clone());
+    let plan: Vec<OffsetTarget> = tokio::task::spawn_blocking(move || preview_reset(&h1, &r1))
+        .await
+        .unwrap()
+        .unwrap()
+        .into_iter()
+        .map(|r| OffsetTarget {
+            topic: r.topic,
+            partition: r.partition,
+            offset: r.target.unwrap(),
+        })
+        .collect();
+    assert_eq!(plan.len(), 2);
+
+    let apply = || {
+        reset_offsets_impl(
+            &st,
+            "it".into(),
+            group.to_string(),
+            plan.clone(),
+            None,
+            Some(proposal_id.clone()),
+            Some(request.clone()),
+        )
+    };
+    let committed = || {
+        let (h, g) = (h.clone(), group.to_string());
+        async move {
+            tokio::task::spawn_blocking(move || group_offsets(&h, &g))
+                .await
+                .unwrap()
+                .unwrap()
+                .iter()
+                .map(|r| r.committed)
+                .collect::<Vec<_>>()
+        }
+    };
+    let saved = || {
+        let f = st.health.store.load("it", now_ms()).unwrap();
+        f.proposals
+            .into_iter()
+            .find(|p| p.id == proposal_id)
+            .unwrap()
+    };
+    let before = saved();
+
+    // Пока человек смотрел предпросмотр, в группу вошёл консьюмер.
+    let (b, g, t) = (bs.clone(), group.to_string(), topic.to_string());
+    let member = tokio::task::spawn_blocking(move || common::join_group(&b, &g, &t))
+        .await
+        .unwrap();
+    let e = apply().await.unwrap_err();
+    assert_eq!(e.code, ErrorCode::GroupNotEmpty, "{e:?}");
+    assert_eq!(e.key, "errors.groups.resetNotEmpty");
+    assert!(e.details.as_deref().unwrap().contains("it-member"), "{e:?}");
+    assert_eq!(committed().await, [Some(2), Some(3)]);
+    // Отказ не трогает предложение: оно открыто и не изменено.
+    let refused = saved();
+    assert_eq!(refused.status, ProposalStatus::Open);
+    assert_eq!(
+        (
+            refused.closed_at_ms,
+            refused.applied_as_proposed,
+            refused.updated_at_ms
+        ),
+        (None, None, before.updated_at_ms)
+    );
+
+    // Консьюмер ушёл — группа снова пуста, тот же план применяется и закрывает предложение.
+    tokio::task::spawn_blocking(move || {
+        member.unsubscribe();
+        drop(member);
+    })
+    .await
+    .unwrap();
+    let deadline = std::time::Instant::now() + Duration::from_secs(15);
+    loop {
+        let (h1, g1) = (h.clone(), group.to_string());
+        let d = tokio::task::spawn_blocking(move || describe_group(&h1, &g1))
+            .await
+            .unwrap()
+            .unwrap();
+        if d.state == "Empty" {
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "группа не опустела: {}",
+            d.state
+        );
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    let results = apply().await.unwrap();
+    assert!(results.iter().all(|r| r.error.is_none()), "{results:?}");
+    assert_eq!(committed().await, [Some(0), Some(0)]);
+    let applied = saved();
+    assert_eq!(
+        (
+            applied.status,
+            applied.applied_as_proposed,
+            applied.applied_change
+        ),
+        (ProposalStatus::Applied, Some(true), None)
+    );
+    assert!(applied.closed_at_ms.is_some());
 }

@@ -205,7 +205,7 @@ tab — Tab (der, Pl. Tabs); screen — Bildschirm; panel (левая панел
 checkbox — Kontrollkästchen; logs — Protokolle (Protokolldateien); batch send — Stapelversand, Stapel;
 release page — Release-Seite; installer — Installationsprogramm; support request — Supportanfrage;
 macOS menu Help — Menü „Hilfe“.
-Глава «LLM-Assistenten (MCP)»: gateway — Gateway; snippet — Fragment; local socket — lokaler Socket; named pipe — Named Pipe; token — Token; indicator — Anzeige; badge `LLM` — Zeichen.
+Глава «LLM-Assistenten (MCP)»: gateway — Gateway; snippet — Fragment; local socket — lokaler Socket; named pipe — Named Pipe; token — Token; indicator — Anzeige; badge `LLM` — Zeichen; service logs (логи сервиса пользователя) — Logs (Pl., das Log), в отличие от журнала MCP самой Glafira — Protokoll.
 
 ## Слова руководства (fr)
 
@@ -228,7 +228,7 @@ support — soporte; timestamp — marca de tiempo; tombstone — tombstone; lis
 purge — purgar, purga (как в интерфейсе); to commit — hacer commit; committed offsets — offsets con commit;
 macOS menu Help — menú Ayuda; Keychain — Llavero; Credential Manager — Administrador de credenciales;
 read-only connection — conexión de solo lectura (с меткой: «en las conexiones con la opción [[ui:common.readOnly]] activada»).
-Глава «Asistentes LLM (MCP)»: gateway — pasarela; snippet — fragmento; named pipe — canalización con nombre; token — token; indicator — indicador; badge `LLM` — marca.
+Глава «Asistentes LLM (MCP)»: gateway — pasarela; snippet — fragmento; named pipe — canalización con nombre; token — token; indicator — indicador; badge `LLM` — marca; service logs (логи сервиса пользователя) — logs (m., sing. log), в отличие от журнала MCP самой Glafira — registro.
 
 ## Слова руководства (it)
 

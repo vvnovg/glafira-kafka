@@ -14,7 +14,7 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 2. 勾選[[ui:settings.mcp.enable]]。狀態會變成[[ui:settings.mcp.state.running]]。
 3. 在連線表單的「[[ui:connections.form.llmAccess]]」中選擇層級並儲存：「[[ui:connections.form.llmLevel.metadata]]」或「[[ui:connections.form.llmLevel.messages]]」（請參閱[讀取訊息](llm-mcp.md#messages)）。層級為「[[ui:connections.form.llmLevel.off]]」的連線，助理看不到。在連線清單中，已開啟的連線會標示 `LLM`；可讀取訊息的連線，標示為實心。
 
-如果管理員停用了 MCP，核取方塊會無法使用，旁邊會顯示「[[ui:settings.mcp.policy]]」。
+如果管理員停用了 MCP，[[ui:settings.mcp.enable]]核取方塊會無法使用，旁邊會顯示「[[ui:settings.mcp.policy]]」。
 
 存取層級和遮罩清單不會隨連線的匯出和匯入一起轉移：在另一台電腦上，需要重新設定。
 
@@ -61,7 +61,7 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 
 例如，可以這樣問：「14:32 訂單服務在日誌中記錄了訂單 123 的錯誤，查一下當時 orders 主題裡有什麼，以及 order-service 群組處理到了哪裡。」請告訴助理你的日誌所用的時區：Glafira 不接受沒有時區的時間。
 
-在資料傳送給助理之前，Glafira 會先進行遮罩。「[[ui:connections.form.mask]]」清單中的欄位的值會在 JSON、標頭和 `name=value` 配對中被替換為 `***`；標準清單涵蓋密碼、權杖、電子郵件、電話號碼、卡號和護照號碼。電子郵件、卡號、JWT 和 Bearer 權杖在任何文字中都會被替換。遮罩可降低風險，但無法辨識人名、地址以及名稱陌生的欄位中的資料，Avro、Protobuf 等二進位格式也只能部分遮罩。篩選條件作用於未遮罩的資料，因此助理可以依據日誌中的值找到訊息。對於 `prod` 連線，表單會顯示警告。
+在資料傳送給助理之前，Glafira 會先進行遮罩。遮罩清單中的欄位的值會在 JSON、標頭和 `name=value` 配對中被替換為 `***`。此清單在連線表單中為每個連線分別設定，位於層級為「[[ui:connections.form.llmLevel.messages]]」時顯示的「[[ui:connections.form.mask]]」區段；標準清單涵蓋密碼、權杖、電子郵件、電話號碼、卡號和護照號碼等。電子郵件、卡號、JWT 和 Bearer 權杖在任何文字中都會被替換。遮罩可降低風險，但無法辨識人名、地址以及名稱陌生的欄位中的資料，Avro、Protobuf 等二進位格式也只能部分遮罩。篩選條件作用於未遮罩的資料，因此助理可以依據日誌中的值找到訊息。對於正式環境連線，表單會顯示警告。
 
 讀取提交記錄需要對 `__consumer_offsets` 擁有 Read 權限。Compaction 會刪除舊的提交記錄，較新的記錄通常還在。
 
@@ -77,7 +77,7 @@ Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor
 - [[ui:settings.mcp.clients]]：[[ui:settings.mcp.revoke]]會關閉該用戶端的工作階段，該用戶端下次連線時會再次要求核准。
 - 在「[[ui:connections.form.llmAccess]]」中變更層級會立即生效，不需要重新連線。
 - [[ui:settings.mcp.audit.title]]：記錄每一次請求的時間、用戶端、工具、連線和結果。回應的內容不會被記錄。[[ui:settings.mcp.audit.reveal]]會開啟檔案 `mcp-audit.jsonl`。
-- 對於讀取訊息的呼叫，日誌還會顯示主題或群組、在掃描的記錄中傳回了多少則，以及遮罩了多少個值。點按[[ui:settings.mcp.audit.openInBrowse]]，會在該主題的[[ui:topics.details.tabMessages]]分頁中開啟同一時間範圍，不做遮罩：你看到的就是助理看到的內容。
+- 對於讀取訊息的呼叫，日誌還會顯示主題或群組、在掃描的記錄中傳回了多少則，以及遮罩了多少個值。對於成功的 `read_messages` 和 `summarize_messages` 呼叫，按一下[[ui:settings.mcp.audit.openInBrowse]]會以呼叫的參數填寫該主題[[ui:topics.details.tabMessages]]分頁中的表單；再按[[ui:browse.panel.read]]即可重新讀取訊息（不做遮罩），並與助理收到的內容比較。如果篩選條件或上限無法準確轉換，表單會註明；如果按鈕已停用，將指標停在按鈕上即可查看原因。
 
 若要完全關閉 MCP，請取消勾選[[ui:settings.mcp.enable]]：用戶端會被中斷連線。
 

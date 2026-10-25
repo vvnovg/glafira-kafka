@@ -14,7 +14,7 @@ Si Glafira n’est pas lancée, le client la lance lui-même et attend jusqu’�
 2. Cochez [[ui:settings.mcp.enable]]. L’état passe à [[ui:settings.mcp.state.running]].
 3. Dans le formulaire de connexion, choisissez le niveau sous [[ui:connections.form.llmAccess]] et enregistrez : [[ui:connections.form.llmLevel.metadata]] ou [[ui:connections.form.llmLevel.messages]] (voir [Lecture des messages](llm-mcp.md#messages)). L’assistant ne voit pas les connexions au niveau [[ui:connections.form.llmLevel.off]]. Dans la liste des connexions, les connexions ouvertes sont marquées `LLM` ; pour les connexions avec messages, la marque est pleine.
 
-Si votre administrateur a interdit MCP, la case est indisponible et [[ui:settings.mcp.policy]] s’affiche à côté.
+Si votre administrateur a interdit MCP, la case [[ui:settings.mcp.enable]] est indisponible et [[ui:settings.mcp.policy]] s’affiche à côté.
 
 Le niveau d’accès et la liste de masquage ne sont pas transférés lors de l’export et de l’import des connexions : sur un autre ordinateur, définissez-les de nouveau.
 
@@ -61,7 +61,7 @@ Au niveau [[ui:connections.form.llmLevel.messages]], l’assistant lit aussi le 
 
 Vous pouvez demander par exemple : « À 14:32, le service des commandes a journalisé une erreur pour la commande 123 — trouve ce qu’il y avait dans le topic orders et ce que le groupe order-service avait traité. » Indiquez à l’assistant le fuseau horaire de vos journaux : Glafira n’accepte pas d’heure sans fuseau.
 
-Avant que les données ne parviennent à l’assistant, Glafira les masque. Les valeurs des champs de la liste [[ui:connections.form.mask]] sont remplacées par `***` dans le JSON, dans les en-têtes et dans les paires `name=value` ; la liste standard couvre les mots de passe, jetons, e-mails, numéros de téléphone, de carte et de passeport. Les e-mails, numéros de carte, JWT et jetons Bearer sont remplacés dans n’importe quel texte. Le masquage réduit le risque mais ne reconnaît pas les noms de personnes, les adresses ni les données dans des champs aux noms inconnus, et les formats binaires comme Avro ou Protobuf ne sont masqués que partiellement. Les filtres voient les données non masquées : l’assistant peut donc trouver un message d’après une valeur de votre journal. Pour une connexion `prod`, le formulaire affiche un avertissement.
+Avant que les données ne parviennent à l’assistant, Glafira les masque. Les valeurs des champs de la liste de masquage sont remplacées par `***` dans le JSON, dans les en-têtes et dans les paires `name=value`. La liste se définit pour chaque connexion dans le formulaire de connexion, dans le bloc [[ui:connections.form.mask]] affiché au niveau [[ui:connections.form.llmLevel.messages]] ; la liste standard couvre notamment les mots de passe, jetons, e-mails, numéros de téléphone, de carte et de passeport. Les e-mails, numéros de carte, JWT et jetons Bearer sont remplacés dans n’importe quel texte. Le masquage réduit le risque mais ne reconnaît pas les noms de personnes, les adresses ni les données dans des champs aux noms inconnus, et les formats binaires comme Avro ou Protobuf ne sont masqués que partiellement. Les filtres voient les données non masquées : l’assistant peut donc trouver un message d’après une valeur de votre journal. Pour une connexion `prod`, le formulaire affiche un avertissement.
 
 L’historique des commits nécessite l’autorisation Read sur `__consumer_offsets`. La compaction supprime les anciens commits ; les récents sont généralement présents.
 
@@ -77,7 +77,7 @@ Tant qu’un client est connecté, un indicateur `LLM` avec le nom du client s�
 - [[ui:settings.mcp.clients]] : [[ui:settings.mcp.revoke]] ferme les sessions du client, qui demandera de nouveau une approbation à la prochaine connexion.
 - Un niveau modifié sous [[ui:connections.form.llmAccess]] prend effet immédiatement, sans reconnexion.
 - [[ui:settings.mcp.audit.title]] — chaque requête : heure, client, outil, connexion, résultat. Le contenu des réponses n’est pas enregistré. [[ui:settings.mcp.audit.reveal]] ouvre le fichier `mcp-audit.jsonl`.
-- Pour la lecture des messages, le journal indique en plus le topic ou le groupe, combien d’enregistrements ont été renvoyés sur ceux parcourus et combien de valeurs ont été masquées. [[ui:settings.mcp.audit.openInBrowse]] ouvre la même fenêtre dans l’onglet [[ui:topics.details.tabMessages]] du topic, sans masquage : vous voyez ce que l’assistant a vu.
+- Pour la lecture des messages, le journal indique en plus le topic ou le groupe, combien d’enregistrements ont été renvoyés sur ceux parcourus et combien de valeurs ont été masquées. Pour les appels `read_messages` et `summarize_messages` réussis, le bouton [[ui:settings.mcp.audit.openInBrowse]] remplit le formulaire de l’onglet [[ui:topics.details.tabMessages]] du topic avec les paramètres de l’appel ; cliquez sur [[ui:browse.panel.read]] pour relire les messages, sans masquage, et les comparer avec ce que l’assistant a reçu. Si les filtres ou la limite n’ont pas pu être repris exactement, le formulaire le signale ; si le bouton est désactivé, survolez-le pour voir la raison.
 
 Pour désactiver complètement MCP, décochez [[ui:settings.mcp.enable]] : les clients sont déconnectés.
 

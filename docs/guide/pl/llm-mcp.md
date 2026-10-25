@@ -14,7 +14,7 @@ Jeśli Glafira nie jest uruchomiona, klient uruchomi ją sam i poczeka do 30 sek
 2. Zaznaczyć opcję [[ui:settings.mcp.enable]]. Stan zmieni się na [[ui:settings.mcp.state.running]].
 3. W formularzu połączenia wybrać poziom w [[ui:connections.form.llmAccess]] i zapisać: [[ui:connections.form.llmLevel.metadata]] lub [[ui:connections.form.llmLevel.messages]] (zob. [Odczyt wiadomości](llm-mcp.md#messages)). Połączeń z poziomem [[ui:connections.form.llmLevel.off]] asystent nie widzi. Na liście połączeń otwarte połączenia mają znaczek `LLM`, a połączenia z wiadomościami — wypełniony.
 
-Jeśli administrator zablokował MCP, opcja jest niedostępna, a obok wyświetlany jest komunikat [[ui:settings.mcp.policy]].
+Jeśli administrator zablokował MCP, opcja [[ui:settings.mcp.enable]] jest niedostępna, a obok wyświetlany jest komunikat [[ui:settings.mcp.policy]].
 
 Poziom dostępu i lista maskowania nie są przenoszone przy eksporcie i imporcie połączeń: na innym komputerze trzeba je ustawić ponownie.
 
@@ -61,11 +61,11 @@ Z poziomem [[ui:connections.form.llmLevel.messages]] asystent odczytuje też tre
 
 Można zapytać na przykład: „O 14:32 usługa zamówień zapisała w logu błąd dla zamówienia 123 — ustal, co było w topiku orders i co zdążyła przetworzyć grupa order-service”. Należy podać asystentowi strefę czasową logów: czasu bez strefy Glafira nie przyjmuje.
 
-Zanim dane trafią do asystenta, Glafira je maskuje. Wartości pól z listy [[ui:connections.form.mask]] są zastępowane przez `***` w JSON, w nagłówkach i w parach `name=value`; lista standardowa obejmuje hasła, tokeny, adresy e-mail, numery telefonów, kart i paszportów. Adresy e-mail, numery kart, tokeny JWT i Bearer są zastępowane w dowolnym tekście. Maskowanie zmniejsza ryzyko, ale nie rozpoznaje imion i nazwisk, adresów ani danych w polach o nieznanych nazwach, a formaty binarne, takie jak Avro czy Protobuf, są maskowane tylko częściowo. Filtry widzą dane niezamaskowane, więc asystent może znaleźć wiadomość po wartości z logu. Dla połączenia `prod` formularz wyświetla ostrzeżenie.
+Zanim dane trafią do asystenta, Glafira je maskuje. Wartości pól z listy maskowania są zastępowane przez `***` w JSON, w nagłówkach i w parach `name=value`. Listę ustawia się osobno dla każdego połączenia w formularzu połączenia, w bloku [[ui:connections.form.mask]], widocznym przy poziomie [[ui:connections.form.llmLevel.messages]]; lista standardowa obejmuje między innymi hasła, tokeny, adresy e-mail, numery telefonów, kart i paszportów. Adresy e-mail, numery kart, tokeny JWT i Bearer są zastępowane w dowolnym tekście. Maskowanie zmniejsza ryzyko, ale nie rozpoznaje imion i nazwisk, adresów ani danych w polach o nieznanych nazwach, a formaty binarne, takie jak Avro czy Protobuf, są maskowane tylko częściowo. Filtry widzą dane niezamaskowane, więc asystent może znaleźć wiadomość po wartości z logu. Dla połączenia `prod` formularz wyświetla ostrzeżenie.
 
-Historia zatwierdzeń wymaga uprawnienia Read do `__consumer_offsets`. Kompakcja usuwa stare zatwierdzenia; najnowsze zwykle są dostępne.
+Historia zatwierdzeń wymaga uprawnienia Read do `__consumer_offsets`. Kompaktowanie usuwa stare zatwierdzenia; najnowsze zwykle są dostępne.
 
-Odczyt jest ograniczony: jedna długa operacja na sesję, najwyżej 40 sekund i 1 000 000 rekordów na wywołanie; po osiągnięciu limitu asystent zawęża okno. Glafira czyta bez grupy konsumentów i niczego nie zatwierdza; `client.id` to `glafira-kafka-mcp`, chyba że połączenie ustawia własny.
+Odczyt jest ograniczony: jedna długa operacja na sesję, najwyżej 40 sekund i 1 000 000 rekordów na wywołanie; po osiągnięciu limitu asystent zawęża okno. Glafira czyta bez grupy konsumentów i niczego nie zatwierdza; `client.id` to `glafira-kafka-mcp`, chyba że połączenie ustawia własny.
 
 Administrator może zablokować odczyt wiadomości kluczem zasad `mcpMessagesEnabled`: poziom [[ui:connections.form.llmLevel.messages]] staje się niedostępny, a połączenia z tym poziomem działają jak [[ui:connections.form.llmLevel.metadata]].
 
@@ -77,7 +77,7 @@ Dopóki klient jest połączony, na dole lewego panelu widać wskaźnik `LLM` z 
 - [[ui:settings.mcp.clients]]: przycisk [[ui:settings.mcp.revoke]] zamyka sesje klienta, a przy następnym połączeniu znów poprosi on o zatwierdzenie.
 - Zmiana poziomu w [[ui:connections.form.llmAccess]] działa od razu, ponowne łączenie nie jest potrzebne.
 - [[ui:settings.mcp.audit.title]] — każde żądanie: czas, klient, narzędzie, połączenie, wynik. Treść odpowiedzi nie jest zapisywana. Przycisk [[ui:settings.mcp.audit.reveal]] otwiera plik `mcp-audit.jsonl`.
-- Przy odczycie wiadomości log pokazuje też topik lub grupę, ile rekordów zwrócono z przejrzanych i ile wartości zamaskowano. Przycisk [[ui:settings.mcp.audit.openInBrowse]] otwiera to samo okno na karcie [[ui:topics.details.tabMessages]] topiku, bez maskowania: widać to samo, co widział asystent.
+- Przy odczycie wiadomości log pokazuje też topik lub grupę, ile rekordów zwrócono z przejrzanych i ile wartości zamaskowano. Przy udanych wywołaniach `read_messages` i `summarize_messages` przycisk [[ui:settings.mcp.audit.openInBrowse]] wypełnia formularz na karcie [[ui:topics.details.tabMessages]] topiku parametrami wywołania; po kliknięciu przycisku [[ui:browse.panel.read]] wiadomości są odczytywane ponownie, bez maskowania, i można je porównać z tym, co otrzymał asystent. Jeśli filtrów lub limitu nie udało się przenieść dokładnie, formularz to sygnalizuje; gdy przycisk jest nieaktywny, po najechaniu na niego widać przyczynę.
 
 Aby całkowicie wyłączyć MCP, należy odznaczyć opcję [[ui:settings.mcp.enable]]: klienci zostaną rozłączeni.
 

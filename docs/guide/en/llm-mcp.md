@@ -14,7 +14,7 @@ If Glafira is not running, the client starts it and waits up to 30 seconds.
 2. Select [[ui:settings.mcp.enable]]. The status changes to [[ui:settings.mcp.state.running]].
 3. In the connection form, choose the level in [[ui:connections.form.llmAccess]] and save: [[ui:connections.form.llmLevel.metadata]] or [[ui:connections.form.llmLevel.messages]] (see [Reading messages](llm-mcp.md#messages)). The assistant does not see connections with [[ui:connections.form.llmLevel.off]]. In the connection tree, open connections have an `LLM` badge; for connections with messages it is filled.
 
-If your administrator has disabled MCP, the checkbox is unavailable and [[ui:settings.mcp.policy]] is shown next to it.
+If your administrator has disabled MCP, the [[ui:settings.mcp.enable]] checkbox is unavailable and [[ui:settings.mcp.policy]] is shown next to it.
 
 The access level and the masking list are not carried over when connections are exported and imported: on another computer, set them again.
 
@@ -61,7 +61,7 @@ With [[ui:connections.form.llmLevel.messages]], the assistant can also read mess
 
 You can ask, for example: “At 14:32 the orders service logged an error for order 123 — find out what was in the orders topic and what the order-service group had processed.” Tell the assistant the time zone of your logs: Glafira does not accept times without one.
 
-Before data reaches the assistant, Glafira masks it. Values of the fields listed under [[ui:connections.form.mask]] are replaced with `***` in JSON, in headers and in `name=value` pairs; the standard list covers passwords, tokens, emails, phone numbers, card and passport numbers. Emails, card numbers, JWTs and Bearer tokens are replaced in any text. Masking lowers the risk but does not recognize people's names, addresses or data in fields with unfamiliar names, and binary formats such as Avro or Protobuf are masked only partially. Filters see unmasked data, so the assistant can find a message by a value from your log. For a `prod` connection, the form shows a warning.
+Before data reaches the assistant, Glafira masks it. Values of the fields from the masking list are replaced with `***` in JSON, in headers and in `name=value` pairs. The list is set for each connection in the connection form, in the [[ui:connections.form.mask]] block shown at the [[ui:connections.form.llmLevel.messages]] level; the standard list covers passwords, tokens, emails, phone numbers, card and passport numbers, among others. Emails, card numbers, JWTs and Bearer tokens are replaced in any text. Masking lowers the risk but does not recognize people's names, addresses or data in fields with unfamiliar names, and binary formats such as Avro or Protobuf are masked only partially. Filters see unmasked data, so the assistant can find a message by a value from your log. For a `prod` connection, the form shows a warning.
 
 The commit history needs the Read permission on `__consumer_offsets`. Compaction removes old commits; recent ones are usually there.
 
@@ -77,7 +77,7 @@ While a client is connected, an `LLM` indicator with the client name is shown at
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]] closes the client's sessions, and it asks for approval again the next time.
 - A changed level in [[ui:connections.form.llmAccess]] takes effect at once, without reconnecting.
 - [[ui:settings.mcp.audit.title]] — every request: time, client, tool, connection, result. Response contents are not recorded. [[ui:settings.mcp.audit.reveal]] opens the `mcp-audit.jsonl` file.
-- For message reads, the log also shows the topic or group, how many records were returned of those scanned and how many values were masked. [[ui:settings.mcp.audit.openInBrowse]] opens the same window on the topic's [[ui:topics.details.tabMessages]] tab, without masking: you see what the assistant saw.
+- For message reads, the log also shows the topic or group, how many records were returned of those scanned and how many values were masked. For successful `read_messages` and `summarize_messages` calls, [[ui:settings.mcp.audit.openInBrowse]] fills in the form on the topic's [[ui:topics.details.tabMessages]] tab with the call's parameters; click [[ui:browse.panel.read]] to read the messages again, without masking, and compare them with what the assistant received. If the filters or the limit could not be carried over exactly, the form says so; if the button is disabled, point at it to see the reason.
 
 To turn MCP off completely, clear [[ui:settings.mcp.enable]]: clients are disconnected.
 

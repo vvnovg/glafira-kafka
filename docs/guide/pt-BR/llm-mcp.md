@@ -14,7 +14,7 @@ Se o Glafira não estiver em execução, o cliente o inicia e espera até 30 seg
 2. Marque [[ui:settings.mcp.enable]]. O status muda para [[ui:settings.mcp.state.running]].
 3. No formulário da conexão, escolha o nível em [[ui:connections.form.llmAccess]] e salve: [[ui:connections.form.llmLevel.metadata]] ou [[ui:connections.form.llmLevel.messages]] (veja [Leitura de mensagens](llm-mcp.md#messages)). O assistente não vê as conexões com [[ui:connections.form.llmLevel.off]]. Na lista de conexões, as conexões abertas têm o indicativo `LLM`; nas que têm mensagens, ele aparece preenchido.
 
-Se o administrador tiver desativado o MCP, a caixa fica indisponível e ao lado aparece [[ui:settings.mcp.policy]].
+Se o administrador tiver desativado o MCP, a caixa [[ui:settings.mcp.enable]] fica indisponível e ao lado aparece [[ui:settings.mcp.policy]].
 
 O nível de acesso e a lista de mascaramento não são transferidos na exportação e na importação de conexões: em outro computador, defina-os de novo.
 
@@ -61,7 +61,7 @@ Com [[ui:connections.form.llmLevel.messages]], o assistente lê também o conte�
 
 Você pode perguntar, por exemplo: “Às 14:32 o serviço de pedidos registrou um erro do pedido 123 — descubra o que havia no tópico orders e o que o grupo order-service tinha processado”. Informe ao assistente o fuso horário dos seus logs: o Glafira não aceita horários sem fuso.
 
-Antes que os dados cheguem ao assistente, o Glafira os mascara. Os valores dos campos da lista de [[ui:connections.form.mask]] são substituídos por `***` no JSON, nos cabeçalhos e nos pares `name=value`; a lista padrão abrange senhas, tokens, e-mails, telefones e números de cartão e de passaporte. E-mails, números de cartão, JWTs e tokens Bearer são substituídos em qualquer texto. O mascaramento reduz o risco, mas não reconhece nomes de pessoas, endereços nem dados em campos com nomes desconhecidos, e formatos binários como Avro ou Protobuf são mascarados só em parte. Os filtros veem os dados sem mascaramento, então o assistente pode encontrar uma mensagem por um valor do seu log. Para uma conexão `prod`, o formulário mostra um aviso.
+Antes que os dados cheguem ao assistente, o Glafira os mascara. Os valores dos campos da lista de mascaramento são substituídos por `***` no JSON, nos cabeçalhos e nos pares `name=value`. A lista é definida para cada conexão no formulário da conexão, na seção [[ui:connections.form.mask]], exibida no nível [[ui:connections.form.llmLevel.messages]]; a lista padrão abrange, entre outros, senhas, tokens, e-mails, telefones e números de cartão e de passaporte. E-mails, números de cartão, JWTs e tokens Bearer são substituídos em qualquer texto. O mascaramento reduz o risco, mas não reconhece nomes de pessoas, endereços nem dados em campos com nomes desconhecidos, e formatos binários como Avro ou Protobuf são mascarados só em parte. Os filtros veem os dados sem mascaramento, então o assistente pode encontrar uma mensagem por um valor do seu log. Para uma conexão `prod`, o formulário mostra um aviso.
 
 O histórico de commits exige a permissão Read em `__consumer_offsets`. A compactação remove commits antigos; os recentes costumam estar lá.
 
@@ -77,7 +77,7 @@ Enquanto um cliente está conectado, na parte inferior do painel esquerdo aparec
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]] encerra as sessões do cliente, e na próxima conexão ele pede aprovação de novo.
 - Um nível alterado em [[ui:connections.form.llmAccess]] vale imediatamente, sem reconectar.
 - [[ui:settings.mcp.audit.title]] — cada solicitação: data/hora, cliente, ferramenta, conexão, resultado. O conteúdo das respostas não é gravado. [[ui:settings.mcp.audit.reveal]] abre o arquivo `mcp-audit.jsonl`.
-- Nas leituras de mensagens, o log mostra também o tópico ou o grupo, quantos registros foram retornados dos examinados e quantos valores foram mascarados. [[ui:settings.mcp.audit.openInBrowse]] abre a mesma janela na aba [[ui:topics.details.tabMessages]] do tópico, sem mascaramento: você vê o mesmo que o assistente viu.
+- Nas leituras de mensagens, o log mostra também o tópico ou o grupo, quantos registros foram retornados dos examinados e quantos valores foram mascarados. Nas chamadas bem-sucedidas de `read_messages` e `summarize_messages`, [[ui:settings.mcp.audit.openInBrowse]] preenche o formulário da aba [[ui:topics.details.tabMessages]] do tópico com os parâmetros da chamada; clique em [[ui:browse.panel.read]] para ler as mensagens novamente, sem mascaramento, e compará-las com o que o assistente recebeu. Se os filtros ou o limite não puderam ser transferidos com exatidão, o formulário avisa; se o botão estiver desativado, aponte para ele para ver o motivo.
 
 Para desativar o MCP por completo, desmarque [[ui:settings.mcp.enable]]: os clientes são desconectados.
 

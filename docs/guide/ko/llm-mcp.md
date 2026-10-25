@@ -14,7 +14,7 @@ Glafira가 실행 중이 아니면 클라이언트가 직접 실행하고 최대
 2. [[ui:settings.mcp.enable]]을 선택합니다. 상태에 [[ui:settings.mcp.state.running]]라고 표시됩니다.
 3. 연결 양식의 [[ui:connections.form.llmAccess]] 항목에서 수준을 선택하고 저장합니다: [[ui:connections.form.llmLevel.metadata]] 또는 [[ui:connections.form.llmLevel.messages]] 수준([메시지 읽기](llm-mcp.md#messages) 참조). [[ui:connections.form.llmLevel.off]] 수준인 연결은 어시스턴트에게 보이지 않습니다. 연결 목록에서 열려 있는 연결에는 `LLM` 표시가 붙고, 메시지를 읽을 수 있는 연결에서는 표시가 채워집니다.
 
-관리자가 MCP를 사용하지 못하게 했다면 확인란을 사용할 수 없으며 옆에 [[ui:settings.mcp.policy]]라고 표시됩니다.
+관리자가 MCP를 사용하지 못하게 했다면 [[ui:settings.mcp.enable]] 확인란을 사용할 수 없으며 옆에 [[ui:settings.mcp.policy]]라고 표시됩니다.
 
 접근 수준과 마스킹 목록은 연결을 내보내고 가져올 때 옮겨지지 않습니다. 다른 컴퓨터에서는 다시 설정하세요.
 
@@ -61,7 +61,7 @@ Glafira가 실행 중이 아니면 클라이언트가 직접 실행하고 최대
 
 예를 들어 이렇게 물어볼 수 있습니다: '14:32에 주문 서비스가 주문 123의 오류를 로그에 기록했어. 그때 orders 토픽에 무엇이 있었고 order-service 그룹이 어디까지 처리했는지 알아봐 줘.' 로그의 시간대를 어시스턴트에게 알려 주세요. 시간대가 없는 시각은 Glafira가 받지 않습니다.
 
-데이터가 어시스턴트에게 전달되기 전에 Glafira가 마스킹합니다. [[ui:connections.form.mask]] 목록에 있는 필드의 값은 JSON, 헤더, `name=value` 쌍에서 `***`로 바뀝니다. 표준 목록에는 비밀번호, 토큰, 이메일, 전화번호, 카드 번호, 여권 번호가 포함됩니다. 이메일, 카드 번호, JWT, Bearer 토큰은 어떤 텍스트에서든 바뀝니다. 마스킹은 위험을 줄이지만 사람 이름, 주소, 낯선 이름의 필드에 있는 데이터는 인식하지 못하며, Avro나 Protobuf 같은 바이너리 형식은 일부만 마스킹됩니다. 필터는 마스킹하지 않은 데이터를 보므로 어시스턴트는 로그에 있는 값으로 메시지를 찾을 수 있습니다. `prod` 연결에서는 양식에 경고가 표시됩니다.
+데이터가 어시스턴트에게 전달되기 전에 Glafira가 마스킹합니다. 마스킹 목록에 있는 필드의 값은 JSON, 헤더, `name=value` 쌍에서 `***`로 바뀝니다. 이 목록은 연결 양식의 [[ui:connections.form.mask]] 섹션에서 연결마다 지정하며, 이 섹션은 [[ui:connections.form.llmLevel.messages]] 수준에서 표시됩니다. 표준 목록에는 비밀번호, 토큰, 이메일, 전화번호, 카드 번호, 여권 번호 등이 포함됩니다. 이메일, 카드 번호, JWT, Bearer 토큰은 어떤 텍스트에서든 바뀝니다. 마스킹은 위험을 줄이지만 사람 이름, 주소, 낯선 이름의 필드에 있는 데이터는 인식하지 못하며, Avro나 Protobuf 같은 바이너리 형식은 일부만 마스킹됩니다. 필터는 마스킹하지 않은 데이터를 보므로 어시스턴트는 로그에 있는 값으로 메시지를 찾을 수 있습니다. 운영 환경 연결에서는 양식에 경고가 표시됩니다.
 
 커밋 기록을 읽으려면 `__consumer_offsets`에 대한 Read 권한이 필요합니다. 컴팩션은 오래된 커밋을 삭제하지만 최근 커밋은 보통 남아 있습니다.
 
@@ -77,7 +77,7 @@ Glafira가 실행 중이 아니면 클라이언트가 직접 실행하고 최대
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]]는 클라이언트의 세션을 닫으며, 클라이언트는 다음에 연결할 때 다시 승인을 요청합니다.
 - [[ui:connections.form.llmAccess]] 항목에서 수준을 바꾸면 바로 적용되며 다시 연결할 필요가 없습니다.
 - [[ui:settings.mcp.audit.title]] — 모든 요청: 시간, 클라이언트, 도구, 연결, 결과. 응답 내용은 기록되지 않습니다. [[ui:settings.mcp.audit.reveal]]를 클릭하면 `mcp-audit.jsonl` 파일이 열립니다.
-- 메시지 읽기의 경우 로그에는 토픽 또는 그룹, 스캔한 레코드 중 반환한 개수, 마스킹한 값의 개수도 표시됩니다. [[ui:settings.mcp.audit.openInBrowse]] 버튼을 클릭하면 토픽의 [[ui:topics.details.tabMessages]] 탭에서 같은 시간 범위가 마스킹 없이 열립니다. 어시스턴트가 본 것과 같은 내용을 볼 수 있습니다.
+- 메시지 읽기의 경우 로그에는 토픽 또는 그룹, 스캔한 레코드 중 반환한 개수, 마스킹한 값의 개수도 표시됩니다. 성공한 `read_messages` 및 `summarize_messages` 호출에서 [[ui:settings.mcp.audit.openInBrowse]] 버튼을 클릭하면 토픽의 [[ui:topics.details.tabMessages]] 탭에 있는 양식이 호출의 매개변수로 채워집니다. [[ui:browse.panel.read]] 버튼을 클릭하면 메시지를 마스킹 없이 다시 읽어 어시스턴트가 받은 내용과 비교할 수 있습니다. 필터나 제한을 정확히 옮기지 못한 경우 양식에 표시되며, 버튼이 비활성화되어 있으면 버튼에 포인터를 올려 이유를 볼 수 있습니다.
 
 MCP를 완전히 끄려면 [[ui:settings.mcp.enable]] 확인란의 선택을 해제하세요. 클라이언트의 연결이 끊어집니다.
 

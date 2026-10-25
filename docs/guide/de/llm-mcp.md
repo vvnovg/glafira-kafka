@@ -14,7 +14,7 @@ Läuft Glafira nicht, startet der Client sie selbst und wartet bis zu 30 Sekunde
 2. Wählen Sie [[ui:settings.mcp.enable]]. Der Status wechselt zu [[ui:settings.mcp.state.running]].
 3. Wählen Sie im Verbindungsformular unter [[ui:connections.form.llmAccess]] die Stufe und speichern Sie: [[ui:connections.form.llmLevel.metadata]] oder [[ui:connections.form.llmLevel.messages]] (siehe [Nachrichten lesen](llm-mcp.md#messages)). Verbindungen mit [[ui:connections.form.llmLevel.off]] sieht der Assistent nicht. In der Verbindungsliste tragen geöffnete Verbindungen das Zeichen `LLM`; bei Verbindungen mit Nachrichten ist es ausgefüllt.
 
-Hat Ihr Administrator MCP untersagt, ist das Kontrollkästchen nicht verfügbar, und daneben steht [[ui:settings.mcp.policy]].
+Hat Ihr Administrator MCP untersagt, ist das Kontrollkästchen [[ui:settings.mcp.enable]] nicht verfügbar, und daneben steht [[ui:settings.mcp.policy]].
 
 Die Zugriffsstufe und die Maskierungsliste werden beim Export und Import von Verbindungen nicht übertragen: Auf einem anderen Computer müssen Sie sie erneut festlegen.
 
@@ -61,7 +61,7 @@ Mit [[ui:connections.form.llmLevel.messages]] liest der Assistent auch den Inhal
 
 Sie können zum Beispiel fragen: „Um 14:32 hat der Bestelldienst einen Fehler zu Bestellung 123 protokolliert — finde heraus, was im Topic orders stand und was die Gruppe order-service verarbeitet hatte.“ Nennen Sie dem Assistenten die Zeitzone Ihrer Logs: Zeiten ohne Zeitzone nimmt Glafira nicht an.
 
-Bevor Daten an den Assistenten gehen, maskiert Glafira sie. Werte der Felder aus der Liste unter [[ui:connections.form.mask]] werden in JSON, in Headern und in `name=value`-Paaren durch `***` ersetzt; die Standardliste umfasst Passwörter, Token, E-Mail-Adressen, Telefonnummern, Karten- und Passnummern. E-Mail-Adressen, Kartennummern, JWTs und Bearer-Token werden in jedem Text ersetzt. Die Maskierung senkt das Risiko, erkennt aber keine Personennamen, Adressen oder Daten in Feldern mit unbekannten Namen, und Binärformate wie Avro oder Protobuf werden nur teilweise maskiert. Filter sehen die unmaskierten Daten, daher kann der Assistent eine Nachricht anhand eines Werts aus Ihrem Log finden. Bei einer `prod`-Verbindung zeigt das Formular eine Warnung.
+Bevor Daten an den Assistenten gehen, maskiert Glafira sie. Werte der Felder aus der Maskierungsliste werden in JSON, in Headern und in `name=value`-Paaren durch `***` ersetzt. Die Liste wird für jede Verbindung im Verbindungsformular festgelegt, im Block [[ui:connections.form.mask]], der bei der Stufe [[ui:connections.form.llmLevel.messages]] angezeigt wird; die Standardliste umfasst unter anderem Passwörter, Token, E-Mail-Adressen, Telefonnummern, Karten- und Passnummern. E-Mail-Adressen, Kartennummern, JWTs und Bearer-Token werden in jedem Text ersetzt. Die Maskierung senkt das Risiko, erkennt aber keine Personennamen, Adressen oder Daten in Feldern mit unbekannten Namen, und Binärformate wie Avro oder Protobuf werden nur teilweise maskiert. Filter sehen die unmaskierten Daten, daher kann der Assistent eine Nachricht anhand eines Werts aus Ihrem Log finden. Bei einer `prod`-Verbindung zeigt das Formular eine Warnung.
 
 Der Commit-Verlauf erfordert die Berechtigung Read für `__consumer_offsets`. Compaction entfernt alte Commits; aktuelle sind meist vorhanden.
 
@@ -77,7 +77,7 @@ Solange ein Client verbunden ist, erscheint unten im linken Bereich die Anzeige 
 - [[ui:settings.mcp.clients]]: [[ui:settings.mcp.revoke]] schließt die Sessions des Clients, und beim nächsten Verbinden bittet er erneut um Genehmigung.
 - Eine geänderte Stufe unter [[ui:connections.form.llmAccess]] gilt sofort, ein erneutes Verbinden ist nicht nötig.
 - [[ui:settings.mcp.audit.title]] — jede Anfrage: Zeit, Client, Tool, Verbindung, Ergebnis. Der Inhalt der Antworten wird nicht aufgezeichnet. [[ui:settings.mcp.audit.reveal]] öffnet die Datei `mcp-audit.jsonl`.
-- Bei gelesenen Nachrichten zeigt das Protokoll zusätzlich das Topic oder die Gruppe, wie viele Datensätze von den durchsuchten zurückgegeben und wie viele Werte maskiert wurden. [[ui:settings.mcp.audit.openInBrowse]] öffnet dasselbe Fenster auf dem Tab [[ui:topics.details.tabMessages]] des Topics, ohne Maskierung: Sie sehen, was der Assistent gesehen hat.
+- Bei gelesenen Nachrichten zeigt das Protokoll zusätzlich das Topic oder die Gruppe, wie viele Datensätze von den durchsuchten zurückgegeben und wie viele Werte maskiert wurden. Bei erfolgreichen Aufrufen von `read_messages` und `summarize_messages` füllt [[ui:settings.mcp.audit.openInBrowse]] das Formular auf dem Tab [[ui:topics.details.tabMessages]] des Topics mit den Parametern des Aufrufs aus; klicken Sie auf [[ui:browse.panel.read]], um die Nachrichten erneut und ohne Maskierung zu lesen und mit dem zu vergleichen, was der Assistent erhalten hat. Konnten die Filter oder das Limit nicht genau übernommen werden, weist das Formular darauf hin; ist die Schaltfläche deaktiviert, zeigen Sie mit der Maus darauf, um den Grund zu sehen.
 
 Um MCP ganz auszuschalten, deaktivieren Sie [[ui:settings.mcp.enable]]: Die Clients werden getrennt.
 

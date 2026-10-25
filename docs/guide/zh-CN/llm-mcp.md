@@ -14,7 +14,7 @@ Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor
 2. 选中[[ui:settings.mcp.enable]]。状态会变为[[ui:settings.mcp.state.running]]。
 3. 在连接表单的“[[ui:connections.form.llmAccess]]”中选择级别并保存：“[[ui:connections.form.llmLevel.metadata]]”或“[[ui:connections.form.llmLevel.messages]]”（参见[读取消息](llm-mcp.md#messages)）。级别为“[[ui:connections.form.llmLevel.off]]”的连接，助手看不到。在连接列表中，已打开的连接带有 `LLM` 标记；可读取消息的连接，该标记为实心。
 
-如果管理员禁用了 MCP，该复选框不可用，旁边会显示“[[ui:settings.mcp.policy]]”。
+如果管理员禁用了 MCP，[[ui:settings.mcp.enable]]复选框不可用，旁边会显示“[[ui:settings.mcp.policy]]”。
 
 访问级别和脱敏列表不会随连接的导出和导入一起转移：在另一台计算机上，需要重新设置。
 
@@ -61,7 +61,7 @@ Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor
 
 例如，可以这样问：“14:32 订单服务在日志中记录了订单 123 的错误，查一下当时 orders 主题里有什么，以及 order-service 组处理到了哪里。”请告诉助手你的日志所用的时区：Glafira 不接受没有时区的时间。
 
-在数据发送给助手之前，Glafira 会对其进行脱敏。“[[ui:connections.form.mask]]”列表中的字段的值会在 JSON、标头和 `name=value` 对中被替换为 `***`；标准列表涵盖密码、令牌、电子邮件、电话号码、卡号和护照号。电子邮件、卡号、JWT 和 Bearer 令牌在任何文本中都会被替换。脱敏可以降低风险，但无法识别人名、地址以及名称陌生的字段中的数据，Avro、Protobuf 等二进制格式也只能部分脱敏。筛选条件作用于未脱敏的数据，因此助手可以根据日志中的值找到消息。对于 `prod` 连接，表单会显示警告。
+在数据发送给助手之前，Glafira 会对其进行脱敏。脱敏列表中的字段的值会在 JSON、标头和 `name=value` 对中被替换为 `***`。该列表在连接表单中为每个连接单独设置，位于级别为“[[ui:connections.form.llmLevel.messages]]”时显示的“[[ui:connections.form.mask]]”部分；标准列表涵盖密码、令牌、电子邮件、电话号码、卡号和护照号等。电子邮件、卡号、JWT 和 Bearer 令牌在任何文本中都会被替换。脱敏可以降低风险，但无法识别人名、地址以及名称陌生的字段中的数据，Avro、Protobuf 等二进制格式也只能部分脱敏。筛选条件作用于未脱敏的数据，因此助手可以根据日志中的值找到消息。对于生产环境连接，表单会显示警告。
 
 读取提交历史需要对 `__consumer_offsets` 拥有 Read 权限。Compaction 会删除旧的提交记录，较新的记录通常还在。
 
@@ -77,7 +77,7 @@ Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor
 - [[ui:settings.mcp.clients]]：[[ui:settings.mcp.revoke]]会关闭该客户端的会话，该客户端下次连接时会再次请求批准。
 - 在“[[ui:connections.form.llmAccess]]”中更改级别会立即生效，无需重新连接。
 - [[ui:settings.mcp.audit.title]]：记录每一次请求的时间、客户端、工具、连接和结果。响应的内容不会被记录。[[ui:settings.mcp.audit.reveal]]会打开文件 `mcp-audit.jsonl`。
-- 对于读取消息的调用，日志还会显示主题或组、在扫描的记录中返回了多少条，以及脱敏了多少个值。点击[[ui:settings.mcp.audit.openInBrowse]]，会在该主题的[[ui:topics.details.tabMessages]]标签页中打开同一时间窗口，不做脱敏：你看到的就是助手看到的内容。
+- 对于读取消息的调用，日志还会显示主题或组、在扫描的记录中返回了多少条，以及脱敏了多少个值。对于成功的 `read_messages` 和 `summarize_messages` 调用，点击[[ui:settings.mcp.audit.openInBrowse]]会用调用的参数填写该主题[[ui:topics.details.tabMessages]]标签页中的表单；点击[[ui:browse.panel.read]]即可重新读取消息（不做脱敏），并与助手收到的内容进行比较。如果筛选条件或上限无法准确转换，表单会注明；如果按钮被禁用，将指针悬停在按钮上可查看原因。
 
 要完全关闭 MCP，请取消选中[[ui:settings.mcp.enable]]：客户端会被断开。
 

@@ -152,12 +152,17 @@ export function McpSection() {
       refreshAudit();
     },
   });
+  // Клиент протокола 2026-07-28 не шлёт initialize: без кнопки диалог появился бы только при первом вызове.
+  const requestApproval = useMutation({
+    mutationFn: (sessionId: string) => api.requestMcpApproval(sessionId),
+    onSuccess: apply,
+  });
   const reveal = useMutation({ mutationFn: () => api.revealMcpAudit() });
 
   if (status.error) return <ErrorBanner error={status.error} onRetry={() => status.refetch()} />;
   const s = status.data;
   if (!s) return <p className="empty">{t("common.loading")}</p>;
-  const error = toggle.error ?? revoke.error ?? disconnect.error ?? reveal.error;
+  const error = toggle.error ?? revoke.error ?? disconnect.error ?? requestApproval.error ?? reveal.error;
 
   return (
     <section aria-labelledby="mcp-title">
@@ -222,9 +227,16 @@ export function McpSection() {
                   <td>{formatTimestamp(x.startedMs)}</td>
                   <td>{x.calls}</td>
                   <td>
-                    <button type="button" disabled={disconnect.isPending} onClick={() => disconnect.mutate(x.id)}>
-                      {t("settings.mcp.disconnect")}
-                    </button>
+                    <div className="toolbar">
+                      {!x.approved && (
+                        <button type="button" disabled={requestApproval.isPending} onClick={() => requestApproval.mutate(x.id)}>
+                          {t("settings.mcp.approve")}
+                        </button>
+                      )}
+                      <button type="button" disabled={disconnect.isPending} onClick={() => disconnect.mutate(x.id)}>
+                        {t("settings.mcp.disconnect")}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

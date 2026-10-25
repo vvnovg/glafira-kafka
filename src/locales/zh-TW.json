@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "提交序列：{{returned}}，已掃描記錄：{{scanned}}，已遮罩：{{masked}}"
       },
       "openCounts": "已對 LLM 開放：{{n}}，其中可讀取訊息：{{m}}",
-      "messagesPolicy": "讀取訊息已被你的組織停用"
+      "messagesPolicy": "讀取訊息已被你的組織停用",
+      "approve": "核准"
     }
   },
   "layout": {

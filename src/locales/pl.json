@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "serie zatwierdzeń: {{returned}}, przeskanowano rekordów: {{scanned}}, zamaskowano: {{masked}}"
       },
       "openCounts": "Otwarte dla LLM: {{n}}, w tym z wiadomościami: {{m}}",
-      "messagesPolicy": "Odczyt wiadomości jest wyłączony przez organizację"
+      "messagesPolicy": "Odczyt wiadomości jest wyłączony przez organizację",
+      "approve": "Zatwierdź"
     }
   },
   "layout": {

@@ -13,6 +13,7 @@ vi.mock("../../api/client", async (importOriginal) => {
       setMcpEnabled: vi.fn(),
       revokeMcpClient: vi.fn(),
       disconnectMcpSessions: vi.fn(),
+      requestMcpApproval: vi.fn(),
       getMcpAudit: vi.fn(),
       getMcpClientConfigs: vi.fn(),
       revealMcpAudit: vi.fn(),
@@ -234,5 +235,23 @@ describe("McpSection", () => {
     expect(api.revokeMcpClient).toHaveBeenCalledWith("claude-ai");
     // отзыв и отключение обновляют журнал: первая загрузка + отключение + отзыв
     await waitFor(() => expect(api.getMcpAudit).toHaveBeenCalledTimes(3));
+  });
+
+  it("«Подтвердить» у ожидающей сессии запрашивает диалог подтверждения", async () => {
+    const status = mcpStatus({
+      sessions: [
+        { id: "s1", clientName: null, clientVersion: null, startedMs: 0, calls: 0, active: false, approved: false },
+        { id: "s2", clientName: "claude-code", clientVersion: "2.2", startedMs: 0, calls: 3, active: false, approved: true },
+      ],
+    });
+    vi.mocked(api.getMcpStatus).mockResolvedValue(status);
+    vi.mocked(api.requestMcpApproval).mockResolvedValue(status);
+    const user = userEvent.setup();
+    renderWithClient(<McpSection />);
+    const sessions = (await screen.findByText("Активные сессии")).nextElementSibling as HTMLElement;
+    const [waiting, approved] = within(sessions).getAllByRole("row").slice(1);
+    expect(within(approved).queryByRole("button", { name: "Подтвердить" })).not.toBeInTheDocument();
+    await user.click(within(waiting).getByRole("button", { name: "Подтвердить" }));
+    expect(api.requestMcpApproval).toHaveBeenCalledWith("s1");
   });
 });

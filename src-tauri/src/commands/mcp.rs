@@ -31,6 +31,12 @@ pub async fn answer_mcp_approval(
 }
 
 #[tauri::command]
+pub async fn request_mcp_approval(ctl: Ctl<'_>, session_id: String) -> AppResult<McpStatus> {
+    let c = ctl.inner().clone();
+    blocking(move || c.request_approval(&session_id)).await
+}
+
+#[tauri::command]
 pub async fn revoke_mcp_client(ctl: Ctl<'_>, name: String) -> AppResult<McpStatus> {
     let c = ctl.inner().clone();
     blocking(move || c.revoke(&name)).await

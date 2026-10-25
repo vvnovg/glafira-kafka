@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "Commit-Serien: {{returned}}, gescannte Datensätze: {{scanned}}, maskiert: {{masked}}"
       },
       "openCounts": "Für LLM freigegeben: {{n}}, davon mit Nachrichten: {{m}}",
-      "messagesPolicy": "Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert"
+      "messagesPolicy": "Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert",
+      "approve": "Genehmigen"
     }
   },
   "layout": {

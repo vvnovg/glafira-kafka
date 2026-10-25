@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}"
       },
       "openCounts": "LLMに開放：{{n}}件、うちメッセージあり：{{m}}件",
-      "messagesPolicy": "メッセージの読み取りは組織によって無効にされています"
+      "messagesPolicy": "メッセージの読み取りは組織によって無効にされています",
+      "approve": "承認"
     }
   },
   "layout": {

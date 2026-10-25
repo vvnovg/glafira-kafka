@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "commit runs: {{returned}}, records scanned: {{scanned}}, masked: {{masked}}"
       },
       "openCounts": "Open to LLM: {{n}}, with messages: {{m}}",
-      "messagesPolicy": "Reading messages is disabled by your organization"
+      "messagesPolicy": "Reading messages is disabled by your organization",
+      "approve": "Approve"
     }
   },
   "layout": {

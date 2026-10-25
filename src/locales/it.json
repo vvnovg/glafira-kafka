@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "serie di commit: {{returned}}, record analizzati: {{scanned}}, mascherati: {{masked}}"
       },
       "openCounts": "Aperte agli LLM: {{n}}, di cui con messaggi: {{m}}",
-      "messagesPolicy": "La lettura dei messaggi è disattivata dalla tua organizzazione"
+      "messagesPolicy": "La lettura dei messaggi è disattivata dalla tua organizzazione",
+      "approve": "Approva"
     }
   },
   "layout": {

@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "提交序列：{{returned}}，已扫描记录：{{scanned}}，已脱敏：{{masked}}"
       },
       "openCounts": "已向 LLM 开放：{{n}}，其中可读取消息：{{m}}",
-      "messagesPolicy": "读取消息已被你的组织禁用"
+      "messagesPolicy": "读取消息已被你的组织禁用",
+      "approve": "批准"
     }
   },
   "layout": {

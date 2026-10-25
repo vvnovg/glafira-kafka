@@ -471,7 +471,8 @@
         "scanDetailsHistoryNoTarget": "séries de commits: {{returned}}, registros verificados: {{scanned}}, mascarados: {{masked}}"
       },
       "openCounts": "Abertas para LLM: {{n}}, com mensagens: {{m}}",
-      "messagesPolicy": "A leitura de mensagens está desativada pela sua organização"
+      "messagesPolicy": "A leitura de mensagens está desativada pela sua organização",
+      "approve": "Aprovar"
     }
   },
   "layout": {

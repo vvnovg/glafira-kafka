@@ -82,9 +82,11 @@ export interface ConnectionProfile {
   order?: number;
   /** Доступ LLM через MCP; нет поля — "off". */
   llmAccess?: LlmAccess;
+  /** Имена полей для маскирования сообщений; нет поля или null — стандартный список. */
+  llmMaskFields?: string[] | null;
 }
 
-export type LlmAccess = "off" | "metadata";
+export type LlmAccess = "off" | "metadata" | "messages";
 
 export interface ConnectionFolder {
   id: string;
@@ -540,6 +542,8 @@ export interface PolicyStatus {
   language: string | null;
   /** false — MCP запрещён администратором; нет поля — разрешён. */
   mcpEnabled?: boolean;
+  /** false — чтение сообщений через MCP запрещено администратором. */
+  mcpMessagesEnabled?: boolean;
   errors: LocalizedText[];
 }
 
@@ -604,6 +608,10 @@ export interface McpStatus {
   pending: McpApprovalRequest[];
   approvedClients: McpApprovedClient[];
   allowedConnections: number;
+  /** Из них — с чтением сообщений (с учётом политики). */
+  messageConnections: number;
+  /** Политика разрешает чтение сообщений. */
+  messagesAllowed: boolean;
 }
 
 export interface McpClientConfigs {

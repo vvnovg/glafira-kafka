@@ -381,7 +381,8 @@
     },
     "exportAll": "Exportar todo…",
     "import": "Importar…",
-    "findings": "Hallazgos"
+    "findings": "Hallazgos",
+    "llmMessages": "Acceso para LLM: metadatos y mensajes"
   },
   "tabs": {
     "settings": "Ajustes",
@@ -407,7 +408,7 @@
     },
     "mcp": {
       "section": "Asistentes LLM (MCP)",
-      "intro": "Un asistente LLM (Claude Desktop, Claude Code, Cursor y otros) puede conectarse a Glafira mediante MCP y leer los metadatos de las conexiones que abras para él. No puede cambiar nada en los clústeres.",
+      "intro": "Un asistente LLM (Claude Desktop, Claude Code, Cursor y otros) puede conectarse a Glafira mediante MCP y leer los metadatos de las conexiones que abras para él, y los mensajes donde lo permitas. No puede cambiar nada en los clústeres.",
       "enable": "Permitir el servidor MCP",
       "policy": "MCP está desactivado por tu organización",
       "state": {
@@ -456,7 +457,9 @@
         "revoked": "Acceso del cliente revocado",
         "serverStarted": "Servidor iniciado",
         "serverStopped": "Servidor detenido"
-      }
+      },
+      "openCounts": "Abiertas a LLM: {{n}}, con mensajes: {{m}}",
+      "messagesPolicy": "La lectura de mensajes está desactivada por tu organización"
     }
   },
   "layout": {
@@ -471,7 +474,7 @@
       "folder": "Carpeta",
       "folderRoot": "(raíz)",
       "environment": "Entorno",
-      "llmAccess": "Acceso para LLM (solo metadatos)",
+      "llmAccess": "Acceso para LLM",
       "color": "Color",
       "bootstrap": "Servidores bootstrap",
       "protocol": "Protocolo",
@@ -493,7 +496,19 @@
         "config": "Configuración",
         "tcp": "DNS / TCP",
         "kafka": "Kafka (TLS, SASL, metadatos)"
-      }
+      },
+      "llmLevel": {
+        "off": "Desactivado",
+        "metadata": "Solo metadatos",
+        "messages": "Metadatos y mensajes"
+      },
+      "llmMessagesPolicy": "Mensajes: desactivado por tu organización",
+      "llmMessagesAsMetadata": "Funciona como “Solo metadatos”: la lectura de mensajes está desactivada por tu organización",
+      "llmProdWarning": "El contenido de los mensajes de este clúster de producción se enviará al proveedor de LLM",
+      "mask": "Enmascaramiento",
+      "maskStandard": "Lista estándar",
+      "maskFieldsAria": "Nombres de campos para enmascarar, uno por línea",
+      "maskNote": "Los correos electrónicos, los números de tarjeta, los JWT y los tokens Bearer se enmascaran siempre. El enmascaramiento reduce el riesgo, pero no reconoce nombres de personas, direcciones ni datos en campos con nombres desconocidos."
     },
     "tls": {
       "pick": "Examinar…",
@@ -1070,11 +1085,12 @@
     "approval": {
       "title": "{{client}} quiere conectarse a Glafira",
       "body": "Verá los metadatos de las conexiones abiertas a asistentes LLM: {{n}}.",
-      "readOnly": "A través de Glafira, el asistente solo puede leer brokers, topics, configuraciones y consumer groups. Los mensajes y las contraseñas no se comparten.",
+      "readOnly": "A través de Glafira, el asistente solo puede leer: no puede cambiar nada en los clústeres. Las contraseñas no se comparten.",
       "unnamed": "El cliente no indicó su nombre, así que la respuesta solo vale para esta sesión.",
       "more": "Esperando respuesta: {{n}} más",
       "allow": "Permitir",
-      "reject": "Rechazar"
+      "reject": "Rechazar",
+      "messages": "Podrá leer el contenido de los mensajes en {{n}} de ellas."
     },
     "indicator": {
       "one": "LLM: {{client}}",
@@ -1306,7 +1322,7 @@
     "connections": {
       "environment": "Marca la conexión con un color. En las conexiones prod, cualquier cambio debe confirmarse escribiendo el nombre de la conexión.",
       "readOnly": "Bloquea todo lo que modifica el clúster: envío, restablecimiento de offsets, eliminación de topics y grupos, sesiones de consumer.",
-      "llmAccess": "Permite que un asistente LLM conectado por MCP lea los metadatos de este clúster: brokers, topics, configuraciones, consumer groups. Los mensajes y las contraseñas nunca se comparten.",
+      "llmAccess": "Qué puede leer en este clúster un asistente LLM conectado por MCP. “Solo metadatos”: brokers, topics, configuraciones, consumer groups. “Metadatos y mensajes”: además, el contenido de los mensajes y el historial de commits de los consumer groups, con enmascaramiento. Las contraseñas nunca se comparten.",
       "bootstrap": "Uno o varios <code>host:port</code>, separados por comas. El cliente encuentra el resto de brokers por sí solo.",
       "protocol": "PLAINTEXT — sin cifrado ni inicio de sesión. SSL — cifrado TLS. SASL_* — inicio de sesión con usuario y contraseña; SASL_SSL además cifra.",
       "saslMechanism": "Los administradores de Kafka saben qué mecanismo usa el clúster. SCRAM nunca envía la contraseña en sí; PLAIN sin TLS la envía en texto plano.",
@@ -1318,7 +1334,8 @@
       "verifyHostname": "Comprueba que el certificado del broker se emitió para su nombre de host. Desactívalo solo en entornos de prueba.",
       "mtls": "Necesario si los brokers autentican a los clientes por certificado. El certificado y la clave los emiten los administradores de Kafka.",
       "alias": "Nombre de la entrada de la clave en el archivo JKS o PKCS#12. Solo es necesario si el archivo contiene varias claves.",
-      "keyPassword": "Solo si la clave tiene su propia contraseña: distinta de la del keystore, o una clave PEM cifrada."
+      "keyPassword": "Solo si la clave tiene su propia contraseña: distinta de la del keystore, o una clave PEM cifrada.",
+      "mask": "Los valores de campos JSON, encabezados y pares name=value con estos nombres se sustituyen por ***. No importan las mayúsculas ni los caracteres _, - y .; * coincide con cualquier carácter."
     },
     "topics": {
       "partitions": "Las particiones se leen en paralelo; el orden solo está garantizado dentro de una partición. El número puede aumentarse más adelante, pero nunca reducirse.",

@@ -54,6 +54,17 @@ describe("McpSection", () => {
     expect(screen.getByText(configs.otherClient)).toBeInTheDocument();
   });
 
+  it("считает открытые подключения и показывает запрет чтения сообщений", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ allowedConnections: 3, messageConnections: 1 }));
+    const { unmount } = renderWithClient(<McpSection />);
+    expect(await screen.findByText("Открыто для LLM: 3, из них с сообщениями: 1")).toBeInTheDocument();
+    expect(screen.queryByText("Чтение сообщений отключено вашей организацией")).not.toBeInTheDocument();
+    unmount();
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
+    renderWithClient(<McpSection />);
+    expect(await screen.findByText("Чтение сообщений отключено вашей организацией")).toBeInTheDocument();
+  });
+
   it("политика запрещает MCP", async () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(
       mcpStatus({ state: "disabledByPolicy", enabled: true, policyAllows: false }),

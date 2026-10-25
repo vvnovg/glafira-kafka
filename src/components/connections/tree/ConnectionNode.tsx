@@ -1,6 +1,7 @@
 import type { HTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConnectionProfile } from "../../../api/types";
+import { useMcpStatus } from "../../../lib/useMcpStatus";
 import { newConsumerKey, useWorkspace } from "../../../state/workspace";
 import { EnvBadge } from "../../common/EnvBadge";
 import { HealthBadge } from "../../health/HealthBlock";
@@ -12,6 +13,9 @@ import { HealthBadge } from "../../health/HealthBlock";
 export function ConnectionNode({ connection: c, rowProps }: { connection: ConnectionProfile; rowProps?: HTMLAttributes<HTMLDivElement> }) {
   const { t } = useTranslation();
   const open = useWorkspace((s) => s.open);
+  // Уровень «сообщения» при запрете политикой действует как «метаданные» (G4).
+  const messagesAllowed = useMcpStatus().data?.messagesAllowed ?? true;
+  const level = c.llmAccess === "messages" && !messagesAllowed ? "metadata" : c.llmAccess;
 
   return (
     <li>
@@ -19,8 +23,13 @@ export function ConnectionNode({ connection: c, rowProps }: { connection: Connec
         <span className="dot" style={{ background: c.color }} />
         <span className="tree-name">{c.name}</span>
         <EnvBadge environment={c.environment} readOnly={c.readOnly} />
-        {c.llmAccess === "metadata" && (
+        {level === "metadata" && (
           <span className="llm-badge" title={t("sidebar.llmAccess")}>
+            LLM
+          </span>
+        )}
+        {level === "messages" && (
+          <span className="llm-badge llm-badge--messages" title={t("sidebar.llmMessages")}>
             LLM
           </span>
         )}

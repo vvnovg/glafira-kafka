@@ -118,6 +118,8 @@ export function McpSection() {
         {t(STATE_KEYS[s.state])}
         {s.error && <> — {tr(s.error)}</>}
       </p>
+      {s.policyAllows && <p>{t("settings.mcp.openCounts", { n: s.allowedConnections, m: s.messageConnections })}</p>}
+      {s.policyAllows && !s.messagesAllowed && <p className="hint">{t("settings.mcp.messagesPolicy")}</p>}
       {error && <ErrorBanner error={error} />}
 
       {s.policyAllows && configs.error && <ErrorBanner error={configs.error} onRetry={() => configs.refetch()} />}

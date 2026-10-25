@@ -381,7 +381,8 @@
     },
     "exportAll": "Eksportuj wszystko…",
     "import": "Importuj…",
-    "findings": "Ustalenia"
+    "findings": "Ustalenia",
+    "llmMessages": "Dostęp dla LLM: metadane i wiadomości"
   },
   "tabs": {
     "settings": "Ustawienia",
@@ -407,7 +408,7 @@
     },
     "mcp": {
       "section": "Asystenci LLM (MCP)",
-      "intro": "Asystent LLM (Claude Desktop, Claude Code, Cursor i inne) może połączyć się z aplikacją Glafira przez MCP i odczytywać metadane połączeń otwartych dla niego. Nie może niczego zmienić w klastrach.",
+      "intro": "Asystent LLM (Claude Desktop, Claude Code, Cursor i inne) może połączyć się z aplikacją Glafira przez MCP i odczytywać metadane połączeń otwartych dla niego, a tam, gdzie jest to dozwolone, także wiadomości. Nie może niczego zmienić w klastrach.",
       "enable": "Zezwalaj na serwer MCP",
       "policy": "MCP jest wyłączony przez organizację",
       "state": {
@@ -456,7 +457,9 @@
         "revoked": "Dostęp klienta odwołany",
         "serverStarted": "Serwer uruchomiony",
         "serverStopped": "Serwer zatrzymany"
-      }
+      },
+      "openCounts": "Otwarte dla LLM: {{n}}, w tym z wiadomościami: {{m}}",
+      "messagesPolicy": "Odczyt wiadomości jest wyłączony przez organizację"
     }
   },
   "layout": {
@@ -471,7 +474,7 @@
       "folder": "Folder",
       "folderRoot": "(poziom główny)",
       "environment": "Środowisko",
-      "llmAccess": "Dostęp dla LLM (tylko metadane)",
+      "llmAccess": "Dostęp dla LLM",
       "color": "Kolor",
       "bootstrap": "Serwery bootstrap",
       "protocol": "Protokół",
@@ -493,7 +496,19 @@
         "config": "Konfiguracja",
         "tcp": "DNS / TCP",
         "kafka": "Kafka (TLS, SASL, metadane)"
-      }
+      },
+      "llmLevel": {
+        "off": "Wyłączony",
+        "metadata": "Tylko metadane",
+        "messages": "Metadane i wiadomości"
+      },
+      "llmMessagesPolicy": "Wiadomości: wyłączone przez organizację",
+      "llmMessagesAsMetadata": "Działa jak „Tylko metadane”: odczyt wiadomości jest wyłączony przez organizację",
+      "llmProdWarning": "Treść wiadomości z tego klastra produkcyjnego będzie przekazywana dostawcy LLM",
+      "mask": "Maskowanie",
+      "maskStandard": "Lista standardowa",
+      "maskFieldsAria": "Nazwy pól do maskowania, po jednej w wierszu",
+      "maskNote": "Adresy e-mail, numery kart, tokeny JWT i Bearer są maskowane zawsze. Maskowanie zmniejsza ryzyko, ale nie rozpoznaje imion i nazwisk, adresów ani danych w polach o nieznanych nazwach."
     },
     "tls": {
       "pick": "Przeglądaj…",
@@ -1075,11 +1090,12 @@
     "approval": {
       "title": "{{client}} chce połączyć się z aplikacją Glafira",
       "body": "Zobaczy metadane połączeń otwartych dla asystentów LLM: {{n}}.",
-      "readOnly": "Przez Glafira asystent może jedynie odczytywać brokery, topiki, konfiguracje i grupy konsumentów. Wiadomości i hasła nie są przekazywane.",
+      "readOnly": "Przez Glafira asystent może jedynie odczytywać dane: niczego nie może zmienić w klastrach. Hasła nie są przekazywane.",
       "unnamed": "Klient nie podał swojej nazwy, dlatego odpowiedź obowiązuje tylko w tej sesji.",
       "more": "Czeka na odpowiedź: jeszcze {{n}}",
       "allow": "Zezwól",
-      "reject": "Odrzuć"
+      "reject": "Odrzuć",
+      "messages": "W {{n}} z nich może odczytywać treść wiadomości."
     },
     "indicator": {
       "one": "LLM: {{client}}",
@@ -1311,7 +1327,7 @@
     "connections": {
       "environment": "Oznacza połączenie kolorem. W połączeniach prod każdą zmianę trzeba potwierdzić, wpisując nazwę połączenia.",
       "readOnly": "Blokuje wszystko, co zmienia klaster: wysyłanie, resetowanie offsetów, usuwanie topików i grup, sesje konsumenta.",
-      "llmAccess": "Pozwala asystentowi LLM połączonemu przez MCP odczytywać metadane tego klastra: brokery, topiki, konfiguracje, grupy konsumentów. Wiadomości i hasła nigdy nie są udostępniane.",
+      "llmAccess": "Co asystent LLM połączony przez MCP może odczytać w tym klastrze. „Tylko metadane” — brokery, topiki, konfiguracje, grupy konsumentów. „Metadane i wiadomości” — dodatkowo treść wiadomości i historię commitów grup konsumentów, z maskowaniem. Hasła nigdy nie są udostępniane.",
       "bootstrap": "Jeden lub kilka adresów <code>host:port</code>, rozdzielonych przecinkami. Pozostałe brokery klient znajdzie sam.",
       "protocol": "PLAINTEXT — bez szyfrowania i logowania. SSL — szyfrowanie TLS. SASL_* — logowanie loginem i hasłem; SASL_SSL dodatkowo szyfruje.",
       "saslMechanism": "Jakiego mechanizmu używa klaster, wiedzą administratorzy Kafki. SCRAM nie przesyła samego hasła; PLAIN bez TLS przesyła je otwartym tekstem.",
@@ -1323,7 +1339,8 @@
       "verifyHostname": "Sprawdza, czy certyfikat brokera wystawiono na jego nazwę hosta. Wyłączać tylko w środowiskach testowych.",
       "mtls": "Wymagany, jeśli brokery uwierzytelniają klientów certyfikatem. Certyfikat i klucz wydają administratorzy Kafki.",
       "alias": "Nazwa wpisu klucza w pliku JKS lub PKCS#12. Potrzebna tylko wtedy, gdy plik zawiera kilka kluczy.",
-      "keyPassword": "Tylko jeśli klucz ma własne hasło: inne niż hasło magazynu kluczy albo zaszyfrowany klucz PEM."
+      "keyPassword": "Tylko jeśli klucz ma własne hasło: inne niż hasło magazynu kluczy albo zaszyfrowany klucz PEM.",
+      "mask": "Wartości pól JSON, nagłówków i par name=value o tych nazwach są zastępowane przez ***. Wielkość liter i znaki _, - i . nie mają znaczenia; * oznacza dowolne znaki."
     },
     "topics": {
       "partitions": "Partycje są odczytywane równolegle; kolejność jest gwarantowana tylko w obrębie jednej partycji. Liczbę można później zwiększyć, ale nigdy zmniejszyć.",

@@ -381,7 +381,8 @@
     },
     "exportAll": "全部导出…",
     "import": "导入…",
-    "findings": "检查结果"
+    "findings": "检查结果",
+    "llmMessages": "LLM 访问：元数据和消息"
   },
   "tabs": {
     "settings": "设置",
@@ -407,7 +408,7 @@
     },
     "mcp": {
       "section": "LLM 助手（MCP）",
-      "intro": "LLM 助手（Claude Desktop、Claude Code、Cursor 等）可以通过 MCP 连接到 Glafira，并读取你为其开放的连接的元数据。它无法更改集群中的任何内容。",
+      "intro": "LLM 助手（Claude Desktop、Claude Code、Cursor 等）可以通过 MCP 连接到 Glafira，读取你为其开放的连接的元数据，并在你允许的连接中读取消息。它无法更改集群中的任何内容。",
       "enable": "允许 MCP 服务器",
       "policy": "MCP 已被你的组织禁用",
       "state": {
@@ -456,7 +457,9 @@
         "revoked": "客户端访问权限已撤销",
         "serverStarted": "服务器已启动",
         "serverStopped": "服务器已停止"
-      }
+      },
+      "openCounts": "已向 LLM 开放：{{n}}，其中可读取消息：{{m}}",
+      "messagesPolicy": "读取消息已被你的组织禁用"
     }
   },
   "layout": {
@@ -471,7 +474,7 @@
       "folder": "文件夹",
       "folderRoot": "（根目录）",
       "environment": "环境",
-      "llmAccess": "LLM 访问（仅元数据）",
+      "llmAccess": "LLM 访问",
       "color": "颜色",
       "bootstrap": "Bootstrap 服务器",
       "protocol": "协议",
@@ -493,7 +496,19 @@
         "config": "配置",
         "tcp": "DNS / TCP",
         "kafka": "Kafka（TLS、SASL、元数据）"
-      }
+      },
+      "llmLevel": {
+        "off": "关闭",
+        "metadata": "仅元数据",
+        "messages": "元数据和消息"
+      },
+      "llmMessagesPolicy": "消息：已被你的组织禁用",
+      "llmMessagesAsMetadata": "按“仅元数据”生效：读取消息已被你的组织禁用",
+      "llmProdWarning": "此生产集群的消息内容将发送给 LLM 提供商",
+      "mask": "脱敏",
+      "maskStandard": "标准列表",
+      "maskFieldsAria": "要脱敏的字段名，每行一个",
+      "maskNote": "电子邮件、卡号、JWT 和 Bearer 令牌始终会被脱敏。脱敏可以降低风险，但无法识别人名、地址以及名称陌生的字段中的数据。"
     },
     "tls": {
       "pick": "浏览…",
@@ -1060,11 +1075,12 @@
     "approval": {
       "title": "{{client}} 想要连接到 Glafira",
       "body": "它将能看到已向 LLM 助手开放的连接的元数据，共 {{n}} 个连接。",
-      "readOnly": "通过 Glafira，助手只能读取 Broker、主题、配置和消费者组。消息和密码不会共享。",
+      "readOnly": "通过 Glafira，助手只能读取，无法更改集群中的任何内容。密码不会共享。",
       "unnamed": "客户端未提供名称，因此该回答仅对本次会话有效。",
       "more": "另有 {{n}} 个客户端在等待回答",
       "allow": "允许",
-      "reject": "拒绝"
+      "reject": "拒绝",
+      "messages": "其中 {{n}} 个连接的消息内容它也能读取。"
     },
     "indicator": {
       "one": "LLM：{{client}}",
@@ -1296,7 +1312,7 @@
     "connections": {
       "environment": "用颜色标记连接。生产环境连接在任何更改前都要求输入连接名称。",
       "readOnly": "阻止所有会改变集群的操作：发送、重置偏移量、删除主题和组、消费者会话。",
-      "llmAccess": "允许通过 MCP 连接的 LLM 助手读取此集群的元数据：Broker、主题、配置、消费者组。消息和密码绝不会被共享。",
+      "llmAccess": "通过 MCP 连接的 LLM 助手可以在此集群中读取的内容。“仅元数据”：Broker、主题、配置、消费者组。“元数据和消息”：此外还有消息内容和消费者组的提交历史，并经过脱敏。密码绝不会被共享。",
       "bootstrap": "一个或多个 <code>host:port</code>，以逗号分隔。客户端会自动发现其他 Broker。",
       "protocol": "PLAINTEXT：不加密、不登录。SSL：TLS 加密。SASL_*：使用密码登录；SASL_SSL 还会加密。",
       "saslMechanism": "集群使用哪种机制，请咨询你的 Kafka 管理员。SCRAM 从不发送密码本身；不带 TLS 的 PLAIN 会以明文发送密码。",
@@ -1308,7 +1324,8 @@
       "verifyHostname": "检查 Broker 证书是否与其主机名匹配。仅在测试环境中关闭。",
       "mtls": "当 Broker 通过证书验证客户端时需要。证书和私钥由你的 Kafka 管理员签发。",
       "alias": "JKS 或 PKCS#12 文件中私钥条目的名称。仅当文件包含多个私钥时需要。",
-      "keyPassword": "仅当私钥有单独的密码时填写：与密钥库密码不同，或为加密的 PEM 私钥。"
+      "keyPassword": "仅当私钥有单独的密码时填写：与密钥库密码不同，或为加密的 PEM 私钥。",
+      "mask": "名称与这些名称匹配的 JSON 字段、标头和 name=value 对的值会被替换为 ***。不区分大小写，也忽略 _、- 和 . 字符；* 匹配任意字符。"
     },
     "topics": {
       "partitions": "分区可并行读取；仅在单个分区内保证顺序。分区数以后可以增加，但不能减少。",

@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
-import type { AppError, ConnectionProfile, Environment, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
+import type { AppError, ConnectionProfile, Environment, LlmAccess, Protocol, SaslMechanism, TestReport, TlsPasswordsInput } from "../../api/types";
 import { tr } from "../../i18n/text";
+import { useMcpStatus } from "../../lib/useMcpStatus";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
+import { STANDARD_MASK_FIELDS } from "./maskFields";
 import { formatProps, parseProps, withProtocol } from "./profile";
 import { folderPaths } from "./tree/folderTree";
 import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./TlsSection";
@@ -14,6 +16,7 @@ import { emptyTlsSecrets, secretValue, TlsSection, type TlsSecrets } from "./Tls
 const ENVIRONMENTS: Environment[] = ["local", "dev", "test", "stage", "prod"];
 const PROTOCOLS: Protocol[] = ["PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL"];
 const MECHANISMS: SaslMechanism[] = ["PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"];
+const LLM_LEVELS: LlmAccess[] = ["off", "metadata", "messages"];
 
 export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile; tabId: string }) {
   const { t } = useTranslation();
@@ -26,6 +29,9 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const [busy, setBusy] = useState(false);
   // Подтверждение удаления внутри формы: нативный window.confirm в Tauri 2 не показывается и возвращает false.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Политика может запретить чтение сообщений (G4); пока статус не пришёл — разрешено.
+  const messagesAllowed = useMcpStatus().data?.messagesAllowed ?? true;
+  const [maskText, setMaskText] = useState((initial.llmMaskFields ?? STANDARD_MASK_FIELDS).join("\n"));
   const queryClient = useQueryClient();
   const foldersQ = useQuery({ queryKey: ["folders"], queryFn: api.listFolders });
   const paths = useMemo(() => folderPaths(foldersQ.data ?? []), [foldersQ.data]);
@@ -156,17 +162,72 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         </span>
 
         <span className="field-label">
-          <label htmlFor="cf-llm">{t("connections.form.llmAccess")}</label>
+          <span id="cf-llm">{t("connections.form.llmAccess")}</span>
           <Hint k="hints.connections.llmAccess" label={t("connections.form.llmAccess")} />
         </span>
-        <span>
-          <input
-            id="cf-llm"
-            type="checkbox"
-            checked={profile.llmAccess === "metadata"}
-            onChange={(e) => update({ llmAccess: e.target.checked ? "metadata" : "off" })}
-          />
-        </span>
+        <div role="radiogroup" aria-labelledby="cf-llm" className="llm-levels">
+          {LLM_LEVELS.map((level) => (
+            <label key={level}>
+              <input
+                type="radio"
+                name="cf-llm"
+                checked={(profile.llmAccess ?? "off") === level}
+                disabled={level === "messages" && !messagesAllowed}
+                onChange={() => update({ llmAccess: level })}
+              />{" "}
+              {t(`connections.form.llmLevel.${level}`)}
+            </label>
+          ))}
+          {!messagesAllowed && (
+            <span className="muted">
+              {profile.llmAccess === "messages" ? t("connections.form.llmMessagesAsMetadata") : t("connections.form.llmMessagesPolicy")}
+            </span>
+          )}
+          {messagesAllowed && profile.llmAccess === "messages" && profile.environment === "prod" && (
+            <span className="warn">{t("connections.form.llmProdWarning")}</span>
+          )}
+        </div>
+
+        {messagesAllowed && profile.llmAccess === "messages" && (
+          <>
+            <span className="field-label">
+              <label htmlFor="cf-mask-std">{t("connections.form.mask")}</label>
+              <Hint k="hints.connections.mask" label={t("connections.form.mask")} />
+            </span>
+            <div className="llm-mask">
+              <label>
+                <input
+                  id="cf-mask-std"
+                  type="checkbox"
+                  checked={profile.llmMaskFields == null}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      update({ llmMaskFields: null });
+                    } else {
+                      setMaskText(STANDARD_MASK_FIELDS.join("\n"));
+                      update({ llmMaskFields: [...STANDARD_MASK_FIELDS] });
+                    }
+                  }}
+                />{" "}
+                {t("connections.form.maskStandard")}
+              </label>
+              {profile.llmMaskFields == null ? (
+                <code className="muted">{STANDARD_MASK_FIELDS.join(", ")}</code>
+              ) : (
+                <textarea
+                  aria-label={t("connections.form.maskFieldsAria")}
+                  rows={6}
+                  value={maskText}
+                  onChange={(e) => {
+                    setMaskText(e.target.value);
+                    update({ llmMaskFields: e.target.value.split("\n") });
+                  }}
+                />
+              )}
+              <span className="muted">{t("connections.form.maskNote")}</span>
+            </div>
+          </>
+        )}
 
         <label htmlFor="cf-color">{t("connections.form.color")}</label>
         <input id="cf-color" type="color" value={profile.color} onChange={(e) => update({ color: e.target.value })} />

@@ -30,10 +30,21 @@ describe("ApprovalDialog", () => {
     renderWithClient(<ApprovalDialog />);
     const dialog = await screen.findByRole("dialog", { name: "claude-ai 1.2 хочет подключиться к Glafira" });
     expect(dialog).toHaveTextContent("открытых для LLM-ассистентов: 2");
+    expect(dialog).not.toHaveTextContent("Содержимое сообщений");
     expect(dialog).toHaveTextContent("Ждут ответа ещё: 1");
     await user.click(screen.getByRole("button", { name: "Разрешить" }));
     expect(api.answerMcpApproval).toHaveBeenCalledWith("s1", true);
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("называет подключения, где можно читать сообщения", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(
+      mcpStatus({ messageConnections: 1, pending: [{ sessionId: "s1", clientName: "claude-ai", clientVersion: "1" }] }),
+    );
+    renderWithClient(<ApprovalDialog />);
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Содержимое сообщений он сможет читать в 1 из них.");
+    expect(dialog).toHaveTextContent("изменить что-либо в кластерах он не может");
   });
 
   it("клиент без имени: ответ только на сеанс", async () => {

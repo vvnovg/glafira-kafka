@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithClient } from "../../test/render";
@@ -17,12 +17,14 @@ vi.mock("../../api/client", async (importOriginal) => {
       listConnections: vi.fn().mockResolvedValue([]),
       listFolders: vi.fn().mockResolvedValue([]),
       moveItems: vi.fn(),
+      getMcpStatus: vi.fn(),
     },
   };
 });
 
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api } from "../../api/client";
+import { mcpStatus } from "../../test/mcp";
 import { useWorkspace } from "../../state/workspace";
 import type { ConnectionFolder } from "../../api/types";
 import { ConnectionForm } from "./ConnectionForm";
@@ -37,6 +39,7 @@ const FOLDERS: ConnectionFolder[] = [
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(api.listFolders).mockResolvedValue([]);
+  vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
 });
 
 describe("ConnectionForm", () => {
@@ -121,15 +124,76 @@ describe("ConnectionForm", () => {
     expect(screen.getByRole("option", { name: "prod" })).toBeEnabled();
   });
 
-  it("флажок «Доступ для LLM» сохраняется в профиле", async () => {
+  it("уровень доступа для LLM сохраняется в профиле", async () => {
     vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "n", name: "m", llmAccess: "metadata" });
     const user = userEvent.setup();
     renderWithClient(<ConnectionForm initial={{ ...newProfile(), name: "m" }} tabId="t" />);
-    const box = screen.getByLabelText("Доступ для LLM (только метаданные)");
-    expect(box).not.toBeChecked();
-    await user.click(box);
+    const group = screen.getByRole("radiogroup", { name: "Доступ для LLM" });
+    expect(within(group).getByLabelText("Нет")).toBeChecked();
+    await user.click(within(group).getByLabelText("Только метаданные"));
+    expect(screen.queryByLabelText("Маскирование")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
     expect(api.saveConnection).toHaveBeenCalledWith(expect.objectContaining({ llmAccess: "metadata" }), undefined, undefined);
+  });
+
+  it("уровень «Метаданные и сообщения»: стандартный список масок или свой", async () => {
+    vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "n", name: "m" });
+    const user = userEvent.setup();
+    renderWithClient(<ConnectionForm initial={{ ...newProfile(), name: "m" }} tabId="t" />);
+    await user.click(screen.getByLabelText("Метаданные и сообщения"));
+    const standard = screen.getByLabelText("Стандартный список");
+    expect(standard).toBeChecked();
+    expect(screen.getByText(/\*password\*, passwd/)).toBeInTheDocument();
+    expect(screen.getByText(/Email, номера карт, JWT/)).toBeInTheDocument();
+    await user.click(standard);
+    const list = screen.getByLabelText("Имена полей для маскирования, по одному на строку");
+    expect((list as HTMLTextAreaElement).value.split("\n")).toContain("snils");
+    await user.clear(list);
+    await user.type(list, "inn{enter}order_id");
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    expect(api.saveConnection).toHaveBeenCalledWith(
+      expect.objectContaining({ llmAccess: "messages", llmMaskFields: ["inn", "order_id"] }),
+      undefined,
+      undefined,
+    );
+  });
+
+  it("возврат к стандартному списку сохраняет null", async () => {
+    vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "p", name: "p" });
+    const user = userEvent.setup();
+    const initial = { ...newProfile(), id: "p", name: "p", llmAccess: "messages" as const, llmMaskFields: ["inn"] };
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    expect(screen.getByLabelText("Имена полей для маскирования, по одному на строку")).toHaveValue("inn");
+    await user.click(screen.getByLabelText("Стандартный список"));
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    expect(api.saveConnection).toHaveBeenCalledWith(expect.objectContaining({ llmMaskFields: null }), undefined, undefined);
+  });
+
+  it("сообщения production-кластера — предупреждение", async () => {
+    const user = userEvent.setup();
+    const initial = { ...newProfile(), id: "p", name: "p", environment: "prod" as const };
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    expect(screen.queryByText(/production-кластера/)).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("Метаданные и сообщения"));
+    expect(screen.getByText("Содержимое сообщений этого production-кластера будет уходить провайдеру LLM")).toBeInTheDocument();
+  });
+
+  it("политика запрещает чтение сообщений", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
+    renderWithClient(<ConnectionForm initial={{ ...newProfile(), name: "m" }} tabId="t" />);
+    expect(await screen.findByText("Сообщения: отключено вашей организацией")).toBeInTheDocument();
+    expect(screen.getByLabelText("Метаданные и сообщения")).toBeDisabled();
+  });
+
+  it("уже выбранный уровень «сообщения» при запрете действует как метаданные", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
+    const initial = { ...newProfile(), id: "p", name: "p", llmAccess: "messages" as const };
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    expect(await screen.findByText(/Действует как «Только метаданные»/)).toBeInTheDocument();
+    const messages = screen.getByLabelText("Метаданные и сообщения");
+    expect(messages).toBeChecked();
+    expect(messages).toBeDisabled();
+    expect(screen.queryByLabelText("Стандартный список")).not.toBeInTheDocument();
   });
 
   it("невалидные доп. свойства показывают ошибку и не вызывают сохранение", async () => {

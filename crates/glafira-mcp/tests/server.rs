@@ -1024,9 +1024,9 @@ async fn exposes_exactly_the_tools() {
             "{}",
             t.name
         );
-        if writes {
-            assert_eq!(a.idempotent_hint, Some(true), "{}", t.name);
-        }
+        // Все четыре подсказки явно у каждого инструмента: каталоги клиентов (OpenAI) отклоняют
+        // инструменты без любой из них. Чтение идемпотентно; запись в Glafira — тоже (повтор не дублирует).
+        assert_eq!(a.idempotent_hint, Some(true), "{}", t.name);
         assert!(
             t.description.as_deref().is_some_and(|d| d.len() > 30),
             "{}",

@@ -22,6 +22,7 @@ vi.mock("../../api/client", async (importOriginal) => {
       getMcpStatus: vi.fn().mockResolvedValue(mcpStatus({ state: "off", enabled: false })),
       getMcpClientConfigs: vi.fn().mockResolvedValue({ command: "/x", args: ["mcp"], claudeDesktop: "{}", claudeCode: "claude", otherClient: "/x mcp" }),
       getMcpAudit: vi.fn().mockResolvedValue([]),
+      listConnections: vi.fn().mockResolvedValue([]),
     },
   };
 });

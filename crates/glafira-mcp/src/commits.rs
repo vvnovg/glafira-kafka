@@ -127,7 +127,7 @@ impl CommitHistoryBuilder {
                 });
                 // Память ограничена: при удвоенном пределе отбрасываем старые до предела.
                 if p.runs.len() >= 2 * MAX_RUNS {
-                    p.runs.drain(..p.runs.len() - MAX_RUNS);
+                    p.runs.drain(..p.runs.len().saturating_sub(MAX_RUNS));
                     p.runs_dropped = true;
                 }
             }
@@ -148,7 +148,9 @@ impl CommitHistoryBuilder {
                 .map(|((topic, partition), mut p)| {
                     let runs_truncated = p.runs_dropped || p.runs.len() > MAX_RUNS;
                     if runs_truncated {
-                        p.runs.drain(..p.runs.len() - MAX_RUNS);
+                        // После отбрасывания при просмотре `runs` остаётся не меньше предела; saturating_sub не даёт
+                        // этому инварианту стать паникой.
+                        p.runs.drain(..p.runs.len().saturating_sub(MAX_RUNS));
                     }
                     PartitionHistory {
                         topic,

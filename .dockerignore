@@ -1,0 +1,6 @@
+**/target
+**/node_modules
+dist
+dist-e2e
+dev/certs/out
+.claude

@@ -252,6 +252,29 @@ async fn handle_conn(
         tracing::debug!("mcp handshake failed: {e}");
         return;
     }
+    serve_session(shared, stream, ct).await;
+}
+
+/// Одна сессия MCP поверх готового потока, без рукопожатия и без сокета: так работает
+/// сервер-каталог для реестров MCP (`glafira-mcp-catalog`, stdin/stdout). Возвращается,
+/// когда клиент закрыл поток.
+pub async fn serve_stream(
+    stream: BoxStream,
+    backend: Arc<dyn Backend>,
+    audit: Arc<AuditLog>,
+    options: GatewayOptions,
+) {
+    let shared = Arc::new(Shared {
+        backend,
+        audit,
+        options,
+        global: Arc::new(Semaphore::new(GLOBAL_CONCURRENCY)),
+        sessions: Mutex::new(HashMap::new()),
+    });
+    serve_session(shared, stream, CancellationToken::new()).await;
+}
+
+async fn serve_session(shared: Arc<Shared>, stream: BoxStream, ct: CancellationToken) {
     let id = format!("s{}", NEXT_SESSION.fetch_add(1, Ordering::Relaxed));
     shared.sessions().insert(
         id.clone(),

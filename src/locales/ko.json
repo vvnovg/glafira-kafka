@@ -788,7 +788,9 @@
       "limit": "제한",
       "format": "형식",
       "key": "키",
-      "value": "값"
+      "value": "값",
+      "offsetTitle": "선택한 각 파티션에서 읽기를 시작할 오프셋",
+      "partitionsTitle": "쉼표로 구분한 파티션 번호입니다. 비워 두면 모든 파티션을 읽습니다"
     },
     "filters": {
       "title": "필터",

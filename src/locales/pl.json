@@ -794,7 +794,9 @@
       "limit": "Limit",
       "format": "Format",
       "key": "klucz",
-      "value": "wartość"
+      "value": "wartość",
+      "offsetTitle": "Offset, od którego czytać każdą wybraną partycję",
+      "partitionsTitle": "Numery partycji oddzielone przecinkami; puste pole oznacza wszystkie partycje"
     },
     "filters": {
       "title": "Filtry",

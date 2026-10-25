@@ -30,6 +30,8 @@ button.link { background: none; border: none; color: var(--accent); padding: 2px
 button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 button.danger { color: var(--danger); }
 input, select, textarea { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; }
+/* Подсказка в пустом поле — курсивом, чтобы её нельзя было принять за введённое значение. */
+input::placeholder, textarea::placeholder { font-style: italic; }
 code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 pre { white-space: pre-wrap; word-break: break-all; margin: 0; }
 table { border-collapse: collapse; width: 100%; }

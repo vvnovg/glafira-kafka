@@ -31,6 +31,12 @@ describe("BrowseForm", () => {
     expect(screen.getByLabelText("JSONPath")).toHaveValue('$.status == "FAILED"');
   });
 
+  it("у полей оффсета и партиций — подсказка при наведении: подписи у них не видно", () => {
+    render(<BrowseForm form={{ ...defaultBrowseForm, startType: "offset", partitions: "1" }} onChange={() => {}} />);
+    expect(screen.getByLabelText("Оффсет")).toHaveAttribute("title", "Оффсет, с которого читать каждую выбранную партицию");
+    expect(screen.getByLabelText("Партиции")).toHaveAttribute("title", "Номера партиций через запятую; пусто — все партиции");
+  });
+
   it("подсказки «?» у начальной позиции, лимита и формата", async () => {
     const user = userEvent.setup();
     render(<BrowseForm form={defaultBrowseForm} onChange={() => {}} />);

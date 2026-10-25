@@ -790,7 +790,9 @@
       "limit": "Limit",
       "format": "Format",
       "key": "key",
-      "value": "value"
+      "value": "value",
+      "offsetTitle": "Offset to start reading from in each selected partition",
+      "partitionsTitle": "Partition numbers separated by commas; empty means all partitions"
     },
     "filters": {
       "title": "Filters",

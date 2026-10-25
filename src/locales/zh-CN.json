@@ -788,7 +788,9 @@
       "limit": "上限",
       "format": "格式",
       "key": "键",
-      "value": "值"
+      "value": "值",
+      "offsetTitle": "在每个所选分区中开始读取的偏移量",
+      "partitionsTitle": "分区编号，用逗号分隔；留空表示全部分区"
     },
     "filters": {
       "title": "筛选",

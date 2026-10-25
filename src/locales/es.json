@@ -792,7 +792,9 @@
       "limit": "Límite",
       "format": "Formato",
       "key": "clave",
-      "value": "valor"
+      "value": "valor",
+      "offsetTitle": "Offset desde el que leer cada partición seleccionada",
+      "partitionsTitle": "Números de partición separados por comas; vacío significa todas las particiones"
     },
     "filters": {
       "title": "Filtros",

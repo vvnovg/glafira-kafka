@@ -788,7 +788,9 @@
       "limit": "上限",
       "format": "格式",
       "key": "鍵",
-      "value": "值"
+      "value": "值",
+      "offsetTitle": "在每個所選分區中開始讀取的偏移量",
+      "partitionsTitle": "分區編號，以逗號分隔；留空表示全部分區"
     },
     "filters": {
       "title": "篩選",

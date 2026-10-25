@@ -71,6 +71,33 @@ jobs:
           KE_IT_SASL_BOOTSTRAP: localhost:9094
           KE_IT_MTLS_BOOTSTRAP: localhost:9095
 
+  mcp-catalog-image:
+    # Образ сервера-каталога для реестров MCP (Glama): собирается и отвечает на initialize и
+    # tools/list по stdio, вызов инструмента — ошибка desktop_app_required.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Собрать образ
+        run: docker build -f crates/glafira-mcp/Dockerfile -t glafira-mcp-catalog .
+      - name: Проверить ответы по stdio
+        run: |
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+            '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_connections","arguments":{}}}' \
+            | (cat; sleep 2) | docker run -i --rm glafira-mcp-catalog > out.jsonl
+          python3 - <<'PY'
+          import json
+          r = {m["id"]: m for m in map(json.loads, open("out.jsonl")) if "id" in m}
+          assert r[1]["result"]["serverInfo"]["name"] == "glafira-kafka", r[1]
+          tools = r[2]["result"]["tools"]
+          assert len(tools) >= 19, len(tools)
+          assert r[3]["result"]["isError"] is True, r[3]
+          assert "desktop_app_required" in r[3]["result"]["content"][0]["text"], r[3]
+          print("tools:", len(tools))
+          PY
+
   platforms:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     strategy:

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithClient } from "../../test/render";
@@ -24,6 +24,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api } from "../../api/client";
+import { MCP_STATUS_KEY } from "../../lib/useMcpStatus";
 import { mcpStatus } from "../../test/mcp";
 import { useWorkspace } from "../../state/workspace";
 import type { ConnectionFolder } from "../../api/types";
@@ -41,6 +42,13 @@ beforeEach(() => {
   vi.mocked(api.listFolders).mockResolvedValue([]);
   vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
 });
+
+/** Переключатель «Метаданные и сообщения», когда статус MCP пришёл и разрешает чтение сообщений. */
+async function messagesLevel() {
+  const radio = screen.getByLabelText("Метаданные и сообщения");
+  await waitFor(() => expect(radio).toBeEnabled());
+  return radio;
+}
 
 describe("ConnectionForm", () => {
   it("собирает профиль SASL_SSL и показывает шаги проверки", async () => {
@@ -140,7 +148,8 @@ describe("ConnectionForm", () => {
     vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "n", name: "m" });
     const user = userEvent.setup();
     renderWithClient(<ConnectionForm initial={{ ...newProfile(), name: "m" }} tabId="t" />);
-    await user.click(screen.getByLabelText("Метаданные и сообщения"));
+    await user.click(await messagesLevel());
+    expect(screen.queryByText(/отключено вашей организацией/)).not.toBeInTheDocument();
     const standard = screen.getByLabelText("Стандартный список");
     expect(standard).toBeChecked();
     expect(screen.getByText(/\*password\*, passwd/)).toBeInTheDocument();
@@ -163,10 +172,22 @@ describe("ConnectionForm", () => {
     const user = userEvent.setup();
     const initial = { ...newProfile(), id: "p", name: "p", llmAccess: "messages" as const, llmMaskFields: ["inn"] };
     renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
-    expect(screen.getByLabelText("Имена полей для маскирования, по одному на строку")).toHaveValue("inn");
+    expect(await screen.findByLabelText("Имена полей для маскирования, по одному на строку")).toHaveValue("inn");
     await user.click(screen.getByLabelText("Стандартный список"));
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
     expect(api.saveConnection).toHaveBeenCalledWith(expect.objectContaining({ llmMaskFields: null }), undefined, undefined);
+  });
+
+  it("подпись «Маскирование» называет блок и не переключает «Стандартный список»", async () => {
+    const user = userEvent.setup();
+    const initial = { ...newProfile(), id: "p", name: "p", llmAccess: "messages" as const, llmMaskFields: ["inn"] };
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    const group = await screen.findByRole("group", { name: "Маскирование" });
+    expect(group).toHaveAccessibleDescription(/^Email, номера карт, JWT/);
+    const standard = within(group).getByRole("checkbox", { name: "Стандартный список" });
+    await user.dblClick(screen.getByText("Маскирование"));
+    expect(standard).not.toBeChecked();
+    expect(within(group).getByLabelText("Имена полей для маскирования, по одному на строку")).toHaveValue("inn");
   });
 
   it("сообщения production-кластера — предупреждение", async () => {
@@ -174,8 +195,10 @@ describe("ConnectionForm", () => {
     const initial = { ...newProfile(), id: "p", name: "p", environment: "prod" as const };
     renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
     expect(screen.queryByText(/production-кластера/)).not.toBeInTheDocument();
-    await user.click(screen.getByLabelText("Метаданные и сообщения"));
-    expect(screen.getByText("Содержимое сообщений этого production-кластера будет уходить провайдеру LLM")).toBeInTheDocument();
+    await user.click(await messagesLevel());
+    const warning = screen.getByText("Содержимое сообщений этого production-кластера будет уходить провайдеру LLM");
+    expect(warning).toHaveAttribute("role", "status");
+    expect(screen.getByRole("radiogroup", { name: "Доступ для LLM" })).toHaveAccessibleDescription(warning.textContent ?? "");
   });
 
   it("политика запрещает чтение сообщений", async () => {
@@ -194,6 +217,45 @@ describe("ConnectionForm", () => {
     expect(messages).toBeChecked();
     expect(messages).toBeDisabled();
     expect(screen.queryByLabelText("Стандартный список")).not.toBeInTheDocument();
+  });
+
+  it("при запрете политикой сохранение не меняет уровень «сообщения» и список масок", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
+    vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "p", name: "p" });
+    const user = userEvent.setup();
+    const initial = { ...newProfile(), id: "p", name: "p", llmAccess: "messages" as const, llmMaskFields: ["inn"] };
+    renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    await screen.findByText(/Действует как «Только метаданные»/);
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    expect(api.saveConnection).toHaveBeenCalledWith(
+      expect.objectContaining({ llmAccess: "messages", llmMaskFields: ["inn"] }),
+      undefined,
+      undefined,
+    );
+  });
+
+  it.each([
+    ["пока статус MCP не пришёл", () => new Promise<never>(() => {}), "pending"],
+    ["если статус MCP не загрузился", () => Promise.reject(new Error("нет ответа")), "error"],
+  ] as const)("%s: третий уровень недоступен без пометок, сохранённый уровень не меняется", async (_, status, state) => {
+    vi.mocked(api.getMcpStatus).mockImplementation(status);
+    vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "p", name: "p" });
+    const user = userEvent.setup();
+    const initial = { ...newProfile(), id: "p", name: "p", environment: "prod" as const, llmAccess: "messages" as const, llmMaskFields: ["inn"] };
+    const { client } = renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
+    await waitFor(() => expect(client.getQueryState(MCP_STATUS_KEY)?.status).toBe(state));
+    const messages = screen.getByLabelText("Метаданные и сообщения");
+    expect(messages).toBeChecked();
+    expect(messages).toBeDisabled();
+    expect(screen.queryByText(/отключено вашей организацией/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/production-кластера/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Маскирование" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Сохранить" }));
+    expect(api.saveConnection).toHaveBeenCalledWith(
+      expect.objectContaining({ llmAccess: "messages", llmMaskFields: ["inn"] }),
+      undefined,
+      undefined,
+    );
   });
 
   it("невалидные доп. свойства показывают ошибку и не вызывают сохранение", async () => {

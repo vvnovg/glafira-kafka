@@ -29,8 +29,11 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   const [busy, setBusy] = useState(false);
   // Подтверждение удаления внутри формы: нативный window.confirm в Tauri 2 не показывается и возвращает false.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  // Политика может запретить чтение сообщений (G4); пока статус не пришёл — разрешено.
-  const messagesAllowed = useMcpStatus().data?.messagesAllowed ?? true;
+  // Политика может запретить чтение сообщений (G4). Строго: третий уровень и блок «Маскирование» — только когда статус
+  // пришёл и разрешает (true), пометки политики — только при явном запрете (false). Пока статус грузится или не
+  // загрузился, третий уровень недоступен без пометки, а сохранение оставляет сохранённый уровень как есть.
+  const messagesAllowed = useMcpStatus().data?.messagesAllowed;
+  const prodWarning = messagesAllowed === true && profile.llmAccess === "messages" && profile.environment === "prod";
   const [maskText, setMaskText] = useState((initial.llmMaskFields ?? STANDARD_MASK_FIELDS).join("\n"));
   const queryClient = useQueryClient();
   const foldersQ = useQuery({ queryKey: ["folders"], queryFn: api.listFolders });
@@ -165,36 +168,39 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
           <span id="cf-llm">{t("connections.form.llmAccess")}</span>
           <Hint k="hints.connections.llmAccess" label={t("connections.form.llmAccess")} />
         </span>
-        <div role="radiogroup" aria-labelledby="cf-llm" className="llm-levels">
+        <div role="radiogroup" aria-labelledby="cf-llm" aria-describedby={prodWarning ? "cf-llm-prod" : undefined} className="llm-levels">
           {LLM_LEVELS.map((level) => (
             <label key={level}>
               <input
                 type="radio"
                 name="cf-llm"
                 checked={(profile.llmAccess ?? "off") === level}
-                disabled={level === "messages" && !messagesAllowed}
+                disabled={level === "messages" && messagesAllowed !== true}
                 onChange={() => update({ llmAccess: level })}
               />{" "}
               {t(`connections.form.llmLevel.${level}`)}
             </label>
           ))}
-          {!messagesAllowed && (
+          {messagesAllowed === false && (
             <span className="muted">
               {profile.llmAccess === "messages" ? t("connections.form.llmMessagesAsMetadata") : t("connections.form.llmMessagesPolicy")}
             </span>
           )}
-          {messagesAllowed && profile.llmAccess === "messages" && profile.environment === "prod" && (
-            <span className="warn">{t("connections.form.llmProdWarning")}</span>
+          {prodWarning && (
+            <span id="cf-llm-prod" className="warn" role="status">
+              {t("connections.form.llmProdWarning")}
+            </span>
           )}
         </div>
 
-        {messagesAllowed && profile.llmAccess === "messages" && (
+        {messagesAllowed === true && profile.llmAccess === "messages" && (
           <>
+            {/* Подпись блока, а не флажка: щелчок по ней не должен переключать «Стандартный список» и стирать свой список. */}
             <span className="field-label">
-              <label htmlFor="cf-mask-std">{t("connections.form.mask")}</label>
+              <span id="cf-mask-label">{t("connections.form.mask")}</span>
               <Hint k="hints.connections.mask" label={t("connections.form.mask")} />
             </span>
-            <div className="llm-mask">
+            <div className="llm-mask" role="group" aria-labelledby="cf-mask-label" aria-describedby="cf-mask-note">
               <label>
                 <input
                   id="cf-mask-std"
@@ -224,7 +230,9 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
                   }}
                 />
               )}
-              <span className="muted">{t("connections.form.maskNote")}</span>
+              <span id="cf-mask-note" className="muted">
+                {t("connections.form.maskNote")}
+              </span>
             </div>
           </>
         )}

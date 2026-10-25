@@ -28,6 +28,7 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({ save: vi.fn(), open: vi.fn() }));
 
 import { open as openDialog, save } from "@tauri-apps/plugin-dialog";
 import { api } from "../../../api/client";
+import { MCP_STATUS_KEY } from "../../../lib/useMcpStatus";
 import { mcpStatus } from "../../../test/mcp";
 import { useWorkspace } from "../../../state/workspace";
 import { ConnectionTree } from "./ConnectionTree";
@@ -92,6 +93,19 @@ describe("ConnectionTree", () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
     renderWithClient(<ConnectionTree />);
     await waitFor(() => expect(screen.getAllByTitle("Открыто LLM-ассистентам по MCP")).toHaveLength(2));
+    expect(screen.queryByTitle("Доступ для LLM: метаданные и сообщения")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["пока статус MCP не пришёл", () => new Promise<never>(() => {}), "pending"],
+    ["если статус MCP не загрузился", () => Promise.reject(new Error("нет ответа")), "error"],
+  ] as const)("%s, значок уровня «сообщения» не закрашен", async (_, status, state) => {
+    vi.mocked(api.getMcpStatus).mockImplementation(status);
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...CONNS[1], llmAccess: "messages" }]);
+    const { client } = renderWithClient(<ConnectionTree />);
+    await screen.findByText("local");
+    await waitFor(() => expect(client.getQueryState(MCP_STATUS_KEY)?.status).toBe(state));
+    expect(screen.getByTitle("Открыто LLM-ассистентам по MCP")).not.toHaveClass("llm-badge--messages");
     expect(screen.queryByTitle("Доступ для LLM: метаданные и сообщения")).not.toBeInTheDocument();
   });
 

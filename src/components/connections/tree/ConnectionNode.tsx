@@ -13,8 +13,9 @@ import { HealthBadge } from "../../health/HealthBlock";
 export function ConnectionNode({ connection: c, rowProps }: { connection: ConnectionProfile; rowProps?: HTMLAttributes<HTMLDivElement> }) {
   const { t } = useTranslation();
   const open = useWorkspace((s) => s.open);
-  // Уровень «сообщения» при запрете политикой действует как «метаданные» (G4).
-  const messagesAllowed = useMcpStatus().data?.messagesAllowed ?? true;
+  // Уровень «сообщения» при запрете политикой действует как «метаданные» (G4). Закрашенный значок — только когда статус
+  // MCP пришёл и разрешает чтение; пока он грузится или не загрузился — как при запрете.
+  const messagesAllowed = useMcpStatus().data?.messagesAllowed === true;
   const level = c.llmAccess === "messages" && !messagesAllowed ? "metadata" : c.llmAccess;
 
   return (

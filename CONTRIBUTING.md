@@ -10,7 +10,7 @@ Thank you for your interest in Glafira for Apache Kafka.
 
 ## Building and testing
 
-See `README.md` («Требования», «Запуск», «Тесты»). Before opening a pull request run:
+See the "Development" section of `README.md` (requirements, run, tests). Before opening a pull request run:
 
 ```bash
 pnpm test && pnpm test:scripts && pnpm i18n:check && pnpm build

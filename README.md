@@ -1,130 +1,113 @@
 # Glafira for Apache Kafka
 
-Desktop-приложение (Tauri 2 + Rust + React) для интерактивной работы с кластерами Apache Kafka.
+A free, open-source desktop client for Apache Kafka on macOS, Windows and Linux, built with Tauri 2, Rust and React.
+It also works as an MCP gateway: an LLM assistant can read your cluster's metadata, leave notes and propose changes,
+but it cannot change anything in the cluster.
+
+[Русская версия](README.ru.md)
 
 Apache Kafka is a trademark of the Apache Software Foundation; this project is not affiliated with the ASF.
-Спецификация: `docs/superpowers/specs/2026-10-14-kafka-explorer-design.md`.
 
-## Установка
-Установщики (macOS `.dmg`/`.pkg`, Windows `.msi`, Linux `.deb`/`.rpm`/`.AppImage`) — в разделе релизов:
+## Install
+
+Installers for macOS (`.dmg`, `.pkg`), Windows (`.msi`) and Linux (`.deb`, `.rpm`, `.AppImage`):
 https://github.com/vvnovg/glafira-kafka-releases/releases
 
-Бета-сборки могут быть неподписанными. Чтобы открыть:
-- **macOS:** правый клик по приложению → «Открыть» → «Открыть», либо «Системные настройки» → «Конфиденциальность и безопасность» → «Все равно открыть».
-- **Windows:** SmartScreen → «Подробнее» → «Выполнить в любом случае».
+macOS builds are signed and notarized. Windows builds are not signed yet: if SmartScreen blocks the installer,
+choose "More info", then "Run anyway".
 
-Для администраторов (тихая установка, политика, зеркало обновлений): `docs/admin.md`.
+User guide in 12 languages: [English](docs/guide/en/getting-started.md).
+For administrators (silent install, policy, update mirror): [`docs/admin.md`](docs/admin.md) (in Russian).
 
-## Требования
-- Rust stable (`rustup`), cmake, Xcode Command Line Tools (macOS)
+## Features
+
+- **Connections.** PLAINTEXT, SSL, SASL PLAIN and SCRAM-SHA-256/512, mTLS with client certificates in PEM, PKCS#12 or JKS.
+  Nested folders, export to a file without passwords and import with a preview. Passwords live in the OS secret store
+  (Keychain, Credential Manager, Secret Service).
+- **Browse messages** without joining a consumer group. Start from the last N messages, the beginning, an offset,
+  a timestamp or the last X minutes. Filter by substring or regex on key, value and headers, by a JSONPath condition
+  such as `$.order.status == "FAILED"` and by time range. Live tail. Formats: auto, string, json, hex, base64.
+- **Producer.** Key, value, headers, partition, `acks`, compression, idempotence. Templates with placeholders
+  (`{{uuid}}`, `{{now}}`, `{{seq}}`, `{{randomInt 1 100}}`, `{{env NAME}}`), batch send from a form or a JSON Lines / CSV file,
+  "Resend" of a browsed message byte for byte.
+- **Consumer sessions** that join a group, show assignments and rebalances and commit offsets by hand.
+- **Topics and consumer groups.** Create topics, edit configs with a before/after review, add partitions, purge, delete.
+  Group lag per partition, members with host and `group.instance.id`, offset reset with a mandatory preview.
+- **Cluster check.** Built-in rules for partitions and replication, topic and broker configs and consumer groups;
+  severity depends on the connection's environment (local, dev, test, stage, prod).
+- **12 languages**, built-in guide (F1), a "?" hint on every field and topic config parameter.
+
+## Safety
+
+- **Read-only** connections: every changing operation is rejected in Rust with `READ_ONLY`, and the buttons are hidden.
+- **prod** connections: every changing operation asks you to type the connection name; delete and purge also ask
+  for the object name.
+- Offset reset and group deletion work only on groups without members, and the reset always shows a dry run first.
+
+## LLM assistants (MCP)
+
+Claude Desktop, Claude Code, Cursor or any other MCP client runs `glafira-kafka mcp`, which connects to the running
+Glafira through a local socket (a named pipe on Windows). The assistant sees only connections you mark
+"LLM access (metadata only)" and never gets messages, passwords, certificates or the bootstrap address.
+
+- **Reads metadata:** brokers, topics, partitions and ISR, topic and broker configs with secrets hidden,
+  consumer groups with members and lag, and it can observe a group for up to 50 seconds to diagnose rebalances.
+- **Leaves notes** that appear next to topics and groups in Glafira, and runs the same cluster check as the button.
+- **Proposes changes:** topic configs, a new topic, more partitions or an offset reset. A proposal opens the usual
+  Glafira form already filled in; you review the diff and apply it yourself. Deletes and purges cannot be proposed.
+
+Changing the cluster through the gateway is impossible by construction: the MCP layer is a separate crate,
+[`crates/glafira-mcp`](crates/glafira-mcp), that depends neither on `rdkafka` nor on the application crate, and its
+backend trait has only read operations (a test checks the crate's manifest). Every new client is approved in a dialog,
+every call goes to an audit log, and an administrator can disable MCP by policy.
+
+Enable it in Settings → "LLM assistants (MCP)" → "Allow the MCP server"; the same section shows ready-made client config snippets.
+Details: [guide chapter](docs/guide/en/llm-mcp.md).
+
+**Catalog build for MCP registries.** Registries such as Glama start a server in a container and ask it for its
+tools. The real server lives inside the desktop app, so the crate also ships `glafira-mcp-catalog`: the same server
+over stdio with the real tool list, where every call answers `desktop_app_required` with a link to the installers.
+Build it with `docker build -f crates/glafira-mcp/Dockerfile .`. You do not need it to use Glafira.
+
+## Development
+
+Requirements:
+- Rust stable (`rustup`), cmake, Xcode Command Line Tools on macOS
 - Node 22+, pnpm
-- Docker — для локальной Kafka (`confluentinc/cp-kafka:7.6.1`) и интеграционных тестов
+- Docker for the local Kafka (`confluentinc/cp-kafka:7.6.1`) and integration tests
 
-## Запуск
+Run:
 ```bash
 pnpm install
-docker compose -f dev/docker-compose.yml up -d   # локальная Kafka, см. «Локальный стенд»
-docker wait ke-kafka-init   # дождаться создания SCRAM-пользователя (печатает 0); нужно SCRAM-тестам
+docker compose -f dev/docker-compose.yml up -d   # local Kafka, see "Local cluster"
+docker wait ke-kafka-init   # waits for the SCRAM user (prints 0); needed by SCRAM tests
 pnpm tauri dev
 ```
 
-## Локальный стенд (`dev/docker-compose.yml`)
+Local cluster (`dev/docker-compose.yml`):
 - PLAINTEXT: `localhost:9092`.
-- SASL_PLAINTEXT: `localhost:9094`, механизмы PLAIN, SCRAM-SHA-256 и SCRAM-SHA-512.
+- SASL_PLAINTEXT: `localhost:9094` with PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512.
   - PLAIN: `tester` / `tester-secret`, `admin` / `admin-secret`.
-  - SCRAM-SHA-256 и SCRAM-SHA-512: `scram-user` / `scram-secret` (создаётся одноразовым сервисом `kafka-init` после старта брокера).
+  - SCRAM-SHA-256 and SCRAM-SHA-512: `scram-user` / `scram-secret` (created by the one-off `kafka-init` service).
+- SSL with client certificates (mTLS): `localhost:9095`, certificates in `dev/certs/out` (see `dev/certs/README.md`).
 
-## Тесты
+Tests:
 ```bash
-pnpm test                                              # фронтенд
+pnpm test                                              # frontend
 cargo test --manifest-path src-tauri/Cargo.toml --lib  # Rust unit
 KE_IT_BOOTSTRAP=localhost:9092 KE_IT_SASL_BOOTSTRAP=localhost:9094 KE_IT_MTLS_BOOTSTRAP=localhost:9095 \
-  cargo test --manifest-path src-tauri/Cargo.toml --tests   # Rust интеграционные (нужен docker compose)
-cargo test --manifest-path crates/glafira-mcp/Cargo.toml   # MCP-шлюз (без Kafka)
+  cargo test --manifest-path src-tauri/Cargo.toml --tests   # Rust integration (needs docker compose)
+cargo test --manifest-path crates/glafira-mcp/Cargo.toml   # MCP gateway (no Kafka)
 ```
-Без переменной `KE_IT_*` соответствующий интеграционный тест пропускается.
-Windows: если падает `librdkafka_is_built_with_every_compression_codec` (snappy), librdkafka собрана до подключения `src-tauri/cmake/rdkafka-windows.cmake` — выполните `cargo clean -p rdkafka-sys --manifest-path src-tauri/Cargo.toml` и пересоберите.
+An integration test without its `KE_IT_*` variable is skipped. Logs: `RUST_LOG=debug pnpm tauri dev`.
 
-## Поведение
-- Просмотр сообщений переживает перезапуск брокера: временные ошибки терпятся, сессия завершается ошибкой, если связь не восстановилась за 60 с.
+Where the app keeps its data, the MCP files and the full developer notes are described in [README.ru.md](README.ru.md)
+(in Russian); design specs are in `docs/superpowers/specs/`.
 
-## Папки, экспорт и импорт подключений
-- Подключения можно раскладывать по вложенным папкам: создание, переименование, перетаскивание, фильтр по дереву.
-- Дерево целиком или отдельную папку можно экспортировать в файл — без паролей — и импортировать на другом компьютере: новые подключения добавляются, существующие обновляются по желанию, перед применением показывается предпросмотр.
-- Откат на 0.2.x: подключения сохраняются, но раскладка по папкам теряется при первой записи `connections.json` старой версией.
+## License and support
 
-## Где хранятся данные
-- Профили подключений: `connections.json` в каталоге данных приложения (macOS: `~/Library/Application Support/io.github.vvnovg.glafira.kafka/`).
-- Пароли — в системном хранилище секретов (Keychain / Credential Manager / Secret Service), сервис `glafira-kafka`.
-- Переход со старого имени (Kafka Explorer, `dev.kafkaexplorer.app`): при первом запуске, если в новом каталоге данных нет
-  `connections.json`, из старого каталога рядом копируются `connections.json`, `templates.json`, `history/`,
-  а пароли подключений — из сервиса keychain `kafka-explorer` в `glafira-kafka`. Уже существующее не перезаписывается,
-  старые данные и записи keychain не удаляются (их можно удалить вручную). В логе — `миграция данных`.
-  macOS может один раз спросить доступ к старым записям Keychain.
-- Шаблоны сообщений: `templates.json`; история отправки — `history/<id подключения>.json` (последние 100, значения до 64 КБ). История хранится открытым текстом и содержит уже отрисованные сообщения: значения, подставленные из `{{env NAME}}`, и значения заголовков (например, токены) записываются как есть. Файлы данных создаются с правами только для владельца (0600, каталог `history/` — 0700 на macOS/Linux). Если `templates.json` не читается (например, создан более новой версией), недоступны только шаблоны — ошибка показывается в панели шаблонов.
-- MCP: `mcp.json` (адрес и токен сервера, пока он работает) и журнал вызовов `mcp-audit.jsonl` (+ `mcp-audit.1.jsonl`, ротация при 5 МБ) — в каталоге данных; содержимое ответов LLM в журнал не пишется. Сокет — `mcp.sock` там же, а если путь длиннее 100 байт, — `glafira-kafka-mcp-….sock` в `$XDG_RUNTIME_DIR`, а если он не задан, — во временном каталоге; на Windows вместо сокета — именованный канал `\\.\pipe\glafira-kafka-mcp-…`. На macOS/Linux файлы и сокет доступны только владельцу (0600).
-- Проверка кластера, замечания и предложения: `health/<id подключения>.json` — последняя проверка, скрытые находки, замечания LLM (каждое живёт 7 дней с создания, открытых — до 200) и предложения LLM (7 дней, открытых — до 50). Каталог `health/` — 0700, файлы — 0600 на macOS/Linux. Удаляется вместе с подключением, в экспорт и импорт не входит; повреждённый файл переименовывается в `<id>.json.corrupt-<время>`.
-- Логи: `RUST_LOG=debug pnpm tauri dev`.
-
-## Защита от изменений
-- **Только чтение** (флаг профиля): все изменяющие операции (создание/изменение/очистка/удаление топиков, сброс и удаление групп) отклоняются в Rust с кодом `READ_ONLY`, кнопки изменений в интерфейсе скрыты.
-- **prod**: каждая изменяющая операция требует ввести имя подключения; удаление и очистка дополнительно — имя объекта. Подтверждения — внутри страницы (диалог), не системные.
-- Сброс оффсетов и удаление группы — только для группы без участников (`Empty`) или несуществующей.
-- «Сбросить группу сюда» из просмотра сообщений выбирает группу только из списка существующих.
-- Размер топика на диске вне MVP (librdkafka не поддерживает DescribeLogDirs).
-
-Проверить сброс вручную:
-```bash
-docker exec ke-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group <group>
-```
-
-## Отправка и чтение как группа
-- **Producer**: форматы string / json / hex / base64 / null, заголовки, acks / сжатие / идемпотентность. Плейсхолдеры: `{{uuid}}`, `{{now}}`, `{{nowMillis}}`, `{{seq}}`, `{{randomInt 1 100}}`, `{{randomString 8}}`, `{{env NAME}}`; `\{{` — буквальные `{{`.
-- **Пакетная отправка**: N копий формы или файл JSON Lines (`{"key":…, "value":…, "headers":{…}, "partition":…}` в строке) / CSV (колонки `key,value,partition,header.<имя>`). Пакеты не попадают в историю.
-- **«Отправить повторно»** из просмотра сообщений и **«Повторить»** из истории открывают Producer с копией ключа, значения и заголовков байт в байт (усечённые и декодированные с потерями значения не отправляются). Чтобы шаблонизатор не тронул чужой текст, каждое `{{` в форме экранируется как `\{{`: плейсхолдеры из прочитанного сообщения (в том числе `{{env NAME}}`) не подставляются, а повтор из истории отправляет уже отрисованные значения. Шаблоны, загруженные из списка «Шаблон», отрисовываются как обычно. Партицию выбирает партиционер (не исходная партиция), timestamp — новый.
-- **Consumer-сессия** вступает в группу (ребаланс у других участников!). Автокоммит по умолчанию выключен; коммит — вручную кнопками. На подключениях «только чтение» отправка и consumer-сессии запрещены.
-
-Проверить коммиты сессии:
-```bash
-docker exec ke-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group <group>
-```
-
-## Сертификаты (SSL и mTLS)
-- **Доверенный CA** — файл PEM, PKCS#12 или JKS (truststore). Пусто — системные корневые сертификаты.
-- **Клиентский сертификат (mTLS)** — PEM (сертификат + ключ), PKCS#12 (`.p12`, `.pfx`) или JKS. Пароли необязательны и хранятся в системном хранилище секретов.
-- Файлы читаются при каждом подключении: после ротации сертификата достаточно переподключиться.
-
-Пример для кластера в Kubernetes с Istio / cert-manager (секрет с `tls.crt`, `tls.key`, `ca.crt`):
-```bash
-kubectl get secret kafka-client -o jsonpath='{.data.tls\.crt}' | base64 -d > ~/certs/tls.crt
-kubectl get secret kafka-client -o jsonpath='{.data.tls\.key}' | base64 -d > ~/certs/tls.key
-kubectl get secret kafka-client -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/certs/ca.crt
-```
-Протокол `SSL`, доверенный CA — `ca.crt`, клиентский сертификат PEM — `tls.crt` и `tls.key`, пароли пустые.
-
-Локальный стенд слушает mTLS на `localhost:9095` (сертификаты — `dev/certs/out`, см. `dev/certs/README.md`).
-
-## LLM-ассистенты (MCP)
-- Glafira — MCP-шлюз, который не меняет кластер: LLM-клиент (Claude Desktop, Claude Code, Cursor) запускает `glafira-kafka mcp`, тот соединяется с запущенной Glafira через локальный сокет (Windows — named pipe) и читает метаданные подключений с флажком «Доступ для LLM (только метаданные)». Изменить кластер через шлюз нельзя: замечания LLM пишутся только в файл Glafira; сообщения, пароли и настройки безопасности не передаются.
-- Включается в «Настройки» → «LLM-ассистенты (MCP)», там же — фрагменты конфига клиентов, подтверждённые клиенты, сессии и журнал. Новый клиент подтверждается диалогом. Политика `mcpEnabled = false` запрещает MCP (`docs/admin.md`).
-- Предложения изменений (`propose_change`, `list_proposals`, `withdraw_proposal`): LLM предлагает конфиги топика, новый топик, партиции или сброс оффсетов; предложение пишется в файл Glafira и показывается рядом с объектом, а применяет его человек заполненной формой с обычными стражами (read-only, ввод имени для prod). Статус «применено» ставит Rust после успеха операции. Удаление и очистку предложить нельзя. Спецификация: `docs/superpowers/specs/2026-10-22-glafira-proposals-g3-design.md`.
-- Протокол, инструменты и лимиты — крейт `crates/glafira-mcp` (не зависит от rdkafka и приложения); связь с приложением — `src-tauri/src/mcp/`. Спецификация: `docs/superpowers/specs/2026-10-18-glafira-mcp-gateway-g1-design.md`.
-- Разработка: отладочный бинарь — `src-tauri/target/debug/kafka-explorer` (`… mcp` — режим шима); Glafira запускайте через `pnpm tauri dev` до подключения клиента — шим не поднимет dev-сервер Vite.
-
-## Проверка кластера и замечания
-- «Проверить кластер» (обзор кластера или вкладка «Замечания» у подключения) запускает встроенные правила: партиции и репликация, конфиги топиков и брокеров, consumer groups. Строгость зависит от окружения подключения. Проверка только читает кластер: до 2000 топиков, 500 групп и 45 секунд; запускается по кнопке или по запросу LLM (`health_check`), сама не повторяется.
-- Находки видны на вкладке «Замечания», значками в дереве и списках топиков и групп и блоком на экранах топика и группы. Находку можно скрыть для объекта.
-- LLM-ассистент через MCP оставляет замечания (`annotate`, `list_annotations`, `remove_annotation`): они пишутся в Glafira, кластер не меняется. Текст показывается как есть, с подписью клиента.
-- Предложения LLM на той же вкладке: карточка с обоснованием и описанием изменения, «Открыть в форме» открывает редактор конфигов, создание топика, диалог партиций или сброс оффсетов уже заполненными; «Отклонить» — с необязательной причиной, которую видит модель.
-- Код: правила и снимок — `src-tauri/src/health/` (правила — чистые функции над `ClusterSnapshot`), инструменты — `crates/glafira-mcp/src/server/health_tools.rs`. Спецификация: `docs/superpowers/specs/2026-10-19-glafira-health-annotations-g2-design.md`.
-
-## Языки
-Интерфейс доступен на 12 языках: English, Русский, Deutsch, Français, Español, Italiano, Polski, Português (Brasil), 简体中文, 繁體中文, 日本語, 한국어.
-Язык выбирается в «Настройки» («Как в системе» по умолчанию). Администратор может задать язык политикой `language`
-(см. `docs/admin.md`): тогда выбор пользователю недоступен. Как добавить строку или язык — `docs/i18n/README.md`.
-
-## Лицензия и поддержка проекта
-- Код открыт под [Apache License 2.0](LICENSE). Все функции приложения бесплатны и доступны всем: платных тарифов и лицензионных ключей нет.
-- Имя Glafira и значок приложения лицензией не покрываются — см. `TRADEMARK.md`. Лицензии зависимостей — `THIRD_PARTY.md`.
-- Проект живёт на пожертвования: пункт «Поддержать проект» в приложении (внизу левой панели, в «О программе» и в меню Help на macOS) ведёт на https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md.
-- Как участвовать — `CONTRIBUTING.md`; об уязвимостях — `SECURITY.md`.
+- The code is licensed under [Apache License 2.0](LICENSE). Every feature is free for everyone: no paid tiers, no license keys.
+- The Glafira name and icon are not covered by the license, see [`TRADEMARK.md`](TRADEMARK.md).
+  Dependency licenses: [`THIRD_PARTY.md`](THIRD_PARTY.md).
+- The project lives on donations: [support the project](https://github.com/vvnovg/glafira-kafka-releases/blob/main/SUPPORT.md).
+- Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md). Security reports: [`SECURITY.md`](SECURITY.md).

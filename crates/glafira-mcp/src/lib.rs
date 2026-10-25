@@ -6,6 +6,7 @@
 //! а не в кластер: предложение применяет человек формой приложения.
 
 pub mod audit;
+pub mod catalog;
 pub mod endpoint;
 pub mod handshake;
 pub mod health;
@@ -21,4 +22,4 @@ pub use endpoint::{BoxStream, Endpoint};
 pub use model::{
     Backend, BackendError, BoxFuture, ClientIdent, ReadOp, ReadOutput, SessionAccess, SessionView,
 };
-pub use server::{GatewayOptions, McpServerHandle, SessionSnapshot, start};
+pub use server::{GatewayOptions, McpServerHandle, SessionSnapshot, serve_stream, start};

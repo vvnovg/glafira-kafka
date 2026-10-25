@@ -22,6 +22,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 import { save } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { api } from "../../api/client";
+import { i18n } from "../../i18n";
 import { LICENSE_URL, SUPPORT_URL } from "../../lib/links";
 import { useDiagnosticsRequest } from "../../state/diagnosticsRequest";
 import { AboutPanel } from "./AboutPanel";
@@ -89,7 +90,8 @@ describe("AboutPanel", () => {
   });
 
   it("обновление доступно; при активных сессиях — подтверждение", async () => {
-    vi.mocked(api.checkUpdate).mockResolvedValue({ status: "available", version: "0.3.0", notes: "Исправления", date: null });
+    // Релиз без notes_i18n (0.5.0 и раньше): показывается обычный notes.
+    vi.mocked(api.checkUpdate).mockResolvedValue({ status: "available", version: "0.3.0", notes: "Исправления", notesI18n: {}, date: null });
     vi.mocked(api.installUpdate)
       .mockRejectedValueOnce({ code: "CONFIRMATION_REQUIRED", message: "Идёт сессий: 1 …", retryable: false })
       .mockResolvedValueOnce(undefined);
@@ -97,12 +99,58 @@ describe("AboutPanel", () => {
     renderWithClient(<AboutPanel />);
     await user.click(await screen.findByRole("button", { name: "Проверить обновления" }));
     expect(await screen.findByText("Доступна версия 0.3.0")).toBeInTheDocument();
-    expect(screen.getByText("Исправления")).toBeInTheDocument();
+    expect(await screen.findByText("Исправления")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Установить и перезапустить" }));
     expect(api.installUpdate).toHaveBeenLastCalledWith(false);
     expect(await screen.findByText(/Идёт сессий: 1/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Остановить сессии и обновить" }));
     expect(api.installUpdate).toHaveBeenLastCalledWith(true);
+  });
+
+  it("заметки к обновлению — Markdown на языке интерфейса, ссылки — в системный браузер", async () => {
+    vi.mocked(openUrl).mockClear();
+    vi.mocked(api.checkUpdate).mockResolvedValue({
+      status: "available",
+      version: "0.3.0",
+      notes: "- **Fixes**",
+      notesI18n: { en: "- **Fixes**", ru: "- **Исправления** для `acks`\n- [Подробнее](https://example.com/r)" },
+      date: null,
+    });
+    const user = userEvent.setup();
+    renderWithClient(<AboutPanel />);
+    await user.click(await screen.findByRole("button", { name: "Проверить обновления" }));
+    const notes = await screen.findByRole("region", { name: "Что нового в версии 0.3.0" });
+    expect((await screen.findByText("Исправления")).tagName).toBe("STRONG");
+    expect(screen.getByText("acks").tagName).toBe("CODE");
+    expect(notes.querySelectorAll("li")).toHaveLength(2);
+    expect(notes.textContent).not.toContain("**");
+    expect(screen.queryByText(/Fixes/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Подробнее" }));
+    expect(openUrl).toHaveBeenCalledWith("https://example.com/r");
+  });
+
+  it("смена языка меняет заметки без новой проверки; нет перевода — английские", async () => {
+    vi.mocked(api.checkUpdate).mockClear();
+    vi.mocked(api.checkUpdate).mockResolvedValue({
+      status: "available",
+      version: "0.3.0",
+      notes: "- Fixes",
+      notesI18n: { en: "- Fixes", ru: "- Исправления", de: "- Korrekturen" },
+      date: null,
+    });
+    const user = userEvent.setup();
+    renderWithClient(<AboutPanel />);
+    await user.click(await screen.findByRole("button", { name: "Проверить обновления" }));
+    expect(await screen.findByText("Исправления")).toBeInTheDocument();
+    try {
+      await act(() => i18n.changeLanguage("de"));
+      expect(await screen.findByText("Korrekturen")).toBeInTheDocument();
+      await act(() => i18n.changeLanguage("ja"));
+      expect(await screen.findByText("Fixes")).toBeInTheDocument();
+      expect(api.checkUpdate).toHaveBeenCalledTimes(1);
+    } finally {
+      await act(() => i18n.changeLanguage("ru"));
+    }
   });
 
   it("политика выключила обновления", async () => {

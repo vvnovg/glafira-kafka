@@ -1038,6 +1038,7 @@
       "check": "アップデートを確認",
       "upToDate": "最新バージョンを使用しています",
       "available": "バージョン{{version}}を利用できます",
+      "notesAria": "バージョン{{version}}の新機能",
       "confirmAria": "アップデートを確認",
       "stopAndUpdate": "セッションを停止してアップデート",
       "install": "インストールして再起動",

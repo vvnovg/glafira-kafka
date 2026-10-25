@@ -1042,6 +1042,7 @@
       "check": "Verificar atualizações",
       "upToDate": "Esta é a versão mais recente",
       "available": "A versão {{version}} está disponível",
+      "notesAria": "Novidades da versão {{version}}",
       "confirmAria": "Confirmar a atualização",
       "stopAndUpdate": "Parar as sessões e atualizar",
       "install": "Instalar e reiniciar",

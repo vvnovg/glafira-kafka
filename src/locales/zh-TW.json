@@ -1038,6 +1038,7 @@
       "check": "檢查更新",
       "upToDate": "已是最新版本",
       "available": "有新版本 {{version}} 可用",
+      "notesAria": "版本 {{version}} 的新功能",
       "confirmAria": "確認更新",
       "stopAndUpdate": "停止工作階段並更新",
       "install": "安裝並重新啟動",

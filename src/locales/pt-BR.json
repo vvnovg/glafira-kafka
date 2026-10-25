@@ -460,7 +460,11 @@
         "colDetails": "Detalhes",
         "scanDetails": "{{target}}: {{returned}} de {{scanned}}, mascarados: {{masked}}",
         "openInBrowse": "Abrir em “Mensagens”",
-        "openUnavailable": "Indisponível: os argumentos da chamada estão truncados no log, a conexão não existe mais ou o acesso para LLM dela não é “Metadados e mensagens”"
+        "scanDetailsNoTarget": "{{returned}} de {{scanned}}, mascarados: {{masked}}",
+        "openArgsCut": "Indisponível: os argumentos da chamada estão truncados no log",
+        "openNoConnection": "Indisponível: a conexão não existe mais",
+        "openNotMessages": "Indisponível: o acesso para LLM da conexão não é “Metadados e mensagens”",
+        "openPolicy": "Indisponível: a leitura de mensagens está desativada pela sua organização"
       },
       "openCounts": "Abertas para LLM: {{n}}, com mensagens: {{m}}",
       "messagesPolicy": "A leitura de mensagens está desativada pela sua organização"
@@ -805,7 +809,8 @@
       "finishLimit": "limite atingido",
       "finishEnd": "fim do tópico alcançado",
       "finishCancelled": "interrompido",
-      "prefillInexact": "Os filtros foram transferidos de forma aproximada: no formulário, as opções de regex e maiúsculas são comuns à chave e ao valor"
+      "prefillInexact": "Os filtros foram transferidos de forma aproximada: no formulário, as opções de regex e maiúsculas são comuns à chave, ao valor e ao valor do cabeçalho",
+      "prefillInexactLimit": "O limite foi transferido de forma aproximada: no formulário, ele conta as mensagens encontradas, não os offsets, então a leitura pode passar do offset final da chamada"
     },
     "table": {
       "colTime": "Data/hora",

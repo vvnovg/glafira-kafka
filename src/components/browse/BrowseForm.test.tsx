@@ -1,3 +1,4 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -42,7 +43,7 @@ describe("BrowseForm", () => {
   it("форма заполняется из журнала MCP, чтение не начинается само", () => {
     const prefill = {
       form: { startType: "offset" as const, offset: 7, partitions: "2", valuePattern: "FAILED", regex: true },
-      inexact: true,
+      inexact: ["flags" as const],
       nonce: 1,
     };
     renderWithClient(<BrowsePanel connectionId="c" topic="t" prefill={prefill} />);
@@ -50,6 +51,34 @@ describe("BrowseForm", () => {
     expect(screen.getByLabelText("regex")).toBeChecked();
     expect(screen.getByLabelText("Партиции")).toHaveValue("2");
     expect(screen.getByText(/Фильтры перенесены неточно/)).toBeInTheDocument();
+    expect(api.startBrowse).not.toHaveBeenCalled();
+  });
+
+  it("повторное «Открыть» (новый nonce) заполняет форму заново: ошибка формы и пометки — от нового заполнения", async () => {
+    const user = userEvent.setup();
+    const first = {
+      // Начало «С времени» без времени — ошибка формы по «Читать».
+      form: { startType: "timestamp" as const, timestamp: "", valuePattern: "A" },
+      inexact: ["flags" as const, "limit" as const],
+      nonce: 1,
+    };
+    const { rerender, client } = renderWithClient(<BrowsePanel connectionId="c" topic="t" prefill={first} />);
+    expect(screen.getByText(/Фильтры перенесены неточно/)).toBeInTheDocument();
+    expect(screen.getByText(/Лимит перенесён неточно/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Читать" }));
+    expect(screen.getByText("Укажите корректное время начала")).toBeInTheDocument();
+    await user.clear(screen.getByLabelText("Значение содержит"));
+    await user.type(screen.getByLabelText("Значение содержит"), "edited");
+    const second = { form: { startType: "offset" as const, offset: 3, valuePattern: "B" }, inexact: [], nonce: 2 };
+    rerender(
+      <QueryClientProvider client={client}>
+        <BrowsePanel connectionId="c" topic="t" prefill={second} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByLabelText("Значение содержит")).toHaveValue("B");
+    expect(screen.queryByText("Укажите корректное время начала")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Фильтры перенесены неточно/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Лимит перенесён неточно/)).not.toBeInTheDocument();
     expect(api.startBrowse).not.toHaveBeenCalled();
   });
 

@@ -460,7 +460,11 @@
         "colDetails": "Dettagli",
         "scanDetails": "{{target}}: {{returned}} su {{scanned}}, mascherati: {{masked}}",
         "openInBrowse": "Apri in “Messaggi”",
-        "openUnavailable": "Non disponibile: gli argomenti della chiamata nel registro sono troncati, la connessione non esiste più o il suo accesso LLM non è “Metadati e messaggi”"
+        "scanDetailsNoTarget": "{{returned}} su {{scanned}}, mascherati: {{masked}}",
+        "openArgsCut": "Non disponibile: gli argomenti della chiamata nel log sono troncati",
+        "openNoConnection": "Non disponibile: la connessione non esiste più",
+        "openNotMessages": "Non disponibile: l’accesso LLM della connessione non è “Metadati e messaggi”",
+        "openPolicy": "Non disponibile: la lettura dei messaggi è disattivata dalla tua organizzazione"
       },
       "openCounts": "Aperte agli LLM: {{n}}, di cui con messaggi: {{m}}",
       "messagesPolicy": "La lettura dei messaggi è disattivata dalla tua organizzazione"
@@ -805,7 +809,8 @@
       "finishLimit": "limite raggiunto",
       "finishEnd": "raggiunta la fine del topic",
       "finishCancelled": "interrotto",
-      "prefillInexact": "Filtri riportati in modo approssimativo: nel modulo le opzioni regex e maiuscole sono comuni a chiave e valore"
+      "prefillInexact": "Filtri riportati in modo approssimativo: nel modulo le opzioni regex e maiuscole sono comuni a chiave, valore e valore dell’intestazione",
+      "prefillInexactLimit": "Limite riportato in modo approssimativo: nel modulo conta i messaggi corrispondenti, non gli offset, quindi la lettura può andare oltre l’offset finale della chiamata"
     },
     "table": {
       "colTime": "Data/ora",

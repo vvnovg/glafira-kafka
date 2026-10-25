@@ -70,43 +70,83 @@ describe("McpSection", () => {
     expect(await screen.findByText("Чтение сообщений отключено вашей организацией")).toBeInTheDocument();
   });
 
+  const read = (id: string, topic: string, patch: Partial<McpAuditEntry> = {}): McpAuditEntry => ({
+    ts: 2,
+    event: "call",
+    tool: "read_messages",
+    outcome: "ok",
+    connection: { id, name: id },
+    args: { connectionId: id, topic, from: 0, to: 1000 },
+    scanned: 10,
+    returned: 3,
+    masked: 2,
+    ms: 5,
+    ...patch,
+  });
+  const openButtons = () => screen.findAllByRole("button", { name: "Открыть в «Сообщениях»" });
+  const connections = [
+    { ...newProfile(), id: "c1", name: "dev", llmAccess: "messages" as const },
+    { ...newProfile(), id: "c2", name: "meta", llmAccess: "metadata" as const },
+  ];
+
   it("журнал: подробности чтения сообщений и «Открыть в „Сообщениях“»", async () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
-    vi.mocked(api.listConnections).mockResolvedValue([
-      { ...newProfile(), id: "c1", name: "dev", llmAccess: "messages" },
-      { ...newProfile(), id: "c2", name: "meta", llmAccess: "metadata" },
-    ]);
-    const read = (id: string, topic: string, patch: Partial<McpAuditEntry> = {}): McpAuditEntry => ({
-      ts: 2,
-      event: "call",
-      tool: "read_messages",
-      outcome: "ok",
-      connection: { id, name: id },
-      args: { connectionId: id, topic, from: 0, to: 1000 },
-      scanned: 10,
-      returned: 3,
-      masked: 2,
-      ms: 5,
-      ...patch,
-    });
+    vi.mocked(api.listConnections).mockResolvedValue(connections);
     vi.mocked(api.getMcpAudit).mockResolvedValue([
-      read("c1", "orders"),
+      read("c1", "orders", { scanned: 12345 }),
       read("c2", "payments"),
       read("c1", "big", { args: '{"topic":"big"…' }),
     ]);
     useWorkspace.setState({ tabs: [], activeId: null });
     const user = userEvent.setup();
     renderWithClient(<McpSection />);
-    expect(await screen.findByText(/orders: 3 из 10, замаскировано: 2/)).toBeInTheDocument();
-    const buttons = await screen.findAllByRole("button", { name: "Открыть в «Сообщениях»" });
-    expect(buttons).toHaveLength(2);
+    const buttons = await openButtons();
+    expect(buttons).toHaveLength(3);
+    // Числа — в формате языка интерфейса (textContent: нормализация testing-library заменила бы неразрывный пробел).
+    expect(buttons[0].closest("td")?.textContent).toContain(`orders: 3 из ${(12345).toLocaleString("ru")}, замаскировано: 2`);
     await waitFor(() => expect(buttons[0]).toBeEnabled());
+    expect(buttons[0]).not.toHaveAttribute("title");
     expect(buttons[1]).toBeDisabled();
-    expect(buttons[1]).toHaveAttribute("title", expect.stringContaining("Недоступно"));
+    expect(buttons[1]).toHaveAttribute("title", "Недоступно: у подключения уровень не «Метаданные и сообщения»");
+    // Аргументы усечены: кнопка есть, но неактивна; цели нет — и двоеточия перед числами тоже.
+    expect(buttons[2]).toBeDisabled();
+    expect(buttons[2]).toHaveAttribute("title", "Недоступно: аргументы вызова в журнале усечены");
+    expect(buttons[2].closest("td")).toHaveTextContent(/^3 из 10, замаскировано: 2 Открыть в «Сообщениях»$/);
     await user.click(buttons[0]);
     const tab = useWorkspace.getState().tabs[0];
     expect(tab).toMatchObject({ kind: "topic", connectionId: "c1", topic: "orders" });
     expect(tab.kind === "topic" && tab.browsePrefill?.form.startType).toBe("timestamp");
+  });
+
+  it("журнал: чтение сообщений отключено организацией — своя подсказка у кнопки", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
+    vi.mocked(api.listConnections).mockResolvedValue(connections);
+    vi.mocked(api.getMcpAudit).mockResolvedValue([read("c1", "orders")]);
+    renderWithClient(<McpSection />);
+    const [button] = await openButtons();
+    await waitFor(() => expect(api.listConnections).toHaveBeenCalled());
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", "Недоступно: чтение сообщений отключено вашей организацией");
+  });
+
+  it("журнал: подключения больше нет", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.listConnections).mockResolvedValue(connections);
+    vi.mocked(api.getMcpAudit).mockResolvedValue([read("gone", "orders")]);
+    renderWithClient(<McpSection />);
+    const [button] = await openButtons();
+    await waitFor(() => expect(button).toHaveAttribute("title", "Недоступно: подключения больше нет"));
+    expect(button).toBeDisabled();
+  });
+
+  it("журнал: пока список подключений грузится, кнопка неактивна без подсказки", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.listConnections).mockReturnValue(new Promise(() => {}));
+    vi.mocked(api.getMcpAudit).mockResolvedValue([read("c1", "orders")]);
+    renderWithClient(<McpSection />);
+    const [button] = await openButtons();
+    expect(button).toBeDisabled();
+    expect(button).not.toHaveAttribute("title");
   });
 
   it("политика запрещает MCP", async () => {

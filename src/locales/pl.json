@@ -460,7 +460,11 @@
         "colDetails": "Szczegóły",
         "scanDetails": "{{target}}: {{returned}} z {{scanned}}, zamaskowano: {{masked}}",
         "openInBrowse": "Otwórz w „Wiadomościach”",
-        "openUnavailable": "Niedostępne: argumenty wywołania w dzienniku są obcięte, połączenia już nie ma lub jego dostęp dla LLM to nie „Metadane i wiadomości”"
+        "scanDetailsNoTarget": "{{returned}} z {{scanned}}, zamaskowano: {{masked}}",
+        "openArgsCut": "Niedostępne: argumenty wywołania w logu są obcięte",
+        "openNoConnection": "Niedostępne: połączenia już nie ma",
+        "openNotMessages": "Niedostępne: dostęp dla LLM tego połączenia to nie „Metadane i wiadomości”",
+        "openPolicy": "Niedostępne: odczyt wiadomości jest wyłączony przez organizację"
       },
       "openCounts": "Otwarte dla LLM: {{n}}, w tym z wiadomościami: {{m}}",
       "messagesPolicy": "Odczyt wiadomości jest wyłączony przez organizację"
@@ -807,7 +811,8 @@
       "finishLimit": "osiągnięto limit",
       "finishEnd": "osiągnięto koniec topiku",
       "finishCancelled": "zatrzymano",
-      "prefillInexact": "Filtry przeniesiono niedokładnie: w formularzu opcje regex i wielkości liter są wspólne dla klucza i wartości"
+      "prefillInexact": "Filtry przeniesiono niedokładnie: w formularzu opcje regex i wielkości liter są wspólne dla klucza, wartości i wartości nagłówka",
+      "prefillInexactLimit": "Limit przeniesiono niedokładnie: w formularzu liczy pasujące wiadomości, a nie offsety, więc odczyt może wyjść poza końcowy offset wywołania"
     },
     "table": {
       "colTime": "Czas",

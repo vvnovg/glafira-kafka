@@ -17,10 +17,17 @@ export type ResetPrefill =
 export type ProposalPrefill = { proposal: Proposal; nonce: number };
 
 /**
- * Форма «Сообщения» из записи журнала MCP (G4): человек видит те же сообщения, что LLM, без маскирования.
- * `inexact` — фильтры перенесены неточно (в форме флаги regex и регистра общие для ключа и значения).
+ * Что из вызова MCP форма «Сообщения» повторяет неточно: `flags` — флаги regex и регистра в форме общие для ключа,
+ * значения и значения заголовка, а в вызове различались; `limit` — режим «офсеты» с фильтром: лимит формы считает
+ * найденные сообщения, а не офсеты, и чтение может зайти за конечный офсет вызова.
  */
-export type BrowsePrefill = { form: Partial<BrowseFormState>; inexact: boolean; nonce: number };
+export type PrefillInexact = "flags" | "limit";
+
+/**
+ * Форма «Сообщения» из записи журнала MCP (G4): человек видит те же сообщения, что LLM, без маскирования.
+ * `inexact` — что перенесено неточно (пусто — перенос точный).
+ */
+export type BrowsePrefill = { form: Partial<BrowseFormState>; inexact: PrefillInexact[]; nonce: number };
 
 export type TabSpec =
   | { kind: "cluster"; connectionId: string }

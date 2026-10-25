@@ -460,7 +460,11 @@
         "colDetails": "Details",
         "scanDetails": "{{target}}: {{returned}} of {{scanned}}, masked: {{masked}}",
         "openInBrowse": "Open in Messages",
-        "openUnavailable": "Unavailable: the call's arguments in the log are cut, the connection is gone or its LLM access is not “Metadata and messages”"
+        "scanDetailsNoTarget": "{{returned}} of {{scanned}}, masked: {{masked}}",
+        "openArgsCut": "Unavailable: the call's arguments in the log are cut",
+        "openNoConnection": "Unavailable: the connection is gone",
+        "openNotMessages": "Unavailable: the connection's LLM access is not “Metadata and messages”",
+        "openPolicy": "Unavailable: reading messages is disabled by your organization"
       },
       "openCounts": "Open to LLM: {{n}}, with messages: {{m}}",
       "messagesPolicy": "Reading messages is disabled by your organization"
@@ -803,7 +807,8 @@
       "finishLimit": "limit reached",
       "finishEnd": "reached end of topic",
       "finishCancelled": "stopped",
-      "prefillInexact": "Filters were carried over approximately: in the form, the regex and case settings are shared by the key and the value"
+      "prefillInexact": "Filters were carried over approximately: in the form, the regex and case settings are shared by the key, the value and the header value",
+      "prefillInexactLimit": "The limit was carried over approximately: in the form, it counts matched messages, not offsets, so the read can go past the call's end offset"
     },
     "table": {
       "colTime": "Time",

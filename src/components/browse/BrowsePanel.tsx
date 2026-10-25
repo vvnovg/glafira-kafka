@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BrowsedMessage } from "../../api/types";
-import type { BrowsePrefill } from "../../state/workspace";
+import type { BrowsePrefill, PrefillInexact } from "../../state/workspace";
 import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
@@ -17,16 +17,18 @@ const FINISH_KEYS = { limit: "browse.panel.finishLimit", endOfTopic: "browse.pan
 export function BrowsePanel({ connectionId, topic, prefill }: { connectionId: string; topic: string; prefill?: BrowsePrefill }) {
   const { t } = useTranslation();
   const [form, setForm] = useState(defaultBrowseForm);
-  const [inexact, setInexact] = useState(false);
+  const [inexact, setInexact] = useState<PrefillInexact[]>([]);
+  const [formError, setFormError] = useState<string | null>(null);
   // Заполнение из журнала MCP (G4): чтение начинается по кнопке, как обычно. Ключ — nonce.
   const nonce = prefill?.nonce;
   useEffect(() => {
     if (!prefill) return;
     setForm({ ...defaultBrowseForm, ...prefill.form });
+    // Пометки и ошибка формы относились к прежнему заполнению.
     setInexact(prefill.inexact);
+    setFormError(null);
     // Зависимость только от nonce — повторное открытие из журнала заполняет форму заново.
   }, [nonce]);
-  const [formError, setFormError] = useState<string | null>(null);
   const [selected, setSelected] = useState<BrowsedMessage | null>(null);
   const [utc, setUtc] = useState(false);
   const { state, start, stop } = useBrowseSession();
@@ -46,7 +48,8 @@ export function BrowsePanel({ connectionId, topic, prefill }: { connectionId: st
   return (
     <div className="browse">
       <BrowseForm form={form} onChange={setForm} />
-      {inexact && <p className="hint">{t("browse.panel.prefillInexact")}</p>}
+      {inexact.includes("flags") && <p className="hint">{t("browse.panel.prefillInexact")}</p>}
+      {inexact.includes("limit") && <p className="hint">{t("browse.panel.prefillInexactLimit")}</p>}
       <div className="toolbar">
         <button type="button" className="primary" onClick={onStart}>
           {running ? t("browse.panel.restart") : t("browse.panel.read")}

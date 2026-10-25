@@ -457,10 +457,14 @@
         "revoked": "Zugriff des Clients widerrufen",
         "serverStarted": "Server gestartet",
         "serverStopped": "Server beendet",
-        "colDetails": "Einzelheiten",
+        "colDetails": "Details",
         "scanDetails": "{{target}}: {{returned}} von {{scanned}}, maskiert: {{masked}}",
         "openInBrowse": "In „Nachrichten“ öffnen",
-        "openUnavailable": "Nicht verfügbar: Die Aufrufargumente im Protokoll sind gekürzt, die Verbindung gibt es nicht mehr oder ihr LLM-Zugriff ist nicht „Metadaten und Nachrichten“"
+        "scanDetailsNoTarget": "{{returned}} von {{scanned}}, maskiert: {{masked}}",
+        "openArgsCut": "Nicht verfügbar: Die Aufrufargumente im Protokoll sind gekürzt",
+        "openNoConnection": "Nicht verfügbar: Die Verbindung gibt es nicht mehr",
+        "openNotMessages": "Nicht verfügbar: Der LLM-Zugriff der Verbindung ist nicht „Metadaten und Nachrichten“",
+        "openPolicy": "Nicht verfügbar: Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert"
       },
       "openCounts": "Für LLM freigegeben: {{n}}, davon mit Nachrichten: {{m}}",
       "messagesPolicy": "Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert"
@@ -803,7 +807,8 @@
       "finishLimit": "Limit erreicht",
       "finishEnd": "Ende des Topics erreicht",
       "finishCancelled": "gestoppt",
-      "prefillInexact": "Filter wurden ungenau übernommen: Im Formular gelten Regex und Groß-/Kleinschreibung gemeinsam für Schlüssel und Wert"
+      "prefillInexact": "Filter wurden ungenau übernommen: Im Formular gelten Regex und Groß-/Kleinschreibung gemeinsam für Schlüssel, Wert und Header-Wert",
+      "prefillInexactLimit": "Das Limit wurde ungenau übernommen: Im Formular zählt es Treffer, nicht Offsets, daher kann das Lesen über den End-Offset des Aufrufs hinausgehen"
     },
     "table": {
       "colTime": "Zeit",

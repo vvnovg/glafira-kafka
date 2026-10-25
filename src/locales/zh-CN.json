@@ -457,10 +457,14 @@
         "revoked": "客户端访问权限已撤销",
         "serverStarted": "服务器已启动",
         "serverStopped": "服务器已停止",
-        "colDetails": "详情",
+        "colDetails": "详细信息",
         "scanDetails": "{{target}}：{{scanned}} 条中返回 {{returned}} 条，已脱敏：{{masked}}",
         "openInBrowse": "在“消息”中打开",
-        "openUnavailable": "不可用：日志中的调用参数已被截断、连接已不存在，或其 LLM 访问不是“元数据和消息”"
+        "scanDetailsNoTarget": "{{scanned}} 条中返回 {{returned}} 条，已脱敏：{{masked}}",
+        "openArgsCut": "不可用：日志中的调用参数已被截断",
+        "openNoConnection": "不可用：连接已不存在",
+        "openNotMessages": "不可用：该连接的 LLM 访问不是“元数据和消息”",
+        "openPolicy": "不可用：读取消息已被你的组织禁用"
       },
       "openCounts": "已向 LLM 开放：{{n}}，其中可读取消息：{{m}}",
       "messagesPolicy": "读取消息已被你的组织禁用"
@@ -801,7 +805,8 @@
       "finishLimit": "已达上限",
       "finishEnd": "已到达主题末尾",
       "finishCancelled": "已停止",
-      "prefillInexact": "筛选条件转换不精确：表单中正则表达式和大小写选项由键和值共用"
+      "prefillInexact": "筛选条件转换不精确：表单中 regex 和大小写选项由键、值和标头值共用",
+      "prefillInexactLimit": "上限转换不精确：表单中的上限按匹配的消息计数，而不是按偏移量，因此读取可能超出调用的结束偏移量"
     },
     "table": {
       "colTime": "时间",

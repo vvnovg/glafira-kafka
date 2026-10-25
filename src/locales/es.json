@@ -460,7 +460,11 @@
         "colDetails": "Detalles",
         "scanDetails": "{{target}}: {{returned}} de {{scanned}}, enmascarados: {{masked}}",
         "openInBrowse": "Abrir en “Mensajes”",
-        "openUnavailable": "No disponible: los argumentos de la llamada están truncados en el registro, la conexión ya no existe o su acceso para LLM no es “Metadatos y mensajes”"
+        "scanDetailsNoTarget": "{{returned}} de {{scanned}}, enmascarados: {{masked}}",
+        "openArgsCut": "No disponible: los argumentos de la llamada están truncados en el registro",
+        "openNoConnection": "No disponible: la conexión ya no existe",
+        "openNotMessages": "No disponible: el acceso para LLM de la conexión no es “Metadatos y mensajes”",
+        "openPolicy": "No disponible: la lectura de mensajes está desactivada por tu organización"
       },
       "openCounts": "Abiertas a LLM: {{n}}, con mensajes: {{m}}",
       "messagesPolicy": "La lectura de mensajes está desactivada por tu organización"
@@ -805,7 +809,8 @@
       "finishLimit": "límite alcanzado",
       "finishEnd": "se alcanzó el final del topic",
       "finishCancelled": "detenido",
-      "prefillInexact": "Los filtros se trasladaron de forma aproximada: en el formulario, las opciones de regex y mayúsculas son comunes para la clave y el valor"
+      "prefillInexact": "Los filtros se trasladaron de forma aproximada: en el formulario, las opciones de regex y mayúsculas son comunes para la clave, el valor y el valor del encabezado",
+      "prefillInexactLimit": "El límite se trasladó de forma aproximada: en el formulario cuenta las coincidencias, no los offsets, así que la lectura puede pasar del offset final de la llamada"
     },
     "table": {
       "colTime": "Fecha/hora",

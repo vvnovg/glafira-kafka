@@ -457,10 +457,14 @@
         "revoked": "用戶端存取權限已撤銷",
         "serverStarted": "伺服器已啟動",
         "serverStopped": "伺服器已停止",
-        "colDetails": "詳細資料",
+        "colDetails": "詳細資訊",
         "scanDetails": "{{target}}：{{scanned}} 則中傳回 {{returned}} 則，已遮罩：{{masked}}",
         "openInBrowse": "在「訊息」中開啟",
-        "openUnavailable": "無法使用：記錄中的呼叫參數已被截斷、連線已不存在，或其 LLM 存取不是「中繼資料和訊息」"
+        "scanDetailsNoTarget": "{{scanned}} 則中傳回 {{returned}} 則，已遮罩：{{masked}}",
+        "openArgsCut": "無法使用：日誌中的呼叫參數已被截斷",
+        "openNoConnection": "無法使用：連線已不存在",
+        "openNotMessages": "無法使用：該連線的 LLM 存取不是「中繼資料和訊息」",
+        "openPolicy": "無法使用：讀取訊息已被你的組織停用"
       },
       "openCounts": "已對 LLM 開放：{{n}}，其中可讀取訊息：{{m}}",
       "messagesPolicy": "讀取訊息已被你的組織停用"
@@ -801,7 +805,8 @@
       "finishLimit": "已達上限",
       "finishEnd": "已到達主題結尾",
       "finishCancelled": "已停止",
-      "prefillInexact": "篩選條件轉換不精確：表單中規則運算式和大小寫選項由鍵和值共用"
+      "prefillInexact": "篩選條件轉換不精確：表單中 regex 和大小寫選項由鍵、值和標頭值共用",
+      "prefillInexactLimit": "上限轉換不精確：表單中的上限依符合的訊息計數，而不是依偏移量，因此讀取可能超出呼叫的結束偏移量"
     },
     "table": {
       "colTime": "時間",

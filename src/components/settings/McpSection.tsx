@@ -4,12 +4,12 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import type { ConnectionProfile, McpAuditEntry, McpServerState, McpStatus } from "../../api/types";
 import { tr } from "../../i18n/text";
-import { formatTimestamp } from "../../lib/format";
+import { formatCount, formatTimestamp } from "../../lib/format";
 import { MCP_STATUS_KEY, useMcpStatus } from "../../lib/useMcpStatus";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
-import { auditTarget, browsePrefillFromAudit } from "./auditPrefill";
+import { auditTarget, browsePrefillFromAudit, isBrowsable } from "./auditPrefill";
 
 const STATE_KEYS: Record<McpServerState, string> = {
   off: "settings.mcp.state.off",
@@ -66,33 +66,52 @@ function auditWhat(e: McpAuditEntry, t: (k: string) => string): string {
   return key ? t(key) : e.event;
 }
 
+/**
+ * Почему «Открыть в „Сообщениях“» неактивна: ключ подсказки; "" — пока неизвестно (список подключений грузится
+ * или не загрузился), без подсказки; null — кнопка активна.
+ */
+function openBlocked(
+  canPrefill: boolean,
+  e: McpAuditEntry,
+  s: McpStatus,
+  connections: ConnectionProfile[] | undefined,
+): string | null {
+  if (!canPrefill) return "settings.mcp.audit.openArgsCut";
+  // Политика действует поверх уровня подключения: сохранённое «сообщения» работает как «Только метаданные».
+  if (!s.messagesAllowed) return "settings.mcp.audit.openPolicy";
+  if (!connections) return "";
+  const conn = connections.find((c) => c.id === e.connection?.id);
+  if (!conn) return "settings.mcp.audit.openNoConnection";
+  return conn.llmAccess === "messages" ? null : "settings.mcp.audit.openNotMessages";
+}
+
 /** Подробности вызова чтения сообщений (G4): цель, отдано из просмотренных, замаскировано. */
 function AuditDetails({ e, s, connections }: { e: McpAuditEntry; s: McpStatus; connections: ConnectionProfile[] | undefined }) {
   const { t } = useTranslation();
   const open = useWorkspace((st) => st.open);
   if (e.scanned === undefined) return null;
-  const target = browsePrefillFromAudit(e);
-  const conn = connections?.find((c) => c.id === e.connection?.id);
-  const canOpen = !!target && conn?.llmAccess === "messages" && s.messagesAllowed;
+  const counts = { returned: formatCount(e.returned ?? 0), scanned: formatCount(e.scanned), masked: formatCount(e.masked ?? 0) };
+  // У усечённых аргументов цели нет — строка без неё, а не «: 3 из 10».
+  const target = auditTarget(e);
+  const details = target ? t("settings.mcp.audit.scanDetails", { target, ...counts }) : t("settings.mcp.audit.scanDetailsNoTarget", counts);
+  if (!isBrowsable(e)) return <>{details}</>;
+  const prefill = browsePrefillFromAudit(e);
+  const blocked = openBlocked(prefill !== null, e, s, connections);
   return (
     <>
-      {t("settings.mcp.audit.scanDetails", { target: auditTarget(e), returned: e.returned ?? 0, scanned: e.scanned, masked: e.masked ?? 0 })}
-      {target && (
-        <>
-          {" "}
-          <button
-            type="button"
-            className="link"
-            disabled={!canOpen}
-            title={canOpen ? undefined : t("settings.mcp.audit.openUnavailable")}
-            onClick={() =>
-              open({ kind: "topic", connectionId: target.connectionId, topic: target.topic, browsePrefill: { ...target.prefill, nonce: Date.now() } })
-            }
-          >
-            {t("settings.mcp.audit.openInBrowse")}
-          </button>
-        </>
-      )}
+      {details}{" "}
+      <button
+        type="button"
+        className="link"
+        disabled={blocked !== null}
+        title={blocked ? t(blocked) : undefined}
+        onClick={() =>
+          prefill &&
+          open({ kind: "topic", connectionId: prefill.connectionId, topic: prefill.topic, browsePrefill: { ...prefill.prefill, nonce: Date.now() } })
+        }
+      >
+        {t("settings.mcp.audit.openInBrowse")}
+      </button>
     </>
   );
 }

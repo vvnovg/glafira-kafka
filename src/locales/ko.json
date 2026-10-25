@@ -460,7 +460,11 @@
         "colDetails": "세부 정보",
         "scanDetails": "{{target}}: {{scanned}}개 중 {{returned}}개, 마스킹: {{masked}}",
         "openInBrowse": "'메시지'에서 열기",
-        "openUnavailable": "사용할 수 없음: 로그의 호출 인수가 잘렸거나, 연결이 없거나, LLM 접근이 '메타데이터 및 메시지'가 아닙니다"
+        "scanDetailsNoTarget": "{{scanned}}개 중 {{returned}}개, 마스킹: {{masked}}",
+        "openArgsCut": "사용할 수 없음: 로그의 호출 인수가 잘렸습니다",
+        "openNoConnection": "사용할 수 없음: 연결이 더 이상 없습니다",
+        "openNotMessages": "사용할 수 없음: 연결의 LLM 접근이 '메타데이터 및 메시지'가 아닙니다",
+        "openPolicy": "사용할 수 없음: 조직에서 메시지 읽기를 비활성화했습니다"
       },
       "openCounts": "LLM에 열림: {{n}}, 그중 메시지 포함: {{m}}",
       "messagesPolicy": "조직에서 메시지 읽기를 비활성화했습니다"
@@ -801,7 +805,8 @@
       "finishLimit": "제한에 도달함",
       "finishEnd": "토픽 끝에 도달함",
       "finishCancelled": "중지됨",
-      "prefillInexact": "필터가 정확히 옮겨지지 않았습니다: 양식에서는 정규식과 대소문자 설정을 키와 값이 함께 씁니다"
+      "prefillInexact": "필터가 정확히 옮겨지지 않았습니다: 양식에서는 regex와 대소문자 설정을 키, 값, 헤더 값이 함께 씁니다",
+      "prefillInexactLimit": "제한이 정확히 옮겨지지 않았습니다: 양식의 제한은 오프셋이 아니라 일치한 메시지 수를 세므로 호출의 종료 오프셋을 넘어 읽을 수 있습니다"
     },
     "table": {
       "colTime": "시간",

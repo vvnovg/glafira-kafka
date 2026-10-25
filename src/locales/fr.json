@@ -460,7 +460,11 @@
         "colDetails": "Détails",
         "scanDetails": "{{target}} : {{returned}} sur {{scanned}}, masqués : {{masked}}",
         "openInBrowse": "Ouvrir dans « Messages »",
-        "openUnavailable": "Indisponible : les arguments de l’appel sont tronqués dans le journal, la connexion n’existe plus ou son accès LLM n’est pas « Métadonnées et messages »"
+        "scanDetailsNoTarget": "{{returned}} sur {{scanned}}, masqués : {{masked}}",
+        "openArgsCut": "Indisponible : les arguments de l’appel sont tronqués dans le journal",
+        "openNoConnection": "Indisponible : la connexion n’existe plus",
+        "openNotMessages": "Indisponible : l’accès LLM de la connexion n’est pas « Métadonnées et messages »",
+        "openPolicy": "Indisponible : la lecture des messages est désactivée par votre organisation"
       },
       "openCounts": "Ouvertes au LLM : {{n}}, dont avec messages : {{m}}",
       "messagesPolicy": "La lecture des messages est désactivée par votre organisation"
@@ -805,7 +809,8 @@
       "finishLimit": "limite atteinte",
       "finishEnd": "fin du topic atteinte",
       "finishCancelled": "arrêté",
-      "prefillInexact": "Filtres repris de façon approximative : dans le formulaire, les options regex et casse sont communes à la clé et à la valeur"
+      "prefillInexact": "Filtres repris de façon approximative : dans le formulaire, les options regex et casse sont communes à la clé, à la valeur et à la valeur de l’en-tête",
+      "prefillInexactLimit": "Limite reprise de façon approximative : dans le formulaire, elle compte les messages trouvés, pas les offsets, donc la lecture peut dépasser l’offset de fin de l’appel"
     },
     "table": {
       "colTime": "Heure",

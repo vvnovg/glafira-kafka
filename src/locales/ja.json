@@ -460,7 +460,11 @@
         "colDetails": "詳細",
         "scanDetails": "{{target}}：{{scanned}}件中{{returned}}件、マスク済み：{{masked}}",
         "openInBrowse": "「メッセージ」で開く",
-        "openUnavailable": "利用できません：ログ内の呼び出し引数が切り詰められているか、接続が存在しないか、LLMアクセスが「メタデータとメッセージ」ではありません"
+        "scanDetailsNoTarget": "{{scanned}}件中{{returned}}件、マスク済み：{{masked}}",
+        "openArgsCut": "利用できません：ログ内の呼び出し引数が切り詰められています",
+        "openNoConnection": "利用できません：接続が存在しません",
+        "openNotMessages": "利用できません：接続のLLMアクセスが「メタデータとメッセージ」ではありません",
+        "openPolicy": "利用できません：メッセージの読み取りは組織によって無効にされています"
       },
       "openCounts": "LLMに開放：{{n}}件、うちメッセージあり：{{m}}件",
       "messagesPolicy": "メッセージの読み取りは組織によって無効にされています"
@@ -801,7 +805,8 @@
       "finishLimit": "上限に達しました",
       "finishEnd": "トピックの末尾に達しました",
       "finishCancelled": "停止しました",
-      "prefillInexact": "フィルターは正確に引き継がれていません：フォームでは正規表現と大文字・小文字の設定がキーと値で共通です"
+      "prefillInexact": "フィルターは正確に引き継がれていません：フォームではregexと大文字・小文字の設定がキー、値、ヘッダーの値で共通です",
+      "prefillInexactLimit": "上限は正確に引き継がれていません：フォームの上限はオフセットではなく一致したメッセージの件数のため、呼び出しの終了オフセットを超えて読み取る場合があります"
     },
     "table": {
       "colTime": "時刻",

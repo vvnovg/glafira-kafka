@@ -44,6 +44,7 @@ vi.mock("../../api/client", async (importOriginal) => {
       describeGroups: vi.fn(),
       getGroupOffsets: vi.fn(),
       previewOffsetReset: vi.fn(),
+      resetOffsets: vi.fn(),
       deleteGroup: vi.fn().mockResolvedValue(undefined),
     },
   };
@@ -185,6 +186,27 @@ describe("GroupDetails", () => {
     const apply = await screen.findByRole("button", { name: "Применить (1)" });
     await vi.waitFor(() => expect(apply).toBeDisabled());
     expect(apply).toHaveAttribute("title", "Сброс возможен только для группы без участников (сейчас: Stable)");
+    expect(screen.getByText("Сброс возможен только для группы без участников (сейчас: Stable)")).toBeInTheDocument();
+  });
+
+  it("отказ GROUP_NOT_EMPTY при применении предложения перечитывает группу: «Применить» блокируется без «Обновить»", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.describeGroups).mockResolvedValue([{ ...stable, state: "Empty", members: [] }]);
+    vi.mocked(api.previewOffsetReset).mockResolvedValue([{ topic: "orders", partition: 0, current: 2, target: 5, low: 0, high: 5 }]);
+    renderWithClient(<GroupDetails connectionId="c" groupId="g" proposal={resetProposal} />);
+    await user.click(await screen.findByRole("button", { name: "Предпросмотр" }));
+    const apply = await screen.findByRole("button", { name: "Применить (1)" });
+    await vi.waitFor(() => expect(apply).toBeEnabled());
+    // Пока человек смотрел предпросмотр, в группу вошёл консьюмер: бэкенд перепроверил состав и отказал.
+    vi.mocked(api.describeGroups).mockResolvedValue([stable]);
+    vi.mocked(api.resetOffsets).mockRejectedValueOnce({ code: "GROUP_NOT_EMPTY", message: "Группа не пуста", details: "Active members: svc-1 (/10.0.0.1)" });
+    await user.click(apply);
+    expect(api.resetOffsets).toHaveBeenCalledWith("c", "g", [{ topic: "orders", partition: 0, offset: 5 }], null, {
+      id: "p1",
+      request: { groupId: "g", strategy: { type: "latest" }, scope: { type: "all" } },
+    });
+    expect(await screen.findByText("Active members: svc-1 (/10.0.0.1)")).toBeInTheDocument();
+    await vi.waitFor(() => expect(screen.getByRole("button", { name: "Применить (1)" })).toBeDisabled());
     expect(screen.getByText("Сброс возможен только для группы без участников (сейчас: Stable)")).toBeInTheDocument();
   });
 

@@ -1,53 +1,55 @@
 # Changelog
 
+Versions in the other interface languages are in [docs/changelog](docs/changelog/). The section of a version is shown in About as the update notes, in the interface language.
+
 ## 0.5.0
-- Чтение сообщений LLM-ассистентом. У подключения три уровня доступа для LLM: «Нет», «Только метаданные», «Метаданные и сообщения». На третьем уровне ассистент через MCP может:
-  - читать сообщения за окно времени или по оффсетам с теми же фильтрами, что на вкладке «Сообщения» (`read_messages`);
-  - смотреть обзор окна без содержимого: объём по партициям и по времени, частые ключи, метки не по порядку (`summarize_messages`);
-  - смотреть, какие оффсеты и когда закоммитила consumer group, по `__consumer_offsets` (`get_group_commit_history`).
-- Время передаётся только с часовым поясом. Один вызов работает не дольше 40 секунд, просматривает не больше миллиона записей и отдаёт не больше 100 КБ.
-- Маскирование до передачи ассистенту:
-  - значения полей из списка имён — стандартного или своего у подключения — заменяются на `***`;
-  - email, номера карт, JWT и токены авторизации маскируются в любом тексте;
-  - фильтры работают по немаскированным данным, так что сообщение можно найти по значению из лога.
-- Уровень доступа и список маскирования не экспортируются и не импортируются.
-- Ключ политики `mcpMessagesEnabled` запрещает чтение сообщений: уровень «Метаданные и сообщения» тогда работает как «Только метаданные».
-- Журнал MCP: у чтения сообщений видны топик или группа, сколько отдано из просмотренного и сколько значений замаскировано. Кнопка «Открыть в «Сообщениях»» заполняет форму экрана «Сообщения» тем же окном и фильтрами; если перенести их точно нельзя, форма об этом сообщает.
-- MCP: поддержаны клиенты протокола MCP 2026-07-28 (например, Claude Code 2.1.310): имя клиента и подтверждение — сразу при подключении. У ожидающей сессии есть кнопка «Подтвердить». Все инструменты явно помечены как только читающие (`idempotentHint`).
-- Сервер-каталог `glafira-mcp-catalog` для реестров MCP (Glama): Docker-образ, настоящий список инструментов, а вызовы отвечают, что нужно настольное приложение. README — по-английски (русский — `README.ru.md`).
-- Сброс оффсетов по предложению LLM: перед записью состав группы проверяется заново. Если брокер отказал, потому что в группу тем временем вошли участники, показывается понятная ошибка «группа не пуста», а форма сброса сразу показывает свежее состояние группы.
-- Интерфейс:
-  - подсказки в пустых полях — курсивом, чтобы их не путали с введёнными значениями;
-  - у полей начальной позиции и партиций на экране «Сообщения» — подсказки при наведении;
-  - над значками окружения и LLM в дереве подключений — обычная стрелка.
-- Руководство: раздел «Чтение сообщений» в главе «LLM-ассистенты (MCP)» на 12 языках.
+- Reading messages by an LLM assistant. A connection has three levels of LLM access: “Off”, “Metadata only”, “Metadata and messages”. At the third level, the assistant can use MCP to:
+  - read messages within a time window or by offsets, with the same filters as on the “Messages” tab (`read_messages`);
+  - get an overview of a window without the content: volume by partition and over time, frequent keys, out-of-order timestamps (`summarize_messages`);
+  - see which offsets a consumer group committed and when, from `__consumer_offsets` (`get_group_commit_history`).
+- Times are passed only with a time zone. A single call runs for at most 40 seconds, scans at most a million records and returns at most 100 KB.
+- Masking before data reaches the assistant:
+  - values of fields from a list of names — the standard one or the connection’s own — are replaced with `***`;
+  - emails, card numbers, JWTs and authorization tokens are masked in any text;
+  - filters work on unmasked data, so a message can be found by a value from a log.
+- The access level and the masking list are not exported or imported.
+- The `mcpMessagesEnabled` policy key forbids reading messages: the “Metadata and messages” level then works as “Metadata only”.
+- MCP log: for message reads, it shows the topic or group, how much was returned out of what was scanned, and how many values were masked. The “Open in Messages” button fills in the form on the “Messages” screen with the same window and filters; if they cannot be transferred exactly, the form says so.
+- MCP: clients of the MCP 2026-07-28 protocol are supported (for example, Claude Code 2.1.310): the client name and approval come right at connection. A pending session has an “Approve” button. All tools are explicitly marked as read-only (`idempotentHint`).
+- The `glafira-mcp-catalog` catalog server for MCP registries (Glama): a Docker image, the real list of tools, and calls answer that the desktop app is required. The README is in English (Russian — `README.ru.md`).
+- Offset reset proposed by an LLM: group membership is checked again before writing. If the broker refused because members joined the group in the meantime, a clear “group is not empty” error is shown, and the reset form immediately shows the current state of the group.
+- Interface:
+  - placeholders in empty fields are in italics, so they are not mistaken for entered values;
+  - the start position and partition fields on the “Messages” screen have tooltips on hover;
+  - the environment and LLM badges in the connection tree show the regular arrow pointer.
+- Guide: the “Reading messages” section in the “LLM assistants (MCP)” chapter, in 12 languages.
 
 ## 0.4.0
-- Предложения LLM: ассистент через MCP может предложить изменение — конфиги топика, создание топика, добавление партиций или сброс оффсетов группы (инструменты `propose_change`, `list_proposals`, `withdraw_proposal`). Предложение проверяется против кластера, хранится рядом с замечаниями и показывается в разделе «Предложения LLM» вкладки «Замечания» и в блоках топика и группы. Ничего не применяется само: кнопка «Открыть в форме» открывает заполненную форму Glafira, подтверждение — как у обычного изменения (на prod — ввод имени подключения). После успеха статус «применено» или «применено с правками» ставится автоматически; при правках карточка показывает, что применено на самом деле, а ассистент видит это в `list_proposals`. Предложение можно отклонить с причиной, открыть снова, удалить; ассистент может отозвать своё. Подключения «только чтение» получают предложения без возможности применить. Лимит — 50 открытых предложений на подключение, срок хранения — 7 дней.
-- Проверка кластера: единое состояние «Проверка…» на всех вкладках подключения; пометка «проверено как PROD», если окружение подключения сменили после проверки; новое правило «Контроллер неизвестен» (предупреждение) вместо «Нет контроллера» при живых лидерах; файлы проверки для импортированных подключений с нестандартными идентификаторами.
-- Вкладка «Замечания»: закрытые замечания и предложения — недавно закрытые сверху; редактор конфигурации топика подсвечивает изменённые строки.
-- Руководство: раздел «Предложения LLM» в главе «Проверка кластера», обновлённая глава об ассистентах; установка на macOS описана для подписанных и нотаризованных сборок (шаги с карантином убраны).
-- Тексты: пояснение «Очистка невозможна» называет допустимые значения `cleanup.policy` в кавычках.
+- LLM proposals: an assistant can use MCP to propose a change — topic configs, creating a topic, adding partitions or resetting group offsets (the `propose_change`, `list_proposals`, `withdraw_proposal` tools). A proposal is validated against the cluster, stored next to the notes and shown in the “LLM proposals” section of the “Findings” tab and in the topic and group blocks. Nothing is applied by itself: the “Open in form” button opens a filled-in Glafira form, and confirmation works as for a regular change (on prod, typing the connection name). After success, the status “applied” or “applied with edits” is set automatically; with edits, the card shows what was actually applied, and the assistant sees it in `list_proposals`. A proposal can be rejected with a reason, reopened or deleted; an assistant can withdraw its own. Read-only connections receive proposals without the option to apply them. The limit is 50 open proposals per connection; they are kept for 7 days.
+- Cluster check: a single “Checking…” state on all tabs of a connection; a “checked as PROD” label if the connection’s environment was changed after the check; a new “Controller unknown” rule (warning) instead of “No controller” when leaders are alive; check files for imported connections with non-standard IDs.
+- “Findings” tab: recently closed notes and proposals are at the top; the topic configuration editor highlights changed lines.
+- Guide: the “LLM proposals” section in the “Cluster check and notes” chapter, an updated chapter about assistants; installation on macOS is described for signed and notarized builds (the quarantine steps are removed).
+- Texts: the “Purge is not possible” explanation names the allowed `cleanup.policy` values in quotes.
 
 ## 0.3.0
-- Все функции бесплатны: consumer-сессии, prod-подключения и замечания LLM доступны без ключа; экран «Лицензия» и лицензионные ключи удалены.
-- Исходный код открыт под Apache License 2.0. Пункт «Поддержать проект» — внизу левой панели, в «О программе» и в меню Help (macOS); в «О программе» — строка «Лицензия».
-- Политика: ключ `licenseKey` больше не используется и игнорируется.
-- Руководство: глава «Лицензия и обновления» стала главой «Обновления и диагностика».
-- Интерфейс на 12 языках: en, ru, de, fr, es, it, pl, pt-BR, zh-CN, zh-TW, ja, ko. Выбор — «Настройки» → «Язык интерфейса»; для администратора — ключ политики `language`.
-- Подсказки «?» в формах подключения, топиков, просмотра сообщений, Producer, сброса оффсетов и consumer-сессий, а также у каждого параметра конфигурации топика.
-- Встроенное руководство: вкладка «Справка» с поиском, клавиша F1, меню Help на macOS. Руководство публикуется и в репозитории релизов (`guide/`).
-- Папки подключений: вложенные папки в левой панели, перетаскивание, фильтр по дереву. Экспорт подключений в файл без паролей и импорт с предпросмотром.
-- MCP-шлюз для LLM-ассистентов: раздел «LLM-ассистенты (MCP)» в «Настройках», подтверждение каждого клиента, флажок «Доступ для LLM (только метаданные)» у подключения, инструменты только для чтения (подключения, топики, конфигурация, consumer groups и наблюдение за группой), журнал вызовов `mcp-audit.jsonl`. Ключ политики `mcpEnabled`.
-- Проверка кластера: вкладка «Замечания» у подключения — правила для брокеров, топиков, конфигурации и consumer groups со строгостью по окружению, скрытие находок, значки в дереве и на экранах объектов. Замечания LLM-ассистентов через MCP (`health_check`, `annotate`, `list_annotations`, `remove_annotation`).
-- Описание consumer group: координатор, протокол и `group.instance.id` участников.
-- Producer: ключ по умолчанию не задаётся (null), а не пустая строка.
-- «О программе»: краткое описание приложения; новый значок приложения.
-- Откат на 0.2.x сохраняет подключения, но раскладка по папкам теряется при первой записи `connections.json` старой версией.
+- All features are free: consumer sessions, prod connections and LLM notes are available without a key; the “License” screen and license keys are removed.
+- The source code is open under the Apache License 2.0. “Support the project” is at the bottom of the left panel, in About and in the Help menu (macOS); About has a “License” row.
+- Policy: the `licenseKey` key is no longer used and is ignored.
+- Guide: the “License and updates” chapter became “Updates and diagnostics”.
+- The interface in 12 languages: en, ru, de, fr, es, it, pl, pt-BR, zh-CN, zh-TW, ja, ko. Choose in “Settings” → “Interface language”; for administrators — the `language` policy key.
+- “?” hints in the connection, topic, message browsing, Producer, offset reset and consumer session forms, and for every topic configuration parameter.
+- Built-in guide: the “Help” tab with search, the F1 key, the Help menu on macOS. The guide is also published in the releases repository (`guide/`).
+- Connection folders: nested folders in the left panel, drag and drop, a tree filter. Export of connections to a file without passwords and import with a preview.
+- MCP gateway for LLM assistants: the “LLM assistants (MCP)” section in “Settings”, approval of every client, the “LLM access (metadata only)” checkbox of a connection, read-only tools (connections, topics, configuration, consumer groups and group watching), the `mcp-audit.jsonl` call log. The `mcpEnabled` policy key.
+- Cluster check: the “Findings” tab of a connection — rules for brokers, topics, configuration and consumer groups with severity by environment, hiding findings, badges in the tree and on object screens. LLM assistant notes via MCP (`health_check`, `annotate`, `list_annotations`, `remove_annotation`).
+- Consumer group description: the coordinator, the protocol and members’ `group.instance.id`.
+- Producer: the key is not set by default (null) rather than an empty string.
+- About: a short description of the app; a new app icon.
+- Rolling back to 0.2.x keeps connections, but the folder layout is lost the first time the older version writes `connections.json`.
 
 ## 0.2.0
-- Клиентские сертификаты (mTLS): PEM, PKCS#12, JKS; пароли в системном хранилище секретов.
-- Лицензии Free / Pro: consumer-сессии и режим prod — в Pro.
-- Корпоративная политика (MDM, групповые политики, /etc): обновления, адрес зеркала, ключ организации.
-- Автообновление, логи в файл, архив диагностики, «О программе».
-- Установщики: macOS (.dmg, .pkg), Windows (.msi), Linux (.deb, .rpm, .AppImage).
+- Client certificates (mTLS): PEM, PKCS#12, JKS; passwords in the system secret store.
+- Free / Pro licenses: consumer sessions and the prod mode are in Pro.
+- Enterprise policy (MDM, group policies, /etc): updates, mirror address, organization key.
+- Auto-update, logging to a file, diagnostics archive, About.
+- Installers: macOS (.dmg, .pkg), Windows (.msi), Linux (.deb, .rpm, .AppImage).

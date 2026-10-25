@@ -214,6 +214,7 @@ impl GatewayServer {
         annotations(
             read_only_hint = true,
             destructive_hint = false,
+            idempotent_hint = true,
             open_world_hint = false
         )
     )]
@@ -287,6 +288,7 @@ impl GatewayServer {
         annotations(
             read_only_hint = true,
             destructive_hint = false,
+            idempotent_hint = true,
             open_world_hint = false
         )
     )]

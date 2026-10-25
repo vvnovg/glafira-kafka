@@ -163,7 +163,9 @@
       "secretInExtraProperties": "追加プロパティにシークレットは保存できません：{{key}}",
       "timeoutTooSmall": "リクエストのタイムアウトは1000 ms以上にしてください",
       "notFound": "接続{{id}}が見つかりません",
-      "saslPasswordMissing": "接続のSASLパスワードが設定されていません"
+      "saslPasswordMissing": "接続のSASLパスワードが設定されていません",
+      "maskFieldsTooMany": "マスクするフィールド名は最大{{max}}個です",
+      "maskFieldTooLong": "マスクするフィールド名が{{max}}文字を超えています：{{name}}"
     },
     "storage": {
       "writeFailed": "{{path}}を書き込めませんでした：{{error}}",
@@ -379,7 +381,8 @@
     },
     "exportAll": "すべてエクスポート…",
     "import": "インポート…",
-    "findings": "検出事項"
+    "findings": "検出事項",
+    "llmMessages": "LLMアクセス：メタデータとメッセージ"
   },
   "tabs": {
     "settings": "設定",
@@ -405,7 +408,7 @@
     },
     "mcp": {
       "section": "LLMアシスタント（MCP）",
-      "intro": "LLMアシスタント（Claude Desktop、Claude Code、Cursorなど）は、MCP経由でGlafiraに接続し、アシスタント用に開放した接続のメタデータを読み取れます。クラスターの内容を変更することはできません。",
+      "intro": "LLMアシスタント（Claude Desktop、Claude Code、Cursorなど）は、MCP経由でGlafiraに接続し、アシスタント用に開放した接続のメタデータを読み取れます。許可した接続ではメッセージも読み取れます。クラスターの内容を変更することはできません。",
       "enable": "MCPサーバーを許可",
       "policy": "MCPは組織によって無効にされています",
       "state": {
@@ -453,8 +456,23 @@
         "rejected": "クライアントを拒否しました",
         "revoked": "クライアントのアクセスを取り消しました",
         "serverStarted": "サーバーを起動しました",
-        "serverStopped": "サーバーを停止しました"
-      }
+        "serverStopped": "サーバーを停止しました",
+        "colDetails": "詳細",
+        "scanDetails": "{{target}}：{{scanned}}件中{{returned}}件、マスク済み：{{masked}}",
+        "openInBrowse": "「メッセージ」で開く",
+        "scanDetailsNoTarget": "{{scanned}}件中{{returned}}件、マスク済み：{{masked}}",
+        "openArgsCut": "利用できません：ログ内の呼び出し引数が切り詰められています",
+        "openNoConnection": "利用できません：接続が存在しません",
+        "openNotMessages": "利用できません：接続のLLMアクセスが「メタデータとメッセージ」ではありません",
+        "openPolicy": "利用できません：メッセージの読み取りは組織によって無効にされています",
+        "scanDetailsSummary": "{{target}}：区間：{{returned}}、スキャン済み：{{scanned}}、マスク済み：{{masked}}",
+        "scanDetailsSummaryNoTarget": "区間：{{returned}}、スキャン済み：{{scanned}}、マスク済み：{{masked}}",
+        "scanDetailsHistory": "{{target}}：コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}",
+        "scanDetailsHistoryNoTarget": "コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}"
+      },
+      "openCounts": "LLMに開放：{{n}}件、うちメッセージあり：{{m}}件",
+      "messagesPolicy": "メッセージの読み取りは組織によって無効にされています",
+      "approve": "承認"
     }
   },
   "layout": {
@@ -469,7 +487,7 @@
       "folder": "フォルダー",
       "folderRoot": "（ルート）",
       "environment": "環境",
-      "llmAccess": "LLMアクセス（メタデータのみ）",
+      "llmAccess": "LLMアクセス",
       "color": "色",
       "bootstrap": "ブートストラップサーバー",
       "protocol": "プロトコル",
@@ -491,7 +509,19 @@
         "config": "設定",
         "tcp": "DNS / TCP",
         "kafka": "Kafka（TLS、SASL、メタデータ）"
-      }
+      },
+      "llmLevel": {
+        "off": "オフ",
+        "metadata": "メタデータのみ",
+        "messages": "メタデータとメッセージ"
+      },
+      "llmMessagesPolicy": "メッセージ：組織によって無効にされています",
+      "llmMessagesAsMetadata": "「メタデータのみ」として動作します：メッセージの読み取りは組織によって無効にされています",
+      "llmProdWarning": "この本番クラスターのメッセージ内容がLLMプロバイダーに送信されます",
+      "mask": "マスキング",
+      "maskStandard": "標準リスト",
+      "maskFieldsAria": "マスクするフィールド名（1行に1つ）",
+      "maskNote": "メールアドレス、カード番号、JWT、Bearerトークンは常にマスクされます。マスキングはリスクを下げますが、人名、住所、見慣れない名前のフィールドのデータは認識しません。"
     },
     "tls": {
       "pick": "参照…",
@@ -758,7 +788,9 @@
       "limit": "上限",
       "format": "形式",
       "key": "キー",
-      "value": "値"
+      "value": "値",
+      "offsetTitle": "選択した各パーティションで読み取りを始めるオフセット",
+      "partitionsTitle": "パーティション番号をカンマ区切りで指定します。空欄の場合はすべてのパーティションです"
     },
     "filters": {
       "title": "フィルター",
@@ -779,7 +811,9 @@
       "reading": "読み取り中…",
       "finishLimit": "上限に達しました",
       "finishEnd": "トピックの末尾に達しました",
-      "finishCancelled": "停止しました"
+      "finishCancelled": "停止しました",
+      "prefillInexact": "フィルターは正確に引き継がれていません：フォームではregexと大文字・小文字の設定がキー、値、ヘッダーの値で共通です",
+      "prefillInexactLimit": "上限は正確に引き継がれていません：フォームの上限はオフセットではなく一致したメッセージの件数のため、呼び出しの終了オフセットを超えて読み取る場合があります"
     },
     "table": {
       "colTime": "時刻",
@@ -1058,11 +1092,12 @@
     "approval": {
       "title": "{{client}}がGlafiraへの接続を求めています",
       "body": "LLMアシスタント用に開放されている接続（{{n}}件）のメタデータを参照できます。",
-      "readOnly": "Glafira経由でアシスタントが読み取れるのは、ブローカー、トピック、設定、コンシューマーグループのみです。メッセージとパスワードは共有されません。",
+      "readOnly": "Glafira経由でアシスタントができるのは読み取りのみで、クラスターの内容を変更することはできません。パスワードは共有されません。",
       "unnamed": "クライアントが名前を送信しなかったため、この回答はこのセッションにのみ適用されます。",
       "more": "ほかに{{n}}件が回答待ちです",
       "allow": "許可",
-      "reject": "拒否"
+      "reject": "拒否",
+      "messages": "そのうち{{n}}件ではメッセージ内容も読み取れます。"
     },
     "indicator": {
       "one": "LLM：{{client}}",
@@ -1294,7 +1329,7 @@
     "connections": {
       "environment": "接続を色で区別します。本番接続では、変更のたびに接続名の入力を求められます。",
       "readOnly": "クラスターを変更する操作をすべてブロックします：送信、オフセットのリセット、トピックとグループの削除、コンシューマーセッション。",
-      "llmAccess": "MCP経由で接続したLLMアシスタントが、このクラスターのメタデータを読み取れるようにします：ブローカー、トピック、設定、コンシューマーグループ。メッセージとパスワードが共有されることはありません。",
+      "llmAccess": "MCP経由で接続したLLMアシスタントがこのクラスターで読み取れる内容です。「メタデータのみ」：ブローカー、トピック、設定、コンシューマーグループ。「メタデータとメッセージ」：さらにメッセージ内容とコンシューマーグループのコミット履歴（マスキング済み）。パスワードが共有されることはありません。",
       "bootstrap": "1つ以上の<code>host:port</code>をカンマ区切りで指定します。他のブローカーはクライアントが自動的に検出します。",
       "protocol": "PLAINTEXT：暗号化もログインもなし。SSL：TLSで暗号化。SASL_*：パスワードでログイン。SASL_SSLは暗号化も行います。",
       "saslMechanism": "クラスターで使われているメカニズムはKafkaの管理者が知っています。SCRAMはパスワード自体を送信しません。TLSなしのPLAINはパスワードを平文で送信します。",
@@ -1306,7 +1341,8 @@
       "verifyHostname": "ブローカーの証明書がホスト名と一致することを確認します。オフにするのはテスト環境のみにしてください。",
       "mtls": "ブローカーがクライアントを証明書で認証する場合に必要です。証明書と鍵はKafkaの管理者が発行します。",
       "alias": "JKSまたはPKCS#12ファイル内の鍵エントリの名前です。ファイルに複数の鍵がある場合のみ必要です。",
-      "keyPassword": "鍵に独自のパスワードがある場合のみ：キーストアのパスワードと異なる場合、または暗号化されたPEM鍵の場合。"
+      "keyPassword": "鍵に独自のパスワードがある場合のみ：キーストアのパスワードと異なる場合、または暗号化されたPEM鍵の場合。",
+      "mask": "これらの名前に一致するJSONフィールド、ヘッダー、name=valueペアの値は***に置き換えられます。大文字と小文字、「_」「-」「.」の文字は区別しません。*は任意の文字に一致します。名前は200個まで、各64文字までです。"
     },
     "topics": {
       "partitions": "パーティションは並列に読み取られます。順序が保証されるのは1つのパーティション内のみです。数は後から増やせますが、減らすことはできません。",

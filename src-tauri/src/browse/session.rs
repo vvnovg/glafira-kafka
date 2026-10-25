@@ -6,7 +6,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::{KafkaError, KafkaResult};
 use rdkafka::message::{BorrowedMessage, Headers, Message};
-use rdkafka::{Offset, TopicPartitionList};
+use rdkafka::{ClientConfig, Offset, TopicPartitionList};
 use serde::Deserialize;
 
 use crate::browse::filter::{CompiledFilter, FilterSpec};
@@ -53,7 +53,7 @@ pub(crate) const BATCH_SIZE: usize = 200;
 pub(crate) const MAX_BATCH_BYTES: usize = 4 * 1024 * 1024;
 pub(crate) const BATCH_INTERVAL: Duration = Duration::from_millis(100);
 const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
-const POLL_TIMEOUT: Duration = Duration::from_millis(100);
+pub(crate) const POLL_TIMEOUT: Duration = Duration::from_millis(100);
 const MAX_LAST_MINUTES: i64 = 5_256_000; // 10 лет
 
 pub fn validate(params: &BrowseParams) -> AppResult<()> {
@@ -118,7 +118,7 @@ fn run_inner(
     validate(params)?;
     let filter = CompiledFilter::compile(&params.filter)?;
     let ctx = CapturingContext::default();
-    let consumer = create_consumer(profile, secrets, &ctx)?;
+    let consumer = create_consumer(profile, secrets, &ctx, "browse", |_| {})?;
     // Ошибка операции, начатой в `started`: консьюмер опрашивается, чтобы получить причину (TLS/SASL).
     let kerr = |started: Instant| {
         let consumer = &consumer;
@@ -126,7 +126,13 @@ fn run_inner(
     };
     let timeout = Duration::from_millis(profile.request_timeout_ms);
 
-    let bounds = load_bounds(&consumer, params, timeout, &kerr(Instant::now()))?;
+    let bounds = load_bounds(
+        &consumer,
+        &params.topic,
+        params.partitions.as_deref(),
+        timeout,
+        &kerr(Instant::now()),
+    )?;
     let plans = resolve_plans(&consumer, params, &bounds, timeout, &kerr(Instant::now()))?;
     assign(&consumer, &params.topic, &plans, params.live).map_err(kerr(Instant::now()))?;
 
@@ -207,18 +213,35 @@ fn run_inner(
     Ok(())
 }
 
-fn create_consumer(
+/// Консьюмер чтения без группы. `role` — часть служебного `group.id` (`browse`, `mcp`), `tune` —
+/// настройки поверх общих (например, `client.id` трафика MCP).
+pub(crate) fn create_consumer(
     p: &ConnectionProfile,
     secrets: &dyn SecretStore,
     ctx: &CapturingContext,
+    role: &str,
+    tune: impl FnOnce(&mut ClientConfig),
 ) -> AppResult<BaseConsumer<CapturingContext>> {
+    consumer_config(p, secrets, role, tune)?
+        .create_with_context(ctx.clone())
+        .map_err(|e| from_kafka(&e, None))
+}
+
+/// Настройки консьюмера чтения: общие (`build_client_config`, последними в нём — `extraProperties`
+/// подключения), затем служебные, затем `tune` — его значения важнее всех остальных.
+pub(crate) fn consumer_config(
+    p: &ConnectionProfile,
+    secrets: &dyn SecretStore,
+    role: &str,
+    tune: impl FnOnce(&mut ClientConfig),
+) -> AppResult<ClientConfig> {
     let mut cfg = build_client_config(p, secrets)?;
     // group.id обязателен для librdkafka-консьюмера, но мы не подписываемся и не коммитим:
     // партиции назначаются через assign, поэтому группа на брокере не появляется.
     cfg.set(
         "group.id",
         format!(
-            "{}-browse-{}",
+            "{}-{role}-{}",
             crate::product::KAFKA_CLIENT_PREFIX,
             uuid::Uuid::new_v4()
         ),
@@ -227,24 +250,37 @@ fn create_consumer(
     .set("enable.auto.offset.store", "false")
     .set("enable.partition.eof", "true")
     .set("auto.offset.reset", "earliest");
-    cfg.create_with_context(ctx.clone())
-        .map_err(|e| from_kafka(&e, None))
+    tune(&mut cfg);
+    Ok(cfg)
 }
 
-fn load_bounds(
+/// Границы выбранных партиций топика (`partitions` пусто или `None` — все).
+pub(crate) fn load_bounds(
     consumer: &BaseConsumer<CapturingContext>,
-    params: &BrowseParams,
+    topic: &str,
+    partitions: Option<&[i32]>,
     timeout: Duration,
     kerr: &impl Fn(KafkaError) -> AppError,
 ) -> AppResult<Vec<PartitionBounds>> {
-    let md = fetch_metadata_fast_fail(consumer, Some(&params.topic), timeout)?;
+    let selected = topic_partitions(consumer, topic, partitions, timeout)?;
+    partition_bounds(consumer, topic, &selected, timeout, kerr)
+}
+
+/// Выбранные партиции топика по метаданным (`partitions` пусто или `None` — все).
+pub(crate) fn topic_partitions(
+    consumer: &BaseConsumer<CapturingContext>,
+    topic: &str,
+    partitions: Option<&[i32]>,
+    timeout: Duration,
+) -> AppResult<Vec<i32>> {
+    let md = fetch_metadata_fast_fail(consumer, Some(topic), timeout)?;
     let (_, topics) = convert(&md);
-    let topic = topics
+    let found = topics
         .into_iter()
-        .find(|t| t.name == params.topic && !t.partitions.is_empty())
-        .ok_or_else(|| crate::kafka::admin::topic_not_found(&params.topic))?;
-    let all: Vec<i32> = topic.partitions.iter().map(|p| p.id).collect();
-    let selected = match &params.partitions {
+        .find(|t| t.name == topic && !t.partitions.is_empty())
+        .ok_or_else(|| crate::kafka::admin::topic_not_found(topic))?;
+    let all: Vec<i32> = found.partitions.iter().map(|p| p.id).collect();
+    match partitions {
         Some(list) if !list.is_empty() => {
             if let Some(bad) = list.iter().find(|p| !all.contains(p)) {
                 return Err(app_err!(
@@ -254,18 +290,25 @@ fn load_bounds(
                     partition = bad
                 ));
             }
-            list.clone()
+            Ok(list.to_vec())
         }
-        _ => all,
-    };
-    let keys: Vec<(String, i32)> = selected
-        .iter()
-        .map(|p| (params.topic.clone(), *p))
-        .collect();
+        _ => Ok(all),
+    }
+}
+
+/// Границы `low`/`high` партиций `selected`: ошибка любой из них — ошибка всего чтения.
+pub(crate) fn partition_bounds(
+    consumer: &BaseConsumer<CapturingContext>,
+    topic: &str,
+    selected: &[i32],
+    timeout: Duration,
+    kerr: &impl Fn(KafkaError) -> AppError,
+) -> AppResult<Vec<PartitionBounds>> {
+    let keys: Vec<(String, i32)> = selected.iter().map(|p| (topic.to_string(), *p)).collect();
     let bounds = fetch_bounds(consumer, &keys, timeout).map_err(kerr)?;
     let mut out = Vec::with_capacity(selected.len());
-    for p in &selected {
-        match bounds.get(&(params.topic.clone(), *p)) {
+    for p in selected {
+        match bounds.get(&(topic.to_string(), *p)) {
             Some(Ok((low, high))) => out.push(PartitionBounds {
                 partition: *p,
                 low: *low,
@@ -323,7 +366,8 @@ fn resolve_plans(
     })
 }
 
-fn offsets_for_timestamp(
+/// Первый офсет с меткой времени не раньше `ts` по партициям; партиции без такого офсета в карте нет.
+pub(crate) fn offsets_for_timestamp(
     consumer: &BaseConsumer<CapturingContext>,
     topic: &str,
     bounds: &[PartitionBounds],
@@ -362,7 +406,7 @@ fn offsets_for_timestamp(
     Ok(found)
 }
 
-fn assign(
+pub(crate) fn assign(
     consumer: &BaseConsumer<CapturingContext>,
     topic: &str,
     plans: &[PartitionPlan],

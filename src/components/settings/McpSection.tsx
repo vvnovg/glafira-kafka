@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
-import type { McpAuditEntry, McpServerState, McpStatus } from "../../api/types";
+import type { ConnectionProfile, McpAuditEntry, McpServerState, McpStatus } from "../../api/types";
 import { tr } from "../../i18n/text";
-import { formatTimestamp } from "../../lib/format";
+import { formatCount, formatTimestamp } from "../../lib/format";
 import { MCP_STATUS_KEY, useMcpStatus } from "../../lib/useMcpStatus";
+import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
+import { auditTarget, browsePrefillFromAudit, isBrowsable } from "./auditPrefill";
 
 const STATE_KEYS: Record<McpServerState, string> = {
   off: "settings.mcp.state.off",
@@ -28,6 +30,17 @@ const EVENT_KEYS: Record<string, string> = {
 };
 
 const AUDIT_LIMIT = 200;
+
+/**
+ * Подробности вызова чтения по инструменту (G4): `returned` — сообщения у `read_messages`, корзины обзора у
+ * `summarize_messages`, серии коммитов (подряд идущие коммиты одного оффсета) у `get_group_commit_history`.
+ * Без цели — для усечённых аргументов.
+ */
+const DETAILS_KEYS: Record<string, { target: string; noTarget: string }> = {
+  read_messages: { target: "settings.mcp.audit.scanDetails", noTarget: "settings.mcp.audit.scanDetailsNoTarget" },
+  summarize_messages: { target: "settings.mcp.audit.scanDetailsSummary", noTarget: "settings.mcp.audit.scanDetailsSummaryNoTarget" },
+  get_group_commit_history: { target: "settings.mcp.audit.scanDetailsHistory", noTarget: "settings.mcp.audit.scanDetailsHistoryNoTarget" },
+};
 
 function CopyBlock({ id, label, text }: { id: string; label: string; text: string }) {
   const { t } = useTranslation();
@@ -64,12 +77,64 @@ function auditWhat(e: McpAuditEntry, t: (k: string) => string): string {
   return key ? t(key) : e.event;
 }
 
+/**
+ * Почему «Открыть в „Сообщениях“» неактивна: ключ подсказки; "" — пока неизвестно (список подключений грузится
+ * или не загрузился), без подсказки; null — кнопка активна.
+ */
+function openBlocked(
+  canPrefill: boolean,
+  e: McpAuditEntry,
+  s: McpStatus,
+  connections: ConnectionProfile[] | undefined,
+): string | null {
+  if (!canPrefill) return "settings.mcp.audit.openArgsCut";
+  // Политика действует поверх уровня подключения: сохранённое «сообщения» работает как «Только метаданные».
+  if (!s.messagesAllowed) return "settings.mcp.audit.openPolicy";
+  if (!connections) return "";
+  const conn = connections.find((c) => c.id === e.connection?.id);
+  if (!conn) return "settings.mcp.audit.openNoConnection";
+  return conn.llmAccess === "messages" ? null : "settings.mcp.audit.openNotMessages";
+}
+
+/** Подробности вызова чтения сообщений (G4): цель, отдано (по шаблону инструмента), просмотрено, замаскировано. */
+function AuditDetails({ e, s, connections }: { e: McpAuditEntry; s: McpStatus; connections: ConnectionProfile[] | undefined }) {
+  const { t } = useTranslation();
+  const open = useWorkspace((st) => st.open);
+  if (e.scanned === undefined) return null;
+  const counts = { returned: formatCount(e.returned ?? 0), scanned: formatCount(e.scanned), masked: formatCount(e.masked ?? 0) };
+  const keys = DETAILS_KEYS[e.tool ?? ""] ?? DETAILS_KEYS.read_messages;
+  // У усечённых аргументов цели нет — строка без неё, а не «: 3 из 10».
+  const target = auditTarget(e);
+  const details = target ? t(keys.target, { target, ...counts }) : t(keys.noTarget, counts);
+  if (!isBrowsable(e)) return <>{details}</>;
+  const prefill = browsePrefillFromAudit(e);
+  const blocked = openBlocked(prefill !== null, e, s, connections);
+  return (
+    <>
+      {details}{" "}
+      <button
+        type="button"
+        className="link"
+        disabled={blocked !== null}
+        title={blocked ? t(blocked) : undefined}
+        onClick={() =>
+          prefill &&
+          open({ kind: "topic", connectionId: prefill.connectionId, topic: prefill.topic, browsePrefill: { ...prefill.prefill, nonce: Date.now() } })
+        }
+      >
+        {t("settings.mcp.audit.openInBrowse")}
+      </button>
+    </>
+  );
+}
+
 export function McpSection() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const status = useMcpStatus();
   const configs = useQuery({ queryKey: ["mcp-configs"], queryFn: api.getMcpClientConfigs, staleTime: Infinity });
   const audit = useQuery({ queryKey: ["mcp-audit"], queryFn: () => api.getMcpAudit(AUDIT_LIMIT) });
+  const connections = useQuery({ queryKey: ["connections"], queryFn: api.listConnections });
   const apply = (s: McpStatus) => qc.setQueryData(MCP_STATUS_KEY, s);
   const toggle = useMutation({ mutationFn: (enabled: boolean) => api.setMcpEnabled(enabled), onSuccess: apply });
   const refreshAudit = () => void qc.invalidateQueries({ queryKey: ["mcp-audit"] });
@@ -87,12 +152,17 @@ export function McpSection() {
       refreshAudit();
     },
   });
+  // Клиент протокола 2026-07-28 не шлёт initialize: без кнопки диалог появился бы только при первом вызове.
+  const requestApproval = useMutation({
+    mutationFn: (sessionId: string) => api.requestMcpApproval(sessionId),
+    onSuccess: apply,
+  });
   const reveal = useMutation({ mutationFn: () => api.revealMcpAudit() });
 
   if (status.error) return <ErrorBanner error={status.error} onRetry={() => status.refetch()} />;
   const s = status.data;
   if (!s) return <p className="empty">{t("common.loading")}</p>;
-  const error = toggle.error ?? revoke.error ?? disconnect.error ?? reveal.error;
+  const error = toggle.error ?? revoke.error ?? disconnect.error ?? requestApproval.error ?? reveal.error;
 
   return (
     <section aria-labelledby="mcp-title">
@@ -118,6 +188,8 @@ export function McpSection() {
         {t(STATE_KEYS[s.state])}
         {s.error && <> — {tr(s.error)}</>}
       </p>
+      {s.policyAllows && <p>{t("settings.mcp.openCounts", { n: s.allowedConnections, m: s.messageConnections })}</p>}
+      {s.policyAllows && !s.messagesAllowed && <p className="hint">{t("settings.mcp.messagesPolicy")}</p>}
       {error && <ErrorBanner error={error} />}
 
       {s.policyAllows && configs.error && <ErrorBanner error={configs.error} onRetry={() => configs.refetch()} />}
@@ -155,9 +227,16 @@ export function McpSection() {
                   <td>{formatTimestamp(x.startedMs)}</td>
                   <td>{x.calls}</td>
                   <td>
-                    <button type="button" disabled={disconnect.isPending} onClick={() => disconnect.mutate(x.id)}>
-                      {t("settings.mcp.disconnect")}
-                    </button>
+                    <div className="toolbar">
+                      {!x.approved && (
+                        <button type="button" disabled={requestApproval.isPending} onClick={() => requestApproval.mutate(x.id)}>
+                          {t("settings.mcp.approve")}
+                        </button>
+                      )}
+                      <button type="button" disabled={disconnect.isPending} onClick={() => disconnect.mutate(x.id)}>
+                        {t("settings.mcp.disconnect")}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -222,6 +301,7 @@ export function McpSection() {
               <th>{t("settings.mcp.audit.colConnection")}</th>
               <th>{t("settings.mcp.audit.colResult")}</th>
               <th>{t("settings.mcp.audit.colMs")}</th>
+              <th>{t("settings.mcp.audit.colDetails")}</th>
             </tr>
           </thead>
           <tbody>
@@ -233,6 +313,9 @@ export function McpSection() {
                 <td>{e.connection?.name ?? ""}</td>
                 <td>{e.outcome === "error" ? e.code ?? t("settings.mcp.audit.error") : e.outcome === "ok" ? t("settings.mcp.audit.ok") : ""}</td>
                 <td>{e.ms ?? ""}</td>
+                <td>
+                  <AuditDetails e={e} s={s} connections={connections.data} />
+                </td>
               </tr>
             ))}
           </tbody>

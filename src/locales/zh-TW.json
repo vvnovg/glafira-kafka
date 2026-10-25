@@ -163,7 +163,9 @@
       "secretInExtraProperties": "額外屬性中不能儲存機密資訊：{{key}}",
       "timeoutTooSmall": "要求逾時至少為 1000 ms",
       "notFound": "找不到連線 {{id}}",
-      "saslPasswordMissing": "未設定此連線的 SASL 密碼"
+      "saslPasswordMissing": "未設定此連線的 SASL 密碼",
+      "maskFieldsTooMany": "最多 {{max}} 個遮罩欄位名稱",
+      "maskFieldTooLong": "遮罩欄位名稱超過 {{max}} 個字元：{{name}}"
     },
     "storage": {
       "writeFailed": "無法寫入 {{path}}：{{error}}",
@@ -379,7 +381,8 @@
     },
     "exportAll": "全部匯出…",
     "import": "匯入…",
-    "findings": "檢查結果"
+    "findings": "檢查結果",
+    "llmMessages": "LLM 存取：中繼資料和訊息"
   },
   "tabs": {
     "settings": "設定",
@@ -405,7 +408,7 @@
     },
     "mcp": {
       "section": "LLM 助理（MCP）",
-      "intro": "LLM 助理（Claude Desktop、Claude Code、Cursor 等）可以透過 MCP 連線到 Glafira，並讀取你為其開放的連線的中繼資料。它無法變更叢集中的任何內容。",
+      "intro": "LLM 助理（Claude Desktop、Claude Code、Cursor 等）可以透過 MCP 連線到 Glafira，讀取你為其開放的連線的中繼資料，並在你允許的連線中讀取訊息。它無法變更叢集中的任何內容。",
       "enable": "允許 MCP 伺服器",
       "policy": "MCP 已被你的組織停用",
       "state": {
@@ -453,8 +456,23 @@
         "rejected": "用戶端已拒絕",
         "revoked": "用戶端存取權限已撤銷",
         "serverStarted": "伺服器已啟動",
-        "serverStopped": "伺服器已停止"
-      }
+        "serverStopped": "伺服器已停止",
+        "colDetails": "詳細資訊",
+        "scanDetails": "{{target}}：{{scanned}} 則中傳回 {{returned}} 則，已遮罩：{{masked}}",
+        "openInBrowse": "在「訊息」中開啟",
+        "scanDetailsNoTarget": "{{scanned}} 則中傳回 {{returned}} 則，已遮罩：{{masked}}",
+        "openArgsCut": "無法使用：日誌中的呼叫參數已被截斷",
+        "openNoConnection": "無法使用：連線已不存在",
+        "openNotMessages": "無法使用：該連線的 LLM 存取不是「中繼資料和訊息」",
+        "openPolicy": "無法使用：讀取訊息已被你的組織停用",
+        "scanDetailsSummary": "{{target}}：時間區段：{{returned}}，已掃描：{{scanned}}，已遮罩：{{masked}}",
+        "scanDetailsSummaryNoTarget": "時間區段：{{returned}}，已掃描：{{scanned}}，已遮罩：{{masked}}",
+        "scanDetailsHistory": "{{target}}：提交序列：{{returned}}，已掃描記錄：{{scanned}}，已遮罩：{{masked}}",
+        "scanDetailsHistoryNoTarget": "提交序列：{{returned}}，已掃描記錄：{{scanned}}，已遮罩：{{masked}}"
+      },
+      "openCounts": "已對 LLM 開放：{{n}}，其中可讀取訊息：{{m}}",
+      "messagesPolicy": "讀取訊息已被你的組織停用",
+      "approve": "核准"
     }
   },
   "layout": {
@@ -469,7 +487,7 @@
       "folder": "資料夾",
       "folderRoot": "（根目錄）",
       "environment": "環境",
-      "llmAccess": "LLM 存取（僅中繼資料）",
+      "llmAccess": "LLM 存取",
       "color": "顏色",
       "bootstrap": "Bootstrap 伺服器",
       "protocol": "通訊協定",
@@ -491,7 +509,19 @@
         "config": "設定",
         "tcp": "DNS / TCP",
         "kafka": "Kafka（TLS、SASL、中繼資料）"
-      }
+      },
+      "llmLevel": {
+        "off": "關閉",
+        "metadata": "僅中繼資料",
+        "messages": "中繼資料和訊息"
+      },
+      "llmMessagesPolicy": "訊息：已被你的組織停用",
+      "llmMessagesAsMetadata": "以「僅中繼資料」生效：讀取訊息已被你的組織停用",
+      "llmProdWarning": "此正式環境叢集的訊息內容將傳送給 LLM 供應商",
+      "mask": "遮罩",
+      "maskStandard": "標準清單",
+      "maskFieldsAria": "要遮罩的欄位名稱，每行一個",
+      "maskNote": "電子郵件、卡號、JWT 和 Bearer 權杖一律會被遮罩。遮罩可降低風險，但無法辨識人名、地址以及名稱陌生的欄位中的資料。"
     },
     "tls": {
       "pick": "瀏覽…",
@@ -758,7 +788,9 @@
       "limit": "上限",
       "format": "格式",
       "key": "鍵",
-      "value": "值"
+      "value": "值",
+      "offsetTitle": "在每個所選分區中開始讀取的偏移量",
+      "partitionsTitle": "分區編號，以逗號分隔；留空表示全部分區"
     },
     "filters": {
       "title": "篩選",
@@ -779,7 +811,9 @@
       "reading": "正在讀取…",
       "finishLimit": "已達上限",
       "finishEnd": "已到達主題結尾",
-      "finishCancelled": "已停止"
+      "finishCancelled": "已停止",
+      "prefillInexact": "篩選條件轉換不精確：表單中 regex 和大小寫選項由鍵、值和標頭值共用",
+      "prefillInexactLimit": "上限轉換不精確：表單中的上限依符合的訊息計數，而不是依偏移量，因此讀取可能超出呼叫的結束偏移量"
     },
     "table": {
       "colTime": "時間",
@@ -1058,11 +1092,12 @@
     "approval": {
       "title": "{{client}} 想要連線到 Glafira",
       "body": "它將能看到已向 LLM 助理開放的連線的中繼資料，共 {{n}} 個連線。",
-      "readOnly": "透過 Glafira，助理只能讀取 Broker、主題、設定和消費者群組。訊息和密碼不會分享。",
+      "readOnly": "透過 Glafira，助理只能讀取，無法變更叢集中的任何內容。密碼不會分享。",
       "unnamed": "用戶端未提供名稱，因此回答僅適用於本次工作階段。",
       "more": "另有 {{n}} 個用戶端在等待回答",
       "allow": "允許",
-      "reject": "拒絕"
+      "reject": "拒絕",
+      "messages": "其中 {{n}} 個連線的訊息內容它也能讀取。"
     },
     "indicator": {
       "one": "LLM：{{client}}",
@@ -1294,7 +1329,7 @@
     "connections": {
       "environment": "以顏色標示連線。正式環境連線在任何變更前都會要求輸入連線名稱。",
       "readOnly": "封鎖所有會改變叢集的操作：傳送、重設偏移量、刪除主題和群組、消費者工作階段。",
-      "llmAccess": "允許透過 MCP 連線的 LLM 助理讀取此叢集的中繼資料：Broker、主題、設定、消費者群組。訊息和密碼絕不會被分享。",
+      "llmAccess": "透過 MCP 連線的 LLM 助理可在此叢集中讀取的內容。「僅中繼資料」：Broker、主題、設定、消費者群組。「中繼資料和訊息」：另外還有訊息內容和消費者群組的提交記錄，並經過遮罩。密碼絕不會被分享。",
       "bootstrap": "一個或多個 <code>host:port</code>，以逗號分隔。用戶端會自動找到其他 Broker。",
       "protocol": "PLAINTEXT：不加密、不登入。SSL：TLS 加密。SASL_*：使用密碼登入；SASL_SSL 還會加密。",
       "saslMechanism": "叢集使用哪種機制，請洽詢你的 Kafka 管理員。SCRAM 絕不傳送密碼本身；未搭配 TLS 的 PLAIN 會以明文傳送密碼。",
@@ -1306,7 +1341,8 @@
       "verifyHostname": "檢查 Broker 憑證是否與其主機名稱相符。僅在測試環境中關閉。",
       "mtls": "Broker 以憑證驗證用戶端時需要。憑證和私密金鑰由你的 Kafka 管理員核發。",
       "alias": "JKS 或 PKCS#12 檔案中金鑰項目的名稱。僅在檔案包含多個金鑰時需要。",
-      "keyPassword": "僅在金鑰有自己的密碼時填寫：與金鑰庫密碼不同，或是加密的 PEM 金鑰。"
+      "keyPassword": "僅在金鑰有自己的密碼時填寫：與金鑰庫密碼不同，或是加密的 PEM 金鑰。",
+      "mask": "名稱符合這些名稱的 JSON 欄位、標頭和 name=value 配對的值會被替換為 ***。不分大小寫，也忽略 _、- 和 . 字元；* 代表任意字元。最多 200 個名稱，每個不超過 64 個字元。"
     },
     "topics": {
       "partitions": "分區可平行讀取；只有在單一分區內才保證順序。分區數日後可以增加，但無法減少。",

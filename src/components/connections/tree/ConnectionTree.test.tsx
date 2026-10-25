@@ -20,6 +20,7 @@ vi.mock("../../../api/client", async (importOriginal) => {
       exportConnections: vi.fn(),
       previewImport: vi.fn(),
       applyImport: vi.fn(),
+      getMcpStatus: vi.fn(),
     },
   };
 });
@@ -27,6 +28,8 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({ save: vi.fn(), open: vi.fn() }));
 
 import { open as openDialog, save } from "@tauri-apps/plugin-dialog";
 import { api } from "../../../api/client";
+import { MCP_STATUS_KEY } from "../../../lib/useMcpStatus";
+import { mcpStatus } from "../../../test/mcp";
 import { useWorkspace } from "../../../state/workspace";
 import { ConnectionTree } from "./ConnectionTree";
 
@@ -44,6 +47,7 @@ beforeEach(() => {
   localStorage.clear();
   vi.mocked(api.listFolders).mockResolvedValue(FOLDERS);
   vi.mocked(api.listConnections).mockResolvedValue(CONNS);
+  vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
   useWorkspace.setState({ tabs: [], activeId: null });
 });
 
@@ -77,6 +81,34 @@ async function openFolderMenu(name: string) {
 }
 
 describe("ConnectionTree", () => {
+  it("значок LLM показывает уровень доступа с учётом политики", async () => {
+    vi.mocked(api.listConnections).mockResolvedValue([
+      { ...CONNS[0], llmAccess: "metadata" },
+      { ...CONNS[1], llmAccess: "messages" },
+    ]);
+    const { unmount } = renderWithClient(<ConnectionTree />);
+    expect(await screen.findByTitle("Доступ для LLM: метаданные и сообщения")).toHaveClass("llm-badge--messages");
+    expect(screen.getByTitle("Открыто LLM-ассистентам по MCP")).not.toHaveClass("llm-badge--messages");
+    unmount();
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
+    renderWithClient(<ConnectionTree />);
+    await waitFor(() => expect(screen.getAllByTitle("Открыто LLM-ассистентам по MCP")).toHaveLength(2));
+    expect(screen.queryByTitle("Доступ для LLM: метаданные и сообщения")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["пока статус MCP не пришёл", () => new Promise<never>(() => {}), "pending"],
+    ["если статус MCP не загрузился", () => Promise.reject(new Error("нет ответа")), "error"],
+  ] as const)("%s, значок уровня «сообщения» не закрашен", async (_, status, state) => {
+    vi.mocked(api.getMcpStatus).mockImplementation(status);
+    vi.mocked(api.listConnections).mockResolvedValue([{ ...CONNS[1], llmAccess: "messages" }]);
+    const { client } = renderWithClient(<ConnectionTree />);
+    await screen.findByText("local");
+    await waitFor(() => expect(client.getQueryState(MCP_STATUS_KEY)?.status).toBe(state));
+    expect(screen.getByTitle("Открыто LLM-ассистентам по MCP")).not.toHaveClass("llm-badge--messages");
+    expect(screen.queryByTitle("Доступ для LLM: метаданные и сообщения")).not.toBeInTheDocument();
+  });
+
   it("показывает папки с подключениями и пункты подключения", async () => {
     renderWithClient(<ConnectionTree />);
     expect(await screen.findByText("kafka-ift")).toBeInTheDocument();

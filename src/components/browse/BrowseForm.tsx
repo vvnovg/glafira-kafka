@@ -37,15 +37,15 @@ export function BrowseForm({ form, onChange }: Props) {
           <input aria-label="N" type="number" min={1} value={form.count} onChange={(e) => set("count", Number(e.target.value))} style={{ width: 80 }} />
         )}
         {form.startType === "offset" && (
-          <input aria-label={t("browse.form.offsetAria")} type="number" min={0} value={form.offset} onChange={(e) => set("offset", Number(e.target.value))} style={{ width: 100 }} />
+          <input aria-label={t("browse.form.offsetAria")} title={t("browse.form.offsetTitle")} type="number" min={0} value={form.offset} onChange={(e) => set("offset", Number(e.target.value))} style={{ width: 100 }} />
         )}
         {form.startType === "timestamp" && (
-          <input aria-label={t("browse.form.timeAria")} type="datetime-local" step={1} value={form.timestamp} onChange={(e) => set("timestamp", e.target.value)} />
+          <input aria-label={t("browse.form.timeAria")} title={t("browse.form.timeAria")} type="datetime-local" step={1} value={form.timestamp} onChange={(e) => set("timestamp", e.target.value)} />
         )}
         {form.startType === "lastMinutes" && (
-          <input aria-label={t("browse.form.minutesAria")} type="number" min={1} value={form.minutes} onChange={(e) => set("minutes", Number(e.target.value))} style={{ width: 70 }} />
+          <input aria-label={t("browse.form.minutesAria")} title={t("browse.form.minutesAria")} type="number" min={1} value={form.minutes} onChange={(e) => set("minutes", Number(e.target.value))} style={{ width: 70 }} />
         )}
-        <input aria-label={t("browse.form.partitionsAria")} placeholder={t("browse.form.partitionsPlaceholder")} value={form.partitions} onChange={(e) => set("partitions", e.target.value)} style={{ width: 110 }} />
+        <input aria-label={t("browse.form.partitionsAria")} title={t("browse.form.partitionsTitle")} placeholder={t("browse.form.partitionsPlaceholder")} value={form.partitions} onChange={(e) => set("partitions", e.target.value)} style={{ width: 110 }} />
         <label>
           {t("browse.form.limit")} <input type="number" min={1} max={100000} value={form.limit} onChange={(e) => set("limit", Number(e.target.value))} style={{ width: 80 }} />
         </label>

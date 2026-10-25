@@ -50,6 +50,7 @@
     "producer.partition",
     "producer.partitionAuto",
     "producer.topic",
+    "settings.mcp.audit.colDetails",
     "settings.mcp.audit.colMs",
     "settings.mcp.colClient",
     "sidebar.producer",

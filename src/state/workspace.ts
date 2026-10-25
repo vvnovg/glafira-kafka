@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { ProduceMessage, ProducerSettings, Proposal, ResetScope, ResetStrategy } from "../api/types";
+import type { BrowseFormState } from "../components/browse/params";
 
 export type ProducerPrefill = { message: ProduceMessage; settings?: ProducerSettings; nonce: number };
 
@@ -15,10 +16,23 @@ export type ResetPrefill =
 /** Предложение LLM, которое открывает заполненную форму вкладки (G3); `nonce` — повторное открытие обновляет заполнение. */
 export type ProposalPrefill = { proposal: Proposal; nonce: number };
 
+/**
+ * Что из вызова MCP форма «Сообщения» повторяет неточно: `flags` — флаги regex и регистра в форме общие для ключа,
+ * значения и значения заголовка, а в вызове различались; `limit` — режим «офсеты» с `endOffset` и фильтром: лимит
+ * формы считает найденные сообщения, а не офсеты, и чтение может зайти за конечный офсет вызова.
+ */
+export type PrefillInexact = "flags" | "limit";
+
+/**
+ * Форма «Сообщения» из записи журнала MCP (G4): человек видит те же сообщения, что LLM, без маскирования.
+ * `inexact` — что перенесено неточно (пусто — перенос точный).
+ */
+export type BrowsePrefill = { form: Partial<BrowseFormState>; inexact: PrefillInexact[]; nonce: number };
+
 export type TabSpec =
   | { kind: "cluster"; connectionId: string }
   | { kind: "topics"; connectionId: string; proposal?: ProposalPrefill }
-  | { kind: "topic"; connectionId: string; topic: string; proposal?: ProposalPrefill }
+  | { kind: "topic"; connectionId: string; topic: string; proposal?: ProposalPrefill; browsePrefill?: BrowsePrefill }
   | { kind: "groups"; connectionId: string }
   /** «Замечания»: находки проверки кластера, замечания и предложения LLM (G2, G3). */
   | { kind: "findings"; connectionId: string }

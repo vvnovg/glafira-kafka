@@ -11,6 +11,8 @@ export function mcpStatus(patch: Partial<McpStatus> = {}): McpStatus {
     pending: [],
     approvedClients: [],
     allowedConnections: 2,
+    messageConnections: 0,
+    messagesAllowed: true,
     ...patch,
   };
 }

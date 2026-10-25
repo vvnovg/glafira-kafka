@@ -56,6 +56,10 @@ async fn catalog_lists_the_tools_and_every_call_points_to_the_desktop_app() {
             json!({"connectionId": "c1", "topic": "orders"}),
         ),
         ("health_check", json!({"connectionId": "c1"})),
+        (
+            "read_messages",
+            json!({"connectionId": "c1", "topic": "orders", "partition": 0, "startOffset": 0}),
+        ),
     ] {
         let mut p = CallToolRequestParams::new(tool.to_string());
         if let serde_json::Value::Object(m) = args {

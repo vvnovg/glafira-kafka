@@ -15,6 +15,7 @@ use crate::error::{AppResult, ErrorCode};
 use crate::i18n::LocalizedText;
 use crate::settings::ApprovedClient;
 use crate::state::AppState;
+use crate::storage::connections::LlmAccess;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,6 +48,10 @@ pub struct McpStatus {
     pub approved_clients: Vec<ApprovedClient>,
     /// Подключений с доступом для LLM (для текста диалога подтверждения).
     pub allowed_connections: usize,
+    /// Из них — с чтением сообщений, с учётом политики (спец. G4 §4, §8).
+    pub message_connections: usize,
+    /// Политика разрешает чтение сообщений.
+    pub messages_allowed: bool,
 }
 
 /// Связь с окном: событие статуса и привлечение внимания.
@@ -105,6 +110,8 @@ impl McpController {
     }
 
     pub fn status(&self) -> McpStatus {
+        let profiles = self.state.connections.list();
+        let messages_allowed = self.state.policy.status.messages_allowed();
         let inner = self.inner();
         let sessions = inner
             .handle
@@ -125,13 +132,12 @@ impl McpController {
             sessions,
             pending: self.approvals.pending(),
             approved_clients: self.state.settings.mcp().approved_clients,
-            allowed_connections: self
-                .state
-                .connections
-                .list()
+            allowed_connections: profiles.iter().filter(|p| !p.llm_access.is_off()).count(),
+            message_connections: profiles
                 .iter()
-                .filter(|p| !p.llm_access.is_off())
+                .filter(|p| p.llm_access.effective(messages_allowed) == LlmAccess::Messages)
                 .count(),
+            messages_allowed,
         }
     }
 
@@ -314,6 +320,28 @@ impl McpController {
         Ok(self.status())
     }
 
+    /// Кнопка «Подтвердить» у ожидающей сессии: клиент протокола 2026-07-28 не шлёт `initialize`,
+    /// и без неё подтверждение запрашивается только при первом вызове инструмента. Сессия
+    /// становится ожидающей (диалог) или сразу разрешённой, если её клиент уже запомнен.
+    /// Закрытая, решённая или неизвестная сессия — без изменений. Блокирующий вызов (настройки).
+    pub fn request_approval(&self, session_id: &str) -> AppResult<McpStatus> {
+        let session = self
+            .inner()
+            .handle
+            .as_ref()
+            .and_then(|h| h.sessions().into_iter().find(|s| s.id == session_id));
+        if let Some(s) = session.filter(|_| self.policy_allows()) {
+            let client = s.client_name.map(|name| glafira_mcp::model::ClientIdent {
+                name,
+                version: s.client_version.unwrap_or_default(),
+            });
+            let view = glafira_mcp::model::SessionView { id: s.id, client };
+            self.approvals.access(&view, now_ms());
+        }
+        self.emit();
+        Ok(self.status())
+    }
+
     /// Отзыв запомненного клиента: его сессии закрываются. Блокирующий вызов.
     pub fn revoke(&self, name: &str) -> AppResult<McpStatus> {
         if self.approvals.revoke(name)? {
@@ -368,13 +396,24 @@ mod tests {
     }
 
     fn controller(policy_allows: bool) -> (tempfile::TempDir, Arc<McpController>, Arc<Recorder>) {
+        controller_with(policy_allows, true)
+    }
+
+    fn controller_with(
+        policy_allows: bool,
+        messages_allowed: bool,
+    ) -> (tempfile::TempDir, Arc<McpController>, Arc<Recorder>) {
         let dir = tempfile::tempdir().unwrap();
         let mut st = AppState::new(dir.path(), Arc::new(MemoryStore::default())).unwrap();
         let mut policy = (*st.policy).clone();
         policy.status.mcp_enabled = policy_allows;
+        policy.status.mcp_messages_enabled = messages_allowed;
         st.policy = Arc::new(policy);
         let mut p = sample_profile("c1");
         p.llm_access = LlmAccess::Metadata;
+        st.connections.upsert(p).unwrap();
+        let mut p = sample_profile("c2");
+        p.llm_access = LlmAccess::Messages;
         st.connections.upsert(p).unwrap();
         let c = McpController::new(st, dir.path());
         let rec = Arc::new(Recorder(Mutex::new(Vec::new()), Mutex::new(0)));
@@ -390,8 +429,9 @@ mod tests {
         let s = c.set_enabled(true).await.unwrap();
         assert_eq!(
             (s.state, s.enabled, s.allowed_connections),
-            (ServerState::Running, true, 1)
+            (ServerState::Running, true, 2)
         );
+        assert_eq!((s.message_connections, s.messages_allowed), (1, true));
         let f = files::read(dir.path()).unwrap();
         assert!(glafira_mcp::endpoint::connect(&f.endpoint).await.is_ok());
         let s = c.set_enabled(false).await.unwrap();
@@ -400,6 +440,21 @@ mod tests {
         assert!(
             rec.0.lock().unwrap().len() >= 2,
             "статус уходит в интерфейс"
+        );
+    }
+
+    #[test]
+    fn messages_policy_is_counted_in_the_status() {
+        let (_d, c, _) = controller_with(true, false);
+        let s = c.status();
+        assert_eq!(
+            (
+                s.allowed_connections,
+                s.message_connections,
+                s.messages_allowed
+            ),
+            (2, 0, false),
+            "уровень «сообщения» действует как «метаданные»"
         );
     }
 
@@ -522,6 +577,52 @@ mod tests {
         assert_eq!(r.is_error, Some(false));
         let audit = c.audit_recent(10);
         assert!(audit.iter().any(|a| a["event"] == "approved"));
+        c.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn waiting_session_without_initialize_gets_a_dialog_on_request() {
+        let (dir, c, rec) = controller(true);
+        c.set_enabled(true).await.unwrap();
+        let f = files::read(dir.path()).unwrap();
+        // Клиент протокола 2026-07-28 не шлёт initialize: сессия есть, запроса подтверждения нет.
+        let mut s = glafira_mcp::endpoint::connect(&f.endpoint).await.unwrap();
+        glafira_mcp::handshake::client(&mut s, &f.token)
+            .await
+            .unwrap();
+        let mut id = None;
+        for _ in 0..100 {
+            if let Some(x) = c.status().sessions.first() {
+                id = Some(x.session.id.clone());
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+        let id = id.expect("сессия появилась");
+        let before = c.status();
+        assert!(before.pending.is_empty());
+        assert!(!before.sessions[0].approved);
+        let emitted = rec.0.lock().unwrap().len();
+
+        let request = |id: String| {
+            let c = c.clone();
+            tokio::task::spawn_blocking(move || c.request_approval(&id))
+        };
+        let st = request(id.clone()).await.unwrap().unwrap();
+        assert_eq!(st.pending.len(), 1);
+        assert_eq!(st.pending[0].session_id, id);
+        assert_eq!(st.pending[0].client_name, None);
+        assert!(
+            rec.0.lock().unwrap().len() > emitted,
+            "окно получило статус"
+        );
+        // Повторный запрос и неизвестная сессия ничего не добавляют.
+        assert_eq!(request(id.clone()).await.unwrap().unwrap().pending.len(), 1);
+        assert_eq!(
+            request("s999".into()).await.unwrap().unwrap().pending.len(),
+            1
+        );
+        drop(s);
         c.shutdown().await;
     }
 }

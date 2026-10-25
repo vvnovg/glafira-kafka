@@ -214,6 +214,10 @@ mod tests {
         assert!(p.status.update_url.is_some());
         assert_eq!(p.status.language.as_deref(), Some("en"));
         assert!(!p.status.mcp_enabled, "пример запрещает MCP");
+        assert!(
+            !p.status.mcp_messages_enabled,
+            "пример запрещает чтение сообщений"
+        );
 
         // Профиль MDM: содержимое PayloadContent[0] попадает в Managed Preferences как есть.
         let profile = plist::Value::from_file(format!("{base}/policy.mobileconfig")).unwrap();
@@ -228,11 +232,23 @@ mod tests {
             content.get("PayloadType").and_then(|v| v.as_string()),
             Some(crate::product::IDENTIFIER)
         );
-        for key in ["updatesEnabled", "updateUrl", "language", "mcpEnabled"] {
+        for key in [
+            "updatesEnabled",
+            "updateUrl",
+            "language",
+            "mcpEnabled",
+            "mcpMessagesEnabled",
+        ] {
             assert!(content.contains_key(key), "{key}");
         }
         assert_eq!(
             content.get("mcpEnabled").and_then(|v| v.as_boolean()),
+            Some(false)
+        );
+        assert_eq!(
+            content
+                .get("mcpMessagesEnabled")
+                .and_then(|v| v.as_boolean()),
             Some(false)
         );
 
@@ -243,5 +259,9 @@ mod tests {
             crate::product::POLICY_PRODUCT
         )));
         assert!(reg.contains(r#""mcpEnabled"=dword:00000000"#), "{reg}");
+        assert!(
+            reg.contains(r#""mcpMessagesEnabled"=dword:00000000"#),
+            "{reg}"
+        );
     }
 }

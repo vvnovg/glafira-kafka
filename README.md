@@ -47,11 +47,17 @@ For administrators (silent install, policy, update mirror): [`docs/admin.md`](do
 ## LLM assistants (MCP)
 
 Claude Desktop, Claude Code, Cursor or any other MCP client runs `glafira-kafka mcp`, which connects to the running
-Glafira through a local socket (a named pipe on Windows). The assistant sees only connections you mark
-"LLM access (metadata only)" and never gets messages, passwords, certificates or the bootstrap address.
+Glafira through a local socket (a named pipe on Windows). The assistant sees only connections you open for it in
+the connection form: "LLM access" set to "Metadata only" or "Metadata and messages". It never gets passwords,
+certificates or the bootstrap address.
 
 - **Reads metadata:** brokers, topics, partitions and ISR, topic and broker configs with secrets hidden,
   consumer groups with members and lag, and it can observe a group for up to 50 seconds to diagnose rebalances.
+- **Reads messages**, only on connections with "Metadata and messages": messages of a topic for a time window or an
+  offset range with the same filters as the Messages screen, a window summary without contents, and a group's commit
+  history from `__consumer_offsets`. Values are masked before the answer leaves Glafira: a per-connection list of field
+  names plus built-in patterns for emails, card numbers, JWTs and Bearer tokens. The MCP log shows what was read, and
+  "Open in Messages" shows you the same messages. An administrator can disable message reading by policy.
 - **Leaves notes** that appear next to topics and groups in Glafira, and runs the same cluster check as the button.
 - **Proposes changes:** topic configs, a new topic, more partitions or an offset reset. A proposal opens the usual
   Glafira form already filled in; you review the diff and apply it yourself. Deletes and purges cannot be proposed.

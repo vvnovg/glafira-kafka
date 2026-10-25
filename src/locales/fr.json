@@ -163,7 +163,9 @@
       "secretInExtraProperties": "Les secrets ne peuvent pas être stockés dans les propriétés supplémentaires : {{key}}",
       "timeoutTooSmall": "Le délai de requête doit être d’au moins 1000 ms",
       "notFound": "Connexion {{id}} introuvable",
-      "saslPasswordMissing": "Le mot de passe SASL de la connexion n’est pas défini"
+      "saslPasswordMissing": "Le mot de passe SASL de la connexion n’est pas défini",
+      "maskFieldsTooMany": "Au plus {{max}} noms de champs à masquer",
+      "maskFieldTooLong": "Un nom de champ à masquer dépasse {{max}} caractères : {{name}}"
     },
     "storage": {
       "writeFailed": "Impossible d’écrire {{path}} : {{error}}",
@@ -379,7 +381,8 @@
     },
     "exportAll": "Tout exporter…",
     "import": "Importer…",
-    "findings": "Constats"
+    "findings": "Constats",
+    "llmMessages": "Accès LLM : métadonnées et messages"
   },
   "tabs": {
     "settings": "Paramètres",
@@ -405,7 +408,7 @@
     },
     "mcp": {
       "section": "Assistants LLM (MCP)",
-      "intro": "Un assistant LLM (Claude Desktop, Claude Code, Cursor et d’autres) peut se connecter à Glafira via MCP et lire les métadonnées des connexions que vous lui ouvrez. Il ne peut rien modifier dans les clusters.",
+      "intro": "Un assistant LLM (Claude Desktop, Claude Code, Cursor et d’autres) peut se connecter à Glafira via MCP et lire les métadonnées des connexions que vous lui ouvrez — et les messages, là où vous l’autorisez. Il ne peut rien modifier dans les clusters.",
       "enable": "Autoriser le serveur MCP",
       "policy": "MCP est désactivé par votre organisation",
       "state": {
@@ -453,8 +456,23 @@
         "rejected": "Client rejeté",
         "revoked": "Accès du client révoqué",
         "serverStarted": "Serveur démarré",
-        "serverStopped": "Serveur arrêté"
-      }
+        "serverStopped": "Serveur arrêté",
+        "colDetails": "Détails",
+        "scanDetails": "{{target}} : {{returned}} sur {{scanned}}, masqués : {{masked}}",
+        "openInBrowse": "Ouvrir dans « Messages »",
+        "scanDetailsNoTarget": "{{returned}} sur {{scanned}}, masqués : {{masked}}",
+        "openArgsCut": "Indisponible : les arguments de l’appel sont tronqués dans le journal",
+        "openNoConnection": "Indisponible : la connexion n’existe plus",
+        "openNotMessages": "Indisponible : l’accès LLM de la connexion n’est pas « Métadonnées et messages »",
+        "openPolicy": "Indisponible : la lecture des messages est désactivée par votre organisation",
+        "scanDetailsSummary": "{{target}} : intervalles : {{returned}}, analysés : {{scanned}}, masqués : {{masked}}",
+        "scanDetailsSummaryNoTarget": "intervalles : {{returned}}, analysés : {{scanned}}, masqués : {{masked}}",
+        "scanDetailsHistory": "{{target}} : séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}",
+        "scanDetailsHistoryNoTarget": "séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}"
+      },
+      "openCounts": "Connexions ouvertes au LLM : {{n}}, dont {{m}} avec messages",
+      "messagesPolicy": "La lecture des messages est désactivée par votre organisation",
+      "approve": "Approuver"
     }
   },
   "layout": {
@@ -469,7 +487,7 @@
       "folder": "Dossier",
       "folderRoot": "(racine)",
       "environment": "Environnement",
-      "llmAccess": "Accès LLM (métadonnées uniquement)",
+      "llmAccess": "Accès LLM",
       "color": "Couleur",
       "bootstrap": "Serveurs bootstrap",
       "protocol": "Protocole",
@@ -491,7 +509,19 @@
         "config": "Configuration",
         "tcp": "DNS / TCP",
         "kafka": "Kafka (TLS, SASL, métadonnées)"
-      }
+      },
+      "llmLevel": {
+        "off": "Désactivé",
+        "metadata": "Métadonnées uniquement",
+        "messages": "Métadonnées et messages"
+      },
+      "llmMessagesPolicy": "Messages : désactivé par votre organisation",
+      "llmMessagesAsMetadata": "Fonctionne comme « Métadonnées uniquement » : la lecture des messages est désactivée par votre organisation",
+      "llmProdWarning": "Le contenu des messages de ce cluster de production sera envoyé au fournisseur LLM",
+      "mask": "Masquage",
+      "maskStandard": "Liste standard",
+      "maskFieldsAria": "Noms de champs à masquer, un par ligne",
+      "maskNote": "Les e-mails, numéros de carte, JWT et jetons Bearer sont toujours masqués. Le masquage réduit le risque mais ne reconnaît pas les noms de personnes, les adresses ni les données dans des champs aux noms inconnus."
     },
     "tls": {
       "pick": "Parcourir…",
@@ -762,7 +792,9 @@
       "limit": "Limite",
       "format": "Format",
       "key": "clé",
-      "value": "valeur"
+      "value": "valeur",
+      "offsetTitle": "Offset à partir duquel lire chaque partition sélectionnée",
+      "partitionsTitle": "Numéros de partition séparés par des virgules ; vide signifie toutes les partitions"
     },
     "filters": {
       "title": "Filtres",
@@ -783,7 +815,9 @@
       "reading": "lecture…",
       "finishLimit": "limite atteinte",
       "finishEnd": "fin du topic atteinte",
-      "finishCancelled": "arrêté"
+      "finishCancelled": "arrêté",
+      "prefillInexact": "Filtres repris de façon approximative : dans le formulaire, les options regex et casse sont communes à la clé, à la valeur et à la valeur de l’en-tête",
+      "prefillInexactLimit": "Limite reprise de façon approximative : dans le formulaire, elle compte les messages trouvés, pas les offsets, donc la lecture peut dépasser l’offset de fin de l’appel"
     },
     "table": {
       "colTime": "Heure",
@@ -1068,11 +1102,12 @@
     "approval": {
       "title": "{{client}} souhaite se connecter à Glafira",
       "body": "Il verra les métadonnées des connexions ouvertes aux assistants LLM : {{n}}.",
-      "readOnly": "Via Glafira, l’assistant peut uniquement lire les brokers, topics, configurations et consumer groups. Les messages et les mots de passe ne sont pas transmis.",
+      "readOnly": "Via Glafira, l’assistant peut uniquement lire : il ne peut rien modifier dans les clusters. Les mots de passe ne sont pas transmis.",
       "unnamed": "Le client n’a pas communiqué son nom ; la réponse ne vaut donc que pour cette session.",
       "more": "Encore en attente de réponse : {{n}}",
       "allow": "Autoriser",
-      "reject": "Rejeter"
+      "reject": "Rejeter",
+      "messages": "Il pourra lire le contenu des messages dans {{n}} d’entre elles."
     },
     "indicator": {
       "one": "LLM : {{client}}",
@@ -1304,7 +1339,7 @@
     "connections": {
       "environment": "Marque la connexion d’une couleur. Pour les connexions prod, toute modification doit être confirmée en saisissant le nom de la connexion.",
       "readOnly": "Bloque tout ce qui modifie le cluster : envoi, réinitialisation des offsets, suppression de topics et de groupes, sessions consumer.",
-      "llmAccess": "Permet à un assistant LLM connecté via MCP de lire les métadonnées de ce cluster : brokers, topics, configurations, consumer groups. Les messages et les mots de passe ne sont jamais partagés.",
+      "llmAccess": "Ce qu’un assistant LLM connecté via MCP peut lire dans ce cluster. « Métadonnées uniquement » : brokers, topics, configurations, consumer groups. « Métadonnées et messages » : en plus, le contenu des messages et l’historique des commits des consumer groups, avec masquage. Les mots de passe ne sont jamais partagés.",
       "bootstrap": "Un ou plusieurs <code>host:port</code>, séparés par des virgules. Le client trouve lui-même les autres brokers.",
       "protocol": "PLAINTEXT — sans chiffrement ni authentification. SSL — chiffrement TLS. SASL_* — authentification par identifiant et mot de passe ; SASL_SSL chiffre en plus.",
       "saslMechanism": "Les administrateurs Kafka savent quel mécanisme le cluster utilise. SCRAM ne transmet jamais le mot de passe lui-même ; PLAIN sans TLS l’envoie en clair.",
@@ -1316,7 +1351,8 @@
       "verifyHostname": "Vérifie que le certificat du broker a été émis pour son nom d’hôte. À désactiver uniquement dans les environnements de test.",
       "mtls": "Nécessaire si les brokers authentifient les clients par certificat. Le certificat et la clé sont délivrés par les administrateurs Kafka.",
       "alias": "Nom de l’entrée de la clé dans le fichier JKS ou PKCS#12. Nécessaire uniquement si le fichier contient plusieurs clés.",
-      "keyPassword": "Uniquement si la clé a son propre mot de passe : différent de celui du keystore, ou clé PEM chiffrée."
+      "keyPassword": "Uniquement si la clé a son propre mot de passe : différent de celui du keystore, ou clé PEM chiffrée.",
+      "mask": "Les valeurs des champs JSON, des en-têtes et des paires name=value portant ces noms sont remplacées par ***. La casse et les caractères _, - et . sont ignorés ; * correspond à n’importe quels caractères. Jusqu’à 200 noms, de 64 caractères au plus chacun."
     },
     "topics": {
       "partitions": "Les partitions sont lues en parallèle ; l’ordre n’est garanti qu’au sein d’une même partition. Leur nombre peut être augmenté plus tard, mais jamais réduit.",

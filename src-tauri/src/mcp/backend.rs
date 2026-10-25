@@ -6,6 +6,8 @@
 use std::sync::Arc;
 
 use glafira_mcp::health as mh;
+use glafira_mcp::mask::MaskConfig;
+use glafira_mcp::messages as mm;
 use glafira_mcp::model as m;
 use glafira_mcp::proposals as mp;
 use glafira_mcp::{
@@ -31,6 +33,7 @@ use crate::health::{rules, texts};
 use crate::kafka::pool::KafkaHandles;
 use crate::kafka::{cluster, group_ops, topics};
 use crate::state::AppState;
+use crate::storage::connections::LlmAccess;
 
 /// Что-то изменилось для интерфейса; `true` — нужен диалог подтверждения (привлечь внимание).
 pub type OnChange = Arc<dyn Fn(bool) + Send + Sync>;
@@ -95,9 +98,15 @@ impl AppBackend {
         }
     }
 
+    /// Чтение сообщений разрешено политикой (спец. G4 §9).
+    fn messages_allowed(&self) -> bool {
+        self.state.policy.status.messages_allowed()
+    }
+
     /// Подключения, которые видит LLM.
     pub fn connections(&self) -> Vec<m::Connection> {
         let store = &self.state.connections;
+        let messages_allowed = self.messages_allowed();
         store
             .list()
             .into_iter()
@@ -112,6 +121,7 @@ impl AppBackend {
                     .ok()
                     .and_then(|v| v.as_str().map(String::from))
                     .unwrap_or_default(),
+                llm_access: p.llm_access.effective(messages_allowed).as_str().into(),
                 id: p.id,
                 name: p.name,
                 read_only: p.read_only,
@@ -298,7 +308,68 @@ impl AppBackend {
     }
 }
 
+/// Ошибки чтения сообщений (спец. G4 §4, §7): неверный фильтр и партиция — `invalid_argument`,
+/// нет топика — `not_found`, нет права на `__consumer_offsets` — с подсказкой; остальное — как в G1.
+fn scan_to_backend(e: AppError, commits: bool) -> BackendError {
+    if e.key.starts_with("errors.browse.bad") || e.key == "errors.topics.noSuchPartition" {
+        BackendError::invalid_argument(e.message)
+    } else if e.code == ErrorCode::NotFound {
+        BackendError::not_found(e.message)
+    } else if e.key == TASK_PANICKED_KEY {
+        BackendError::new("internal", BACKGROUND_FAILED)
+    } else if commits && e.code == ErrorCode::NotAuthorized {
+        let mut b = to_backend(e);
+        b.message = format!(
+            "{}. Reading __consumer_offsets requires the Read permission on this internal topic",
+            b.message.trim_end_matches('.')
+        );
+        b
+    } else {
+        to_backend(e)
+    }
+}
+
 impl AppBackend {
+    /// Чтение сообщений: доступ (спец. G4 §4), затем просмотр на blocking-потоке.
+    async fn messages_impl(
+        &self,
+        op: mm::MessagesOp,
+        ctx: mm::ScanCtx,
+    ) -> Result<mm::MessagesOutput, BackendError> {
+        let profile = self
+            .state
+            .connections
+            .get(op.connection_id())
+            .ok()
+            .filter(|p| !p.llm_access.is_off())
+            .ok_or_else(BackendError::not_allowed)?;
+        if !self.messages_allowed() {
+            return Err(BackendError::new(
+                "messages_disabled",
+                "Reading messages is disabled by the organization's policy",
+            ));
+        }
+        if profile.llm_access != LlmAccess::Messages {
+            return Err(BackendError::new(
+                "messages_not_allowed",
+                "LLM access to this connection is limited to metadata. Ask the user to switch it to \"Metadata and messages\" in the connection settings in Glafira",
+            ));
+        }
+        let commits = matches!(op, mm::MessagesOp::CommitHistory { .. });
+        let mask = MaskConfig {
+            fields: profile.llm_mask_fields.clone(),
+        };
+        let st = self.state.clone();
+        let body = blocking(move || super::messages::scan(&profile, st.secrets.as_ref(), op, &ctx))
+            .await
+            .map_err(|e| scan_to_backend(e, commits))?;
+        Ok(mm::MessagesOutput {
+            mask,
+            utc_offset_minutes: super::messages::local_utc_offset_minutes(),
+            body,
+        })
+    }
+
     /// Автор замечаний и проверок: имя из диалога подтверждения.
     fn author(&self, session: &SessionView) -> Author {
         Author {
@@ -963,6 +1034,14 @@ impl Backend for AppBackend {
     ) -> BoxFuture<'_, Result<mp::ProposalOutput, BackendError>> {
         Box::pin(self.proposals_impl(op))
     }
+
+    fn messages(
+        &self,
+        op: mm::MessagesOp,
+        ctx: mm::ScanCtx,
+    ) -> BoxFuture<'_, Result<mm::MessagesOutput, BackendError>> {
+        Box::pin(self.messages_impl(op, ctx))
+    }
 }
 
 #[cfg(test)]
@@ -1003,7 +1082,29 @@ mod tests {
             (list[0].id.as_str(), list[0].environment.as_str()),
             ("open", "dev")
         );
+        assert_eq!(list[0].llm_access, "metadata");
         assert_eq!(b.connection_name("open").as_deref(), Some("dev"));
+    }
+
+    #[test]
+    fn messages_level_is_listed_with_the_policy_applied() {
+        let (_d, b) = backend();
+        let mut p = sample_profile("msgs");
+        p.llm_access = LlmAccess::Messages;
+        b.state.connections.upsert(p).unwrap();
+        let level = |b: &AppBackend| {
+            b.connections()
+                .into_iter()
+                .find(|c| c.id == "msgs")
+                .map(|c| c.llm_access)
+        };
+        assert_eq!(level(&b).as_deref(), Some("messages"));
+        let mut st = b.state.clone();
+        let mut policy = (*st.policy).clone();
+        policy.status.mcp_messages_enabled = false;
+        st.policy = Arc::new(policy);
+        let b = AppBackend::new(st, b.approvals.clone(), Arc::new(|_| {}));
+        assert_eq!(level(&b).as_deref(), Some("metadata"));
     }
 
     #[tokio::test]
@@ -1415,6 +1516,141 @@ mod tests {
         related: Option<&str>,
     ) -> BoxFuture<'a, Result<mp::ProposalOutput, BackendError>> {
         propose_in(b, "open", session, new_proposal(title, related))
+    }
+
+    fn read_op(connection_id: &str, value_regex: Option<&str>) -> mm::MessagesOp {
+        mm::MessagesOp::Read {
+            connection_id: connection_id.into(),
+            topic: "orders".into(),
+            range: mm::Range::Window {
+                from_ms: 0,
+                to_ms: 1,
+                partitions: None,
+            },
+            filter: mm::MessageFilter {
+                value: value_regex.map(|p| mm::TextMatch {
+                    pattern: p.into(),
+                    regex: true,
+                    case_sensitive: false,
+                }),
+                ..Default::default()
+            },
+            key_format: mm::FormatArg::Auto,
+            value_format: mm::FormatArg::Auto,
+            limit: 10,
+            after: None,
+        }
+    }
+
+    fn scan_ctx() -> mm::ScanCtx {
+        mm::ScanCtx::new(std::time::Duration::from_secs(5))
+    }
+
+    #[tokio::test]
+    async fn messages_need_the_messages_level_and_the_policy() {
+        let (_d, b) = backend();
+        for id in ["closed", "missing"] {
+            let e = b.messages(read_op(id, None), scan_ctx()).await.unwrap_err();
+            assert_eq!(e.code, "not_allowed", "{id}");
+        }
+        let e = b
+            .messages(read_op("open", None), scan_ctx())
+            .await
+            .unwrap_err();
+        assert_eq!(e.code, "messages_not_allowed", "{e:?}");
+        assert!(e.message.contains("Metadata and messages"));
+
+        let mut p = sample_profile("msgs");
+        p.llm_access = LlmAccess::Messages;
+        p.bootstrap_servers = "127.0.0.1:1".into();
+        b.state.connections.upsert(p).unwrap();
+        // Неверный фильтр — до обращения к кластеру.
+        let e = b
+            .messages(read_op("msgs", Some("(")), scan_ctx())
+            .await
+            .unwrap_err();
+        assert_eq!(e.code, "invalid_argument", "{e:?}");
+        assert!(e.message.contains("regular expression"), "{e:?}");
+        let e = b
+            .messages(read_op("msgs", None), scan_ctx())
+            .await
+            .unwrap_err();
+        assert!(
+            ["CONNECTION_FAILED", "TIMEOUT"].contains(&e.code.as_str()),
+            "{e:?}"
+        );
+
+        let mut st = b.state.clone();
+        let mut policy = (*st.policy).clone();
+        policy.status.mcp_messages_enabled = false;
+        st.policy = Arc::new(policy);
+        let b = AppBackend::new(st, b.approvals.clone(), Arc::new(|_| {}));
+        for id in ["msgs", "open"] {
+            let e = b.messages(read_op(id, None), scan_ctx()).await.unwrap_err();
+            assert_eq!(e.code, "messages_disabled", "{id}: {e:?}");
+        }
+    }
+
+    #[test]
+    fn scan_errors_are_classified() {
+        let not_found = crate::kafka::admin::topic_not_found("orders");
+        assert_eq!(scan_to_backend(not_found, false).code, "not_found");
+        let partition = app_err!(
+            ErrorCode::InvalidInput,
+            "errors.topics.noSuchPartition",
+            "The topic has no partition {{partition}}",
+            partition = 9
+        );
+        let e = scan_to_backend(partition, false);
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("invalid_argument", "The topic has no partition 9")
+        );
+        let denied = || {
+            app_err!(
+                ErrorCode::NotAuthorized,
+                "errors.kafka.notAuthorized",
+                "Not authorized to perform the operation"
+            )
+        };
+        assert!(
+            scan_to_backend(denied(), true)
+                .message
+                .contains("Read permission on this internal topic")
+        );
+        assert!(
+            !scan_to_backend(denied(), false)
+                .message
+                .contains("__consumer_offsets")
+        );
+    }
+
+    #[test]
+    fn planning_stopped_by_cancel_or_deadline_is_a_timeout() {
+        let e = scan_to_backend(crate::mcp::messages::planning_stopped(), false);
+        assert_eq!(
+            (e.code.as_str(), e.message.as_str()),
+            ("TIMEOUT", "The operation timed out")
+        );
+    }
+
+    #[test]
+    fn offsets_topic_without_describe_gets_the_read_hint() {
+        // Нет никаких ACL на `__consumer_offsets`: ошибка уже в метаданных, до чтения.
+        let denied = crate::mcp::messages::offsets_partition_count(
+            Some(rdkafka::types::RDKafkaErrorCode::TopicAuthorizationFailed),
+            0,
+        )
+        .unwrap_err();
+        let e = scan_to_backend(denied, true);
+        assert_eq!(e.code, "NOT_AUTHORIZED");
+        assert!(
+            e.message.ends_with(
+                ". Reading __consumer_offsets requires the Read permission on this internal topic"
+            ),
+            "{}",
+            e.message
+        );
     }
 
     #[tokio::test]

@@ -60,6 +60,7 @@ pub fn plaintext_profile(bs: &str) -> ConnectionProfile {
         folder_id: None,
         order: 0,
         llm_access: Default::default(),
+        llm_mask_fields: None,
         extra: Default::default(),
     }
 }

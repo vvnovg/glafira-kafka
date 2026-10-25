@@ -197,6 +197,7 @@ pub fn run() {
             commands::mcp::get_mcp_status,
             commands::mcp::set_mcp_enabled,
             commands::mcp::answer_mcp_approval,
+            commands::mcp::request_mcp_approval,
             commands::mcp::revoke_mcp_client,
             commands::mcp::disconnect_mcp_sessions,
             commands::mcp::get_mcp_audit,

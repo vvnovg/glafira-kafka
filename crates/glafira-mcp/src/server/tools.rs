@@ -9,7 +9,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::{Flag, GatewayServer, to_value};
+use super::{GatewayServer, to_value};
 use crate::audit::now_ms;
 use crate::model::*;
 use crate::observe;
@@ -176,7 +176,7 @@ pub struct ObserveParams {
     pub interval_seconds: Option<u32>,
 }
 
-fn in_range(
+pub(super) fn in_range(
     v: Option<u32>,
     default: u32,
     min: u32,
@@ -284,23 +284,7 @@ impl GatewayServer {
             MAX_INTERVAL_S,
             "intervalSeconds",
         )?;
-        {
-            let mut sessions = self.shared.sessions();
-            let e = sessions
-                .get_mut(&self.session_id)
-                .ok_or_else(BackendError::unexpected)?;
-            if e.observing {
-                return Err(BackendError::new(
-                    "busy",
-                    "Another observation is running in this session; wait for it to finish",
-                ));
-            }
-            e.observing = true;
-        }
-        let _flag = Flag {
-            server: self,
-            observing: true,
-        };
+        let _long = self.begin_long()?;
         let describe = || ReadOp::DescribeGroup {
             connection_id: p.connection_id.clone(),
             group_id: p.group_id.clone(),
@@ -397,7 +381,7 @@ impl GatewayServer {
 #[tool_router(vis = "pub(crate)")]
 impl GatewayServer {
     #[tool(
-        description = "List Kafka connections that the user allowed for LLM access: id, name, environment (local/dev/test/stage/prod), folder path, read-only flag. Use the id in every other tool.",
+        description = "List Kafka connections that the user allowed for LLM access: id, name, environment (local/dev/test/stage/prod), folder path, read-only flag and llmAccess — metadata, or messages when message contents can be read too. Use the id in every other tool.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,

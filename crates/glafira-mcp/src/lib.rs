@@ -7,15 +7,20 @@
 
 pub mod audit;
 pub mod catalog;
+pub mod commits;
 pub mod endpoint;
 pub mod handshake;
 pub mod health;
 pub mod limits;
+pub mod mask;
+pub mod messages;
 pub mod model;
 pub mod observe;
 pub mod proposals;
 pub mod rules;
 pub mod server;
+pub mod summary;
+pub mod topn;
 
 pub use audit::{AuditEvent, AuditLog};
 pub use endpoint::{BoxStream, Endpoint};

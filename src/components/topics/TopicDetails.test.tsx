@@ -1,3 +1,4 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -138,6 +139,25 @@ describe("TopicDetails: вкладка сообщений", () => {
     await user.click(screen.getByRole("button", { name: "Партиции" }));
     await user.click(screen.getByRole("button", { name: "Сообщения" }));
     expect(screen.getByLabelText("Значение содержит")).toHaveValue("FAILED");
+  });
+});
+
+describe("TopicDetails: заполнение из журнала MCP", () => {
+  it("открывает подвкладку «Сообщения», повторное «Открыть» заполняет форму заново", async () => {
+    const user = userEvent.setup();
+    const prefill = (nonce: number, valuePattern: string) => ({ form: { valuePattern }, inexact: [], nonce });
+    const { rerender, client } = renderWithClient(<TopicDetails connectionId="c4" topic="orders" browsePrefill={prefill(1, "A")} />);
+    expect(await screen.findByLabelText("Значение содержит")).toHaveValue("A");
+    await user.click(screen.getByRole("button", { name: "Партиции" }));
+    expect(screen.getByLabelText("Значение содержит")).not.toBeVisible();
+    rerender(
+      <QueryClientProvider client={client}>
+        <TopicDetails connectionId="c4" topic="orders" browsePrefill={prefill(2, "B")} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Сообщения" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Значение содержит")).toBeVisible();
+    expect(screen.getByLabelText("Значение содержит")).toHaveValue("B");
   });
 });
 

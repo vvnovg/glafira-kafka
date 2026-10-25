@@ -10,6 +10,10 @@ publish = false
 # Крейт намеренно не зависит от rdkafka и от крейта приложения: изменить кластер он не может
 # (проверяет tests/manifest.rs).
 [dependencies]
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+hex = "0.4"
+regex = "1"
 rmcp = { version = "3.5.1", features = ["transport-async-rw"] }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

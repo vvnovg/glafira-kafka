@@ -67,6 +67,7 @@ export function ApprovalDialog() {
       >
         <h3 id="mcp-approval-title">{t("mcp.approval.title", { client })}</h3>
         <p>{t("mcp.approval.body", { n: s.allowedConnections })}</p>
+        {s.messageConnections > 0 && <p>{t("mcp.approval.messages", { n: s.messageConnections })}</p>}
         <p className="hint">{t("mcp.approval.readOnly")}</p>
         {!req.clientName && <p className="hint">{t("mcp.approval.unnamed")}</p>}
         {s.pending.length > 1 && <p className="muted">{t("mcp.approval.more", { n: s.pending.length - 1 })}</p>}

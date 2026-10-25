@@ -5,6 +5,7 @@
 //! [`APP_REQUIRED_CODE`] со ссылкой на установщики. Бинарь — `glafira-mcp-catalog`.
 
 use crate::health::{HealthOp, HealthOutput};
+use crate::messages::{MessagesOp, MessagesOutput, ScanCtx};
 use crate::model::{
     Backend, BackendError, BoxFuture, ReadOp, ReadOutput, SessionAccess, SessionView,
 };
@@ -48,6 +49,14 @@ impl Backend for CatalogBackend {
     }
 
     fn proposals(&self, _op: ProposalOp) -> BoxFuture<'_, Result<ProposalOutput, BackendError>> {
+        Box::pin(async { Err(app_required()) })
+    }
+
+    fn messages(
+        &self,
+        _op: MessagesOp,
+        _ctx: ScanCtx,
+    ) -> BoxFuture<'_, Result<MessagesOutput, BackendError>> {
         Box::pin(async { Err(app_required()) })
     }
 }

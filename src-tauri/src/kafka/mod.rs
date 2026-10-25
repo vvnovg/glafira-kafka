@@ -9,6 +9,7 @@ pub mod errors;
 pub mod group_ops;
 pub mod groups;
 pub mod metadata;
+pub mod offsets_log;
 pub mod pool;
 pub mod producer;
 pub mod recovery;

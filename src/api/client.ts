@@ -85,6 +85,7 @@ export const api = {
     call<McpStatus>("answer_mcp_approval", { sessionId, approve }),
   revokeMcpClient: (name: string) => call<McpStatus>("revoke_mcp_client", { name }),
   disconnectMcpSessions: (sessionId: string | null) => call<McpStatus>("disconnect_mcp_sessions", { sessionId }),
+  requestMcpApproval: (sessionId: string) => call<McpStatus>("request_mcp_approval", { sessionId }),
   getMcpAudit: (limit: number) => call<McpAuditEntry[]>("get_mcp_audit", { limit }),
   getMcpClientConfigs: () => call<McpClientConfigs>("get_mcp_client_configs"),
   revealMcpAudit: () => call<void>("reveal_mcp_audit"),

@@ -163,7 +163,9 @@
       "secretInExtraProperties": "추가 속성에는 비밀 정보를 저장할 수 없습니다: {{key}}",
       "timeoutTooSmall": "요청 제한 시간은 1000 ms 이상이어야 합니다",
       "notFound": "연결을 찾을 수 없습니다: {{id}}",
-      "saslPasswordMissing": "연결의 SASL 비밀번호가 설정되지 않았습니다"
+      "saslPasswordMissing": "연결의 SASL 비밀번호가 설정되지 않았습니다",
+      "maskFieldsTooMany": "마스킹할 필드 이름은 최대 {{max}}개입니다",
+      "maskFieldTooLong": "마스킹할 필드 이름이 {{max}}자를 초과합니다: {{name}}"
     },
     "storage": {
       "writeFailed": "{{path}}에 쓰지 못했습니다: {{error}}",
@@ -379,7 +381,8 @@
     },
     "exportAll": "모두 내보내기…",
     "import": "가져오기…",
-    "findings": "발견 사항"
+    "findings": "발견 사항",
+    "llmMessages": "LLM 접근: 메타데이터 및 메시지"
   },
   "tabs": {
     "settings": "설정",
@@ -405,7 +408,7 @@
     },
     "mcp": {
       "section": "LLM 어시스턴트(MCP)",
-      "intro": "LLM 어시스턴트(Claude Desktop, Claude Code, Cursor 등)는 MCP로 Glafira에 연결해 어시스턴트에 열어 준 연결의 메타데이터를 읽을 수 있습니다. 클러스터에서는 아무것도 변경할 수 없습니다.",
+      "intro": "LLM 어시스턴트(Claude Desktop, Claude Code, Cursor 등)는 MCP로 Glafira에 연결해 어시스턴트에 열어 준 연결의 메타데이터를 읽고, 허용한 연결에서는 메시지도 읽을 수 있습니다. 클러스터에서는 아무것도 변경할 수 없습니다.",
       "enable": "MCP 서버 허용",
       "policy": "조직에서 MCP를 비활성화했습니다",
       "state": {
@@ -453,8 +456,23 @@
         "rejected": "클라이언트 거부됨",
         "revoked": "클라이언트 접근 취소됨",
         "serverStarted": "서버 시작됨",
-        "serverStopped": "서버 중지됨"
-      }
+        "serverStopped": "서버 중지됨",
+        "colDetails": "세부 정보",
+        "scanDetails": "{{target}}: {{scanned}}개 중 {{returned}}개, 마스킹: {{masked}}",
+        "openInBrowse": "'메시지'에서 열기",
+        "scanDetailsNoTarget": "{{scanned}}개 중 {{returned}}개, 마스킹: {{masked}}",
+        "openArgsCut": "사용할 수 없음: 로그의 호출 인수가 잘렸습니다",
+        "openNoConnection": "사용할 수 없음: 연결이 더 이상 없습니다",
+        "openNotMessages": "사용할 수 없음: 연결의 LLM 접근이 '메타데이터 및 메시지'가 아닙니다",
+        "openPolicy": "사용할 수 없음: 조직에서 메시지 읽기를 비활성화했습니다",
+        "scanDetailsSummary": "{{target}}: 구간: {{returned}}, 검사: {{scanned}}, 마스킹: {{masked}}",
+        "scanDetailsSummaryNoTarget": "구간: {{returned}}, 검사: {{scanned}}, 마스킹: {{masked}}",
+        "scanDetailsHistory": "{{target}}: 커밋 묶음: {{returned}}, 검사한 레코드: {{scanned}}, 마스킹: {{masked}}",
+        "scanDetailsHistoryNoTarget": "커밋 묶음: {{returned}}, 검사한 레코드: {{scanned}}, 마스킹: {{masked}}"
+      },
+      "openCounts": "LLM에 열림: {{n}}, 그중 메시지 포함: {{m}}",
+      "messagesPolicy": "조직에서 메시지 읽기를 비활성화했습니다",
+      "approve": "승인"
     }
   },
   "layout": {
@@ -469,7 +487,7 @@
       "folder": "폴더",
       "folderRoot": "(루트)",
       "environment": "환경",
-      "llmAccess": "LLM 접근(메타데이터만)",
+      "llmAccess": "LLM 접근",
       "color": "색상",
       "bootstrap": "부트스트랩 서버",
       "protocol": "프로토콜",
@@ -491,7 +509,19 @@
         "config": "구성",
         "tcp": "DNS / TCP",
         "kafka": "Kafka(TLS, SASL, 메타데이터)"
-      }
+      },
+      "llmLevel": {
+        "off": "끔",
+        "metadata": "메타데이터만",
+        "messages": "메타데이터 및 메시지"
+      },
+      "llmMessagesPolicy": "메시지: 조직에서 비활성화했습니다",
+      "llmMessagesAsMetadata": "'메타데이터만'으로 동작합니다: 조직에서 메시지 읽기를 비활성화했습니다",
+      "llmProdWarning": "이 운영 클러스터의 메시지 내용이 LLM 제공업체로 전송됩니다",
+      "mask": "마스킹",
+      "maskStandard": "표준 목록",
+      "maskFieldsAria": "마스킹할 필드 이름(한 줄에 하나)",
+      "maskNote": "이메일, 카드 번호, JWT, Bearer 토큰은 항상 마스킹됩니다. 마스킹은 위험을 줄이지만 사람 이름, 주소, 낯선 이름의 필드에 있는 데이터는 인식하지 못합니다."
     },
     "tls": {
       "pick": "찾아보기…",
@@ -758,7 +788,9 @@
       "limit": "제한",
       "format": "형식",
       "key": "키",
-      "value": "값"
+      "value": "값",
+      "offsetTitle": "선택한 각 파티션에서 읽기를 시작할 오프셋",
+      "partitionsTitle": "쉼표로 구분한 파티션 번호입니다. 비워 두면 모든 파티션을 읽습니다"
     },
     "filters": {
       "title": "필터",
@@ -779,7 +811,9 @@
       "reading": "읽는 중…",
       "finishLimit": "제한에 도달함",
       "finishEnd": "토픽 끝에 도달함",
-      "finishCancelled": "중지됨"
+      "finishCancelled": "중지됨",
+      "prefillInexact": "필터가 정확히 옮겨지지 않았습니다: 양식에서는 regex와 대소문자 설정을 키, 값, 헤더 값이 함께 씁니다",
+      "prefillInexactLimit": "제한이 정확히 옮겨지지 않았습니다: 양식의 제한은 오프셋이 아니라 일치한 메시지 수를 세므로 호출의 종료 오프셋을 넘어 읽을 수 있습니다"
     },
     "table": {
       "colTime": "시간",
@@ -1058,11 +1092,12 @@
     "approval": {
       "title": "Glafira에 연결하려는 클라이언트: {{client}}",
       "body": "LLM 어시스턴트에 열어 준 연결 {{n}}개의 메타데이터를 볼 수 있습니다.",
-      "readOnly": "어시스턴트는 Glafira를 통해 브로커, 토픽, 구성, 컨슈머 그룹만 읽을 수 있습니다. 메시지와 비밀번호는 공유되지 않습니다.",
+      "readOnly": "어시스턴트는 Glafira를 통해 읽기만 할 수 있으며 클러스터에서 아무것도 변경할 수 없습니다. 비밀번호는 공유되지 않습니다.",
       "unnamed": "클라이언트가 이름을 보내지 않았으므로 이 응답은 이 세션에만 적용됩니다.",
       "more": "응답 대기 중인 클라이언트가 {{n}}개 더 있습니다",
       "allow": "허용",
-      "reject": "거부"
+      "reject": "거부",
+      "messages": "그중 {{n}}개 연결에서는 메시지 내용도 읽을 수 있습니다."
     },
     "indicator": {
       "one": "LLM: {{client}}",
@@ -1294,7 +1329,7 @@
     "connections": {
       "environment": "연결을 색상으로 표시합니다. 운영 환경 연결은 변경하기 전에 연결 이름을 입력하도록 요구합니다.",
       "readOnly": "클러스터를 변경하는 모든 작업을 차단합니다: 전송, 오프셋 재설정, 토픽 및 그룹 삭제, 컨슈머 세션.",
-      "llmAccess": "MCP로 연결된 LLM 어시스턴트가 이 클러스터의 메타데이터를 읽을 수 있습니다: 브로커, 토픽, 구성, 컨슈머 그룹. 메시지와 비밀번호는 절대 공유되지 않습니다.",
+      "llmAccess": "MCP로 연결된 LLM 어시스턴트가 이 클러스터에서 읽을 수 있는 내용입니다. '메타데이터만': 브로커, 토픽, 구성, 컨슈머 그룹. '메타데이터 및 메시지': 여기에 더해 메시지 내용과 컨슈머 그룹의 커밋 기록(마스킹 적용). 비밀번호는 절대 공유되지 않습니다.",
       "bootstrap": "하나 이상의 <code>host:port</code>를 쉼표로 구분하여 입력합니다. 클라이언트가 나머지 브로커를 자동으로 찾습니다.",
       "protocol": "PLAINTEXT — 암호화 및 로그인 없음. SSL — TLS 암호화. SASL_* — 비밀번호로 로그인하며, SASL_SSL은 암호화도 합니다.",
       "saslMechanism": "클러스터에서 사용하는 메커니즘은 Kafka 관리자가 알고 있습니다. SCRAM은 비밀번호 자체를 보내지 않으며, TLS 없는 PLAIN은 비밀번호를 평문으로 보냅니다.",
@@ -1306,7 +1341,8 @@
       "verifyHostname": "브로커 인증서가 호스트 이름과 일치하는지 확인합니다. 테스트 환경에서만 끄세요.",
       "mtls": "브로커가 인증서로 클라이언트를 인증하는 경우 필요합니다. 인증서와 키는 Kafka 관리자가 발급합니다.",
       "alias": "JKS 또는 PKCS#12 파일의 키 항목 이름입니다. 파일에 키가 여러 개인 경우에만 필요합니다.",
-      "keyPassword": "키에 자체 비밀번호가 있는 경우에만 입력합니다: 키스토어 비밀번호와 다르거나 암호화된 PEM 키인 경우."
+      "keyPassword": "키에 자체 비밀번호가 있는 경우에만 입력합니다: 키스토어 비밀번호와 다르거나 암호화된 PEM 키인 경우.",
+      "mask": "이 이름과 일치하는 JSON 필드, 헤더, name=value 쌍의 값은 ***로 바뀝니다. 대소문자와 _, -, . 문자는 구분하지 않으며 *는 임의의 문자와 일치합니다. 이름은 최대 200개, 각각 최대 64자입니다."
     },
     "topics": {
       "partitions": "파티션은 병렬로 읽히며, 순서는 한 파티션 안에서만 보장됩니다. 파티션 수는 나중에 늘릴 수 있지만 줄일 수는 없습니다.",

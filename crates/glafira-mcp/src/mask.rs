@@ -6,7 +6,7 @@ use std::fmt;
 use std::sync::LazyLock;
 
 use base64::Engine;
-use regex::{Captures, Regex};
+use regex::{Captures, Match, Regex};
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
@@ -116,6 +116,12 @@ static EMAIL: LazyLock<Regex> = LazyLock::new(|| {
 /// краям — не цифра (буква рядом не мешает: `id4111…`).
 static DIGIT_RUN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[0-9]+(?:[ -][0-9]+)*").expect("digit run regex"));
+/// Серия групп цифр по границам слова, как до G4.1. Число, приклеенное к слову (`ab12`), входит в
+/// серию [`DIGIT_RUN`], и карта в редкой группировке рядом с ним по всей серии уже не находится;
+/// здесь такое число в серию не входит (`ab12 41111 11111 111111`). Что маскировалось до G4.1,
+/// маскируется и теперь.
+static WORD_DIGIT_RUN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\b[0-9]+(?:[ -][0-9]+)*\b").expect("word digit run regex"));
 /// Имя пары `name=value`, `name: value`, `"name": value` в тексте вместе с разделителем.
 static PAIR: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
@@ -226,44 +232,58 @@ fn card_shaped(lens: &[usize]) -> bool {
     }
 }
 
-/// Номера карт (диапазоны байтов) среди групп цифр: в каждой серии — вся серия из 13–19 цифр при
-/// любой группировке и все окна из подряд идущих целых групп в форме номера карты
-/// ([`card_shaped`]), прошедшие [`is_card`]; пересекающиеся окна объединяются. Соседние числа
-/// (`… 12/25`, `qty 2 …`, `630000 4111 …`) остаются на виду и не мешают, списки чисел (серии
-/// длиннее) картой не считаются, а группа не делится: 23 цифры подряд — не карта.
-fn card_spans(text: &str) -> Vec<(usize, usize)> {
+/// Номера карт (диапазоны байтов) в одной серии групп цифр: вся серия из 13–19 цифр при любой
+/// группировке и все окна из подряд идущих целых групп в форме номера карты ([`card_shaped`]),
+/// прошедшие [`is_card`]. Диапазоны могут пересекаться.
+fn series_spans(run: Match<'_>) -> Vec<(usize, usize)> {
     let mut spans: Vec<(usize, usize)> = Vec::new();
-    for run in DIGIT_RUN.find_iter(text) {
-        if run.len() < 13 {
-            continue;
+    if run.len() < 13 {
+        return spans;
+    }
+    let digits: Vec<u8> = run.as_str().bytes().filter(u8::is_ascii_digit).collect();
+    // Группы: начало и конец в тексте, начало в `digits`.
+    let mut groups: Vec<(usize, usize, usize)> = Vec::new();
+    let mut start = run.start();
+    for (i, b) in run.as_str().bytes().enumerate() {
+        if !b.is_ascii_digit() {
+            groups.push((start, run.start() + i, start - run.start() - groups.len()));
+            start = run.start() + i + 1;
         }
-        let digits: Vec<u8> = run.as_str().bytes().filter(u8::is_ascii_digit).collect();
-        // Группы: начало и конец в тексте, начало в `digits`.
-        let mut groups: Vec<(usize, usize, usize)> = Vec::new();
-        let mut start = run.start();
-        for (i, b) in run.as_str().bytes().enumerate() {
-            if !b.is_ascii_digit() {
-                groups.push((start, run.start() + i, start - run.start() - groups.len()));
-                start = run.start() + i + 1;
+    }
+    groups.push((start, run.end(), start - run.start() - groups.len()));
+    let lens: Vec<usize> = groups.iter().map(|&(s, e, _)| e - s).collect();
+    // Вся серия из 13–19 цифр — при любой группировке.
+    if is_card(&digits) {
+        spans.push((run.start(), run.end()));
+    }
+    for (i, &(first, _, from)) in groups.iter().enumerate() {
+        for (j, &(_, end, at)) in groups.iter().enumerate().skip(i).take(5) {
+            if card_shaped(&lens[i..=j]) && is_card(&digits[from..at + lens[j]]) {
+                spans.push((first, end));
             }
         }
-        groups.push((start, run.end(), start - run.start() - groups.len()));
-        let lens: Vec<usize> = groups.iter().map(|&(s, e, _)| e - s).collect();
-        // Вся серия из 13–19 цифр — при любой группировке; начинается раньше любого окна.
-        if is_card(&digits) {
-            spans.push((run.start(), run.end()));
-        }
-        for (i, &(first, _, from)) in groups.iter().enumerate() {
-            for (j, &(_, end, at)) in groups.iter().enumerate().skip(i).take(5) {
-                if !card_shaped(&lens[i..=j]) || !is_card(&digits[from..at + lens[j]]) {
-                    continue;
-                }
-                // Окна идут по возрастанию начала: пересекается только с последним диапазоном.
-                match spans.last_mut() {
-                    Some((_, last)) if *last > first => *last = (*last).max(end),
-                    _ => spans.push((first, end)),
-                }
-            }
+    }
+    spans
+}
+
+/// Номера карт (диапазоны байтов) среди групп цифр: [`series_spans`] в сериях по границам цифр
+/// ([`DIGIT_RUN`]) и по границам слова ([`WORD_DIGIT_RUN`]); пересекающиеся диапазоны
+/// объединяются в один. Соседние числа (`… 12/25`, `qty 2 …`, `630000 4111 …`) остаются на виду и
+/// не мешают, списки чисел (серии длиннее) картой не считаются, а группа не делится: 23 цифры
+/// подряд — не карта.
+fn card_spans(text: &str) -> Vec<(usize, usize)> {
+    let mut found: Vec<(usize, usize)> = DIGIT_RUN
+        .find_iter(text)
+        .chain(WORD_DIGIT_RUN.find_iter(text))
+        .flat_map(series_spans)
+        .collect();
+    found.sort_unstable();
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for (start, end) in found {
+        // По возрастанию начала: пересекается только с последним диапазоном.
+        match spans.last_mut() {
+            Some((_, last)) if *last > start => *last = (*last).max(end),
+            _ => spans.push((start, end)),
         }
     }
     spans
@@ -1147,6 +1167,12 @@ mod tests {
                 ("qty 2 41111111 11111111", "qty 2 [card]", 1),
                 // Без верной суммы Луна приклеенные цифры остаются.
                 ("id4111111111111112", "id4111111111111112", 0),
+                // Число, приклеенное к слову, входит в серию по границам цифр; карта в редкой
+                // группировке рядом с ним находится по границам слова, как до G4.1.
+                ("ab12 41111 11111 111111", "ab12 [card]", 1),
+                ("v2 4111-111111111111", "v2 [card]", 1),
+                ("A7-411111111 1111111", "A7-[card]", 1),
+                ("41111 11111 111111 9x", "[card] 9x", 1),
             ],
         );
     }
@@ -1167,7 +1193,7 @@ mod tests {
     #[test]
     fn json_longer_than_the_parse_limit_is_masked_as_text() {
         let m = standard();
-        let head = br#"{"password":"x","pad":""#;
+        let head = br#"{"password":1,"pad":""#;
         let mut whole = head.to_vec();
         whole.resize(MASK_PARSE_LIMIT + 10, b'a');
         whole.extend(br#""}"#);
@@ -1175,7 +1201,7 @@ mod tests {
         let mut n = 0;
         let d = m.data(&whole, whole.len(), DataFormat::Json, 64, &mut n);
         assert!(
-            d.text.starts_with(r#"{"password":"***","pad":"aaa"#),
+            d.text.starts_with(r#"{"password":***,"pad":"aaa"#),
             "{}",
             d.text
         );
@@ -1190,7 +1216,7 @@ mod tests {
             &mut n,
         );
         assert!(
-            d.text.starts_with(r#"{"password":"***","pad":"aaa"#),
+            d.text.starts_with(r#"{"password":***,"pad":"aaa"#),
             "{}",
             d.text
         );

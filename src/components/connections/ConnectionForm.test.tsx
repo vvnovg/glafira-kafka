@@ -255,7 +255,11 @@ describe("ConnectionForm", () => {
     expect(screen.queryByRole("group", { name: "Маскирование" })).not.toBeInTheDocument();
     // Пометка — только когда статус не загрузился, а не пока он грузится.
     const unavailable = screen.queryByText("Статус MCP недоступен: уровень «Метаданные и сообщения» сейчас нельзя выбрать");
-    expect(unavailable !== null).toBe(note);
+    if (note) {
+      expect(unavailable).toBeInTheDocument();
+    } else {
+      expect(unavailable).not.toBeInTheDocument();
+    }
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
     expect(api.saveConnection).toHaveBeenCalledWith(
       expect.objectContaining({ llmAccess: "messages", llmMaskFields: ["inn"] }),

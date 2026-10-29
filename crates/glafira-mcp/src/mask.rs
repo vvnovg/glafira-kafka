@@ -992,7 +992,8 @@ mod tests {
                     "authorization=***",
                     1,
                 ),
-                // Только в той же строке; у других имён следующее слово остаётся.
+                // Правило строки кончается на `\n`; слово со следующей строки берётся только после
+                // схемы из `SCHEMES`, а `Negotiate` не из них.
                 (
                     "Authorization: Negotiate\nYIIabc",
                     "Authorization: ***\nYIIabc",
@@ -1124,6 +1125,14 @@ mod tests {
         );
         let (out, n) = json(&standard(), r#"{"h":"Set-Cookie: sid=1; Path=/"}"#);
         assert_eq!((out.as_str(), n), (r#"{"h":"Set-Cookie: ***"}"#, 1));
+        // Только для имён из списка: `Cookie` не в нём — его значение не съедает строку.
+        let own = Masker::new(&MaskConfig {
+            fields: Some(vec!["password".into()]),
+        });
+        texts(
+            &own,
+            &[("Cookie: a=1; password=x", "Cookie: a=1; password=***", 1)],
+        );
     }
 
     #[test]
@@ -1138,6 +1147,13 @@ mod tests {
                 ),
                 // В той же строке слово с `=` в конце — учётные данные (base64 с выравниванием).
                 ("X-Auth-Token: Basic dXNlcjpwYXM=", "X-Auth-Token: ***", 1),
+                (
+                    "X-Auth-Token: Basic dXNlcjpwYXM= from 10.0.0.1",
+                    "X-Auth-Token: *** from 10.0.0.1",
+                    1,
+                ),
+                // И слово вида `name=value` в той же строке — учётные данные.
+                ("token: Bearer abcdefgh=ijklmnop", "token: ***", 1),
                 // На следующей строке без значения после `=` — тоже учётные данные.
                 ("token: Basic\ndXNlcjpwYXM=", "token: ***", 1),
                 // Слово `name=` со значением после пробелов — имя пары, только если имя из списка.
@@ -1188,6 +1204,13 @@ mod tests {
                 ("A7-411111111 1111111", "A7-[card]", 1),
                 ("41111 11111 111111 9x", "[card] 9x", 1),
             ],
+        );
+        // В двоичном режиме — тоже по границам слова.
+        let mut n = 0;
+        let out = standard().binary(b"\x00ab12 41111 11111 111111\x00", &mut n);
+        assert_eq!(
+            (String::from_utf8_lossy(&out), n),
+            (format!("\0ab12 {}\0", "*".repeat(18)).into(), 1)
         );
     }
 

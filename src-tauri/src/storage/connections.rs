@@ -964,6 +964,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = ConnectionStore::open(dir.path()).unwrap();
         let mut p = sample_profile("a");
+        // Очистка — на любом уровне: пробелы по краям и пустые строки убираются.
+        p.llm_access = LlmAccess::Off;
+        p.llm_mask_fields = Some(vec![" f0 ".into(), String::new()]);
+        let saved = store.upsert(p.clone()).unwrap();
+        assert_eq!(saved.llm_mask_fields, Some(vec!["f0".to_string()]));
         // Список скрыт в форме на других уровнях и не применяется: сохранение он не блокирует.
         let too_many: Vec<String> = (0..=MAX_MASK_FIELDS).map(|i| format!("f{i}")).collect();
         p.llm_mask_fields = Some(too_many.clone());

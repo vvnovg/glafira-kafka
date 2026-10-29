@@ -2896,15 +2896,23 @@ async fn scan_progress_reaches_the_client_with_its_token() {
     let c = log.clone().serve(s).await.unwrap();
     // rmcp сам кладёт в `_meta` запроса свой progressToken: у первого запроса клиента — 0.
     ok(call_with(&c, "read_messages", window_args("progress")).await);
-    // Обработчик уведомлений клиента может отставать от ответа.
+    // Обработчик уведомлений клиента может отставать от ответа: ждём все три уведомления бэкенда
+    // (или последнее, если промежуточные слились).
+    let arrived = || {
+        let notes = log.0.lock().unwrap();
+        notes.len() >= 3 || notes.iter().any(|n| n.progress == 3.0)
+    };
     for _ in 0..100 {
-        if !log.0.lock().unwrap().is_empty() {
+        if arrived() {
             break;
         }
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
     let notes = log.0.lock().unwrap().clone();
-    assert!(!notes.is_empty(), "уведомлений о ходе нет");
+    assert!(
+        notes.len() >= 2,
+        "уведомлений о ходе меньше двух: {notes:?}"
+    );
     let token = ProgressToken(NumberOrString::Number(0));
     assert!(notes.iter().all(|n| n.progress_token == token), "{notes:?}");
     assert!(notes.iter().all(|n| n.total == Some(3.0)));
@@ -2946,17 +2954,35 @@ async fn bad_summarize_arguments_do_not_reach_the_backend() {
     let c = client(&e.ep).await;
     let base = window_args("orders");
     let cases = [
-        json!({"bucketSeconds": 0}),
-        json!({"bucketSeconds": 86401}),
-        json!({"topKeys": 101}),
-        json!({"from": "2026-10-24T14:31:00"}),
+        (
+            json!({"bucketSeconds": 0}),
+            "bucketSeconds must be between 1 and 86400, got 0",
+        ),
+        (
+            json!({"bucketSeconds": 86401}),
+            "bucketSeconds must be between 1 and 86400, got 86401",
+        ),
+        (
+            json!({"topKeys": 101}),
+            "topKeys must be between 0 and 100, got 101",
+        ),
+        (
+            json!({"from": "2026-10-24T14:31:00"}),
+            "timestamp has no time zone",
+        ),
         // Два дня по минуте — больше 1000 корзин.
-        json!({"to": "2026-10-26T14:40:00+03:00", "bucketSeconds": 60}),
+        (
+            json!({"to": "2026-10-26T14:40:00+03:00", "bucketSeconds": 60}),
+            "buckets, at most 1000",
+        ),
     ];
-    for extra in cases {
+    for (extra, want) in cases {
         let args = with(base.clone(), extra);
         let msg = err(&call(&c, "summarize_messages", args.clone()).await);
-        assert!(msg.starts_with("invalid_argument:"), "{args}: {msg}");
+        assert!(
+            msg.starts_with("invalid_argument:") && msg.contains(want),
+            "{args}: {msg}"
+        );
     }
     assert!(fake.message_ops.lock().unwrap().is_empty());
 }

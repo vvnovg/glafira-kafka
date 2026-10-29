@@ -1194,6 +1194,7 @@ mod tests {
         let mut body = history(3000, 1);
         let e = fit_history(&mut body).unwrap_err();
         assert_eq!(e.code, "response_too_large");
+        assert_eq!(e.message, HISTORY_TOO_LARGE);
         // Без `runs` помещается — ответ с обрезкой, как раньше.
         let mut body = history(1200, 2);
         assert_eq!(fit_history(&mut body).ok(), Some(true));

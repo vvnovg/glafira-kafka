@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use glafira_mcp::commits::{CommitHistoryBuilder, CommitRecord, CommitStats};
-use glafira_mcp::mask::{self as mm, MASK_PARSE_LIMIT};
+use glafira_mcp::mask::{self as mm, KEY_PARSE_LIMIT, MASK_PARSE_LIMIT};
 use glafira_mcp::messages::{
     COMMIT_LOOKBACK_MS, FormatArg, MAX_HEADERS, MessageFilter, MessagesBody, MessagesOp,
     PartitionRange, Range, RawData, RawMessage, SCAN_RECORD_LIMIT, ScanCtx, ScanStats, StopReason,
@@ -159,9 +159,10 @@ fn timestamp_type(t: Timestamp) -> TimestampType {
     }
 }
 
-fn raw_data(bytes: &[u8], format: DataFormat) -> RawData {
+/// Первые `limit` байтов ключа или значения для маскировки в крейте и исходный размер.
+fn raw_data(bytes: &[u8], format: DataFormat, limit: usize) -> RawData {
     RawData {
-        bytes: bytes[..bytes.len().min(MASK_PARSE_LIMIT)].to_vec(),
+        bytes: bytes[..bytes.len().min(limit)].to_vec(),
         size: bytes.len(),
         format: mask_format(format),
     }
@@ -187,11 +188,11 @@ fn raw_message(msg: &BorrowedMessage<'_>, m: &BrowsedMessage) -> RawMessage {
         key: msg
             .key()
             .zip(m.key.as_ref())
-            .map(|(k, d)| raw_data(k, d.format)),
+            .map(|(k, d)| raw_data(k, d.format, KEY_PARSE_LIMIT)),
         value: msg
             .payload()
             .zip(m.value.as_ref())
-            .map(|(v, d)| raw_data(v, d.format)),
+            .map(|(v, d)| raw_data(v, d.format, MASK_PARSE_LIMIT)),
         headers,
         headers_truncated,
     }
@@ -1030,5 +1031,17 @@ mod tests {
             (e.code, e.key.as_str()),
             (ErrorCode::NotAuthorized, "errors.kafka.notAuthorized")
         );
+    }
+
+    #[test]
+    fn long_keys_are_copied_up_to_the_key_parse_limit() {
+        let key = vec![b'k'; KEY_PARSE_LIMIT + 10];
+        let d = raw_data(&key, DataFormat::Json, KEY_PARSE_LIMIT);
+        assert_eq!(
+            (d.bytes.len(), d.size),
+            (KEY_PARSE_LIMIT, KEY_PARSE_LIMIT + 10)
+        );
+        let d = raw_data(&key, DataFormat::Json, MASK_PARSE_LIMIT);
+        assert_eq!((d.bytes.len(), d.size), (key.len(), key.len()));
     }
 }

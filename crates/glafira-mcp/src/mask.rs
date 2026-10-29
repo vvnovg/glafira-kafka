@@ -14,6 +14,9 @@ use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 pub const MASK: &str = "***";
 /// Сколько первых байтов значения разбирается как JSON; длиннее — текстовый режим.
 pub const MASK_PARSE_LIMIT: usize = 256 * 1024;
+/// Сколько первых байтов ключа приложение передаёт на маскировку: ключ в ответе короткий
+/// (`MAX_KEY_TEXT`), а ключ длиннее маскируется как частичный, текстом.
+pub const KEY_PARSE_LIMIT: usize = 16 * 1024;
 /// Пределы списка полей подключения (проверяет приложение при сохранении).
 pub const MAX_MASK_FIELDS: usize = 200;
 pub const MAX_MASK_FIELD_CHARS: usize = 64;

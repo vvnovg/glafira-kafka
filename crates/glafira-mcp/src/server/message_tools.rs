@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{CallToolResult, ProgressNotificationParam};
@@ -26,9 +26,6 @@ use crate::summary::{
     Summary,
 };
 
-/// Запас сверх бюджета просмотра: приложение закрывает консьюмер и возвращает собранное.
-const SCAN_GRACE: Duration = Duration::from_secs(5);
-
 const INCOMPLETE_HINT: &str = "The scan stopped at the time budget or the record limit (1,000,000): the results cover only the scanned part (see scannedTo). Narrow the window, add filters or select partitions.";
 /// `topic` здесь не поможет: партиция `__consumer_offsets` читается целиком (спец. §6.3).
 const HISTORY_INCOMPLETE_HINT: &str = "The scan of __consumer_offsets stopped at the time budget or the record limit (1,000,000): later commits of the window may be missing. Narrow the window.";
@@ -37,6 +34,7 @@ const PAGE_CUT_HINT: &str =
 const SUMMARY_CUT_HINT: &str =
     "The response was cut to 100 KB: headerNames and keys.top were shortened.";
 const RUNS_CUT_HINT: &str = "The response was cut to 100 KB: the oldest runs were dropped; narrow the window or pass topic.";
+const HISTORY_TOO_LARGE: &str = "The commit history does not fit into 100 KB even without commit runs; narrow it: pass topic or a shorter window";
 const NO_COMMITS_HINT: &str = "No commits of this group in the window: the group may not exist, may store offsets elsewhere (assign() with external storage), or the history was compacted.";
 
 // ---- Параметры (описания полей уходят в JSON Schema для LLM) ----
@@ -845,7 +843,7 @@ fn fit_runs(body: &mut HistoryBody) -> bool {
     let capped: Vec<bool> = body.partitions.iter().map(|p| p.runs_truncated).collect();
     let mut dropped: Vec<Vec<RunOut>> = body.partitions.iter().map(|_| Vec::new()).collect();
     // Наибольший `k` в 0..longest, при котором ответ помещается; не помещается и без `runs` —
-    // остаётся 0, а обвязка ответит response_too_large.
+    // остаётся 0, а `fit_history` ответит response_too_large.
     let (mut lo, mut hi) = (0, longest - 1);
     while lo < hi {
         let mid = (lo + hi).div_ceil(2);
@@ -858,6 +856,17 @@ fn fit_runs(body: &mut HistoryBody) -> bool {
     }
     keep_newest(body, &mut dropped, &capped, lo);
     true
+}
+
+/// Укладывает историю в 100 КБ ([`fit_runs`]); не помещается и без `runs` — `response_too_large`,
+/// а не история, похожая на «коммитов не было». `Ok(true)` — что-то отброшено.
+fn fit_history(body: &mut HistoryBody) -> Result<bool, BackendError> {
+    let cut = fit_runs(body);
+    if fits(body) {
+        Ok(cut)
+    } else {
+        Err(BackendError::new("response_too_large", HISTORY_TOO_LARGE))
+    }
 }
 
 fn history_body(op: &MessagesOp, out: MessagesOutput) -> Result<Value, BackendError> {
@@ -921,7 +930,7 @@ fn history_body(op: &MessagesOp, out: MessagesOutput) -> Result<Value, BackendEr
         truncated: false,
         hint: None,
     };
-    let cut = fit_runs(&mut body);
+    let cut = fit_history(&mut body)?;
     body.truncated = cut;
     body.hint = hints(&[
         (!body.complete).then_some(HISTORY_INCOMPLETE_HINT),
@@ -960,7 +969,8 @@ impl GatewayServer {
     ) -> Result<MessagesOutput, BackendError> {
         let started = Instant::now();
         let budget = self.shared.options.scan_deadline;
-        let safety = tokio::time::Instant::from_std(started + budget + SCAN_GRACE);
+        let safety =
+            tokio::time::Instant::from_std(started + budget + self.shared.options.scan_grace);
         let timeout = || BackendError::new("TIMEOUT", "Reading messages did not finish in time");
         let _long = self.begin_long()?;
         let _slots = tokio::time::timeout_at(safety, self.slots())
@@ -1093,6 +1103,8 @@ impl GatewayServer {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use super::*;
     use crate::commits::MAX_RUNS;
 
@@ -1174,6 +1186,21 @@ mod tests {
             body.partitions
                 .iter()
                 .all(|p| p.runs.len() == 10 && !p.runs_truncated)
+        );
+    }
+
+    #[test]
+    fn history_that_does_not_fit_even_without_runs_is_too_large() {
+        let mut body = history(3000, 1);
+        let e = fit_history(&mut body).unwrap_err();
+        assert_eq!(e.code, "response_too_large");
+        // Без `runs` помещается — ответ с обрезкой, как раньше.
+        let mut body = history(1200, 2);
+        assert_eq!(fit_history(&mut body).ok(), Some(true));
+        assert!(
+            body.partitions
+                .iter()
+                .all(|p| p.runs.is_empty() && p.runs_truncated)
         );
     }
 }

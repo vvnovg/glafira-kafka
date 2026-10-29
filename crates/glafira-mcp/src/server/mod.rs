@@ -78,6 +78,9 @@ pub struct GatewayOptions {
     pub check_wait: Duration,
     /// Бюджет просмотра сообщений (спец. G4 §3.1); приложение останавливается по дедлайну.
     pub scan_deadline: Duration,
+    /// Страховочный запас сверх бюджета: потом вызов отвечает `TIMEOUT` и просит приложение
+    /// остановиться (в тестах — миллисекунды).
+    pub scan_grace: Duration,
 }
 
 impl GatewayOptions {
@@ -88,6 +91,7 @@ impl GatewayOptions {
             observe_unit: Duration::from_secs(1),
             check_wait: Duration::from_secs(50),
             scan_deadline: crate::messages::SCAN_DEADLINE,
+            scan_grace: crate::messages::SCAN_GRACE,
         }
     }
 }

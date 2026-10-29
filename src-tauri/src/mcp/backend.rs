@@ -1637,12 +1637,7 @@ mod tests {
     #[test]
     fn offsets_topic_without_describe_gets_the_read_hint() {
         // Нет никаких ACL на `__consumer_offsets`: ошибка уже в метаданных, до чтения.
-        let denied = crate::mcp::messages::offsets_partition_count(
-            Some(rdkafka::types::RDKafkaErrorCode::TopicAuthorizationFailed),
-            0,
-        )
-        .unwrap_err();
-        let e = scan_to_backend(denied, true);
+        let e = scan_to_backend(crate::browse::session::topic_not_authorized(), true);
         assert_eq!(e.code, "NOT_AUTHORIZED");
         assert!(
             e.message.ends_with(

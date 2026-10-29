@@ -112,9 +112,10 @@ static BEARER: LazyLock<Regex> =
 static EMAIL: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}").expect("email regex")
 });
-/// Серия групп цифр (кандидаты в номер карты): между группами одиночный пробел или дефис.
+/// Серия групп цифр (кандидаты в номер карты): между группами одиночный пробел или дефис; по
+/// краям — не цифра (буква рядом не мешает: `id4111…`).
 static DIGIT_RUN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\b[0-9]+(?:[ -][0-9]+)*\b").expect("digit run regex"));
+    LazyLock::new(|| Regex::new(r"[0-9]+(?:[ -][0-9]+)*").expect("digit run regex"));
 /// Имя пары `name=value`, `name: value`, `"name": value` в тексте вместе с разделителем.
 static PAIR: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
@@ -213,11 +214,13 @@ fn is_card(digits: &[u8]) -> bool {
 }
 
 /// Длины групп окна в форме номера карты: одна группа из 13–19 цифр, 4-4-4-4 с необязательной
-/// последней группой из 1–3 цифр, 4-6-5 (Amex) или 4-6-4 (Diners).
+/// последней группой из 1–3 цифр, 4-6-5 (Amex), 4-6-4 (Diners), 4-4-4-3, 4-3-3-3, 6-13, 8-8.
 fn card_shaped(lens: &[usize]) -> bool {
     match lens {
         [n] => (13..=19).contains(n),
-        [4, 4, 4, 4] | [4, 6, 5] | [4, 6, 4] => true,
+        [4, 4, 4, 4] | [4, 6, 5] | [4, 6, 4] | [4, 4, 4, 3] | [4, 3, 3, 3] | [6, 13] | [8, 8] => {
+            true
+        }
         [4, 4, 4, 4, n] => (1..=3).contains(n),
         _ => false,
     }
@@ -316,6 +319,19 @@ fn patterns_in_place(run: &mut [u8], count: &mut usize) {
         }
         covered = end;
     }
+}
+
+/// Цифры модуля целого значения числа JSON: у отрицательного — без знака; у числа с дробной
+/// частью или экспонентой — если значение целое и по модулю меньше 10¹⁹.
+fn integer_digits(n: &serde_json::Number) -> Option<String> {
+    if let Some(u) = n.as_u64() {
+        return Some(u.to_string());
+    }
+    if let Some(i) = n.as_i64() {
+        return Some(i.unsigned_abs().to_string());
+    }
+    let f = n.as_f64()?.abs();
+    (f.fract() == 0.0 && f < 1e19).then(|| (f as u64).to_string())
 }
 
 /// Обрезает текст до `max` байтов по границе символа; true — обрезан.
@@ -425,8 +441,7 @@ impl Masker {
         match node {
             Node::String(s) => *s = self.text(s, count),
             Node::Number(n) => {
-                let digits = n.to_string();
-                if digits.bytes().all(|b| b.is_ascii_digit()) && is_card(digits.as_bytes()) {
+                if integer_digits(n).is_some_and(|d| is_card(d.as_bytes())) {
                     *count += 1;
                     *node = Node::String("[card]".into());
                 }
@@ -1118,6 +1133,71 @@ mod tests {
     }
 
     #[test]
+    fn cards_glued_to_words_and_rare_groupings_are_found() {
+        texts(
+            &standard(),
+            &[
+                ("id4111111111111111", "id[card]", 1),
+                ("x_4111111111111111", "x_[card]", 1),
+                ("4111111111111111abc", "[card]abc", 1),
+                // Окна новых форм рядом с числом: 4-4-4-3, 4-3-3-3, 6-13, 8-8.
+                ("qty 2 4111 1111 1111 116", "qty 2 [card]", 1),
+                ("qty 2 4222 222 222 222", "qty 2 [card]", 1),
+                ("qty 2 411111 1111111111110", "qty 2 [card]", 1),
+                ("qty 2 41111111 11111111", "qty 2 [card]", 1),
+                // Без верной суммы Луна приклеенные цифры остаются.
+                ("id4111111111111112", "id4111111111111112", 0),
+            ],
+        );
+    }
+
+    #[test]
+    fn negative_and_float_json_card_numbers_are_masked() {
+        let m = standard();
+        for (input, want, want_n) in [
+            (r#"{"n":-4111111111111111}"#, r#"{"n":"[card]"}"#, 1),
+            (r#"{"n":4.111111111111111e15}"#, r#"{"n":"[card]"}"#, 1),
+            (r#"{"n":4111111111111111.0}"#, r#"{"n":"[card]"}"#, 1),
+            (r#"{"n":-12,"m":1.5}"#, r#"{"n":-12,"m":1.5}"#, 0),
+        ] {
+            assert_eq!(json(&m, input), (want.to_string(), want_n), "{input}");
+        }
+    }
+
+    #[test]
+    fn json_longer_than_the_parse_limit_is_masked_as_text() {
+        let m = standard();
+        let head = br#"{"password":"x","pad":""#;
+        let mut whole = head.to_vec();
+        whole.resize(MASK_PARSE_LIMIT + 10, b'a');
+        whole.extend(br#""}"#);
+        // Целиком передано, но длиннее предела разбора.
+        let mut n = 0;
+        let d = m.data(&whole, whole.len(), DataFormat::Json, 64, &mut n);
+        assert!(
+            d.text.starts_with(r#"{"password":"***","pad":"aaa"#),
+            "{}",
+            d.text
+        );
+        assert_eq!((d.truncated, d.size, n), (true, whole.len(), 1));
+        // Передан только предел разбора.
+        let mut n = 0;
+        let d = m.data(
+            &whole[..MASK_PARSE_LIMIT],
+            whole.len(),
+            DataFormat::Json,
+            64,
+            &mut n,
+        );
+        assert!(
+            d.text.starts_with(r#"{"password":"***","pad":"aaa"#),
+            "{}",
+            d.text
+        );
+        assert_eq!((d.truncated, n), (true, 1));
+    }
+
+    #[test]
     fn proxy_authorization_is_in_the_standard_list() {
         let m = standard();
         texts(
@@ -1136,6 +1216,12 @@ mod tests {
             (out.as_str(), n),
             (r#"{"Proxy-Authorization":"***","via":"proxy"}"#, 1)
         );
+        let mut n = 0;
+        assert_eq!(
+            m.header("Proxy-Authorization", "Basic dXNlcjpwNHNz", &mut n),
+            MASK
+        );
+        assert_eq!(n, 1);
         // Отдельное имя, а не `*authorization`: другие имена с этим окончанием в список не попадают.
         assert!(!m.field_matches("preauthorization"));
     }

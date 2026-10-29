@@ -30,9 +30,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   // Подтверждение удаления внутри формы: нативный window.confirm в Tauri 2 не показывается и возвращает false.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // Политика может запретить чтение сообщений (G4). Строго: третий уровень и блок «Маскирование» — только когда статус
-  // пришёл и разрешает (true), пометки политики — только при явном запрете (false). Пока статус грузится или не
-  // загрузился, третий уровень недоступен без пометки, а сохранение оставляет сохранённый уровень как есть.
-  const messagesAllowed = useMcpStatus().data?.messagesAllowed;
+  // пришёл и разрешает (true), пометки политики — только при явном запрете (false). Пока статус грузится, третий уровень
+  // недоступен без пометки, не загрузился — с пометкой; сохранение оставляет сохранённый уровень как есть.
+  const mcpStatus = useMcpStatus();
+  const messagesAllowed = mcpStatus.data?.messagesAllowed;
   const prodWarning = messagesAllowed === true && profile.llmAccess === "messages" && profile.environment === "prod";
   const [maskText, setMaskText] = useState((initial.llmMaskFields ?? STANDARD_MASK_FIELDS).join("\n"));
   const queryClient = useQueryClient();
@@ -186,11 +187,13 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
               {profile.llmAccess === "messages" ? t("connections.form.llmMessagesAsMetadata") : t("connections.form.llmMessagesPolicy")}
             </span>
           )}
-          {prodWarning && (
-            <span id="cf-llm-prod" className="warn" role="status">
-              {t("connections.form.llmProdWarning")}
-            </span>
+          {messagesAllowed === undefined && mcpStatus.isError && (
+            <span className="muted">{t("connections.form.llmStatusUnavailable")}</span>
           )}
+          {/* Живая область есть всегда: текст, вписанный в уже существующую область, программа чтения экрана объявит. */}
+          <span id="cf-llm-prod" className="warn" role="status">
+            {prodWarning ? t("connections.form.llmProdWarning") : ""}
+          </span>
         </div>
 
         {messagesAllowed === true && profile.llmAccess === "messages" && (

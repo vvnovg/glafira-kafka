@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}: buckets: {{returned}}, scanned: {{scanned}}, masked: {{masked}}",
         "scanDetailsSummaryNoTarget": "buckets: {{returned}}, scanned: {{scanned}}, masked: {{masked}}",
         "scanDetailsHistory": "{{target}}: commit runs: {{returned}}, records scanned: {{scanned}}, masked: {{masked}}",
-        "scanDetailsHistoryNoTarget": "commit runs: {{returned}}, records scanned: {{scanned}}, masked: {{masked}}"
+        "scanDetailsHistoryNoTarget": "commit runs: {{returned}}, records scanned: {{scanned}}, masked: {{masked}}",
+        "openConnectionsFailed": "Unavailable: could not load the connection list"
       },
       "openCounts": "Open to LLM: {{n}}, with messages: {{m}}",
       "messagesPolicy": "Reading messages is disabled by your organization",
@@ -522,7 +523,8 @@
       "mask": "Masking",
       "maskStandard": "Standard list",
       "maskFieldsAria": "Field names to mask, one per line",
-      "maskNote": "Emails, card numbers, JWTs and Bearer tokens are always masked. Masking lowers the risk but does not recognize people's names, addresses or data in fields with unfamiliar names."
+      "maskNote": "Emails, card numbers, JWTs and Bearer tokens are always masked. Masking lowers the risk but does not recognize people's names, addresses or data in fields with unfamiliar names.",
+      "llmStatusUnavailable": "MCP status is unavailable: “Metadata and messages” cannot be selected right now"
     },
     "tls": {
       "pick": "Browse…",

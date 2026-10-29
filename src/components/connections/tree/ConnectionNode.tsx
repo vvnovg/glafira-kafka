@@ -25,12 +25,12 @@ export function ConnectionNode({ connection: c, rowProps }: { connection: Connec
         <span className="tree-name">{c.name}</span>
         <EnvBadge environment={c.environment} readOnly={c.readOnly} />
         {level === "metadata" && (
-          <span className="llm-badge" title={t("sidebar.llmAccess")}>
+          <span className="llm-badge" role="img" title={t("sidebar.llmAccess")} aria-label={t("sidebar.llmAccess")}>
             LLM
           </span>
         )}
         {level === "messages" && (
-          <span className="llm-badge llm-badge--messages" title={t("sidebar.llmMessages")}>
+          <span className="llm-badge llm-badge--messages" role="img" title={t("sidebar.llmMessages")} aria-label={t("sidebar.llmMessages")}>
             LLM
           </span>
         )}

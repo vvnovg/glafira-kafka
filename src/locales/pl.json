@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}: przedziały: {{returned}}, przeskanowano: {{scanned}}, zamaskowano: {{masked}}",
         "scanDetailsSummaryNoTarget": "przedziały: {{returned}}, przeskanowano: {{scanned}}, zamaskowano: {{masked}}",
         "scanDetailsHistory": "{{target}}: serie zatwierdzeń: {{returned}}, przeskanowano rekordów: {{scanned}}, zamaskowano: {{masked}}",
-        "scanDetailsHistoryNoTarget": "serie zatwierdzeń: {{returned}}, przeskanowano rekordów: {{scanned}}, zamaskowano: {{masked}}"
+        "scanDetailsHistoryNoTarget": "serie zatwierdzeń: {{returned}}, przeskanowano rekordów: {{scanned}}, zamaskowano: {{masked}}",
+        "openConnectionsFailed": "Niedostępne: nie udało się wczytać listy połączeń"
       },
       "openCounts": "Otwarte dla LLM: {{n}}, w tym z wiadomościami: {{m}}",
       "messagesPolicy": "Odczyt wiadomości jest wyłączony przez organizację",
@@ -522,7 +523,8 @@
       "mask": "Maskowanie",
       "maskStandard": "Lista standardowa",
       "maskFieldsAria": "Nazwy pól do maskowania, po jednej w wierszu",
-      "maskNote": "Adresy e-mail, numery kart, tokeny JWT i Bearer są maskowane zawsze. Maskowanie zmniejsza ryzyko, ale nie rozpoznaje imion i nazwisk, adresów ani danych w polach o nieznanych nazwach."
+      "maskNote": "Adresy e-mail, numery kart, tokeny JWT i Bearer są maskowane zawsze. Maskowanie zmniejsza ryzyko, ale nie rozpoznaje imion i nazwisk, adresów ani danych w polach o nieznanych nazwach.",
+      "llmStatusUnavailable": "Stan MCP jest niedostępny: nie można teraz wybrać „Metadane i wiadomości”"
     },
     "tls": {
       "pick": "Przeglądaj…",

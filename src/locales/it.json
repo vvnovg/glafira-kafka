@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}: intervalli: {{returned}}, analizzati: {{scanned}}, mascherati: {{masked}}",
         "scanDetailsSummaryNoTarget": "intervalli: {{returned}}, analizzati: {{scanned}}, mascherati: {{masked}}",
         "scanDetailsHistory": "{{target}}: serie di commit: {{returned}}, record analizzati: {{scanned}}, mascherati: {{masked}}",
-        "scanDetailsHistoryNoTarget": "serie di commit: {{returned}}, record analizzati: {{scanned}}, mascherati: {{masked}}"
+        "scanDetailsHistoryNoTarget": "serie di commit: {{returned}}, record analizzati: {{scanned}}, mascherati: {{masked}}",
+        "openConnectionsFailed": "Non disponibile: impossibile caricare l’elenco delle connessioni"
       },
       "openCounts": "Aperte agli LLM: {{n}}, di cui con messaggi: {{m}}",
       "messagesPolicy": "La lettura dei messaggi è disattivata dalla tua organizzazione",
@@ -522,7 +523,8 @@
       "mask": "Mascheramento",
       "maskStandard": "Elenco standard",
       "maskFieldsAria": "Nomi dei campi da mascherare, uno per riga",
-      "maskNote": "Email, numeri di carta, JWT e token Bearer vengono sempre mascherati. Il mascheramento riduce il rischio, ma non riconosce nomi di persone, indirizzi o dati in campi con nomi sconosciuti."
+      "maskNote": "Email, numeri di carta, JWT e token Bearer vengono sempre mascherati. Il mascheramento riduce il rischio, ma non riconosce nomi di persone, indirizzi o dati in campi con nomi sconosciuti.",
+      "llmStatusUnavailable": "Stato MCP non disponibile: al momento non è possibile scegliere “Metadati e messaggi”"
     },
     "tls": {
       "pick": "Sfoglia…",

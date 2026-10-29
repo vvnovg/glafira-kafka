@@ -174,6 +174,16 @@ describe("McpSection", () => {
     expect(button).toBeDisabled();
   });
 
+  it("журнал: список подключений не загрузился — своя подсказка у кнопки", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.listConnections).mockRejectedValue(new Error("нет ответа"));
+    vi.mocked(api.getMcpAudit).mockResolvedValue([read("c1", "orders")]);
+    renderWithClient(<McpSection />);
+    const [button] = await openButtons();
+    await waitFor(() => expect(button).toHaveAttribute("title", "Недоступно: не удалось загрузить список подключений"));
+    expect(button).toBeDisabled();
+  });
+
   it("журнал: пока список подключений грузится, кнопка неактивна без подсказки", async () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
     vi.mocked(api.listConnections).mockReturnValue(new Promise(() => {}));

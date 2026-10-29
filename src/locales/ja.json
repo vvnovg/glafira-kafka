@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}：区間：{{returned}}、スキャン済み：{{scanned}}、マスク済み：{{masked}}",
         "scanDetailsSummaryNoTarget": "区間：{{returned}}、スキャン済み：{{scanned}}、マスク済み：{{masked}}",
         "scanDetailsHistory": "{{target}}：コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}",
-        "scanDetailsHistoryNoTarget": "コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}"
+        "scanDetailsHistoryNoTarget": "コミット系列：{{returned}}、スキャン済みレコード：{{scanned}}、マスク済み：{{masked}}",
+        "openConnectionsFailed": "利用できません：接続の一覧を読み込めませんでした"
       },
       "openCounts": "LLMに開放：{{n}}件、うちメッセージあり：{{m}}件",
       "messagesPolicy": "メッセージの読み取りは組織によって無効にされています",
@@ -522,7 +523,8 @@
       "mask": "マスキング",
       "maskStandard": "標準リスト",
       "maskFieldsAria": "マスクするフィールド名（1行に1つ）",
-      "maskNote": "メールアドレス、カード番号、JWT、Bearerトークンは常にマスクされます。マスキングはリスクを下げますが、人名、住所、見慣れない名前のフィールドのデータは認識しません。"
+      "maskNote": "メールアドレス、カード番号、JWT、Bearerトークンは常にマスクされます。マスキングはリスクを下げますが、人名、住所、見慣れない名前のフィールドのデータは認識しません。",
+      "llmStatusUnavailable": "MCPの状態を取得できません：現在は「メタデータとメッセージ」を選択できません"
     },
     "tls": {
       "pick": "参照…",

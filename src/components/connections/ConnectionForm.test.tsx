@@ -190,15 +190,18 @@ describe("ConnectionForm", () => {
     expect(within(group).getByLabelText("Имена полей для маскирования, по одному на строку")).toHaveValue("inn");
   });
 
-  it("сообщения production-кластера — предупреждение", async () => {
+  it("сообщения production-кластера — предупреждение в постоянной живой области", async () => {
     const user = userEvent.setup();
     const initial = { ...newProfile(), id: "p", name: "p", environment: "prod" as const };
     renderWithClient(<ConnectionForm initial={initial} tabId="t" />);
-    expect(screen.queryByText(/production-кластера/)).not.toBeInTheDocument();
+    // Область есть с самого начала: программа чтения экрана объявит текст, когда он появится.
+    const live = screen.getByRole("status");
+    expect(live).toBeEmptyDOMElement();
+    const levels = screen.getByRole("radiogroup", { name: "Доступ для LLM" });
+    expect(levels).not.toHaveAttribute("aria-describedby");
     await user.click(await messagesLevel());
-    const warning = screen.getByText("Содержимое сообщений этого production-кластера будет уходить провайдеру LLM");
-    expect(warning).toHaveAttribute("role", "status");
-    expect(screen.getByRole("radiogroup", { name: "Доступ для LLM" })).toHaveAccessibleDescription(warning.textContent ?? "");
+    expect(live).toHaveTextContent("Содержимое сообщений этого production-кластера будет уходить провайдеру LLM");
+    expect(levels).toHaveAccessibleDescription(live.textContent ?? "");
   });
 
   it("политика запрещает чтение сообщений", async () => {
@@ -235,9 +238,9 @@ describe("ConnectionForm", () => {
   });
 
   it.each([
-    ["пока статус MCP не пришёл", () => new Promise<never>(() => {}), "pending"],
-    ["если статус MCP не загрузился", () => Promise.reject(new Error("нет ответа")), "error"],
-  ] as const)("%s: третий уровень недоступен без пометок, сохранённый уровень не меняется", async (_, status, state) => {
+    ["пока статус MCP не пришёл", () => new Promise<never>(() => {}), "pending", false],
+    ["если статус MCP не загрузился", () => Promise.reject(new Error("нет ответа")), "error", true],
+  ] as const)("%s: третий уровень недоступен, сохранённый уровень не меняется", async (_, status, state, note) => {
     vi.mocked(api.getMcpStatus).mockImplementation(status);
     vi.mocked(api.saveConnection).mockResolvedValue({ ...newProfile(), id: "p", name: "p" });
     const user = userEvent.setup();
@@ -250,6 +253,9 @@ describe("ConnectionForm", () => {
     expect(screen.queryByText(/отключено вашей организацией/)).not.toBeInTheDocument();
     expect(screen.queryByText(/production-кластера/)).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Маскирование" })).not.toBeInTheDocument();
+    // Пометка — только когда статус не загрузился, а не пока он грузится.
+    const unavailable = screen.queryByText("Статус MCP недоступен: уровень «Метаданные и сообщения» сейчас нельзя выбрать");
+    expect(unavailable !== null).toBe(note);
     await user.click(screen.getByRole("button", { name: "Сохранить" }));
     expect(api.saveConnection).toHaveBeenCalledWith(
       expect.objectContaining({ llmAccess: "messages", llmMaskFields: ["inn"] }),

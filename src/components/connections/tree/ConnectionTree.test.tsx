@@ -87,8 +87,9 @@ describe("ConnectionTree", () => {
       { ...CONNS[1], llmAccess: "messages" },
     ]);
     const { unmount } = renderWithClient(<ConnectionTree />);
-    expect(await screen.findByTitle("Доступ для LLM: метаданные и сообщения")).toHaveClass("llm-badge--messages");
-    expect(screen.getByTitle("Открыто LLM-ассистентам по MCP")).not.toHaveClass("llm-badge--messages");
+    // Значки различает и программа чтения экрана: у них роль изображения и полное название.
+    expect(await screen.findByRole("img", { name: "Доступ для LLM: метаданные и сообщения" })).toHaveClass("llm-badge--messages");
+    expect(screen.getByRole("img", { name: "Открыто LLM-ассистентам по MCP" })).not.toHaveClass("llm-badge--messages");
     unmount();
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
     renderWithClient(<ConnectionTree />);

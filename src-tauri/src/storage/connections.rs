@@ -365,7 +365,10 @@ pub fn validate_profile(p: &ConnectionProfile) -> AppResult<()> {
             "Request timeout must be at least 1000 ms"
         ));
     }
-    if let Some(fields) = &p.llm_mask_fields {
+    // На других уровнях список скрыт в форме и не применяется (спец. G4.1 §4).
+    if p.llm_access == LlmAccess::Messages
+        && let Some(fields) = &p.llm_mask_fields
+    {
         validate_mask_fields(fields)?;
     }
     Ok(())
@@ -896,6 +899,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = ConnectionStore::open(dir.path()).unwrap();
         let mut p = sample_profile("a");
+        p.llm_access = LlmAccess::Messages;
         // Ровно предельное число имён — допустимо.
         p.llm_mask_fields = Some((0..MAX_MASK_FIELDS).map(|i| format!("f{i}")).collect());
         assert_eq!(
@@ -930,6 +934,7 @@ mod tests {
             "стандартный список не пишется"
         );
         let mut p = sample_profile("a");
+        p.llm_access = LlmAccess::Messages;
         p.llm_mask_fields = Some(vec![" email ".into(), "".into(), "inn".into()]);
         let saved = store.upsert(p.clone()).unwrap();
         assert_eq!(
@@ -951,6 +956,25 @@ mod tests {
         p.llm_mask_fields = Some(vec!["x".repeat(65)]);
         let e = store.upsert(p).unwrap_err();
         assert_eq!(e.key, "errors.connections.maskFieldTooLong");
+    }
+
+    #[test]
+    fn mask_fields_are_checked_only_at_the_messages_level() {
+        use glafira_mcp::mask::MAX_MASK_FIELDS;
+        let dir = tempfile::tempdir().unwrap();
+        let store = ConnectionStore::open(dir.path()).unwrap();
+        let mut p = sample_profile("a");
+        // Список скрыт в форме на других уровнях и не применяется: сохранение он не блокирует.
+        let too_many: Vec<String> = (0..=MAX_MASK_FIELDS).map(|i| format!("f{i}")).collect();
+        p.llm_mask_fields = Some(too_many.clone());
+        for level in [LlmAccess::Off, LlmAccess::Metadata] {
+            p.llm_access = level;
+            let saved = store.upsert(p.clone()).unwrap();
+            assert_eq!(saved.llm_mask_fields.as_ref(), Some(&too_many), "{level:?}");
+        }
+        p.llm_access = LlmAccess::Messages;
+        let e = store.upsert(p).unwrap_err();
+        assert_eq!(e.key, "errors.connections.maskFieldsTooMany");
     }
 
     #[test]

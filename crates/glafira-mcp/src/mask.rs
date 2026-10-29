@@ -128,7 +128,7 @@ static WORD_DIGIT_RUN: LazyLock<Regex> =
 /// Имя пары `name=value`, `name: value`, `"name": value` в тексте вместе с разделителем.
 static PAIR: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[\p{L}_][\p{L}\p{N}_.\-]*))\s*[:=]\s*"#,
+        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[\p{L}_][\p{L}\p{M}\p{N}_.\-]*))\s*[:=]\s*"#,
     )
     .expect("pair regex")
 });
@@ -143,11 +143,12 @@ static CREDENTIAL: LazyLock<Regex> =
 static NEXT_PAIR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s*[:=]").expect("next pair regex"));
 /// Слово начинается с пары `name=value`.
-static GLUED_PAIR: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[\p{L}_][\p{L}\p{N}_.\-]*=[^=]").expect("glued pair regex"));
+static GLUED_PAIR: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^[\p{L}_][\p{L}\p{M}\p{N}_.\-]*=[^=]").expect("glued pair regex")
+});
 /// Слово — имя пары с `=` в конце (`password=`).
 static OPEN_PAIR: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[\p{L}_][\p{L}\p{N}_.\-]*=$").expect("open pair regex"));
+    LazyLock::new(|| Regex::new(r"^[\p{L}_][\p{L}\p{M}\p{N}_.\-]*=$").expect("open pair regex"));
 /// За словом в той же строке после пробелов стоит значение.
 static SPACED_VALUE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[ \t]+[^\s]").expect("spaced value regex"));
@@ -169,33 +170,6 @@ fn masks_line(name: &str) -> bool {
 /// Длина строки `s` до `\n` или `\r` (или до конца).
 fn line_len(s: &str) -> usize {
     s.find(['\n', '\r']).unwrap_or(s.len())
-}
-
-/// Сколько байтов `rest` занимают учётные данные, если значение пары — схема `Bearer`, `Basic`,
-/// `Digest` или `Token` (иначе они остались бы за `***`); токен может быть и на следующей строке.
-/// Учётные данные — слово целиком (`user:p4ss`, `abc@x`, `a=b`), но не имя следующей пары: слово
-/// с `:` в конце или перед `:`/`=` (`access_token: x`), а на следующей строке и слово,
-/// начинающееся с `name=value` (`user=ann`), и слово `name=` со значением после пробелов
-/// (`password= x`); в той же строке такие слова — параметр схемы или base64 с `=`.
-fn credential_len(value: &str, rest: &str) -> usize {
-    if !is_scheme(value) {
-        return 0;
-    }
-    let Some(cred) = CREDENTIAL.find(rest) else {
-        return 0;
-    };
-    let word = cred.as_str().trim_start();
-    let after = &rest[cred.end()..];
-    let next_line = !cred.as_str()[..cred.len() - word.len()]
-        .bytes()
-        .all(|b| b == b' ' || b == b'\t');
-    let next_pair =
-        GLUED_PAIR.is_match(word) || (OPEN_PAIR.is_match(word) && SPACED_VALUE.is_match(after));
-    if word.ends_with(':') || NEXT_PAIR.is_match(after) || (next_line && next_pair) {
-        0
-    } else {
-        cred.end()
-    }
 }
 
 /// ASCII-цифры номера карты: 13–19 цифр, проверка Луна и первая цифра 2–6 (Мир, Visa,
@@ -398,6 +372,36 @@ impl Masker {
         !n.is_empty() && self.fields.iter().any(|p| glob(p, &n))
     }
 
+    /// Сколько байтов `rest` занимают учётные данные, если значение пары — схема `Bearer`, `Basic`,
+    /// `Digest` или `Token` (иначе они остались бы за `***`); токен может быть и на следующей
+    /// строке. Учётные данные — слово целиком (`user:p4ss`, `abc@x`, `a=b`), но не имя следующей
+    /// пары: слово с `:` в конце или перед `:`/`=` (`access_token: x`), а на следующей строке и
+    /// слово, начинающееся с `name=value` (`user=ann`), и слово `name=` со значением после
+    /// пробелов, если `name` из списка (`password= x`; `Zm9v= foo` — учётные данные); в той же
+    /// строке такие слова — параметр схемы или base64 с `=`.
+    fn credential_len(&self, value: &str, rest: &str) -> usize {
+        if !is_scheme(value) {
+            return 0;
+        }
+        let Some(cred) = CREDENTIAL.find(rest) else {
+            return 0;
+        };
+        let word = cred.as_str().trim_start();
+        let after = &rest[cred.end()..];
+        let next_line = !cred.as_str()[..cred.len() - word.len()]
+            .bytes()
+            .all(|b| b == b' ' || b == b'\t');
+        let next_pair = GLUED_PAIR.is_match(word)
+            || (OPEN_PAIR.is_match(word)
+                && SPACED_VALUE.is_match(after)
+                && self.field_matches(word.trim_end_matches('=')));
+        if word.ends_with(':') || NEXT_PAIR.is_match(after) || (next_line && next_pair) {
+            0
+        } else {
+            cred.end()
+        }
+    }
+
     /// Текстовый режим: значения пар `name=value` из списка → `***`, затем шаблоны. У кук и
     /// заголовков авторизации ([`masks_line`]) значение без кавычек — до конца строки. Значение
     /// пары с именем не из списка просматривается дальше — в нём бывают свои пары
@@ -439,12 +443,12 @@ impl Masker {
                     let rest_blank = s[pos..end].bytes().all(|b| b == b' ' || b == b'\t');
                     pos = end;
                     if rest_blank {
-                        pos += credential_len(v.as_str(), &s[pos..]);
+                        pos += self.credential_len(v.as_str(), &s[pos..]);
                     }
                 }
                 None => {
                     out.push_str(MASK);
-                    pos += credential_len(v.as_str(), &s[pos..]);
+                    pos += self.credential_len(v.as_str(), &s[pos..]);
                 }
             }
         }
@@ -1136,6 +1140,8 @@ mod tests {
                 ("X-Auth-Token: Basic dXNlcjpwYXM=", "X-Auth-Token: ***", 1),
                 // На следующей строке без значения после `=` — тоже учётные данные.
                 ("token: Basic\ndXNlcjpwYXM=", "token: ***", 1),
+                // Слово `name=` со значением после пробелов — имя пары, только если имя из списка.
+                ("token: Basic\nZm9v= foo", "token: *** foo", 1),
             ],
         );
     }
@@ -1153,6 +1159,11 @@ mod tests {
                 ("token: Basic\nпароль= x", "token: ***\nпароль= ***", 2),
             ],
         );
+        // Комбинирующие знаки (`\p{M}`) — часть имени.
+        let own = Masker::new(&MaskConfig {
+            fields: Some(vec!["पासवर्ड".into()]),
+        });
+        texts(&own, &[("पासवर्ड=x", "पासवर्ड=***", 1)]);
     }
 
     #[test]

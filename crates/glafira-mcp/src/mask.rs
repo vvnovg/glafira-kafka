@@ -118,7 +118,7 @@ static DIGIT_RUN: LazyLock<Regex> =
 /// Имя пары `name=value`, `name: value`, `"name": value` в тексте вместе с разделителем.
 static PAIR: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[A-Za-z_][A-Za-z0-9_.\-]{0,63}))\s*[:=]\s*"#,
+        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[\p{L}_][\p{L}\p{N}_.\-]*))\s*[:=]\s*"#,
     )
     .expect("pair regex")
 });
@@ -126,52 +126,62 @@ static PAIR: LazyLock<Regex> = LazyLock::new(|| {
 static VALUE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"^(?:"(?:[^"\\]|\\.)*"|'[^']*'|[^\s,;&}\]]+)"#).expect("value regex")
 });
-/// Слово учётных данных после известной схемы авторизации — и на следующей строке.
+/// Слово учётных данных после схемы авторизации — и на следующей строке.
 static CREDENTIAL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s+[^\s,;&}\]]+").expect("credential regex"));
-/// Слово учётных данных после любой другой схемы — только в той же строке.
-static SAME_LINE_CREDENTIAL: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s,;&}\]]+").expect("same-line credential regex"));
 /// Разделитель пары сразу за словом: слово — имя следующей пары.
 static NEXT_PAIR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s*[:=]").expect("next pair regex"));
 /// Слово начинается с пары `name=value`.
 static GLUED_PAIR: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[A-Za-z_][\w.-]*=[^=]").expect("glued pair regex"));
+    LazyLock::new(|| Regex::new(r"^[\p{L}_][\p{L}\p{N}_.\-]*=[^=]").expect("glued pair regex"));
+/// Слово — имя пары с `=` в конце (`password=`).
+static OPEN_PAIR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[\p{L}_][\p{L}\p{N}_.\-]*=$").expect("open pair regex"));
+/// За словом в той же строке после пробелов стоит значение.
+static SPACED_VALUE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s]").expect("spaced value regex"));
 
-/// Сколько байтов `rest` занимают учётные данные, если значение пары — схема авторизации
-/// (`Authorization: Negotiate YII…`, иначе они остались бы за `***`): `Bearer`, `Basic`, `Digest`,
-/// `Token` — у любого имени из списка, токен может быть и на следующей строке; любая другая схема
-/// (токен RFC 7235) — только у имён, оканчивающихся на `authorization`, и в той же строке.
+/// Схемы авторизации, после которых учётные данные берутся следующим словом.
+const SCHEMES: [&str; 4] = ["bearer", "basic", "digest", "token"];
+
+fn is_scheme(value: &str) -> bool {
+    SCHEMES.iter().any(|s| value.eq_ignore_ascii_case(s))
+}
+
+/// Имена, значение которых без кавычек маскируется до конца строки: куки и заголовки
+/// авторизации (`Cookie: a=1; b=2`, `Authorization: Digest username="u", response="…"`).
+fn masks_line(name: &str) -> bool {
+    let n = normalize(name);
+    n == "cookie" || n == "setcookie" || n.ends_with("authorization")
+}
+
+/// Длина строки `s` до `\n` или `\r` (или до конца).
+fn line_len(s: &str) -> usize {
+    s.find(['\n', '\r']).unwrap_or(s.len())
+}
+
+/// Сколько байтов `rest` занимают учётные данные, если значение пары — схема `Bearer`, `Basic`,
+/// `Digest` или `Token` (иначе они остались бы за `***`); токен может быть и на следующей строке.
 /// Учётные данные — слово целиком (`user:p4ss`, `abc@x`, `a=b`), но не имя следующей пары: слово
 /// с `:` в конце или перед `:`/`=` (`access_token: x`), а на следующей строке и слово,
-/// начинающееся с `name=value` (`user=ann`; в той же строке это параметр схемы).
-fn credential_len(name: &str, value: &str, rest: &str) -> usize {
-    let re = if ["bearer", "basic", "digest", "token"]
-        .iter()
-        .any(|s| value.eq_ignore_ascii_case(s))
-    {
-        &*CREDENTIAL
-    } else if normalize(name).ends_with("authorization")
-        && value
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
-    {
-        &*SAME_LINE_CREDENTIAL
-    } else {
+/// начинающееся с `name=value` (`user=ann`), и слово `name=` со значением после пробелов
+/// (`password= x`); в той же строке такие слова — параметр схемы или base64 с `=`.
+fn credential_len(value: &str, rest: &str) -> usize {
+    if !is_scheme(value) {
         return 0;
-    };
-    let Some(cred) = re.find(rest) else {
+    }
+    let Some(cred) = CREDENTIAL.find(rest) else {
         return 0;
     };
     let word = cred.as_str().trim_start();
+    let after = &rest[cred.end()..];
     let next_line = !cred.as_str()[..cred.len() - word.len()]
         .bytes()
         .all(|b| b == b' ' || b == b'\t');
-    if word.ends_with(':')
-        || NEXT_PAIR.is_match(&rest[cred.end()..])
-        || (next_line && GLUED_PAIR.is_match(word))
-    {
+    let next_pair =
+        GLUED_PAIR.is_match(word) || (OPEN_PAIR.is_match(word) && SPACED_VALUE.is_match(after));
+    if word.ends_with(':') || NEXT_PAIR.is_match(after) || (next_line && next_pair) {
         0
     } else {
         cred.end()
@@ -349,8 +359,9 @@ impl Masker {
         !n.is_empty() && self.fields.iter().any(|p| glob(p, &n))
     }
 
-    /// Текстовый режим: значения пар `name=value` из списка → `***`, затем шаблоны. Значение пары
-    /// с именем не из списка просматривается дальше — в нём бывают свои пары
+    /// Текстовый режим: значения пар `name=value` из списка → `***`, затем шаблоны. У кук и
+    /// заголовков авторизации ([`masks_line`]) значение без кавычек — до конца строки. Значение
+    /// пары с именем не из списка просматривается дальше — в нём бывают свои пары
     /// (`url=…?password=x`, `note: token=y`).
     pub fn text(&self, s: &str, count: &mut usize) -> String {
         let mut out = String::with_capacity(s.len());
@@ -383,9 +394,18 @@ impl Masker {
                     out.push_str(MASK);
                     out.push(q);
                 }
+                None if masks_line(name) => {
+                    out.push_str(MASK);
+                    let end = head + line_len(&s[head..]);
+                    let rest_blank = s[pos..end].bytes().all(|b| b == b' ' || b == b'\t');
+                    pos = end;
+                    if rest_blank {
+                        pos += credential_len(v.as_str(), &s[pos..]);
+                    }
+                }
                 None => {
                     out.push_str(MASK);
-                    pos += credential_len(name, v.as_str(), &s[pos..]);
+                    pos += credential_len(v.as_str(), &s[pos..]);
                 }
             }
         }
@@ -924,9 +944,10 @@ mod tests {
                     "Authorization: ***",
                     1,
                 ),
+                // У `…authorization` — до конца строки, вместе с соседними парами.
                 (
                     "authorization=ApiKey s3cr3tKEY, next",
-                    "authorization=***, next",
+                    "authorization=***",
                     1,
                 ),
                 // Только в той же строке; у других имён следующее слово остаётся.
@@ -972,14 +993,14 @@ mod tests {
                 ),
                 (
                     "authorization=abc password: hunter2",
-                    "authorization=*** password: ***",
-                    2,
+                    "authorization=***",
+                    1,
                 ),
                 ("token: Bearer\nuser=ann", "token: ***\nuser=ann", 1),
                 // Токен — слово целиком: с `:`, `@` и `=` внутри.
                 (
                     "Authorization: Basic dXNlcg== from 10.0.0.1",
-                    "Authorization: *** from 10.0.0.1",
+                    "Authorization: ***",
                     1,
                 ),
                 (
@@ -989,7 +1010,7 @@ mod tests {
                 ),
                 (
                     "Authorization: Basic alice:hunter2 from 10.0.0.1",
-                    "Authorization: *** from 10.0.0.1",
+                    "Authorization: ***",
                     1,
                 ),
                 ("token: Token id42:s3cr3tKEY", "token: ***", 1),
@@ -1020,6 +1041,79 @@ mod tests {
                 "Proxy-Authorization: ***\nok",
                 1,
             )],
+        );
+    }
+
+    #[test]
+    fn cookies_and_authorization_are_masked_to_the_end_of_the_line() {
+        texts(
+            &standard(),
+            &[
+                ("Cookie: a=1; sessionid=xyz", "Cookie: ***", 1),
+                ("cookie: a=1\nuser=ann", "cookie: ***\nuser=ann", 1),
+                (
+                    r#"Authorization: Digest username="bob", realm="r", response="abc""#,
+                    "Authorization: ***",
+                    1,
+                ),
+                (
+                    "Authorization: AWS4-HMAC-SHA256 Credential=AKIA/2026/s3, SignedHeaders=host, Signature=abc",
+                    "Authorization: ***",
+                    1,
+                ),
+                ("Authorization: Bearer abc:", "Authorization: ***", 1),
+                (
+                    "Authorization: Bearer\n  abcdef12345",
+                    "Authorization: ***",
+                    1,
+                ),
+                // Значение в кавычках — по-прежнему в пределах кавычек.
+                (
+                    r#"Cookie: "a=1; b=2" user=ann"#,
+                    r#"Cookie: "***" user=ann"#,
+                    1,
+                ),
+                (
+                    "set-cookie: sid=1; Path=/\r\nok",
+                    "set-cookie: ***\r\nok",
+                    1,
+                ),
+            ],
+        );
+        let (out, n) = json(&standard(), r#"{"h":"Set-Cookie: sid=1; Path=/"}"#);
+        assert_eq!((out.as_str(), n), (r#"{"h":"Set-Cookie: ***"}"#, 1));
+    }
+
+    #[test]
+    fn next_line_pair_with_a_spaced_value_is_not_a_credential() {
+        texts(
+            &standard(),
+            &[
+                (
+                    "pwd: basic\npassword= hunter2",
+                    "pwd: ***\npassword= ***",
+                    2,
+                ),
+                // В той же строке слово с `=` в конце — учётные данные (base64 с выравниванием).
+                ("X-Auth-Token: Basic dXNlcjpwYXM=", "X-Auth-Token: ***", 1),
+                // На следующей строке без значения после `=` — тоже учётные данные.
+                ("token: Basic\ndXNlcjpwYXM=", "token: ***", 1),
+            ],
+        );
+    }
+
+    #[test]
+    fn pair_names_may_be_in_any_script() {
+        let own = Masker::new(&MaskConfig {
+            fields: Some(vec!["пароль".into(), "token".into()]),
+        });
+        texts(
+            &own,
+            &[
+                ("пароль=x", "пароль=***", 1),
+                ("логин=ann Пароль: секрет", "логин=ann Пароль: ***", 1),
+                ("token: Basic\nпароль= x", "token: ***\nпароль= ***", 2),
+            ],
         );
     }
 

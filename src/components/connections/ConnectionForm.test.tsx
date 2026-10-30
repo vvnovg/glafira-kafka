@@ -204,6 +204,24 @@ describe("ConnectionForm", () => {
     expect(levels).toHaveAccessibleDescription(live.textContent ?? "");
   });
 
+  it("две открытые формы не делят группу уровней LLM и подписи полей", async () => {
+    // Вкладки только скрываются, поэтому формы двух подключений могут быть в документе одновременно.
+    const user = userEvent.setup();
+    renderWithClient(
+      <>
+        <ConnectionForm initial={{ ...newProfile(), id: "a", name: "a", llmAccess: "messages" }} tabId="a" />
+        <ConnectionForm initial={{ ...newProfile(), id: "b", name: "b" }} tabId="b" />
+      </>,
+    );
+    const [first, second] = screen.getAllByRole("radiogroup", { name: "Доступ для LLM" });
+    expect(within(first).getByLabelText("Метаданные и сообщения")).toBeChecked();
+    expect(within(second).getByLabelText("Нет")).toBeChecked();
+    await user.click(within(second).getByLabelText("Только метаданные"));
+    expect(within(second).getByLabelText("Только метаданные")).toBeChecked();
+    expect(within(first).getByLabelText("Метаданные и сообщения")).toBeChecked();
+    expect(screen.getAllByLabelText("Имя").map((input) => (input as HTMLInputElement).value)).toEqual(["a", "b"]);
+  });
+
   it("политика запрещает чтение сообщений", async () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
     renderWithClient(<ConnectionForm initial={{ ...newProfile(), name: "m" }} tabId="t" />);
@@ -393,7 +411,7 @@ describe("ConnectionForm", () => {
       expect(screen.getByRole("button", { name: `Подсказка: ${label}` })).toBeInTheDocument();
     }
     // Значок рядом с подписью, а не внутри: доступное имя поля не меняется.
-    expect(screen.getByLabelText("Bootstrap-серверы")).toHaveAttribute("id", "cf-bootstrap");
+    expect(screen.getByLabelText("Bootstrap-серверы")).toHaveAttribute("id", expect.stringMatching(/-bootstrap$/));
     await user.click(screen.getByRole("button", { name: "Подсказка: Bootstrap-серверы" }));
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
       "Один или несколько host:port через запятую. Остальные брокеры клиент найдёт сам.",

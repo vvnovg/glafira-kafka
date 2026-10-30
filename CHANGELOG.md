@@ -2,6 +2,21 @@
 
 Versions in the other interface languages are in [docs/changelog](docs/changelog/). The section of a version is shown in About as the update notes, in the interface language.
 
+## 0.5.2
+- More thorough masking of messages read by an LLM assistant:
+  - in text, the values of cookies and `Authorization` headers (including `Proxy-Authorization`) are masked to the end of the line, so all cookies, Digest parameters and AWS signatures are hidden;
+  - in `name=value` pairs, names in any alphabet are recognized, for example a field name from the connection’s own list written in Cyrillic;
+  - card numbers glued to letters (`id4111…`) or written in unusual groupings are found, as are negative and fractional card numbers in JSON.
+- A topic without the Describe permission: the “Messages” tab and the `read_messages`, `summarize_messages` and `get_group_commit_history` tools report “Not authorized to perform the operation” instead of “not found”.
+- `get_group_commit_history`: if the commit history does not fit into 100 KB even without commit runs, the assistant gets a “response too large” error with advice to narrow the request instead of an empty history. `summarize_messages` uses less memory with large keys.
+- Connection form:
+  - when two connection forms were open, the LLM access level selected in one of them was not shown, although it was saved correctly; now each form shows its own;
+  - screen readers announce the warning that the message contents of a production cluster will be sent to the LLM provider;
+  - if the MCP status could not be loaded, a note explains why “Metadata and messages” cannot be selected;
+  - a masking list hidden at the “Off” and “Metadata only” levels no longer blocks saving.
+- `LLM` badges in the connection tree: screen readers read them in full, for example “LLM access: metadata and messages”, instead of “LLM”; the text has higher contrast.
+- MCP log: the “Open in Messages” button explains that it is unavailable when the list of connections could not be loaded.
+
 ## 0.5.1
 - Update notes in “About” → “Updates” are shown in the interface language (in English if there is no translation) and as formatted text instead of raw Markdown. This applies to updates offered to version 0.5.1 and later; earlier versions show the notes as plain English text.
 - The changelog is now in English (`CHANGELOG.md`); its versions in the other interface languages are in `docs/changelog/`.

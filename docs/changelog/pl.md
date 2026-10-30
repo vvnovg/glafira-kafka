@@ -2,6 +2,21 @@
 
 Polska wersja [CHANGELOG.md](../../CHANGELOG.md), gdzie są też wcześniejsze wersje. Sekcja wersji jest wyświetlana w „O programie” jako informacje o aktualizacji.
 
+## 0.5.2
+- Dokładniejsze maskowanie wiadomości odczytywanych przez asystenta LLM:
+  - w tekście wartości ciasteczek i nagłówków `Authorization` (także `Proxy-Authorization`) są maskowane do końca wiersza, więc ukryte są wszystkie ciasteczka, parametry Digest i podpisy AWS;
+  - w parach `name=value` rozpoznawane są nazwy w dowolnym alfabecie, na przykład nazwa pola z własnej listy połączenia zapisana cyrylicą;
+  - wykrywane są numery kart sklejone z literami (`id4111…`) lub zapisane w nietypowych grupach, a także ujemne i ułamkowe numery kart w JSON.
+- Topik bez uprawnienia Describe: karta „Wiadomości” oraz narzędzia `read_messages`, `summarize_messages` i `get_group_commit_history` zgłaszają „Brak uprawnień do wykonania operacji” zamiast „nie znaleziono”.
+- `get_group_commit_history`: jeśli historia zatwierdzeń nie mieści się w 100 KB nawet bez serii zatwierdzeń, asystent zamiast pustej historii dostaje błąd „odpowiedź za duża” z radą, by zawęzić zapytanie. `summarize_messages` zużywa mniej pamięci przy dużych kluczach.
+- Formularz połączenia:
+  - gdy otwarte były dwa formularze połączeń, poziom dostępu dla LLM wybrany w jednym z nich nie był widoczny, choć zapisywał się poprawnie; teraz każdy formularz pokazuje swój;
+  - czytniki ekranu odczytują ostrzeżenie, że treść wiadomości z klastra produkcyjnego będzie przekazywana dostawcy LLM;
+  - jeśli nie udało się wczytać stanu MCP, komunikat wyjaśnia, dlaczego nie można wybrać poziomu „Metadane i wiadomości”;
+  - lista maskowania ukryta na poziomach „Wyłączony” i „Tylko metadane” nie blokuje już zapisu.
+- Znaczki `LLM` w drzewie połączeń: czytniki ekranu odczytują je w całości, na przykład „Dostęp dla LLM: metadane i wiadomości”, a nie „LLM”; tekst ma wyższy kontrast.
+- Log MCP: przycisk „Otwórz w »Wiadomościach«” wyjaśnia, że jest niedostępny, gdy nie udało się wczytać listy połączeń.
+
 ## 0.5.1
 - Informacje o aktualizacji w „O programie” → „Aktualizacje” są wyświetlane w języku interfejsu (bez tłumaczenia — po angielsku) i jako sformatowany tekst zamiast surowego Markdownu. Dotyczy to aktualizacji proponowanych dla wersji 0.5.1 i nowszych; wcześniejsze wersje pokazują informacje jako zwykły tekst po angielsku.
 - Lista zmian jest teraz prowadzona po angielsku (`CHANGELOG.md`); jej wersje w pozostałych językach interfejsu znajdują się w `docs/changelog/`.

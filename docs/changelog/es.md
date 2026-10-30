@@ -2,6 +2,21 @@
 
 Versión en español de [CHANGELOG.md](../../CHANGELOG.md), donde también están las versiones anteriores. La sección de una versión se muestra en “Acerca de” como notas de la actualización.
 
+## 0.5.2
+- Enmascaramiento más completo de los mensajes que lee un asistente LLM:
+  - en el texto, los valores de las cookies y de las cabeceras `Authorization` (incluida `Proxy-Authorization`) se enmascaran hasta el final de la línea, así que quedan ocultas todas las cookies, los parámetros Digest y las firmas de AWS;
+  - en los pares `name=value` se reconocen nombres en cualquier alfabeto, por ejemplo un nombre de campo de la lista propia de la conexión escrito en cirílico;
+  - se detectan los números de tarjeta pegados a letras (`id4111…`) o escritos con agrupaciones poco habituales, así como los números de tarjeta negativos y decimales en JSON.
+- Topic sin permiso Describe: la pestaña “Mensajes” y las herramientas `read_messages`, `summarize_messages` y `get_group_commit_history` indican “No tienes autorización para realizar la operación” en lugar de “no encontrado”.
+- `get_group_commit_history`: si el historial de commits no cabe en 100 KB ni siquiera sin series de commits, el asistente recibe, en lugar de un historial vacío, un error de “respuesta demasiado grande” con el consejo de acotar la consulta. `summarize_messages` usa menos memoria con claves grandes.
+- Formulario de conexión:
+  - cuando había dos formularios de conexión abiertos, el nivel de acceso para LLM elegido en uno de ellos no se mostraba, aunque se guardaba correctamente; ahora cada formulario muestra el suyo;
+  - los lectores de pantalla anuncian la advertencia de que el contenido de los mensajes de un clúster de producción se enviará al proveedor de LLM;
+  - si no se pudo cargar el estado de MCP, una nota explica por qué no se puede elegir “Metadatos y mensajes”;
+  - una lista de enmascaramiento oculta en los niveles “Desactivado” y “Solo metadatos” ya no impide guardar.
+- Marcas `LLM` en el árbol de conexiones: los lectores de pantalla las leen completas, por ejemplo “Acceso para LLM: metadatos y mensajes”, en lugar de “LLM”; el texto tiene más contraste.
+- Registro de MCP: el botón “Abrir en ‘Mensajes’” explica que no está disponible cuando no se pudo cargar la lista de conexiones.
+
 ## 0.5.1
 - Las notas de la actualización en “Acerca de” → “Actualizaciones” se muestran en el idioma de la interfaz (en inglés si no hay traducción) y como texto con formato en lugar de Markdown sin procesar. Esto se aplica a las actualizaciones que se ofrecen a la versión 0.5.1 y posteriores; las versiones anteriores muestran las notas como texto sin formato en inglés.
 - El registro de cambios ahora está en inglés (`CHANGELOG.md`); sus versiones en los demás idiomas de la interfaz están en `docs/changelog/`.

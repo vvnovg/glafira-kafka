@@ -2,6 +2,21 @@
 
 Deutsche Fassung von [CHANGELOG.md](../../CHANGELOG.md), dort stehen auch frühere Versionen. Der Abschnitt einer Version wird unter „Über Glafira“ als Versionshinweise zum Update angezeigt.
 
+## 0.5.2
+- Gründlichere Maskierung von Nachrichten, die ein LLM-Assistent liest:
+  - im Text werden die Werte von Cookies und `Authorization`-Headern (auch `Proxy-Authorization`) bis zum Zeilenende maskiert, sodass alle Cookies, Digest-Parameter und AWS-Signaturen verborgen bleiben;
+  - in `name=value`-Paaren werden Namen in jedem Alphabet erkannt, zum Beispiel ein kyrillisch geschriebener Feldname aus der eigenen Liste der Verbindung;
+  - Kartennummern, die direkt an Buchstaben hängen (`id4111…`) oder ungewöhnlich gruppiert sind, werden gefunden, ebenso negative und gebrochene Kartennummern in JSON.
+- Topic ohne Describe-Berechtigung: Der Tab „Nachrichten“ und die Tools `read_messages`, `summarize_messages` und `get_group_commit_history` melden „Keine Berechtigung für diesen Vorgang“ statt „nicht gefunden“.
+- `get_group_commit_history`: Passt der Commit-Verlauf selbst ohne Commit-Serien nicht in 100 KB, erhält der Assistent statt eines leeren Verlaufs den Fehler „Antwort zu groß“ mit dem Rat, die Anfrage einzugrenzen. `summarize_messages` braucht bei großen Schlüsseln weniger Speicher.
+- Verbindungsformular:
+  - waren zwei Verbindungsformulare geöffnet, wurde die in einem davon gewählte Stufe des LLM-Zugriffs nicht angezeigt, obwohl sie richtig gespeichert wurde; jetzt zeigt jedes Formular seine eigene;
+  - Screenreader lesen die Warnung vor, dass die Nachrichteninhalte eines Produktionsclusters an den LLM-Anbieter gesendet werden;
+  - konnte der MCP-Status nicht geladen werden, erklärt ein Hinweis, warum „Metadaten und Nachrichten“ nicht ausgewählt werden kann;
+  - eine Maskierungsliste, die auf den Stufen „Aus“ und „Nur Metadaten“ ausgeblendet ist, verhindert das Speichern nicht mehr.
+- `LLM`-Zeichen im Verbindungsbaum: Screenreader lesen sie vollständig vor, etwa „LLM-Zugriff: Metadaten und Nachrichten“, statt nur „LLM“; der Text hat mehr Kontrast.
+- MCP-Protokoll: Die Schaltfläche „In ‚Nachrichten‘ öffnen“ erklärt, dass sie nicht verfügbar ist, wenn die Liste der Verbindungen nicht geladen werden konnte.
+
 ## 0.5.1
 - Versionshinweise unter „Über Glafira“ → „Updates“ erscheinen in der Sprache der Oberfläche (ohne Übersetzung auf Englisch) und als formatierter Text statt als rohes Markdown. Das gilt für Updates, die ab Version 0.5.1 angeboten werden; frühere Versionen zeigen die Hinweise als einfachen englischen Text.
 - Das Änderungsprotokoll wird jetzt auf Englisch geführt (`CHANGELOG.md`); die Fassungen in den anderen Oberflächensprachen liegen in `docs/changelog/`.

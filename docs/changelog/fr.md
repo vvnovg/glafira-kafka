@@ -2,6 +2,21 @@
 
 Version française de [CHANGELOG.md](../../CHANGELOG.md), qui contient aussi les versions antérieures. La section d’une version s’affiche dans « À propos » comme notes de mise à jour.
 
+## 0.5.2
+- Masquage plus complet des messages lus par un assistant LLM :
+  - dans le texte, les valeurs des cookies et des en-têtes `Authorization` (y compris `Proxy-Authorization`) sont masquées jusqu’à la fin de la ligne : tous les cookies, les paramètres Digest et les signatures AWS sont cachés ;
+  - dans les paires `name=value`, les noms écrits dans n’importe quel alphabet sont reconnus, par exemple un nom de champ de la liste propre à la connexion écrit en cyrillique ;
+  - les numéros de carte collés à des lettres (`id4111…`) ou écrits avec des groupements inhabituels sont détectés, de même que les numéros de carte négatifs et décimaux dans le JSON.
+- Topic sans droit Describe : l’onglet « Messages » et les outils `read_messages`, `summarize_messages` et `get_group_commit_history` indiquent « Droits insuffisants pour effectuer l’opération » au lieu de « introuvable ».
+- `get_group_commit_history` : si l’historique des commits ne tient pas dans 100 KB même sans séries de commits, l’assistant reçoit, au lieu d’un historique vide, une erreur « réponse trop volumineuse » qui lui conseille de restreindre la requête. `summarize_messages` consomme moins de mémoire avec de grandes clés.
+- Formulaire de connexion :
+  - lorsque deux formulaires de connexion étaient ouverts, le niveau d’accès LLM choisi dans l’un d’eux ne s’affichait pas, bien qu’il soit correctement enregistré ; désormais chaque formulaire affiche le sien ;
+  - les lecteurs d’écran annoncent l’avertissement indiquant que le contenu des messages d’un cluster de production sera envoyé au fournisseur LLM ;
+  - si le statut MCP n’a pas pu être chargé, une note explique pourquoi « Métadonnées et messages » ne peut pas être sélectionné ;
+  - une liste de masquage cachée aux niveaux « Désactivé » et « Métadonnées uniquement » n’empêche plus l’enregistrement.
+- Badges `LLM` dans l’arborescence des connexions : les lecteurs d’écran les lisent en entier, par exemple « Accès LLM : métadonnées et messages », et non plus « LLM » ; le texte est plus contrasté.
+- Journal MCP : le bouton « Ouvrir dans “Messages” » explique qu’il est indisponible lorsque la liste des connexions n’a pas pu être chargée.
+
 ## 0.5.1
 - Les notes de mise à jour dans « À propos » → « Mises à jour » s’affichent dans la langue de l’interface (en anglais faute de traduction) et sous forme de texte mis en forme, et non plus en Markdown brut. Cela concerne les mises à jour proposées à partir de la version 0.5.1 ; les versions antérieures affichent les notes en anglais, en texte brut.
 - Le journal des modifications est désormais tenu en anglais (`CHANGELOG.md`) ; ses versions dans les autres langues de l’interface se trouvent dans `docs/changelog/`.

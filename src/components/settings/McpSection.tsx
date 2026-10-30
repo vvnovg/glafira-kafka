@@ -78,26 +78,37 @@ function auditWhat(e: McpAuditEntry, t: (k: string) => string): string {
 }
 
 /**
- * Почему «Открыть в „Сообщениях“» неактивна: ключ подсказки; "" — пока неизвестно (список подключений грузится
- * или не загрузился), без подсказки; null — кнопка активна.
+ * Почему «Открыть в „Сообщениях“» неактивна: ключ подсказки; "" — пока список подключений грузится, без подсказки;
+ * null — кнопка активна.
  */
 function openBlocked(
   canPrefill: boolean,
   e: McpAuditEntry,
   s: McpStatus,
   connections: ConnectionProfile[] | undefined,
+  connectionsFailed: boolean,
 ): string | null {
   if (!canPrefill) return "settings.mcp.audit.openArgsCut";
   // Политика действует поверх уровня подключения: сохранённое «сообщения» работает как «Только метаданные».
   if (!s.messagesAllowed) return "settings.mcp.audit.openPolicy";
-  if (!connections) return "";
+  if (!connections) return connectionsFailed ? "settings.mcp.audit.openConnectionsFailed" : "";
   const conn = connections.find((c) => c.id === e.connection?.id);
   if (!conn) return "settings.mcp.audit.openNoConnection";
   return conn.llmAccess === "messages" ? null : "settings.mcp.audit.openNotMessages";
 }
 
 /** Подробности вызова чтения сообщений (G4): цель, отдано (по шаблону инструмента), просмотрено, замаскировано. */
-function AuditDetails({ e, s, connections }: { e: McpAuditEntry; s: McpStatus; connections: ConnectionProfile[] | undefined }) {
+function AuditDetails({
+  e,
+  s,
+  connections,
+  connectionsFailed,
+}: {
+  e: McpAuditEntry;
+  s: McpStatus;
+  connections: ConnectionProfile[] | undefined;
+  connectionsFailed: boolean;
+}) {
   const { t } = useTranslation();
   const open = useWorkspace((st) => st.open);
   if (e.scanned === undefined) return null;
@@ -108,7 +119,7 @@ function AuditDetails({ e, s, connections }: { e: McpAuditEntry; s: McpStatus; c
   const details = target ? t(keys.target, { target, ...counts }) : t(keys.noTarget, counts);
   if (!isBrowsable(e)) return <>{details}</>;
   const prefill = browsePrefillFromAudit(e);
-  const blocked = openBlocked(prefill !== null, e, s, connections);
+  const blocked = openBlocked(prefill !== null, e, s, connections, connectionsFailed);
   return (
     <>
       {details}{" "}
@@ -314,7 +325,7 @@ export function McpSection() {
                 <td>{e.outcome === "error" ? e.code ?? t("settings.mcp.audit.error") : e.outcome === "ok" ? t("settings.mcp.audit.ok") : ""}</td>
                 <td>{e.ms ?? ""}</td>
                 <td>
-                  <AuditDetails e={e} s={s} connections={connections.data} />
+                  <AuditDetails e={e} s={s} connections={connections.data} connectionsFailed={connections.isError} />
                 </td>
               </tr>
             ))}

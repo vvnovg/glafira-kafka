@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}: Intervalle: {{returned}}, gescannt: {{scanned}}, maskiert: {{masked}}",
         "scanDetailsSummaryNoTarget": "Intervalle: {{returned}}, gescannt: {{scanned}}, maskiert: {{masked}}",
         "scanDetailsHistory": "{{target}}: Commit-Serien: {{returned}}, gescannte Datensätze: {{scanned}}, maskiert: {{masked}}",
-        "scanDetailsHistoryNoTarget": "Commit-Serien: {{returned}}, gescannte Datensätze: {{scanned}}, maskiert: {{masked}}"
+        "scanDetailsHistoryNoTarget": "Commit-Serien: {{returned}}, gescannte Datensätze: {{scanned}}, maskiert: {{masked}}",
+        "openConnectionsFailed": "Nicht verfügbar: Die Verbindungsliste konnte nicht geladen werden"
       },
       "openCounts": "Für LLM freigegeben: {{n}}, davon mit Nachrichten: {{m}}",
       "messagesPolicy": "Das Lesen von Nachrichten ist von Ihrer Organisation deaktiviert",
@@ -522,7 +523,8 @@
       "mask": "Maskierung",
       "maskStandard": "Standardliste",
       "maskFieldsAria": "Zu maskierende Feldnamen, einer pro Zeile",
-      "maskNote": "E-Mail-Adressen, Kartennummern, JWTs und Bearer-Token werden immer maskiert. Die Maskierung senkt das Risiko, erkennt aber keine Personennamen, Adressen oder Daten in Feldern mit unbekannten Namen."
+      "maskNote": "E-Mail-Adressen, Kartennummern, JWTs und Bearer-Token werden immer maskiert. Die Maskierung senkt das Risiko, erkennt aber keine Personennamen, Adressen oder Daten in Feldern mit unbekannten Namen.",
+      "llmStatusUnavailable": "MCP-Status nicht verfügbar: „Metadaten und Nachrichten“ kann gerade nicht ausgewählt werden"
     },
     "tls": {
       "pick": "Durchsuchen…",

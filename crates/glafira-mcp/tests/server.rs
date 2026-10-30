@@ -20,10 +20,10 @@ use glafira_mcp::{
 };
 use rmcp::model::{
     CallToolRequest, CallToolRequestParams, CallToolResult, ClientCapabilities, ClientConfig,
-    ClientRequest, Implementation,
+    ClientRequest, Implementation, NumberOrString, ProgressNotificationParam, ProgressToken,
 };
-use rmcp::service::{PeerRequestOptions, RunningService};
-use rmcp::{RoleClient, ServiceExt};
+use rmcp::service::{NotificationContext, PeerRequestOptions, RunningService};
+use rmcp::{ClientHandler, RoleClient, ServiceExt};
 use serde_json::{Value, json};
 
 const TOKEN: &str = "test-token";
@@ -671,6 +671,14 @@ impl Backend for Fake {
                             "messages_not_allowed",
                             "LLM access to this connection is limited to metadata",
                         )),
+                        // Три сообщения о ходе, затем пустой ответ.
+                        "progress" => {
+                            for i in 1..=3 {
+                                (ctx.progress)(i, 3);
+                                tokio::time::sleep(Duration::from_millis(30)).await;
+                            }
+                            Ok(read(vec![], ScanStats::default()))
+                        }
                         "slow" => {
                             for i in 0..500 {
                                 if ctx.cancelled() {
@@ -938,6 +946,15 @@ async fn named_client(
 }
 
 async fn call(c: &RunningService<RoleClient, ()>, tool: &str, args: Value) -> CallToolResult {
+    call_with(c, tool, args).await
+}
+
+/// `call` для клиента с любым обработчиком.
+async fn call_with<H: ClientHandler>(
+    c: &RunningService<RoleClient, H>,
+    tool: &str,
+    args: Value,
+) -> CallToolResult {
     let mut p = CallToolRequestParams::new(tool.to_string());
     if let Value::Object(m) = args {
         p = p.with_arguments(m);
@@ -2725,11 +2742,12 @@ async fn scan_deadline_counts_from_the_start_of_the_call() {
 async fn timed_out_scan_is_told_to_stop() {
     let fake = Fake::new(SessionAccess::Approved);
     let e = env_with(fake.clone(), |o| {
-        o.scan_deadline = Duration::from_millis(50)
+        o.scan_deadline = Duration::from_millis(50);
+        o.scan_grace = Duration::from_millis(100);
     })
     .await;
     let c = client(&e.ep).await;
-    // Страховочный таймаут — бюджет + 5 с.
+    // Страховочный таймаут — бюджет + `scan_grace`.
     let msg = err(&call(&c, "read_messages", window_args("stuck")).await);
     assert!(msg.starts_with("TIMEOUT:"), "{msg}");
     let mut stopped = false;
@@ -2853,4 +2871,118 @@ async fn backends_without_messages_answer_not_supported() {
         .await
         .unwrap_err();
     assert_eq!(e.code, "not_supported");
+}
+
+/// Клиент, который запоминает уведомления о ходе.
+#[derive(Clone, Default)]
+struct ProgressLog(Arc<Mutex<Vec<ProgressNotificationParam>>>);
+
+impl ClientHandler for ProgressLog {
+    async fn on_progress(
+        &self,
+        params: ProgressNotificationParam,
+        _: NotificationContext<RoleClient>,
+    ) {
+        self.0.lock().unwrap().push(params);
+    }
+}
+
+#[tokio::test]
+async fn scan_progress_reaches_the_client_with_its_token() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let mut s = endpoint::connect(&e.ep).await.unwrap();
+    handshake::client(&mut s, TOKEN).await.unwrap();
+    let log = ProgressLog::default();
+    let c = log.clone().serve(s).await.unwrap();
+    // rmcp сам кладёт в `_meta` запроса свой progressToken: у первого запроса клиента — 0.
+    ok(call_with(&c, "read_messages", window_args("progress")).await);
+    // Обработчик уведомлений клиента может отставать от ответа: ждём все три уведомления бэкенда
+    // (или последнее, если промежуточные слились).
+    let arrived = || {
+        let notes = log.0.lock().unwrap();
+        notes.len() >= 3 || notes.iter().any(|n| n.progress == 3.0)
+    };
+    for _ in 0..100 {
+        if arrived() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let notes = log.0.lock().unwrap().clone();
+    assert!(
+        notes.len() >= 2,
+        "уведомлений о ходе меньше двух: {notes:?}"
+    );
+    let token = ProgressToken(NumberOrString::Number(0));
+    assert!(notes.iter().all(|n| n.progress_token == token), "{notes:?}");
+    assert!(notes.iter().all(|n| n.total == Some(3.0)));
+    assert!(
+        notes.windows(2).all(|w| w[0].progress <= w[1].progress),
+        "ход не убывает"
+    );
+}
+
+#[tokio::test]
+async fn observation_is_busy_while_a_scan_runs() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let Value::Object(args) = window_args("slow") else {
+        unreachable!()
+    };
+    let request = ClientRequest::CallToolRequest(CallToolRequest::new(
+        CallToolRequestParams::new("read_messages").with_arguments(args),
+    ));
+    let handle = c
+        .send_cancellable_request(request, PeerRequestOptions::no_options())
+        .await
+        .unwrap();
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    let msg = err(&call(
+        &c,
+        "observe_consumer_group",
+        json!({"connectionId": "c1", "groupId": "orders-svc", "durationSeconds": 10}),
+    )
+    .await);
+    assert!(msg.starts_with("busy:"), "{msg}");
+    handle.cancel(Some("test".into())).await.unwrap();
+}
+
+#[tokio::test]
+async fn bad_summarize_arguments_do_not_reach_the_backend() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    let base = window_args("orders");
+    let cases = [
+        (
+            json!({"bucketSeconds": 0}),
+            "bucketSeconds must be between 1 and 86400, got 0",
+        ),
+        (
+            json!({"bucketSeconds": 86401}),
+            "bucketSeconds must be between 1 and 86400, got 86401",
+        ),
+        (
+            json!({"topKeys": 101}),
+            "topKeys must be between 0 and 100, got 101",
+        ),
+        (
+            json!({"from": "2026-10-24T14:31:00"}),
+            "timestamp has no time zone",
+        ),
+        // Два дня по минуте — больше 1000 корзин.
+        (
+            json!({"to": "2026-10-26T14:40:00+03:00", "bucketSeconds": 60}),
+            "buckets, at most 1000",
+        ),
+    ];
+    for (extra, want) in cases {
+        let args = with(base.clone(), extra);
+        let msg = err(&call(&c, "summarize_messages", args.clone()).await);
+        assert!(
+            msg.starts_with("invalid_argument:") && msg.contains(want),
+            "{args}: {msg}"
+        );
+    }
+    assert!(fake.message_ops.lock().unwrap().is_empty());
 }

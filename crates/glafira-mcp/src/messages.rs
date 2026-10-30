@@ -18,6 +18,8 @@ use crate::summary::Summary;
 /// Бюджет одного просмотра: время и число записей (спец. §3.1).
 pub const SCAN_DEADLINE: Duration = Duration::from_secs(40);
 pub const SCAN_RECORD_LIMIT: u64 = 1_000_000;
+/// Запас сверх бюджета просмотра: приложение закрывает консьюмер и возвращает собранное.
+pub const SCAN_GRACE: Duration = Duration::from_secs(5);
 /// Отступ до начала окна в истории коммитов: состояние группы на начало окна.
 pub const COMMIT_LOOKBACK_MS: i64 = 10 * 60 * 1000;
 pub const DEFAULT_LIMIT: u32 = 50;

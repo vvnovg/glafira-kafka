@@ -174,6 +174,34 @@ describe("McpSection", () => {
     expect(button).toBeDisabled();
   });
 
+  it("журнал: список подключений не загрузился — своя подсказка у кнопки", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.listConnections).mockRejectedValue(new Error("нет ответа"));
+    vi.mocked(api.getMcpAudit).mockResolvedValue([read("c1", "orders")]);
+    renderWithClient(<McpSection />);
+    const [button] = await openButtons();
+    await waitFor(() => expect(button).toHaveAttribute("title", "Недоступно: не удалось загрузить список подключений"));
+    expect(button).toBeDisabled();
+  });
+
+  // Порядок причин: усечённые аргументы и политика называются раньше ошибки списка.
+  it("журнал: при ошибке списка подключений подсказки об усечённых аргументах и политике остаются", async () => {
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
+    vi.mocked(api.listConnections).mockRejectedValue(new Error("нет ответа"));
+    vi.mocked(api.getMcpAudit).mockResolvedValue([read("c1", "orders"), read("c1", "big", { args: '{"topic":"big"…' })]);
+    const { unmount } = renderWithClient(<McpSection />);
+    const [failed, cut] = await openButtons();
+    await waitFor(() => expect(failed).toHaveAttribute("title", "Недоступно: не удалось загрузить список подключений"));
+    expect(cut).toHaveAttribute("title", "Недоступно: аргументы вызова в журнале усечены");
+    unmount();
+    vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus({ messagesAllowed: false }));
+    const { client } = renderWithClient(<McpSection />);
+    const [policy, cutToo] = await openButtons();
+    await waitFor(() => expect(client.getQueryState(["connections"])?.status).toBe("error"));
+    expect(policy).toHaveAttribute("title", "Недоступно: чтение сообщений отключено вашей организацией");
+    expect(cutToo).toHaveAttribute("title", "Недоступно: аргументы вызова в журнале усечены");
+  });
+
   it("журнал: пока список подключений грузится, кнопка неактивна без подсказки", async () => {
     vi.mocked(api.getMcpStatus).mockResolvedValue(mcpStatus());
     vi.mocked(api.listConnections).mockReturnValue(new Promise(() => {}));

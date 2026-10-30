@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, toAppError } from "../../api/client";
@@ -20,6 +20,9 @@ const LLM_LEVELS: LlmAccess[] = ["off", "metadata", "messages"];
 
 export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile; tabId: string }) {
   const { t } = useTranslation();
+  // Вкладки только скрываются, и формы нескольких подключений бывают в документе одновременно: с общими id подписи
+  // вели бы к полям чужой формы, а с общим именем радиокнопки уровней LLM были бы одной группой на все формы.
+  const uid = useId();
   const [profile, setProfile] = useState(initial);
   const [password, setPassword] = useState("");
   const [tlsSecrets, setTlsSecrets] = useState<TlsSecrets>(emptyTlsSecrets);
@@ -30,9 +33,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
   // Подтверждение удаления внутри формы: нативный window.confirm в Tauri 2 не показывается и возвращает false.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // Политика может запретить чтение сообщений (G4). Строго: третий уровень и блок «Маскирование» — только когда статус
-  // пришёл и разрешает (true), пометки политики — только при явном запрете (false). Пока статус грузится или не
-  // загрузился, третий уровень недоступен без пометки, а сохранение оставляет сохранённый уровень как есть.
-  const messagesAllowed = useMcpStatus().data?.messagesAllowed;
+  // пришёл и разрешает (true), пометки политики — только при явном запрете (false). Пока статус грузится, третий уровень
+  // недоступен без пометки, не загрузился — с пометкой; сохранение оставляет сохранённый уровень как есть.
+  const mcpStatus = useMcpStatus();
+  const messagesAllowed = mcpStatus.data?.messagesAllowed;
   const prodWarning = messagesAllowed === true && profile.llmAccess === "messages" && profile.environment === "prod";
   const [maskText, setMaskText] = useState((initial.llmMaskFields ?? STANDARD_MASK_FIELDS).join("\n"));
   const queryClient = useQueryClient();
@@ -116,12 +120,12 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         <h2>{isNew ? t("connections.form.titleNew") : t("connections.form.titleEdit", { name: initial.name })}</h2>
       </div>
       <div className="form">
-        <label htmlFor="cf-name">{t("connections.form.name")}</label>
-        <input id="cf-name" value={profile.name} onChange={(e) => update({ name: e.target.value })} />
+        <label htmlFor={`${uid}-name`}>{t("connections.form.name")}</label>
+        <input id={`${uid}-name`} value={profile.name} onChange={(e) => update({ name: e.target.value })} />
 
-        <label htmlFor="cf-folder">{t("connections.form.folder")}</label>
+        <label htmlFor={`${uid}-folder`}>{t("connections.form.folder")}</label>
         <select
-          id="cf-folder"
+          id={`${uid}-folder`}
           value={folderId ?? ""}
           onChange={(e) => {
             setFolderTouched(true);
@@ -137,11 +141,11 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         </select>
 
         <span className="field-label">
-          <label htmlFor="cf-env">{t("connections.form.environment")}</label>
+          <label htmlFor={`${uid}-env`}>{t("connections.form.environment")}</label>
           <Hint k="hints.connections.environment" label={t("connections.form.environment")} />
         </span>
         <select
-          id="cf-env"
+          id={`${uid}-env`}
           value={profile.environment}
           onChange={(e) => {
             const environment = e.target.value as Environment;
@@ -157,23 +161,23 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         </select>
 
         <span className="field-label">
-          <label htmlFor="cf-ro">{t("common.readOnly")}</label>
+          <label htmlFor={`${uid}-ro`}>{t("common.readOnly")}</label>
           <Hint k="hints.connections.readOnly" label={t("common.readOnly")} />
         </span>
         <span>
-          <input id="cf-ro" type="checkbox" checked={profile.readOnly} onChange={(e) => update({ readOnly: e.target.checked })} />
+          <input id={`${uid}-ro`} type="checkbox" checked={profile.readOnly} onChange={(e) => update({ readOnly: e.target.checked })} />
         </span>
 
         <span className="field-label">
-          <span id="cf-llm">{t("connections.form.llmAccess")}</span>
+          <span id={`${uid}-llm`}>{t("connections.form.llmAccess")}</span>
           <Hint k="hints.connections.llmAccess" label={t("connections.form.llmAccess")} />
         </span>
-        <div role="radiogroup" aria-labelledby="cf-llm" aria-describedby={prodWarning ? "cf-llm-prod" : undefined} className="llm-levels">
+        <div role="radiogroup" aria-labelledby={`${uid}-llm`} aria-describedby={prodWarning ? `${uid}-llm-prod` : undefined} className="llm-levels">
           {LLM_LEVELS.map((level) => (
             <label key={level}>
               <input
                 type="radio"
-                name="cf-llm"
+                name={`${uid}-llm`}
                 checked={(profile.llmAccess ?? "off") === level}
                 disabled={level === "messages" && messagesAllowed !== true}
                 onChange={() => update({ llmAccess: level })}
@@ -186,24 +190,26 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
               {profile.llmAccess === "messages" ? t("connections.form.llmMessagesAsMetadata") : t("connections.form.llmMessagesPolicy")}
             </span>
           )}
-          {prodWarning && (
-            <span id="cf-llm-prod" className="warn" role="status">
-              {t("connections.form.llmProdWarning")}
-            </span>
+          {messagesAllowed === undefined && mcpStatus.isError && (
+            <span className="muted">{t("connections.form.llmStatusUnavailable")}</span>
           )}
+          {/* Живая область есть всегда: текст, вписанный в уже существующую область, программа чтения экрана объявит. */}
+          <span id={`${uid}-llm-prod`} className="warn" role="status">
+            {prodWarning ? t("connections.form.llmProdWarning") : ""}
+          </span>
         </div>
 
         {messagesAllowed === true && profile.llmAccess === "messages" && (
           <>
             {/* Подпись блока, а не флажка: щелчок по ней не должен переключать «Стандартный список» и стирать свой список. */}
             <span className="field-label">
-              <span id="cf-mask-label">{t("connections.form.mask")}</span>
+              <span id={`${uid}-mask-label`}>{t("connections.form.mask")}</span>
               <Hint k="hints.connections.mask" label={t("connections.form.mask")} />
             </span>
-            <div className="llm-mask" role="group" aria-labelledby="cf-mask-label" aria-describedby="cf-mask-note">
+            <div className="llm-mask" role="group" aria-labelledby={`${uid}-mask-label`} aria-describedby={`${uid}-mask-note`}>
               <label>
                 <input
-                  id="cf-mask-std"
+                  id={`${uid}-mask-std`}
                   type="checkbox"
                   checked={profile.llmMaskFields == null}
                   onChange={(e) => {
@@ -230,32 +236,32 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
                   }}
                 />
               )}
-              <span id="cf-mask-note" className="muted">
+              <span id={`${uid}-mask-note`} className="muted">
                 {t("connections.form.maskNote")}
               </span>
             </div>
           </>
         )}
 
-        <label htmlFor="cf-color">{t("connections.form.color")}</label>
-        <input id="cf-color" type="color" value={profile.color} onChange={(e) => update({ color: e.target.value })} />
+        <label htmlFor={`${uid}-color`}>{t("connections.form.color")}</label>
+        <input id={`${uid}-color`} type="color" value={profile.color} onChange={(e) => update({ color: e.target.value })} />
 
         <span className="field-label">
-          <label htmlFor="cf-bootstrap">{t("connections.form.bootstrap")}</label>
+          <label htmlFor={`${uid}-bootstrap`}>{t("connections.form.bootstrap")}</label>
           <Hint k="hints.connections.bootstrap" label={t("connections.form.bootstrap")} />
         </span>
         <input
-          id="cf-bootstrap"
+          id={`${uid}-bootstrap`}
           placeholder="host1:9092,host2:9092"
           value={profile.bootstrapServers}
           onChange={(e) => update({ bootstrapServers: e.target.value })}
         />
 
         <span className="field-label">
-          <label htmlFor="cf-protocol">{t("connections.form.protocol")}</label>
+          <label htmlFor={`${uid}-protocol`}>{t("connections.form.protocol")}</label>
           <Hint k="hints.connections.protocol" label={t("connections.form.protocol")} />
         </span>
-        <select id="cf-protocol" value={sec.protocol} onChange={(e) => update({ security: withProtocol(sec, e.target.value as Protocol) })}>
+        <select id={`${uid}-protocol`} value={sec.protocol} onChange={(e) => update({ security: withProtocol(sec, e.target.value as Protocol) })}>
           {PROTOCOLS.map((p) => (
             <option key={p} value={p}>
               {p}
@@ -276,11 +282,11 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         {"sasl" in sec && (
           <>
             <span className="field-label">
-              <label htmlFor="cf-mech">{t("connections.form.saslMechanism")}</label>
+              <label htmlFor={`${uid}-mech`}>{t("connections.form.saslMechanism")}</label>
               <Hint k="hints.connections.saslMechanism" label={t("connections.form.saslMechanism")} />
             </span>
             <select
-              id="cf-mech"
+              id={`${uid}-mech`}
               value={sec.sasl.mechanism}
               onChange={(e) => update({ security: { ...sec, sasl: { ...sec.sasl, mechanism: e.target.value as SaslMechanism } } })}
             >
@@ -290,15 +296,15 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
                 </option>
               ))}
             </select>
-            <label htmlFor="cf-user">{t("connections.form.username")}</label>
+            <label htmlFor={`${uid}-user`}>{t("connections.form.username")}</label>
             <input
-              id="cf-user"
+              id={`${uid}-user`}
               value={sec.sasl.username}
               onChange={(e) => update({ security: { ...sec, sasl: { ...sec.sasl, username: e.target.value } } })}
             />
-            <label htmlFor="cf-pass">{t("connections.form.password")}</label>
+            <label htmlFor={`${uid}-pass`}>{t("connections.form.password")}</label>
             <input
-              id="cf-pass"
+              id={`${uid}-pass`}
               type="password"
               autoComplete="off"
               placeholder={isNew ? "" : t("connections.form.passwordKeep")}
@@ -309,11 +315,11 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         )}
 
         <span className="field-label">
-          <label htmlFor="cf-timeout">{t("connections.form.timeout")}</label>
+          <label htmlFor={`${uid}-timeout`}>{t("connections.form.timeout")}</label>
           <Hint k="hints.connections.timeout" label={t("connections.form.timeout")} />
         </span>
         <input
-          id="cf-timeout"
+          id={`${uid}-timeout`}
           type="number"
           min={1000}
           step={1000}
@@ -322,10 +328,10 @@ export function ConnectionForm({ initial, tabId }: { initial: ConnectionProfile;
         />
 
         <span className="field-label">
-          <label htmlFor="cf-props">{t("connections.form.props")}</label>
+          <label htmlFor={`${uid}-props`}>{t("connections.form.props")}</label>
           <Hint k="hints.connections.props" label={t("connections.form.props")} />
         </span>
-        <textarea id="cf-props" rows={4} placeholder={t("connections.form.propsPlaceholder")} value={propsText} onChange={(e) => setPropsText(e.target.value)} />
+        <textarea id={`${uid}-props`} rows={4} placeholder={t("connections.form.propsPlaceholder")} value={propsText} onChange={(e) => setPropsText(e.target.value)} />
       </div>
 
       <div className="toolbar">

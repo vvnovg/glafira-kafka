@@ -6,7 +6,7 @@ use std::fmt;
 use std::sync::LazyLock;
 
 use base64::Engine;
-use regex::{Captures, Regex};
+use regex::{Captures, Match, Regex};
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
@@ -14,6 +14,9 @@ use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 pub const MASK: &str = "***";
 /// Сколько первых байтов значения разбирается как JSON; длиннее — текстовый режим.
 pub const MASK_PARSE_LIMIT: usize = 256 * 1024;
+/// Сколько первых байтов ключа приложение передаёт на маскировку: ключ в ответе короткий
+/// (`MAX_KEY_TEXT`), а ключ длиннее маскируется как частичный, текстом.
+pub const KEY_PARSE_LIMIT: usize = 16 * 1024;
 /// Пределы списка полей подключения (проверяет приложение при сохранении).
 pub const MAX_MASK_FIELDS: usize = 200;
 pub const MAX_MASK_FIELD_CHARS: usize = 64;
@@ -112,13 +115,20 @@ static BEARER: LazyLock<Regex> =
 static EMAIL: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}").expect("email regex")
 });
-/// Серия групп цифр (кандидаты в номер карты): между группами одиночный пробел или дефис.
+/// Серия групп цифр (кандидаты в номер карты): между группами одиночный пробел или дефис; по
+/// краям — не цифра (буква рядом не мешает: `id4111…`).
 static DIGIT_RUN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\b[0-9]+(?:[ -][0-9]+)*\b").expect("digit run regex"));
+    LazyLock::new(|| Regex::new(r"[0-9]+(?:[ -][0-9]+)*").expect("digit run regex"));
+/// Серия групп цифр по границам слова, как до G4.1. Число, приклеенное к слову (`ab12`), входит в
+/// серию [`DIGIT_RUN`], и карта в редкой группировке рядом с ним по всей серии уже не находится;
+/// здесь такое число в серию не входит (`ab12 41111 11111 111111`). Что маскировалось до G4.1,
+/// маскируется и теперь.
+static WORD_DIGIT_RUN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\b[0-9]+(?:[ -][0-9]+)*\b").expect("word digit run regex"));
 /// Имя пары `name=value`, `name: value`, `"name": value` в тексте вместе с разделителем.
 static PAIR: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[A-Za-z_][A-Za-z0-9_.\-]{0,63}))\s*[:=]\s*"#,
+        r#"(?:"(?P<n1>[^"\\]{1,64})"|'(?P<n2>[^'\\]{1,64})'|(?P<n3>[\p{L}_][\p{L}\p{M}\p{N}_.\-]*))\s*[:=]\s*"#,
     )
     .expect("pair regex")
 });
@@ -126,56 +136,40 @@ static PAIR: LazyLock<Regex> = LazyLock::new(|| {
 static VALUE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"^(?:"(?:[^"\\]|\\.)*"|'[^']*'|[^\s,;&}\]]+)"#).expect("value regex")
 });
-/// Слово учётных данных после известной схемы авторизации — и на следующей строке.
+/// Слово учётных данных после схемы авторизации — и на следующей строке.
 static CREDENTIAL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s+[^\s,;&}\]]+").expect("credential regex"));
-/// Слово учётных данных после любой другой схемы — только в той же строке.
-static SAME_LINE_CREDENTIAL: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s,;&}\]]+").expect("same-line credential regex"));
 /// Разделитель пары сразу за словом: слово — имя следующей пары.
 static NEXT_PAIR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s*[:=]").expect("next pair regex"));
 /// Слово начинается с пары `name=value`.
-static GLUED_PAIR: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[A-Za-z_][\w.-]*=[^=]").expect("glued pair regex"));
+static GLUED_PAIR: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^[\p{L}_][\p{L}\p{M}\p{N}_.\-]*=[^=]").expect("glued pair regex")
+});
+/// Слово — имя пары с `=` в конце (`password=`).
+static OPEN_PAIR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[\p{L}_][\p{L}\p{M}\p{N}_.\-]*=$").expect("open pair regex"));
+/// За словом в той же строке после пробелов стоит значение.
+static SPACED_VALUE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[ \t]+[^\s]").expect("spaced value regex"));
 
-/// Сколько байтов `rest` занимают учётные данные, если значение пары — схема авторизации
-/// (`Authorization: Negotiate YII…`, иначе они остались бы за `***`): `Bearer`, `Basic`, `Digest`,
-/// `Token` — у любого имени из списка, токен может быть и на следующей строке; любая другая схема
-/// (токен RFC 7235) — только у имён, оканчивающихся на `authorization`, и в той же строке.
-/// Учётные данные — слово целиком (`user:p4ss`, `abc@x`, `a=b`), но не имя следующей пары: слово
-/// с `:` в конце или перед `:`/`=` (`access_token: x`), а на следующей строке и слово,
-/// начинающееся с `name=value` (`user=ann`; в той же строке это параметр схемы).
-fn credential_len(name: &str, value: &str, rest: &str) -> usize {
-    let re = if ["bearer", "basic", "digest", "token"]
-        .iter()
-        .any(|s| value.eq_ignore_ascii_case(s))
-    {
-        &*CREDENTIAL
-    } else if normalize(name).ends_with("authorization")
-        && value
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
-    {
-        &*SAME_LINE_CREDENTIAL
-    } else {
-        return 0;
-    };
-    let Some(cred) = re.find(rest) else {
-        return 0;
-    };
-    let word = cred.as_str().trim_start();
-    let next_line = !cred.as_str()[..cred.len() - word.len()]
-        .bytes()
-        .all(|b| b == b' ' || b == b'\t');
-    if word.ends_with(':')
-        || NEXT_PAIR.is_match(&rest[cred.end()..])
-        || (next_line && GLUED_PAIR.is_match(word))
-    {
-        0
-    } else {
-        cred.end()
-    }
+/// Схемы авторизации, после которых учётные данные берутся следующим словом.
+const SCHEMES: [&str; 4] = ["bearer", "basic", "digest", "token"];
+
+fn is_scheme(value: &str) -> bool {
+    SCHEMES.iter().any(|s| value.eq_ignore_ascii_case(s))
+}
+
+/// Имена, значение которых без кавычек маскируется до конца строки: куки и заголовки
+/// авторизации (`Cookie: a=1; b=2`, `Authorization: Digest username="u", response="…"`).
+fn masks_line(name: &str) -> bool {
+    let n = normalize(name);
+    n == "cookie" || n == "setcookie" || n.ends_with("authorization")
+}
+
+/// Длина строки `s` до `\n` или `\r` (или до конца).
+fn line_len(s: &str) -> usize {
+    s.find(['\n', '\r']).unwrap_or(s.len())
 }
 
 /// ASCII-цифры номера карты: 13–19 цифр, проверка Луна и первая цифра 2–6 (Мир, Visa,
@@ -203,54 +197,70 @@ fn is_card(digits: &[u8]) -> bool {
 }
 
 /// Длины групп окна в форме номера карты: одна группа из 13–19 цифр, 4-4-4-4 с необязательной
-/// последней группой из 1–3 цифр, 4-6-5 (Amex) или 4-6-4 (Diners).
+/// последней группой из 1–3 цифр, 4-6-5 (Amex), 4-6-4 (Diners), 4-4-4-3, 4-3-3-3, 6-13, 8-8.
 fn card_shaped(lens: &[usize]) -> bool {
     match lens {
         [n] => (13..=19).contains(n),
-        [4, 4, 4, 4] | [4, 6, 5] | [4, 6, 4] => true,
+        [4, 4, 4, 4] | [4, 6, 5] | [4, 6, 4] | [4, 4, 4, 3] | [4, 3, 3, 3] | [6, 13] | [8, 8] => {
+            true
+        }
         [4, 4, 4, 4, n] => (1..=3).contains(n),
         _ => false,
     }
 }
 
-/// Номера карт (диапазоны байтов) среди групп цифр: в каждой серии — вся серия из 13–19 цифр при
-/// любой группировке и все окна из подряд идущих целых групп в форме номера карты
-/// ([`card_shaped`]), прошедшие [`is_card`]; пересекающиеся окна объединяются. Соседние числа
-/// (`… 12/25`, `qty 2 …`, `630000 4111 …`) остаются на виду и не мешают, списки чисел (серии
-/// длиннее) картой не считаются, а группа не делится: 23 цифры подряд — не карта.
-fn card_spans(text: &str) -> Vec<(usize, usize)> {
+/// Номера карт (диапазоны байтов) в одной серии групп цифр: вся серия из 13–19 цифр при любой
+/// группировке и все окна из подряд идущих целых групп в форме номера карты ([`card_shaped`]),
+/// прошедшие [`is_card`]. Диапазоны могут пересекаться.
+fn series_spans(run: Match<'_>) -> Vec<(usize, usize)> {
     let mut spans: Vec<(usize, usize)> = Vec::new();
-    for run in DIGIT_RUN.find_iter(text) {
-        if run.len() < 13 {
-            continue;
+    if run.len() < 13 {
+        return spans;
+    }
+    let digits: Vec<u8> = run.as_str().bytes().filter(u8::is_ascii_digit).collect();
+    // Группы: начало и конец в тексте, начало в `digits`.
+    let mut groups: Vec<(usize, usize, usize)> = Vec::new();
+    let mut start = run.start();
+    for (i, b) in run.as_str().bytes().enumerate() {
+        if !b.is_ascii_digit() {
+            groups.push((start, run.start() + i, start - run.start() - groups.len()));
+            start = run.start() + i + 1;
         }
-        let digits: Vec<u8> = run.as_str().bytes().filter(u8::is_ascii_digit).collect();
-        // Группы: начало и конец в тексте, начало в `digits`.
-        let mut groups: Vec<(usize, usize, usize)> = Vec::new();
-        let mut start = run.start();
-        for (i, b) in run.as_str().bytes().enumerate() {
-            if !b.is_ascii_digit() {
-                groups.push((start, run.start() + i, start - run.start() - groups.len()));
-                start = run.start() + i + 1;
+    }
+    groups.push((start, run.end(), start - run.start() - groups.len()));
+    let lens: Vec<usize> = groups.iter().map(|&(s, e, _)| e - s).collect();
+    // Вся серия из 13–19 цифр — при любой группировке.
+    if is_card(&digits) {
+        spans.push((run.start(), run.end()));
+    }
+    for (i, &(first, _, from)) in groups.iter().enumerate() {
+        for (j, &(_, end, at)) in groups.iter().enumerate().skip(i).take(5) {
+            if card_shaped(&lens[i..=j]) && is_card(&digits[from..at + lens[j]]) {
+                spans.push((first, end));
             }
         }
-        groups.push((start, run.end(), start - run.start() - groups.len()));
-        let lens: Vec<usize> = groups.iter().map(|&(s, e, _)| e - s).collect();
-        // Вся серия из 13–19 цифр — при любой группировке; начинается раньше любого окна.
-        if is_card(&digits) {
-            spans.push((run.start(), run.end()));
-        }
-        for (i, &(first, _, from)) in groups.iter().enumerate() {
-            for (j, &(_, end, at)) in groups.iter().enumerate().skip(i).take(5) {
-                if !card_shaped(&lens[i..=j]) || !is_card(&digits[from..at + lens[j]]) {
-                    continue;
-                }
-                // Окна идут по возрастанию начала: пересекается только с последним диапазоном.
-                match spans.last_mut() {
-                    Some((_, last)) if *last > first => *last = (*last).max(end),
-                    _ => spans.push((first, end)),
-                }
-            }
+    }
+    spans
+}
+
+/// Номера карт (диапазоны байтов) среди групп цифр: [`series_spans`] в сериях по границам цифр
+/// ([`DIGIT_RUN`]) и по границам слова ([`WORD_DIGIT_RUN`]); пересекающиеся диапазоны
+/// объединяются в один. Соседние числа (`… 12/25`, `qty 2 …`, `630000 4111 …`) остаются на виду и
+/// не мешают, списки чисел (серии длиннее) картой не считаются, а группа не делится: 23 цифры
+/// подряд — не карта.
+fn card_spans(text: &str) -> Vec<(usize, usize)> {
+    let mut found: Vec<(usize, usize)> = DIGIT_RUN
+        .find_iter(text)
+        .chain(WORD_DIGIT_RUN.find_iter(text))
+        .flat_map(series_spans)
+        .collect();
+    found.sort_unstable();
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for (start, end) in found {
+        // По возрастанию начала: пересекается только с последним диапазоном.
+        match spans.last_mut() {
+            Some((_, last)) if *last > start => *last = (*last).max(end),
+            _ => spans.push((start, end)),
         }
     }
     spans
@@ -308,6 +318,19 @@ fn patterns_in_place(run: &mut [u8], count: &mut usize) {
     }
 }
 
+/// Цифры модуля целого значения числа JSON: у отрицательного — без знака; у числа с дробной
+/// частью или экспонентой — если значение целое и по модулю меньше 10¹⁹.
+fn integer_digits(n: &serde_json::Number) -> Option<String> {
+    if let Some(u) = n.as_u64() {
+        return Some(u.to_string());
+    }
+    if let Some(i) = n.as_i64() {
+        return Some(i.unsigned_abs().to_string());
+    }
+    let f = n.as_f64()?.abs();
+    (f.fract() == 0.0 && f < 1e19).then(|| (f as u64).to_string())
+}
+
 /// Обрезает текст до `max` байтов по границе символа; true — обрезан.
 pub(crate) fn cut_utf8(mut s: String, max: usize) -> (String, bool) {
     if s.len() <= max {
@@ -349,8 +372,39 @@ impl Masker {
         !n.is_empty() && self.fields.iter().any(|p| glob(p, &n))
     }
 
-    /// Текстовый режим: значения пар `name=value` из списка → `***`, затем шаблоны. Значение пары
-    /// с именем не из списка просматривается дальше — в нём бывают свои пары
+    /// Сколько байтов `rest` занимают учётные данные, если значение пары — схема `Bearer`, `Basic`,
+    /// `Digest` или `Token` (иначе они остались бы за `***`); токен может быть и на следующей
+    /// строке. Учётные данные — слово целиком (`user:p4ss`, `abc@x`, `a=b`), но не имя следующей
+    /// пары: слово с `:` в конце или перед `:`/`=` (`access_token: x`), а на следующей строке и
+    /// слово, начинающееся с `name=value` (`user=ann`), и слово `name=` со значением после
+    /// пробелов, если `name` из списка (`password= x`; `Zm9v= foo` — учётные данные); в той же
+    /// строке такие слова — параметр схемы или base64 с `=`.
+    fn credential_len(&self, value: &str, rest: &str) -> usize {
+        if !is_scheme(value) {
+            return 0;
+        }
+        let Some(cred) = CREDENTIAL.find(rest) else {
+            return 0;
+        };
+        let word = cred.as_str().trim_start();
+        let after = &rest[cred.end()..];
+        let next_line = !cred.as_str()[..cred.len() - word.len()]
+            .bytes()
+            .all(|b| b == b' ' || b == b'\t');
+        let next_pair = GLUED_PAIR.is_match(word)
+            || (OPEN_PAIR.is_match(word)
+                && SPACED_VALUE.is_match(after)
+                && self.field_matches(word.trim_end_matches('=')));
+        if word.ends_with(':') || NEXT_PAIR.is_match(after) || (next_line && next_pair) {
+            0
+        } else {
+            cred.end()
+        }
+    }
+
+    /// Текстовый режим: значения пар `name=value` из списка → `***`, затем шаблоны. У кук и
+    /// заголовков авторизации ([`masks_line`]) значение без кавычек — до конца строки. Значение
+    /// пары с именем не из списка просматривается дальше — в нём бывают свои пары
     /// (`url=…?password=x`, `note: token=y`).
     pub fn text(&self, s: &str, count: &mut usize) -> String {
         let mut out = String::with_capacity(s.len());
@@ -383,9 +437,18 @@ impl Masker {
                     out.push_str(MASK);
                     out.push(q);
                 }
+                None if masks_line(name) => {
+                    out.push_str(MASK);
+                    let end = head + line_len(&s[head..]);
+                    let rest_blank = s[pos..end].bytes().all(|b| b == b' ' || b == b'\t');
+                    pos = end;
+                    if rest_blank {
+                        pos += self.credential_len(v.as_str(), &s[pos..]);
+                    }
+                }
                 None => {
                     out.push_str(MASK);
-                    pos += credential_len(name, v.as_str(), &s[pos..]);
+                    pos += self.credential_len(v.as_str(), &s[pos..]);
                 }
             }
         }
@@ -405,8 +468,7 @@ impl Masker {
         match node {
             Node::String(s) => *s = self.text(s, count),
             Node::Number(n) => {
-                let digits = n.to_string();
-                if digits.bytes().all(|b| b.is_ascii_digit()) && is_card(digits.as_bytes()) {
+                if integer_digits(n).is_some_and(|d| is_card(d.as_bytes())) {
                     *count += 1;
                     *node = Node::String("[card]".into());
                 }
@@ -924,12 +986,14 @@ mod tests {
                     "Authorization: ***",
                     1,
                 ),
+                // У `…authorization` — до конца строки, вместе с соседними парами.
                 (
                     "authorization=ApiKey s3cr3tKEY, next",
-                    "authorization=***, next",
+                    "authorization=***",
                     1,
                 ),
-                // Только в той же строке; у других имён следующее слово остаётся.
+                // Правило строки кончается на `\n`; слово со следующей строки берётся только после
+                // схемы из `SCHEMES`, а `Negotiate` не из них.
                 (
                     "Authorization: Negotiate\nYIIabc",
                     "Authorization: ***\nYIIabc",
@@ -972,14 +1036,14 @@ mod tests {
                 ),
                 (
                     "authorization=abc password: hunter2",
-                    "authorization=*** password: ***",
-                    2,
+                    "authorization=***",
+                    1,
                 ),
                 ("token: Bearer\nuser=ann", "token: ***\nuser=ann", 1),
                 // Токен — слово целиком: с `:`, `@` и `=` внутри.
                 (
                     "Authorization: Basic dXNlcg== from 10.0.0.1",
-                    "Authorization: *** from 10.0.0.1",
+                    "Authorization: ***",
                     1,
                 ),
                 (
@@ -989,7 +1053,7 @@ mod tests {
                 ),
                 (
                     "Authorization: Basic alice:hunter2 from 10.0.0.1",
-                    "Authorization: *** from 10.0.0.1",
+                    "Authorization: ***",
                     1,
                 ),
                 ("token: Token id42:s3cr3tKEY", "token: ***", 1),
@@ -1024,6 +1088,179 @@ mod tests {
     }
 
     #[test]
+    fn cookies_and_authorization_are_masked_to_the_end_of_the_line() {
+        texts(
+            &standard(),
+            &[
+                ("Cookie: a=1; sessionid=xyz", "Cookie: ***", 1),
+                ("cookie: a=1\nuser=ann", "cookie: ***\nuser=ann", 1),
+                (
+                    r#"Authorization: Digest username="bob", realm="r", response="abc""#,
+                    "Authorization: ***",
+                    1,
+                ),
+                (
+                    "Authorization: AWS4-HMAC-SHA256 Credential=AKIA/2026/s3, SignedHeaders=host, Signature=abc",
+                    "Authorization: ***",
+                    1,
+                ),
+                ("Authorization: Bearer abc:", "Authorization: ***", 1),
+                (
+                    "Authorization: Bearer\n  abcdef12345",
+                    "Authorization: ***",
+                    1,
+                ),
+                // Значение в кавычках — по-прежнему в пределах кавычек.
+                (
+                    r#"Cookie: "a=1; b=2" user=ann"#,
+                    r#"Cookie: "***" user=ann"#,
+                    1,
+                ),
+                (
+                    "set-cookie: sid=1; Path=/\r\nok",
+                    "set-cookie: ***\r\nok",
+                    1,
+                ),
+            ],
+        );
+        let (out, n) = json(&standard(), r#"{"h":"Set-Cookie: sid=1; Path=/"}"#);
+        assert_eq!((out.as_str(), n), (r#"{"h":"Set-Cookie: ***"}"#, 1));
+        // Только для имён из списка: `Cookie` не в нём — его значение не съедает строку.
+        let own = Masker::new(&MaskConfig {
+            fields: Some(vec!["password".into()]),
+        });
+        texts(
+            &own,
+            &[("Cookie: a=1; password=x", "Cookie: a=1; password=***", 1)],
+        );
+    }
+
+    #[test]
+    fn next_line_pair_with_a_spaced_value_is_not_a_credential() {
+        texts(
+            &standard(),
+            &[
+                (
+                    "pwd: basic\npassword= hunter2",
+                    "pwd: ***\npassword= ***",
+                    2,
+                ),
+                // В той же строке слово с `=` в конце — учётные данные (base64 с выравниванием).
+                ("X-Auth-Token: Basic dXNlcjpwYXM=", "X-Auth-Token: ***", 1),
+                (
+                    "X-Auth-Token: Basic dXNlcjpwYXM= from 10.0.0.1",
+                    "X-Auth-Token: *** from 10.0.0.1",
+                    1,
+                ),
+                // И слово вида `name=value` в той же строке — учётные данные.
+                ("token: Bearer abcdefgh=ijklmnop", "token: ***", 1),
+                // На следующей строке без значения после `=` — тоже учётные данные.
+                ("token: Basic\ndXNlcjpwYXM=", "token: ***", 1),
+                // Слово `name=` со значением после пробелов — имя пары, только если имя из списка.
+                ("token: Basic\nZm9v= foo", "token: *** foo", 1),
+            ],
+        );
+    }
+
+    #[test]
+    fn pair_names_may_be_in_any_script() {
+        let own = Masker::new(&MaskConfig {
+            fields: Some(vec!["пароль".into(), "token".into()]),
+        });
+        texts(
+            &own,
+            &[
+                ("пароль=x", "пароль=***", 1),
+                ("логин=ann Пароль: секрет", "логин=ann Пароль: ***", 1),
+                ("token: Basic\nпароль= x", "token: ***\nпароль= ***", 2),
+            ],
+        );
+        // Комбинирующие знаки (`\p{M}`) — часть имени.
+        let own = Masker::new(&MaskConfig {
+            fields: Some(vec!["पासवर्ड".into()]),
+        });
+        texts(&own, &[("पासवर्ड=x", "पासवर्ड=***", 1)]);
+    }
+
+    #[test]
+    fn cards_glued_to_words_and_rare_groupings_are_found() {
+        texts(
+            &standard(),
+            &[
+                ("id4111111111111111", "id[card]", 1),
+                ("x_4111111111111111", "x_[card]", 1),
+                ("4111111111111111abc", "[card]abc", 1),
+                // Окна новых форм рядом с числом: 4-4-4-3, 4-3-3-3, 6-13, 8-8.
+                ("qty 2 4111 1111 1111 116", "qty 2 [card]", 1),
+                ("qty 2 4222 222 222 222", "qty 2 [card]", 1),
+                ("qty 2 411111 1111111111110", "qty 2 [card]", 1),
+                ("qty 2 41111111 11111111", "qty 2 [card]", 1),
+                // Без верной суммы Луна приклеенные цифры остаются.
+                ("id4111111111111112", "id4111111111111112", 0),
+                // Число, приклеенное к слову, входит в серию по границам цифр; карта в редкой
+                // группировке рядом с ним находится по границам слова, как до G4.1.
+                ("ab12 41111 11111 111111", "ab12 [card]", 1),
+                ("v2 4111-111111111111", "v2 [card]", 1),
+                ("A7-411111111 1111111", "A7-[card]", 1),
+                ("41111 11111 111111 9x", "[card] 9x", 1),
+            ],
+        );
+        // В двоичном режиме — тоже по границам слова.
+        let mut n = 0;
+        let out = standard().binary(b"\x00ab12 41111 11111 111111\x00", &mut n);
+        assert_eq!(
+            (String::from_utf8_lossy(&out), n),
+            (format!("\0ab12 {}\0", "*".repeat(18)).into(), 1)
+        );
+    }
+
+    #[test]
+    fn negative_and_float_json_card_numbers_are_masked() {
+        let m = standard();
+        for (input, want, want_n) in [
+            (r#"{"n":-4111111111111111}"#, r#"{"n":"[card]"}"#, 1),
+            (r#"{"n":4.111111111111111e15}"#, r#"{"n":"[card]"}"#, 1),
+            (r#"{"n":4111111111111111.0}"#, r#"{"n":"[card]"}"#, 1),
+            (r#"{"n":-12,"m":1.5}"#, r#"{"n":-12,"m":1.5}"#, 0),
+        ] {
+            assert_eq!(json(&m, input), (want.to_string(), want_n), "{input}");
+        }
+    }
+
+    #[test]
+    fn json_longer_than_the_parse_limit_is_masked_as_text() {
+        let m = standard();
+        let head = br#"{"password":1,"pad":""#;
+        let mut whole = head.to_vec();
+        whole.resize(MASK_PARSE_LIMIT + 10, b'a');
+        whole.extend(br#""}"#);
+        // Целиком передано, но длиннее предела разбора.
+        let mut n = 0;
+        let d = m.data(&whole, whole.len(), DataFormat::Json, 64, &mut n);
+        assert!(
+            d.text.starts_with(r#"{"password":***,"pad":"aaa"#),
+            "{}",
+            d.text
+        );
+        assert_eq!((d.truncated, d.size, n), (true, whole.len(), 1));
+        // Передан только предел разбора.
+        let mut n = 0;
+        let d = m.data(
+            &whole[..MASK_PARSE_LIMIT],
+            whole.len(),
+            DataFormat::Json,
+            64,
+            &mut n,
+        );
+        assert!(
+            d.text.starts_with(r#"{"password":***,"pad":"aaa"#),
+            "{}",
+            d.text
+        );
+        assert_eq!((d.truncated, n), (true, 1));
+    }
+
+    #[test]
     fn proxy_authorization_is_in_the_standard_list() {
         let m = standard();
         texts(
@@ -1042,6 +1279,12 @@ mod tests {
             (out.as_str(), n),
             (r#"{"Proxy-Authorization":"***","via":"proxy"}"#, 1)
         );
+        let mut n = 0;
+        assert_eq!(
+            m.header("Proxy-Authorization", "Basic dXNlcjpwNHNz", &mut n),
+            MASK
+        );
+        assert_eq!(n, 1);
         // Отдельное имя, а не `*authorization`: другие имена с этим окончанием в список не попадают.
         assert!(!m.field_matches("preauthorization"));
     }

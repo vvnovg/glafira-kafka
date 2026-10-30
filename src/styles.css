@@ -5,6 +5,8 @@
   --muted: #6b7280;
   --border: #e3e5e8;
   --accent: #3b82f6;
+  /* Значки LLM в дереве: контраст текста не ниже 4,5:1 (#2563eb — 5,2:1 на белом, 4,7:1 на --bg-alt). */
+  --llm-badge: #2563eb;
   --danger: #dc2626;
   --warn: #f59e0b;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -19,6 +21,7 @@
     --fg: #e6e8eb;
     --muted: #9aa0a6;
     --border: #33373d;
+    --llm-badge: #60a5fa;
   }
 }
 * { box-sizing: border-box; }
@@ -173,8 +176,9 @@ label.inline { display: inline-flex; gap: 4px; align-items: center; white-space:
 .help-content pre { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px; padding: 8px; overflow: auto; }
 .help-content pre code { padding: 0; background: none; }
 .help-content a { color: var(--accent); }
-.llm-badge { font-size: 9px; padding: 0 3px; border: 1px solid var(--accent); border-radius: 3px; color: var(--accent); }
-.llm-badge--messages { background: var(--accent); color: #fff; }
+.llm-badge { font-size: 9px; padding: 0 3px; border: 1px solid var(--llm-badge); border-radius: 3px; color: var(--llm-badge); }
+/* Белый текст на #2563eb — 5,2:1 в обеих темах. */
+.llm-badge--messages { background: #2563eb; border-color: #2563eb; color: #fff; }
 .form .llm-levels label, .form .llm-mask label { color: var(--fg); margin-right: 12px; }
 .llm-levels, .llm-mask { display: flex; flex-wrap: wrap; gap: 4px 0; align-items: center; }
 .llm-mask { flex-direction: column; align-items: stretch; }

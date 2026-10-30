@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}：时间段：{{returned}}，已扫描：{{scanned}}，已脱敏：{{masked}}",
         "scanDetailsSummaryNoTarget": "时间段：{{returned}}，已扫描：{{scanned}}，已脱敏：{{masked}}",
         "scanDetailsHistory": "{{target}}：提交序列：{{returned}}，已扫描记录：{{scanned}}，已脱敏：{{masked}}",
-        "scanDetailsHistoryNoTarget": "提交序列：{{returned}}，已扫描记录：{{scanned}}，已脱敏：{{masked}}"
+        "scanDetailsHistoryNoTarget": "提交序列：{{returned}}，已扫描记录：{{scanned}}，已脱敏：{{masked}}",
+        "openConnectionsFailed": "不可用：无法加载连接列表"
       },
       "openCounts": "已向 LLM 开放：{{n}}，其中可读取消息：{{m}}",
       "messagesPolicy": "读取消息已被你的组织禁用",
@@ -522,7 +523,8 @@
       "mask": "脱敏",
       "maskStandard": "标准列表",
       "maskFieldsAria": "要脱敏的字段名，每行一个",
-      "maskNote": "电子邮件、卡号、JWT 和 Bearer 令牌始终会被脱敏。脱敏可以降低风险，但无法识别人名、地址以及名称陌生的字段中的数据。"
+      "maskNote": "电子邮件、卡号、JWT 和 Bearer 令牌始终会被脱敏。脱敏可以降低风险，但无法识别人名、地址以及名称陌生的字段中的数据。",
+      "llmStatusUnavailable": "MCP 状态不可用：现在无法选择“元数据和消息”"
     },
     "tls": {
       "pick": "浏览…",

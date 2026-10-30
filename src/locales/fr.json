@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}} : intervalles : {{returned}}, analysés : {{scanned}}, masqués : {{masked}}",
         "scanDetailsSummaryNoTarget": "intervalles : {{returned}}, analysés : {{scanned}}, masqués : {{masked}}",
         "scanDetailsHistory": "{{target}} : séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}",
-        "scanDetailsHistoryNoTarget": "séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}"
+        "scanDetailsHistoryNoTarget": "séries de commits : {{returned}}, enregistrements analysés : {{scanned}}, masqués : {{masked}}",
+        "openConnectionsFailed": "Indisponible : impossible de charger la liste des connexions"
       },
       "openCounts": "Connexions ouvertes au LLM : {{n}}, dont {{m}} avec messages",
       "messagesPolicy": "La lecture des messages est désactivée par votre organisation",
@@ -522,7 +523,8 @@
       "mask": "Masquage",
       "maskStandard": "Liste standard",
       "maskFieldsAria": "Noms de champs à masquer, un par ligne",
-      "maskNote": "Les e-mails, numéros de carte, JWT et jetons Bearer sont toujours masqués. Le masquage réduit le risque mais ne reconnaît pas les noms de personnes, les adresses ni les données dans des champs aux noms inconnus."
+      "maskNote": "Les e-mails, numéros de carte, JWT et jetons Bearer sont toujours masqués. Le masquage réduit le risque mais ne reconnaît pas les noms de personnes, les adresses ni les données dans des champs aux noms inconnus.",
+      "llmStatusUnavailable": "Statut MCP indisponible : « Métadonnées et messages » ne peut pas être sélectionné pour le moment"
     },
     "tls": {
       "pick": "Parcourir…",

@@ -6,6 +6,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::{KafkaError, KafkaResult};
 use rdkafka::message::{BorrowedMessage, Headers, Message};
+use rdkafka::types::RDKafkaErrorCode;
 use rdkafka::{ClientConfig, Offset, TopicPartitionList};
 use serde::Deserialize;
 
@@ -19,8 +20,7 @@ use crate::browse::types::{BrowseEvent, BrowsedMessage, FinishReason, HeaderView
 use crate::error::{AppError, AppResult, ErrorCode, from_kafka};
 use crate::kafka::config::build_client_config;
 use crate::kafka::context::CapturingContext;
-use crate::kafka::errors::{fetch_metadata_fast_fail, op_error};
-use crate::kafka::metadata::convert;
+use crate::kafka::errors::{fetch_metadata_fast_fail, item_error, op_error};
 use crate::kafka::recovery::{PROBE_TIMEOUT, RecoveryMonitor, is_transient};
 use crate::kafka::topics::fetch_bounds;
 use crate::secrets::SecretStore;
@@ -266,7 +266,21 @@ pub(crate) fn load_bounds(
     partition_bounds(consumer, topic, &selected, timeout, kerr)
 }
 
-/// Выбранные партиции топика по метаданным (`partitions` пусто или `None` — все).
+/// Отказ в правах на топик: без права Describe брокер отвечает `TOPIC_AUTHORIZATION_FAILED`
+/// без партиций.
+pub(crate) fn topic_not_authorized() -> AppError {
+    item_error(
+        RDKafkaErrorCode::TopicAuthorizationFailed,
+        "",
+        ltext!(
+            "errors.kafka.notAuthorized",
+            "Not authorized to perform the operation"
+        ),
+    )
+}
+
+/// Выбранные партиции топика по метаданным (`partitions` пусто или `None` — все). Ошибка топика
+/// в метаданных различает отказ в правах и «топика нет» (спец. G4.1 §3.1).
 pub(crate) fn topic_partitions(
     consumer: &BaseConsumer<CapturingContext>,
     topic: &str,
@@ -274,12 +288,18 @@ pub(crate) fn topic_partitions(
     timeout: Duration,
 ) -> AppResult<Vec<i32>> {
     let md = fetch_metadata_fast_fail(consumer, Some(topic), timeout)?;
-    let (_, topics) = convert(&md);
-    let found = topics
-        .into_iter()
-        .find(|t| t.name == topic && !t.partitions.is_empty())
-        .ok_or_else(|| crate::kafka::admin::topic_not_found(topic))?;
-    let all: Vec<i32> = found.partitions.iter().map(|p| p.id).collect();
+    let meta = md.topics().iter().find(|t| t.name() == topic);
+    if meta.and_then(|t| t.error()).map(RDKafkaErrorCode::from)
+        == Some(RDKafkaErrorCode::TopicAuthorizationFailed)
+    {
+        return Err(topic_not_authorized());
+    }
+    let all: Vec<i32> = meta
+        .map(|t| t.partitions().iter().map(|p| p.id()).collect())
+        .unwrap_or_default();
+    if all.is_empty() {
+        return Err(crate::kafka::admin::topic_not_found(topic));
+    }
     match partitions {
         Some(list) if !list.is_empty() => {
             if let Some(bad) = list.iter().find(|p| !all.contains(p)) {

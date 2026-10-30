@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}: intervalos: {{returned}}, verificadas: {{scanned}}, mascarados: {{masked}}",
         "scanDetailsSummaryNoTarget": "intervalos: {{returned}}, verificadas: {{scanned}}, mascarados: {{masked}}",
         "scanDetailsHistory": "{{target}}: séries de commits: {{returned}}, registros verificados: {{scanned}}, mascarados: {{masked}}",
-        "scanDetailsHistoryNoTarget": "séries de commits: {{returned}}, registros verificados: {{scanned}}, mascarados: {{masked}}"
+        "scanDetailsHistoryNoTarget": "séries de commits: {{returned}}, registros verificados: {{scanned}}, mascarados: {{masked}}",
+        "openConnectionsFailed": "Indisponível: não foi possível carregar a lista de conexões"
       },
       "openCounts": "Abertas para LLM: {{n}}, com mensagens: {{m}}",
       "messagesPolicy": "A leitura de mensagens está desativada pela sua organização",
@@ -522,7 +523,8 @@
       "mask": "Mascaramento",
       "maskStandard": "Lista padrão",
       "maskFieldsAria": "Nomes de campos para mascarar, um por linha",
-      "maskNote": "E-mails, números de cartão, JWTs e tokens Bearer são sempre mascarados. O mascaramento reduz o risco, mas não reconhece nomes de pessoas, endereços nem dados em campos com nomes desconhecidos."
+      "maskNote": "E-mails, números de cartão, JWTs e tokens Bearer são sempre mascarados. O mascaramento reduz o risco, mas não reconhece nomes de pessoas, endereços nem dados em campos com nomes desconhecidos.",
+      "llmStatusUnavailable": "O status do MCP está indisponível: não é possível escolher “Metadados e mensagens” agora"
     },
     "tls": {
       "pick": "Procurar…",

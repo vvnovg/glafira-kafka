@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use glafira_mcp::commits::{CommitHistoryBuilder, CommitRecord, CommitStats};
-use glafira_mcp::mask::{self as mm, MASK_PARSE_LIMIT};
+use glafira_mcp::mask::{self as mm, KEY_PARSE_LIMIT, MASK_PARSE_LIMIT};
 use glafira_mcp::messages::{
     COMMIT_LOOKBACK_MS, FormatArg, MAX_HEADERS, MessageFilter, MessagesBody, MessagesOp,
     PartitionRange, Range, RawData, RawMessage, SCAN_RECORD_LIMIT, ScanCtx, ScanStats, StopReason,
@@ -18,7 +18,6 @@ use rdkafka::ClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaError;
 use rdkafka::message::{BorrowedMessage, Message, Timestamp};
-use rdkafka::types::RDKafkaErrorCode;
 
 use crate::browse::filter::{CompiledFilter, FilterSpec, HeaderMatch, TextMatch};
 use crate::browse::format::DataFormat;
@@ -30,7 +29,7 @@ use crate::browse::session::{
 use crate::browse::types::{BrowsedMessage, HeaderView};
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::kafka::context::CapturingContext;
-use crate::kafka::errors::{fetch_metadata_fast_fail, item_error, op_error};
+use crate::kafka::errors::op_error;
 use crate::kafka::offsets_log::{self, OFFSETS_TOPIC, OffsetsRecord};
 use crate::kafka::recovery::{PROBE_TIMEOUT, RecoveryMonitor, is_transient};
 use crate::secrets::SecretStore;
@@ -55,27 +54,6 @@ fn mcp_tune(profile: &ConnectionProfile) -> impl FnOnce(&mut ClientConfig) {
         if let Some(id) = client_id {
             cfg.set("client.id", id);
         }
-    }
-}
-
-/// Число партиций `__consumer_offsets` по его метаданным: ошибка топика и число партиций
-/// (спец. §6.3). Без права Describe брокер отвечает `TOPIC_AUTHORIZATION_FAILED` без партиций —
-/// это отказ в правах (вызывающий добавит подсказку про Read), а не «топика нет».
-pub(crate) fn offsets_partition_count(
-    error: Option<RDKafkaErrorCode>,
-    partitions: usize,
-) -> AppResult<i32> {
-    match error {
-        Some(code @ RDKafkaErrorCode::TopicAuthorizationFailed) => Err(item_error(
-            code,
-            "",
-            ltext!(
-                "errors.kafka.notAuthorized",
-                "Not authorized to perform the operation"
-            ),
-        )),
-        _ if partitions == 0 => Err(crate::kafka::admin::topic_not_found(OFFSETS_TOPIC)),
-        _ => Ok(partitions as i32),
     }
 }
 
@@ -181,9 +159,10 @@ fn timestamp_type(t: Timestamp) -> TimestampType {
     }
 }
 
-fn raw_data(bytes: &[u8], format: DataFormat) -> RawData {
+/// Первые `limit` байтов ключа или значения для маскировки в крейте и исходный размер.
+fn raw_data(bytes: &[u8], format: DataFormat, limit: usize) -> RawData {
     RawData {
-        bytes: bytes[..bytes.len().min(MASK_PARSE_LIMIT)].to_vec(),
+        bytes: bytes[..bytes.len().min(limit)].to_vec(),
         size: bytes.len(),
         format: mask_format(format),
     }
@@ -209,11 +188,11 @@ fn raw_message(msg: &BorrowedMessage<'_>, m: &BrowsedMessage) -> RawMessage {
         key: msg
             .key()
             .zip(m.key.as_ref())
-            .map(|(k, d)| raw_data(k, d.format)),
+            .map(|(k, d)| raw_data(k, d.format, KEY_PARSE_LIMIT)),
         value: msg
             .payload()
             .zip(m.value.as_ref())
-            .map(|(v, d)| raw_data(v, d.format)),
+            .map(|(v, d)| raw_data(v, d.format, MASK_PARSE_LIMIT)),
         headers,
         headers_truncated,
     }
@@ -342,15 +321,11 @@ impl<'a> Scan<'a> {
         )
     }
 
-    /// Число партиций `__consumer_offsets` по метаданным — с ошибкой топика, которую
-    /// `topic_partitions` не различает (нет права Describe выглядит как «топика нет»).
+    /// Число партиций `__consumer_offsets` по метаданным; без права Describe — отказ в правах
+    /// (вызывающий добавит подсказку про Read), а не «топика нет».
     fn offsets_partitions(&self) -> AppResult<i32> {
-        let md = fetch_metadata_fast_fail(&self.consumer, Some(OFFSETS_TOPIC), self.wait()?)?;
-        let topic = md.topics().iter().find(|t| t.name() == OFFSETS_TOPIC);
-        offsets_partition_count(
-            topic.and_then(|t| t.error()).map(RDKafkaErrorCode::from),
-            topic.map_or(0, |t| t.partitions().len()),
-        )
+        let all = topic_partitions(&self.consumer, OFFSETS_TOPIC, None, self.wait()?)?;
+        Ok(all.len() as i32)
     }
 
     fn offsets_at(
@@ -631,6 +606,7 @@ pub fn local_utc_offset_minutes() -> i32 {
 mod tests {
     use std::io::{Read, Write};
     use std::net::{SocketAddr, TcpListener};
+    use std::sync::Arc;
     use std::sync::atomic::Ordering;
 
     use super::*;
@@ -818,29 +794,21 @@ mod tests {
         assert_eq!((kept.len(), truncated), (MAX_HEADERS, false));
     }
 
-    #[test]
-    fn offsets_topic_without_describe_is_an_authorization_error() {
-        // Без права Describe брокер отвечает TOPIC_AUTHORIZATION_FAILED без партиций.
-        let e = offsets_partition_count(Some(RDKafkaErrorCode::TopicAuthorizationFailed), 0)
-            .unwrap_err();
-        assert_eq!(e.code, ErrorCode::NotAuthorized);
-        assert_eq!(offsets_partition_count(None, 50).ok(), Some(50));
-        assert_eq!(
-            offsets_partition_count(None, 0).map_err(|e| e.code),
-            Err(ErrorCode::NotFound)
-        );
-    }
+    const API_VERSIONS: i16 = 18;
+    const METADATA: i16 = 3;
 
-    /// Брокер, который отвечает только на ApiVersions (соединение готово), а метаданные и
-    /// ListOffsets оставляет без ответа: каждый запрос планирования ждёт свой таймаут целиком.
-    /// Недоступный адрес для этого не годится: `fetch_metadata` без готового брокера сразу
-    /// после первой порции ожидания отвечает «Broker transport failure».
-    fn stalled_broker() -> SocketAddr {
+    /// Фальшивый брокер на 127.0.0.1: на каждый запрос `reply(api_key, correlation_id, port)`
+    /// отвечает готовым ответом или молчит.
+    fn fake_broker(
+        reply: impl Fn(i16, &[u8], u16) -> Option<Vec<u8>> + Send + Sync + 'static,
+    ) -> SocketAddr {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap();
+        let reply = Arc::new(reply);
         std::thread::spawn(move || {
             for conn in listener.incoming() {
                 let Ok(mut conn) = conn else { return };
+                let reply = reply.clone();
                 std::thread::spawn(move || {
                     let mut size = [0u8; 4];
                     while conn.read_exact(&mut size).is_ok() {
@@ -848,9 +816,13 @@ mod tests {
                         if conn.read_exact(&mut req).is_err() {
                             return;
                         }
-                        // Заголовок запроса: api_key (18 — ApiVersions), версия, correlation_id.
-                        if req.len() >= 8 && req[..2] == [0, 18] {
-                            let _ = conn.write_all(&api_versions_reply(&req[4..8]));
+                        // Заголовок запроса: api_key, версия, correlation_id.
+                        if req.len() < 8 {
+                            continue;
+                        }
+                        let api_key = i16::from_be_bytes([req[0], req[1]]);
+                        if let Some(out) = reply(api_key, &req[4..8], addr.port()) {
+                            let _ = conn.write_all(&out);
                         }
                     }
                 });
@@ -859,12 +831,33 @@ mod tests {
         addr
     }
 
-    /// Ответ ApiVersions v3 (заголовок ответа v0): брокер знает только ApiVersions и Metadata.
-    fn api_versions_reply(correlation_id: &[u8]) -> Vec<u8> {
+    /// Брокер, который отвечает только на ApiVersions (соединение готово), а метаданные и
+    /// ListOffsets оставляет без ответа: каждый запрос планирования ждёт свой таймаут целиком.
+    /// Недоступный адрес для этого не годится: `fetch_metadata` без готового брокера сразу
+    /// после первой порции ожидания отвечает «Broker transport failure».
+    fn stalled_broker() -> SocketAddr {
+        fake_broker(|api_key, correlation_id, _| {
+            (api_key == API_VERSIONS).then(|| api_versions_reply(correlation_id, 12))
+        })
+    }
+
+    /// Брокер с метаданными: на любой запрос Metadata — один брокер (он сам) и топик `topic` с
+    /// кодом ошибки `error` без партиций (без права Describe брокер отвечает так: 29).
+    fn metadata_broker(topic: &'static str, error: i16) -> SocketAddr {
+        fake_broker(move |api_key, correlation_id, port| match api_key {
+            API_VERSIONS => Some(api_versions_reply(correlation_id, 1)),
+            METADATA => Some(metadata_reply(correlation_id, port, topic, error)),
+            _ => None,
+        })
+    }
+
+    /// Ответ ApiVersions v3 (заголовок ответа v0): брокер знает только ApiVersions и Metadata
+    /// до версии `metadata_max`.
+    fn api_versions_reply(correlation_id: &[u8], metadata_max: i16) -> Vec<u8> {
         let mut body = correlation_id.to_vec();
         body.extend(0i16.to_be_bytes()); // error_code
         body.push(3); // compact array: 2 элемента + 1
-        for (api_key, max_version) in [(18i16, 3i16), (3, 12)] {
+        for (api_key, max_version) in [(API_VERSIONS, 3i16), (METADATA, metadata_max)] {
             body.extend(api_key.to_be_bytes());
             body.extend(0i16.to_be_bytes());
             body.extend(max_version.to_be_bytes());
@@ -872,6 +865,33 @@ mod tests {
         }
         body.extend(0i32.to_be_bytes()); // throttle_time_ms
         body.push(0); // tagged fields
+        framed(body)
+    }
+
+    /// Ответ Metadata v1 (заголовок ответа v0): брокер 1 на `127.0.0.1:port`, он же контроллер,
+    /// и один топик без партиций.
+    fn metadata_reply(correlation_id: &[u8], port: u16, topic: &str, error: i16) -> Vec<u8> {
+        let mut body = correlation_id.to_vec();
+        body.extend(1i32.to_be_bytes()); // brokers: 1
+        body.extend(1i32.to_be_bytes()); // node_id
+        put_str(&mut body, "127.0.0.1");
+        body.extend(i32::from(port).to_be_bytes());
+        body.extend((-1i16).to_be_bytes()); // rack: null
+        body.extend(1i32.to_be_bytes()); // controller_id
+        body.extend(1i32.to_be_bytes()); // topics: 1
+        body.extend(error.to_be_bytes());
+        put_str(&mut body, topic);
+        body.push(u8::from(topic == OFFSETS_TOPIC)); // is_internal
+        body.extend(0i32.to_be_bytes()); // partitions: 0
+        framed(body)
+    }
+
+    fn put_str(buf: &mut Vec<u8>, s: &str) {
+        buf.extend((s.len() as i16).to_be_bytes());
+        buf.extend(s.as_bytes());
+    }
+
+    fn framed(body: Vec<u8>) -> Vec<u8> {
         let mut out = (body.len() as u32).to_be_bytes().to_vec();
         out.extend(body);
         out
@@ -905,6 +925,21 @@ mod tests {
         }
     }
 
+    fn summarize() -> MessagesOp {
+        MessagesOp::Summarize {
+            connection_id: "a".into(),
+            topic: "orders".into(),
+            from_ms: 0,
+            to_ms: 1_000,
+            partitions: None,
+            filter: MessageFilter::default(),
+            key_format: FormatArg::Auto,
+            value_format: FormatArg::Auto,
+            bucket_ms: 60_000,
+            top_keys: 10,
+        }
+    }
+
     fn commits() -> MessagesOp {
         MessagesOp::CommitHistory {
             connection_id: "a".into(),
@@ -921,18 +956,6 @@ mod tests {
         let expired = ScanCtx::new(Duration::ZERO);
         let cancelled = ScanCtx::new(Duration::from_secs(40));
         cancelled.cancel.store(true, Ordering::Relaxed);
-        let summarize = MessagesOp::Summarize {
-            connection_id: "a".into(),
-            topic: "orders".into(),
-            from_ms: 0,
-            to_ms: 1_000,
-            partitions: None,
-            filter: MessageFilter::default(),
-            key_format: FormatArg::Auto,
-            value_format: FormatArg::Auto,
-            bucket_ms: 60_000,
-            top_keys: 10,
-        };
         let offsets = Range::Offsets {
             partition: 0,
             start: 0,
@@ -941,7 +964,7 @@ mod tests {
         let cases = [
             ("read window, expired", read(window()), &expired),
             ("read offsets, cancelled", read(offsets), &cancelled),
-            ("summarize, expired", summarize, &expired),
+            ("summarize, expired", summarize(), &expired),
             ("commits, expired", commits(), &expired),
             ("commits, cancelled", commits(), &cancelled),
         ];
@@ -977,5 +1000,48 @@ mod tests {
             matches!(e.code, ErrorCode::Timeout | ErrorCode::ConnectionFailed),
             "{e:?}"
         );
+    }
+
+    #[test]
+    fn topic_without_describe_is_not_authorized_and_a_missing_one_is_not_found() {
+        let cases = [
+            (29, ErrorCode::NotAuthorized, "errors.kafka.notAuthorized"),
+            (3, ErrorCode::NotFound, "errors.topics.notFound"),
+        ];
+        for (error, code, key) in cases {
+            let p = profile_at(metadata_broker("orders", error), 5_000);
+            for (name, op) in [("read", read(window())), ("summarize", summarize())] {
+                let ctx = ScanCtx::new(Duration::from_secs(10));
+                let e = scan(&p, &MemoryStore::default(), op, &ctx).expect_err(name);
+                assert_eq!(
+                    (e.code, e.key.as_str()),
+                    (code, key),
+                    "{name}, {error}: {e:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn offsets_topic_without_describe_is_not_authorized() {
+        let p = profile_at(metadata_broker(OFFSETS_TOPIC, 29), 5_000);
+        let ctx = ScanCtx::new(Duration::from_secs(10));
+        let e = scan(&p, &MemoryStore::default(), commits(), &ctx).expect_err("нет Describe");
+        assert_eq!(
+            (e.code, e.key.as_str()),
+            (ErrorCode::NotAuthorized, "errors.kafka.notAuthorized")
+        );
+    }
+
+    #[test]
+    fn long_keys_are_copied_up_to_the_key_parse_limit() {
+        let key = vec![b'k'; KEY_PARSE_LIMIT + 10];
+        let d = raw_data(&key, DataFormat::Json, KEY_PARSE_LIMIT);
+        assert_eq!(
+            (d.bytes.len(), d.size),
+            (KEY_PARSE_LIMIT, KEY_PARSE_LIMIT + 10)
+        );
+        let d = raw_data(&key, DataFormat::Json, MASK_PARSE_LIMIT);
+        assert_eq!((d.bytes.len(), d.size), (key.len(), key.len()));
     }
 }

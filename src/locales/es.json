@@ -469,7 +469,8 @@
         "scanDetailsSummary": "{{target}}: intervalos: {{returned}}, escaneados: {{scanned}}, enmascarados: {{masked}}",
         "scanDetailsSummaryNoTarget": "intervalos: {{returned}}, escaneados: {{scanned}}, enmascarados: {{masked}}",
         "scanDetailsHistory": "{{target}}: series de commits: {{returned}}, registros escaneados: {{scanned}}, enmascarados: {{masked}}",
-        "scanDetailsHistoryNoTarget": "series de commits: {{returned}}, registros escaneados: {{scanned}}, enmascarados: {{masked}}"
+        "scanDetailsHistoryNoTarget": "series de commits: {{returned}}, registros escaneados: {{scanned}}, enmascarados: {{masked}}",
+        "openConnectionsFailed": "No disponible: no se pudo cargar la lista de conexiones"
       },
       "openCounts": "Abiertas a LLM: {{n}}, con mensajes: {{m}}",
       "messagesPolicy": "La lectura de mensajes está desactivada por tu organización",
@@ -522,7 +523,8 @@
       "mask": "Enmascaramiento",
       "maskStandard": "Lista estándar",
       "maskFieldsAria": "Nombres de campos para enmascarar, uno por línea",
-      "maskNote": "Los correos electrónicos, los números de tarjeta, los JWT y los tokens Bearer se enmascaran siempre. El enmascaramiento reduce el riesgo, pero no reconoce nombres de personas, direcciones ni datos en campos con nombres desconocidos."
+      "maskNote": "Los correos electrónicos, los números de tarjeta, los JWT y los tokens Bearer se enmascaran siempre. El enmascaramiento reduce el riesgo, pero no reconoce nombres de personas, direcciones ni datos en campos con nombres desconocidos.",
+      "llmStatusUnavailable": "El estado de MCP no está disponible: ahora no se puede elegir “Metadatos y mensajes”"
     },
     "tls": {
       "pick": "Examinar…",

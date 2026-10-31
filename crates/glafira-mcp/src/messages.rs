@@ -68,7 +68,7 @@ pub enum FormatArg {
     Base64,
 }
 
-/// Time as an RFC 3339 string with a time zone (2026-10-24T14:32:00+03:00) or epoch milliseconds.
+/// Time as an RFC 3339 string with a time zone (YYYY-MM-DDThh:mm:ss±hh:mm, the date and time come from the user's request or logs) or epoch milliseconds.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 #[serde(untagged)]
 pub enum TimeArg {
@@ -87,7 +87,7 @@ impl TimeArg {
                     Ok(t) => t.timestamp_millis(),
                     Err(_) if has_no_zone(s) => {
                         return Err(format!(
-                            "{name}: timestamp has no time zone; ask the user which time zone their logs use and pass it, e.g. 2026-10-24T14:32:00+03:00"
+                            "{name}: timestamp has no time zone; ask the user which time zone their logs use and pass it as YYYY-MM-DDThh:mm:ss±hh:mm"
                         ));
                     }
                     Err(e) => {

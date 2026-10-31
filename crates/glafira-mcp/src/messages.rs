@@ -31,7 +31,7 @@ pub const MAX_KEY_TEXT: usize = 512;
 pub const MAX_HEADER_TEXT: usize = 512;
 pub const MAX_HEADERS: usize = 32;
 
-/// Text filter: a substring or a regular expression.
+/// Text filter: a substring (found anywhere: "123" also matches "1123") or a regular expression.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TextMatch {

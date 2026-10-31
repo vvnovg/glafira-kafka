@@ -66,7 +66,8 @@ pub struct ReadMessagesParams {
     /// Offsets mode: end offset, exclusive. Default: the end of the partition.
     #[serde(default)]
     pub end_offset: Option<i64>,
-    /// Key filter.
+    /// Key filter. A substring matches every key that contains it; for one exact key pass
+    /// {"pattern": "^123$", "regex": true}.
     #[serde(default)]
     pub key: Option<TextMatch>,
     /// Value filter.
@@ -109,7 +110,8 @@ pub struct SummarizeMessagesParams {
     /// Only these partitions. Default: all.
     #[serde(default)]
     pub partitions: Option<Vec<i32>>,
-    /// Key filter.
+    /// Key filter. A substring matches every key that contains it; for one exact key pass
+    /// {"pattern": "^123$", "regex": true}.
     #[serde(default)]
     pub key: Option<TextMatch>,
     /// Value filter.

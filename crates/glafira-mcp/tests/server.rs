@@ -2265,6 +2265,22 @@ async fn read_messages_masks_values_and_orders_by_time() {
 }
 
 #[tokio::test]
+async fn read_messages_hints_at_an_empty_window() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let v = ok(call(&c, "read_messages", window_args("empty")).await);
+    assert!(
+        v["hint"].as_str().unwrap().contains("widen the window"),
+        "{v}"
+    );
+    let v = ok(call(&c, "read_messages", window_args("orders")).await);
+    assert!(v.get("hint").is_none(), "{v}");
+    let args = json!({"connectionId": "c1", "topic": "empty", "partition": 0, "startOffset": 3, "endOffset": 6});
+    let v = ok(call(&c, "read_messages", args).await);
+    assert!(v.get("hint").is_none(), "в режиме офсетов окна нет: {v}");
+}
+
+#[tokio::test]
 async fn connections_show_the_access_level() {
     let e = env(Fake::new(SessionAccess::Approved)).await;
     let c = client(&e.ep).await;

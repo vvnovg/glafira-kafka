@@ -35,6 +35,8 @@ const SUMMARY_CUT_HINT: &str =
     "The response was cut to 100 KB: headerNames and keys.top were shortened.";
 const RUNS_CUT_HINT: &str = "The response was cut to 100 KB: the oldest runs were dropped; narrow the window or pass topic.";
 const HISTORY_TOO_LARGE: &str = "The commit history does not fit into 100 KB even without commit runs; narrow it: pass topic or a shorter window";
+/// Слабые модели ставят время из лога на границу окна и делают вывод «сообщения нет».
+const EMPTY_WINDOW_HINT: &str = "No messages were written in this window (window is in UTC). If you expected some, check the time zone and widen the window: a time from a log is rounded and is not the moment of the write, so keep it inside the window with a few minutes on each side.";
 const NO_COMMITS_HINT: &str = "No commits of this group in the window: the group may not exist, may store offsets elsewhere (assign() with external storage), or the history was compacted.";
 
 // ---- Параметры (описания полей уходят в JSON Schema для LLM) ----
@@ -554,9 +556,11 @@ fn read_body(req: &ReadRequest, out: MessagesOutput) -> Result<Value, BackendErr
         body.next_cursor = Some(encode_cursor(req.hash, last.sort_key));
     }
     body.truncated = cut;
+    let empty_window = body.window.is_some() && body.complete && body.scanned == 0;
     body.hint = hints(&[
         (!body.complete).then_some(INCOMPLETE_HINT),
         cut.then_some(PAGE_CUT_HINT),
+        empty_window.then_some(EMPTY_WINDOW_HINT),
     ]);
     to_value(&body)
 }
@@ -1017,7 +1021,7 @@ impl GatewayServer {
 #[tool_router(router = message_router, vis = "pub(crate)")]
 impl GatewayServer {
     #[tool(
-        description = "Read messages of a topic for debugging: everything written in a time window (from/to) or an offset range of one partition (partition, startOffset, endOffset). Times need a time zone: if the user's logs have none, ask which one they use. Filters work as in Glafira's message browser and see unmasked data, so you can find a message by a value from a log: key, value (substring or regex), header, jsonPath. Messages come ordered by timestamp across partitions; page with nextCursor. Values matching the connection's masking rules come back as ***, [email], [card], [jwt] or [token] — do not try to restore them. A message whose timestamp is inside the window but whose offset lies outside the window's offset range (producer clocks out of order) is not found. Use summarize_messages first for a large window. Available only for connections with llmAccess messages.",
+        description = "Read messages of a topic for debugging: everything written in a time window (from/to) or an offset range of one partition (partition, startOffset, endOffset). Times need a time zone: if the user's logs have none, ask which one they use. For an event at a time from a log, put that time inside the window with a few minutes of margin on each side, not at its edge. Filters work as in Glafira's message browser and see unmasked data, so you can find a message by a value from a log: key, value (substring or regex), header, jsonPath. Messages come ordered by timestamp across partitions; page with nextCursor. Values matching the connection's masking rules come back as ***, [email], [card], [jwt] or [token] — do not try to restore them. A message whose timestamp is inside the window but whose offset lies outside the window's offset range (producer clocks out of order) is not found. Use summarize_messages first for a large window. Available only for connections with llmAccess messages.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,

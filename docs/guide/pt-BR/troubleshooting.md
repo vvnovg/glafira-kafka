@@ -35,7 +35,7 @@ A mensagem [[ui:errors.kafka.connectionFailed]] depois que a etapa TCP passou no
 
 Erros na etapa [[ui:connections.form.step.kafka]] durante o handshake TLS:
 
-- [[ui:errors.kafka.plaintextListener]].
+- [[ui:errors.kafka.handshakeClosed]]. Causas comuns: a porta não tem TLS — verifique a porta e o protocolo; o broker recusou o certificado do cliente sem informar o motivo — verifique a data de validade e o emissor do certificado; um proxy na frente dos brokers, como Istio ou Envoy, não tem rota para este endereço — conecte-se pelo nome que os aplicativos do cluster usam. A causa exata está no log do broker.
 - [[ui:errors.kafka.caUntrusted]]. Em [[ui:connections.tls.ca]], indique o arquivo da CA que assinou os certificados dos brokers. Os administradores podem fornecer esse arquivo. Com o campo vazio, apenas os certificados raiz do sistema são considerados confiáveis.
 - [[ui:errors.kafka.hostnameMismatch]]. Conecte-se pelo nome para o qual o certificado foi emitido, e não por um endereço IP ou um alias. Somente em ambientes de teste, você pode desativar a opção [[ui:connections.tls.verifyHostname]].
 - [[ui:errors.kafka.clientCertRejected]]. O broker exige um certificado de cliente ou não confia no que você usa. Verifique se a opção [[ui:connections.tls.mtls]] está ativada e se o certificado foi emitido para este cluster. Consulte [Certificado do cliente (mTLS)](connections.md#mtls).

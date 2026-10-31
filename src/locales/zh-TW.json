@@ -214,7 +214,7 @@
     "kafka": {
       "emptyResponse": "{{request}} 回應為空",
       "tcpUnreachable": "所有 Bootstrap 伺服器都無法透過 TCP 連線",
-      "plaintextListener": "此位址上的 Broker 接受未使用 TLS 的連線，請檢查連接埠，或選擇不含 SSL 的通訊協定",
+      "handshakeClosed": "Broker 在 TLS 交握期間關閉了連線，可能此連接埠未啟用 TLS，或用戶端憑證未被接受",
       "hostnameMismatch": "Broker 主機名稱與其憑證不符",
       "caUntrusted": "Broker 憑證並非由受信任的 CA 簽署，請檢查「受信任的 CA」",
       "clientCertRejected": "Broker 拒絕了用戶端憑證",

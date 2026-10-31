@@ -35,7 +35,7 @@ Um den Port außerhalb der App zu prüfen, führen Sie unter macOS oder Linux `n
 
 Fehler im Schritt [[ui:connections.form.step.kafka]] während des TLS-Handshakes:
 
-- [[ui:errors.kafka.plaintextListener]].
+- [[ui:errors.kafka.handshakeClosed]]. Häufige Ursachen: Der Port hat kein TLS — prüfen Sie Port und Protokoll. Der Broker hat das Client-Zertifikat ohne Begründung abgelehnt — prüfen Sie Ablaufdatum und Aussteller des Zertifikats. Ein Proxy vor den Brokern, etwa Istio oder Envoy, hat keine Route für diese Adresse — verbinden Sie sich über den Namen, den die Anwendungen des Clusters verwenden. Die genaue Ursache steht im Broker-Log.
 - [[ui:errors.kafka.caUntrusted]]. Setzen Sie [[ui:connections.tls.ca]] auf die Datei der CA, die die Broker-Zertifikate signiert hat. Diese Datei erhalten Sie von Ihren Administratoren. Bei leerem Feld wird nur den Stammzertifikaten des Systems vertraut.
 - [[ui:errors.kafka.hostnameMismatch]]. Verbinden Sie sich über den Namen, für den das Zertifikat ausgestellt wurde, nicht über eine IP-Adresse oder einen Alias. Nur in Testumgebungen können Sie [[ui:connections.tls.verifyHostname]] deaktivieren.
 - [[ui:errors.kafka.clientCertRejected]]. Der Broker verlangt ein Client-Zertifikat oder vertraut dem verwendeten nicht. Prüfen Sie, ob [[ui:connections.tls.mtls]] aktiviert ist und das Zertifikat für diesen Cluster ausgestellt wurde. Siehe [Client-Zertifikat (mTLS)](connections.md#mtls).

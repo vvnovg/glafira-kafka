@@ -35,7 +35,7 @@ TCPの段階が成功したあとの「[[ui:errors.kafka.connectionFailed]]」�
 
 TLSハンドシェイク中に「[[ui:connections.form.step.kafka]]」の段階で発生するエラー：
 
-- [[ui:errors.kafka.plaintextListener]]。
+- [[ui:errors.kafka.handshakeClosed]]。よくある原因：ポートでTLSが有効になっていない（ポートとプロトコルを確認してください）。ブローカーが理由を示さずにクライアント証明書を拒否した（証明書の有効期限と発行者を確認してください）。ブローカーの前にあるプロキシ（IstioやEnvoyなど）にこのアドレスのルートがない（クラスターのアプリケーションが使っている名前で接続してください）。正確な原因はブローカーのログに記録されています。
 - [[ui:errors.kafka.caUntrusted]]。[[ui:connections.tls.ca]]に、ブローカーの証明書に署名したCAのファイルを指定します。このファイルは管理者から入手できます。フィールドが空の場合は、システムのルート証明書だけが信頼されます。
 - [[ui:errors.kafka.hostnameMismatch]]。IPアドレスや別名ではなく、証明書の発行対象の名前で接続してください。テスト環境に限り、[[ui:connections.tls.verifyHostname]]をオフにできます。
 - [[ui:errors.kafka.clientCertRejected]]。ブローカーがクライアント証明書を要求しているか、使用中の証明書を信頼していません。「[[ui:connections.tls.mtls]]」がオンになっていること、証明書がこのクラスター用に発行されたものであることを確認してください。[クライアント証明書（mTLS）](connections.md#mtls)を参照してください。

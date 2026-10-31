@@ -35,7 +35,7 @@ TCP 단계를 통과한 후의 '[[ui:errors.kafka.connectionFailed]]' 오류는 
 
 TLS 핸드셰이크 중 [[ui:connections.form.step.kafka]] 단계에서 발생하는 오류:
 
-- [[ui:errors.kafka.plaintextListener]].
+- [[ui:errors.kafka.handshakeClosed]]. 흔한 원인: 포트에 TLS가 없음 — 포트와 프로토콜을 확인하세요. 브로커가 이유를 알리지 않고 클라이언트 인증서를 거부함 — 인증서의 만료일과 발급자를 확인하세요. 브로커 앞의 프록시(예: Istio, Envoy)에 이 주소에 대한 라우트가 없음 — 클러스터의 애플리케이션이 사용하는 이름으로 연결하세요. 정확한 원인은 브로커 로그에 있습니다.
 - [[ui:errors.kafka.caUntrusted]]. [[ui:connections.tls.ca]]에 브로커 인증서에 서명한 CA의 파일을 지정하세요. 이 파일은 관리자에게 받을 수 있습니다. 필드가 비어 있으면 시스템 루트 인증서만 신뢰합니다.
 - [[ui:errors.kafka.hostnameMismatch]]. IP 주소나 별칭이 아니라 인증서가 발급된 이름으로 연결하세요. 테스트 환경에서만 [[ui:connections.tls.verifyHostname]]을 끌 수 있습니다.
 - [[ui:errors.kafka.clientCertRejected]]. 브로커가 클라이언트 인증서를 요구하거나, 사용 중인 인증서를 신뢰하지 않습니다. [[ui:connections.tls.mtls]] 옵션이 켜져 있는지, 인증서가 이 클러스터용으로 발급되었는지 확인하세요. [클라이언트 인증서(mTLS)](connections.md#mtls)를 참고하세요.

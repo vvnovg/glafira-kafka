@@ -131,10 +131,13 @@ pub fn classify_message(text: &str) -> Option<ErrorCode> {
 /// «certificate verify failed», в который оно вложено.
 fn tls_message(text: &str) -> LocalizedText {
     let t = text.to_lowercase();
-    if t.contains("plaintext broker listener") {
+    // Подсказку «connecting to a PLAINTEXT broker listener?» librdkafka добавляет при любом
+    // обрыве рукопожатия собеседником, а рвёт и прокси (Istio, Envoy), и брокер, не принявший
+    // клиентский сертификат, — поэтому текст не утверждает, что TLS на порту нет.
+    if t.contains("plaintext broker listener") || t.contains("ssl connection closed by peer") {
         ltext!(
-            "errors.kafka.plaintextListener",
-            "The broker accepts connections without TLS on this address — check the port or choose a protocol without SSL"
+            "errors.kafka.handshakeClosed",
+            "The broker closed the connection during the TLS handshake — the port may have no TLS, or the client certificate was not accepted"
         )
     } else if t.contains("hostname mismatch") || t.contains("ip address mismatch") {
         ltext!(
@@ -249,7 +252,11 @@ mod tests {
         for (client, expected) in [
             (
                 "ssl://localhost:9092/bootstrap: SSL handshake failed: Disconnected: SSL connection closed by peer: connecting to a PLAINTEXT broker listener? (after 17ms in state SSL_HANDSHAKE)",
-                "errors.kafka.plaintextListener",
+                "errors.kafka.handshakeClosed",
+            ),
+            (
+                "ssl://h:9093/bootstrap: SSL handshake failed: Disconnected: SSL connection closed by peer (after 5ms in state SSL_HANDSHAKE)",
+                "errors.kafka.handshakeClosed",
             ),
             (
                 "ssl://h:9095/bootstrap: SSL handshake failed: error:0A000086:SSL routines::certificate verify failed: broker certificate could not be verified",

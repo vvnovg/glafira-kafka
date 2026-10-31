@@ -214,7 +214,7 @@
     "kafka": {
       "emptyResponse": "Resposta vazia para {{request}}",
       "tcpUnreachable": "Nenhum servidor bootstrap está acessível por TCP",
-      "plaintextListener": "O broker aceita conexões sem TLS neste endereço — verifique a porta ou escolha um protocolo sem SSL",
+      "handshakeClosed": "O broker fechou a conexão durante o handshake TLS — talvez a porta não tenha TLS ou o certificado do cliente não tenha sido aceito",
       "hostnameMismatch": "O nome do host do broker não corresponde ao certificado dele",
       "caUntrusted": "O certificado do broker não foi assinado por uma CA confiável — verifique “CA confiável”",
       "clientCertRejected": "O broker rejeitou o certificado do cliente",

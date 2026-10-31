@@ -35,7 +35,7 @@ Per verificare la porta al di fuori dell’app, esegui `nc -vz <host> <port>` su
 
 Errori nel passaggio [[ui:connections.form.step.kafka]] durante l’handshake TLS:
 
-- [[ui:errors.kafka.plaintextListener]].
+- [[ui:errors.kafka.handshakeClosed]]. Cause frequenti: la porta non ha TLS — controlla la porta e il protocollo; il broker ha rifiutato il certificato client senza indicarne il motivo — controlla la data di scadenza e l’emittente del certificato; un proxy davanti ai broker, come Istio o Envoy, non ha una route per questo indirizzo — connettiti con il nome usato dalle applicazioni del cluster. La causa esatta è nel log del broker.
 - [[ui:errors.kafka.caUntrusted]]. In [[ui:connections.tls.ca]] indica il file della CA che ha firmato i certificati dei broker. I tuoi amministratori possono fornirti questo file. Con il campo vuoto, sono considerati attendibili solo i certificati radice di sistema.
 - [[ui:errors.kafka.hostnameMismatch]]. Connettiti con il nome per cui è stato emesso il certificato, non con un indirizzo IP o un alias. Solo negli ambienti di test puoi disattivare [[ui:connections.tls.verifyHostname]].
 - [[ui:errors.kafka.clientCertRejected]]. Il broker richiede un certificato client, oppure non considera attendibile quello che usi. Verifica che [[ui:connections.tls.mtls]] sia attivo e che il certificato sia stato emesso per questo cluster. Vedi [Certificato client (mTLS)](connections.md#mtls).

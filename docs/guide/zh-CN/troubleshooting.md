@@ -35,7 +35,7 @@ TCP 步骤通过后出现[[ui:errors.kafka.connectionFailed]]，通常表示某�
 
 在 [[ui:connections.form.step.kafka]] 步骤中，TLS 握手期间的错误：
 
-- [[ui:errors.kafka.plaintextListener]]。
+- [[ui:errors.kafka.handshakeClosed]]。常见原因：端口未启用 TLS，请检查端口和协议；Broker 拒绝了客户端证书但未说明原因，请检查证书的有效期和签发者；Broker 前面的代理（如 Istio 或 Envoy）没有此地址的路由，请使用集群中应用所用的名称连接。确切原因见 Broker 日志。
 - [[ui:errors.kafka.caUntrusted]]。请将[[ui:connections.tls.ca]]设为为 Broker 证书签名的 CA 的文件，该文件可向管理员索取。字段为空时，只信任系统根证书。
 - [[ui:errors.kafka.hostnameMismatch]]。请使用证书签发时所对应的名称连接，而不是 IP 地址或别名。仅在测试环境中，可以关闭[[ui:connections.tls.verifyHostname]]。
 - [[ui:errors.kafka.clientCertRejected]]。Broker 要求提供客户端证书，或不信任你使用的证书。请检查是否已开启[[ui:connections.tls.mtls]]，以及证书是否为此集群签发。参见[客户端证书（mTLS）](connections.md#mtls)。

@@ -12,7 +12,7 @@ El resto del capítulo trata de la tercera opción; el cliente para la segunda s
 
 ## Qué puede hacer un modelo local {#capabilities}
 
-Probado en un Mac con M4 Pro y 48 GB de memoria, un contexto de 64k tokens y un clúster de prueba con un broker y tres topics (7 particiones, unos 3000 mensajes). Tres tareas típicas: una comprobación del clúster con explicación de los hallazgos, el lag de un grupo sin miembros y la búsqueda de un mensaje por la hora de un log de servicio. Cada modelo se ejecutó tres veces.
+Probado en un Mac con M4 Pro y 48 GB de memoria, el servidor vllm-metal, un contexto de 64k tokens y un clúster de prueba con un broker y tres topics (7 particiones, unos 3000 mensajes). Tres tareas típicas: una comprobación del clúster con explicación de los hallazgos, el lag de un grupo sin miembros y la búsqueda de un mensaje por la hora de un log de servicio. Cada modelo se ejecutó tres veces.
 
 | Modelo (4 bits) | Respuestas correctas | Generación | Comprobación del clúster | Lag del grupo | Búsqueda de mensaje |
 |---|---|---|---|---|---|
@@ -39,15 +39,17 @@ Un Mac con procesador Intel no sirve para modelos locales.
 
 ## Servidor de modelos {#server}
 
-El servidor debe ofrecer una API compatible con OpenAI con llamada a herramientas. Un ejemplo para vllm-metal en un Mac:
+El servidor debe ofrecer una API compatible con OpenAI con llamada a herramientas. En un Mac, [Ollama](https://ollama.com) es la opción más sencilla: instale la aplicación, descargue el modelo y cree una variante con un contexto de 64k tokens — por defecto, Ollama usa un contexto menor y las descripciones de herramientas de Glafira no caben en él:
 
 ```bash
-vllm serve mlx-community/Qwen3.6-35B-A3B-4bit --host 127.0.0.1 --port 8100 --api-key sk-local \
-  --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 \
-  --max-model-len 65536
+ollama pull qwen3.6:35b-a3b
+printf 'FROM qwen3.6:35b-a3b\nPARAMETER num_ctx 65536\n' > Modelfile
+ollama create qwen3.6-64k:35b-a3b -f Modelfile
 ```
 
-Cómo se interpretan las llamadas a herramientas depende del servidor: en vLLM lo define para la familia del modelo la opción `--tool-call-parser`; en Ollama, la plantilla del modelo. El servidor escucha solo en `127.0.0.1` para que otros equipos no puedan conectarse al modelo.
+El cliente necesita la dirección `http://127.0.0.1:11434/v1`, el modelo `qwen3.6-64k:35b-a3b` y cualquier clave de API que no esté vacía. Ollama escucha solo en `127.0.0.1`, así que otros equipos no pueden conectarse al modelo.
+
+En Linux con NVIDIA, lo habitual es vLLM. Interpreta las llamadas a herramientas con la opción `--tool-call-parser`, que se define para la familia del modelo (`qwen3_coder` para Qwen3.6); en Ollama, lo hace la plantilla del modelo.
 
 ## Ajustes de Glafira {#glafira-settings}
 

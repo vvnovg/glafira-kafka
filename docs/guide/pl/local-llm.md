@@ -12,7 +12,7 @@ Dalsza część rozdziału dotyczy trzeciej opcji; klienta dla drugiej konfiguru
 
 ## Co potrafi model lokalny {#capabilities}
 
-Test przeprowadzono na komputerze Mac z M4 Pro i 48 GB pamięci, z kontekstem 64 tys. tokenów i testowym klastrem z jednym brokerem i trzema topikami (7 partycji, około 3 000 wiadomości). Trzy typowe zadania: sprawdzenie klastra z wyjaśnieniem ustaleń, lag grupy bez członków oraz znalezienie wiadomości według czasu z logu usługi. Każdy model uruchomiono trzykrotnie.
+Test przeprowadzono na komputerze Mac z M4 Pro i 48 GB pamięci, na serwerze vllm-metal, z kontekstem 64 tys. tokenów i testowym klastrem z jednym brokerem i trzema topikami (7 partycji, około 3 000 wiadomości). Trzy typowe zadania: sprawdzenie klastra z wyjaśnieniem ustaleń, lag grupy bez członków oraz znalezienie wiadomości według czasu z logu usługi. Każdy model uruchomiono trzykrotnie.
 
 | Model (4 bity) | Poprawne odpowiedzi | Generowanie | Sprawdzenie klastra | Lag grupy | Wyszukiwanie wiadomości |
 |---|---|---|---|---|---|
@@ -39,15 +39,17 @@ Komputer Mac z procesorem Intel nie nadaje się do modeli lokalnych.
 
 ## Serwer modeli {#server}
 
-Serwer musi udostępniać API zgodne z OpenAI z wywoływaniem narzędzi. Przykład dla vllm-metal na komputerze Mac:
+Serwer musi udostępniać API zgodne z OpenAI z wywoływaniem narzędzi. Na komputerze Mac najprościej użyć [Ollama](https://ollama.com): zainstaluj aplikację, pobierz model i utwórz jego wariant z kontekstem 64 tys. tokenów — domyślnie Ollama używa mniejszego kontekstu, a opisy narzędzi Glafira się w nim nie mieszczą:
 
 ```bash
-vllm serve mlx-community/Qwen3.6-35B-A3B-4bit --host 127.0.0.1 --port 8100 --api-key sk-local \
-  --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 \
-  --max-model-len 65536
+ollama pull qwen3.6:35b-a3b
+printf 'FROM qwen3.6:35b-a3b\nPARAMETER num_ctx 65536\n' > Modelfile
+ollama create qwen3.6-64k:35b-a3b -f Modelfile
 ```
 
-To, jak wywołania narzędzi są analizowane, zależy od serwera: w vLLM ustawia to flaga `--tool-call-parser` dla danej rodziny modeli, w Ollama — szablon modelu. Serwer nasłuchuje tylko na `127.0.0.1`, aby inne komputery nie mogły połączyć się z modelem.
+Klient potrzebuje adresu `http://127.0.0.1:11434/v1`, modelu `qwen3.6-64k:35b-a3b` i dowolnego niepustego klucza API. Ollama nasłuchuje tylko na `127.0.0.1`, więc inne komputery nie mogą połączyć się z modelem.
+
+Na Linuksie z NVIDIA zwykle wybiera się vLLM. Analizuje on wywołania narzędzi za pomocą flagi `--tool-call-parser`, ustawianej dla danej rodziny modeli (`qwen3_coder` dla Qwen3.6); w Ollama robi to szablon modelu.
 
 ## Ustawienia Glafira {#glafira-settings}
 

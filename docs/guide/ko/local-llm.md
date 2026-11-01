@@ -12,7 +12,7 @@
 
 ## 로컬 모델로 할 수 있는 일 {#capabilities}
 
-테스트 환경은 M4 Pro와 48 GB 메모리를 갖춘 Mac, 64k 토큰 컨텍스트, 브로커 1대와 토픽 3개(파티션 7개, 메시지 약 3,000개)로 이루어진 테스트 클러스터입니다. 대표적인 작업 세 가지를 실행했습니다. 클러스터 점검과 발견 사항 설명, 멤버가 없는 그룹의 랙 확인, 서비스 로그의 시각으로 메시지 찾기입니다. 모델마다 세 번씩 실행했습니다.
+테스트 환경은 M4 Pro와 48 GB 메모리를 갖춘 Mac, vllm-metal 서버, 64k 토큰 컨텍스트, 브로커 1대와 토픽 3개(파티션 7개, 메시지 약 3,000개)로 이루어진 테스트 클러스터입니다. 대표적인 작업 세 가지를 실행했습니다. 클러스터 점검과 발견 사항 설명, 멤버가 없는 그룹의 랙 확인, 서비스 로그의 시각으로 메시지 찾기입니다. 모델마다 세 번씩 실행했습니다.
 
 | 모델(4비트) | 정답 | 생성 속도 | 클러스터 점검 | 그룹 랙 | 메시지 검색 |
 |---|---|---|---|---|---|
@@ -39,15 +39,17 @@ Intel 프로세서를 쓰는 Mac은 로컬 모델에 적합하지 않습니다.
 
 ## 모델 서버 {#server}
 
-서버는 도구 호출을 지원하는 OpenAI 호환 API를 제공해야 합니다. Mac에서 vllm-metal을 쓰는 예시입니다.
+서버는 도구 호출을 지원하는 OpenAI 호환 API를 제공해야 합니다. Mac에서는 [Ollama](https://ollama.com)가 가장 간단합니다. 앱을 설치하고 모델을 내려받은 뒤, 컨텍스트가 64k 토큰인 변형 모델을 만듭니다. Ollama는 기본적으로 더 작은 컨텍스트를 쓰기 때문에 Glafira의 도구 설명이 들어가지 않습니다.
 
 ```bash
-vllm serve mlx-community/Qwen3.6-35B-A3B-4bit --host 127.0.0.1 --port 8100 --api-key sk-local \
-  --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 \
-  --max-model-len 65536
+ollama pull qwen3.6:35b-a3b
+printf 'FROM qwen3.6:35b-a3b\nPARAMETER num_ctx 65536\n' > Modelfile
+ollama create qwen3.6-64k:35b-a3b -f Modelfile
 ```
 
-도구 호출을 해석하는 방식은 서버에 따라 다릅니다. vLLM에서는 `--tool-call-parser` 플래그로 모델 계열에 맞게 지정하고, Ollama에서는 모델 템플릿이 결정합니다. 서버는 `127.0.0.1`에서만 연결을 받으므로 다른 컴퓨터는 모델에 연결할 수 없습니다.
+클라이언트에는 주소 `http://127.0.0.1:11434/v1`, 모델 `qwen3.6-64k:35b-a3b`, 비어 있지 않은 임의의 API 키가 필요합니다. Ollama는 `127.0.0.1`에서만 연결을 받으므로 다른 컴퓨터는 모델에 연결할 수 없습니다.
+
+NVIDIA를 갖춘 Linux에서는 보통 vLLM을 씁니다. vLLM은 모델 계열에 맞게 지정하는 `--tool-call-parser` 플래그(Qwen3.6은 `qwen3_coder`)로 도구 호출을 해석하고, Ollama에서는 모델 템플릿이 그 역할을 합니다.
 
 ## Glafira 설정 {#glafira-settings}
 

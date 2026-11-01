@@ -12,7 +12,7 @@
 
 ## 本地模型能做什么 {#capabilities}
 
-测试环境：搭载 M4 Pro 和 48 GB 内存的 Mac，上下文为 64k 令牌，测试集群包含一个 Broker 和三个主题（7 个分区，约 3,000 条消息）。三个典型任务：检查集群并解释发现的问题、查看没有成员的组的延迟，以及根据服务日志中的时间查找消息。每个模型运行三次。
+测试环境：搭载 M4 Pro 和 48 GB 内存的 Mac，vllm-metal 服务器，上下文为 64k 令牌，测试集群包含一个 Broker 和三个主题（7 个分区，约 3,000 条消息）。三个典型任务：检查集群并解释发现的问题、查看没有成员的组的延迟，以及根据服务日志中的时间查找消息。每个模型运行三次。
 
 | 模型（4 位） | 正确回答 | 生成速度 | 集群检查 | 组延迟 | 消息查找 |
 |---|---|---|---|---|---|
@@ -39,15 +39,17 @@ Qwen3.8-27B 的回答更详细，但它是稠密模型：每生成一个令牌�
 
 ## 模型服务器 {#server}
 
-服务器必须提供支持工具调用的 OpenAI 兼容 API。下面是在 Mac 上使用 vllm-metal 的示例：
+服务器必须提供支持工具调用的 OpenAI 兼容 API。在 Mac 上，[Ollama](https://ollama.com) 是最简单的选择：安装应用，下载模型，并创建一个上下文为 64k 令牌的变体——Ollama 默认使用较小的上下文，Glafira 的工具说明放不下：
 
 ```bash
-vllm serve mlx-community/Qwen3.6-35B-A3B-4bit --host 127.0.0.1 --port 8100 --api-key sk-local \
-  --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 \
-  --max-model-len 65536
+ollama pull qwen3.6:35b-a3b
+printf 'FROM qwen3.6:35b-a3b\nPARAMETER num_ctx 65536\n' > Modelfile
+ollama create qwen3.6-64k:35b-a3b -f Modelfile
 ```
 
-工具调用如何解析取决于服务器：在 vLLM 中，由 `--tool-call-parser` 参数为对应的模型系列指定；在 Ollama 中，由模型模板决定。服务器只监听 `127.0.0.1`，这样其他计算机就无法连接到该模型。
+客户端需要地址 `http://127.0.0.1:11434/v1`、模型 `qwen3.6-64k:35b-a3b` 和任意非空的 API 密钥。Ollama 只监听 `127.0.0.1`，因此其他计算机无法连接到该模型。
+
+在配备 NVIDIA 的 Linux 上，通常使用 vLLM。它通过 `--tool-call-parser` 参数解析工具调用，该参数按模型系列设置（Qwen3.6 使用 `qwen3_coder`）；在 Ollama 中，由模型模板完成这项工作。
 
 ## Glafira 设置 {#glafira-settings}
 

@@ -56,7 +56,7 @@ ollama create qwen3.6-64k:35b-a3b -f Modelfile
 在「[[ui:settings.mcp.section]]」區段：
 
 - [[ui:settings.mcp.responseLimit]]：一次工具呼叫的最大回應。100 KB 的回應約占 30k 權杖，因此對於 64k 的上下文，請選擇 48 KB 或 24 KB：Glafira 會截斷過長的清單，並提示模型縮小請求範圍。
-- 「[[ui:settings.mcp.clients]]」清單中的「[[ui:settings.mcp.colCompact]]」：不含註記和變更建議的工具集，它們的描述約占 9,000 權杖的上下文。用戶端連線並經你核准後才會出現該核取方塊；用戶端重新連線後才能看到新的工具清單。
+- 「[[ui:settings.mcp.clients]]」清單中的「[[ui:settings.mcp.colCompact]]」：不含註記和變更建議的工具集，它們的描述約占 1,000 權杖的上下文。用戶端連線並經你核准後才會出現該核取方塊；用戶端重新連線後才能看到新的工具清單。
 
 ## 檢查 {#check}
 

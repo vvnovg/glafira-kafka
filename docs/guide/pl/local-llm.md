@@ -56,7 +56,7 @@ Na Linuksie z NVIDIA zwykle wybiera się vLLM. Analizuje on wywołania narzędzi
 W sekcji [[ui:settings.mcp.section]]:
 
 - [[ui:settings.mcp.responseLimit]] — największa odpowiedź jednego wywołania narzędzia. Odpowiedź 100 KB to około 30 tys. tokenów, więc dla kontekstu 64 tys. należy wybrać 48 lub 24 KB: Glafira skraca długie listy i każe modelowi zawęzić żądanie.
-- [[ui:settings.mcp.colCompact]] na liście [[ui:settings.mcp.clients]] — zestaw narzędzi bez notatek i propozycji zmian: ich opisy zajmują w kontekście około 9 000 tokenów. Pole wyboru pojawia się, gdy klient się połączy i zostanie zatwierdzony; nową listę klient widzi po ponownym połączeniu.
+- [[ui:settings.mcp.colCompact]] na liście [[ui:settings.mcp.clients]] — zestaw narzędzi bez notatek i propozycji zmian: ich opisy zajmują w kontekście około 1 000 tokenów. Pole wyboru pojawia się, gdy klient się połączy i zostanie zatwierdzony; nową listę klient widzi po ponownym połączeniu.
 
 ## Sprawdzanie {#check}
 

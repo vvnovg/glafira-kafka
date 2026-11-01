@@ -27,7 +27,7 @@ pub struct SessionView {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ClientOptions {
     pub response_limit_bytes: usize,
-    /// Без инструментов записи ([`COMPACT_HIDDEN_TOOLS`]): их схемы — около 9 тыс. токенов.
+    /// Без инструментов записи ([`COMPACT_HIDDEN_TOOLS`]): их схемы — около 1 тыс. токенов.
     pub compact_tools: bool,
 }
 

@@ -56,7 +56,7 @@ En Linux con NVIDIA, lo habitual es vLLM. Interpreta las llamadas a herramientas
 En la sección [[ui:settings.mcp.section]]:
 
 - [[ui:settings.mcp.responseLimit]] — la respuesta más grande de una llamada a una herramienta. Una respuesta de 100 KB ocupa unos 30k tokens, así que para un contexto de 64k elige 48 o 24 KB: Glafira recorta las listas largas e indica al modelo que acote la solicitud.
-- [[ui:settings.mcp.colCompact]] en la lista [[ui:settings.mcp.clients]] — un conjunto de herramientas sin notas ni propuestas de cambio: sus descripciones ocupan unos 9000 tokens de contexto. La casilla aparece cuando el cliente se conecta y lo apruebas; el cliente ve la nueva lista después de volver a conectarse.
+- [[ui:settings.mcp.colCompact]] en la lista [[ui:settings.mcp.clients]] — un conjunto de herramientas sin notas ni propuestas de cambio: sus descripciones ocupan unos 1000 tokens de contexto. La casilla aparece cuando el cliente se conecta y lo apruebas; el cliente ve la nueva lista después de volver a conectarse.
 
 ## Comprobación {#check}
 

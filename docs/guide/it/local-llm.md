@@ -56,7 +56,7 @@ Su Linux con NVIDIA la scelta abituale è vLLM. Interpreta le chiamate agli stru
 Nella sezione [[ui:settings.mcp.section]]:
 
 - [[ui:settings.mcp.responseLimit]] — la risposta più grande di una chiamata a uno strumento. Una risposta da 100 KB occupa circa 30k token, quindi per un contesto da 64k scegli 48 o 24 KB: Glafira tronca gli elenchi lunghi e dice al modello di restringere la richiesta.
-- [[ui:settings.mcp.colCompact]] nell’elenco [[ui:settings.mcp.clients]] — un insieme di strumenti senza note e proposte di modifica: le loro descrizioni occupano circa 9000 token di contesto. La casella compare quando il client si collega e lo approvi; il client vede il nuovo elenco dopo essersi ricollegato.
+- [[ui:settings.mcp.colCompact]] nell’elenco [[ui:settings.mcp.clients]] — un insieme di strumenti senza note e proposte di modifica: le loro descrizioni occupano circa 1000 token di contesto. La casella compare quando il client si collega e lo approvi; il client vede il nuovo elenco dopo essersi ricollegato.
 
 ## Verifica {#check}
 

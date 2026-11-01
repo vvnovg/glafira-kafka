@@ -56,7 +56,7 @@ On Linux with NVIDIA, vLLM is the usual choice. It parses tool calls with the `-
 In the [[ui:settings.mcp.section]] section:
 
 - [[ui:settings.mcp.responseLimit]] — the largest answer of one tool call. A 100 KB answer takes about 30k tokens, so for a 64k context choose 48 or 24 KB: Glafira truncates long lists and tells the model to narrow the request.
-- [[ui:settings.mcp.colCompact]] in the [[ui:settings.mcp.clients]] list — a tool set without notes and change proposals: their descriptions take about 9,000 tokens of context. The checkbox appears once the client connects and you approve it; the client sees the new list after it reconnects.
+- [[ui:settings.mcp.colCompact]] in the [[ui:settings.mcp.clients]] list — a tool set without notes and change proposals: their descriptions take about 1,000 tokens of context. The checkbox appears once the client connects and you approve it; the client sees the new list after it reconnects.
 
 ## Check {#check}
 

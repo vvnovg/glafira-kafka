@@ -56,7 +56,7 @@ NVIDIA를 갖춘 Linux에서는 보통 vLLM을 씁니다. vLLM은 모델 계열�
 [[ui:settings.mcp.section]] 섹션에서 설정합니다.
 
 - [[ui:settings.mcp.responseLimit]] — 도구 호출 한 번의 최대 응답 크기입니다. 100 KB 응답은 약 30k 토큰을 차지하므로, 64k 컨텍스트에서는 48 KB 또는 24 KB를 선택하세요. Glafira는 긴 목록을 잘라 내고 모델에 요청 범위를 좁히라고 알려 줍니다.
-- [[ui:settings.mcp.clients]] 목록의 [[ui:settings.mcp.colCompact]] — 메모와 변경 제안이 빠진 도구 세트입니다. 그 설명이 컨텍스트를 약 9,000 토큰 차지합니다. 이 확인란은 클라이언트가 연결되고 사용자가 승인한 뒤에 나타나며, 클라이언트는 다시 연결한 뒤에 새 목록을 보게 됩니다.
+- [[ui:settings.mcp.clients]] 목록의 [[ui:settings.mcp.colCompact]] — 메모와 변경 제안이 빠진 도구 세트입니다. 그 설명이 컨텍스트를 약 1,000 토큰 차지합니다. 이 확인란은 클라이언트가 연결되고 사용자가 승인한 뒤에 나타나며, 클라이언트는 다시 연결한 뒤에 새 목록을 보게 됩니다.
 
 ## 확인 {#check}
 

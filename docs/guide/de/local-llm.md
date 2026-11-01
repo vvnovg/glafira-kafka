@@ -56,7 +56,7 @@ Unter Linux mit NVIDIA ist vLLM die übliche Wahl. Es parst Tool-Aufrufe mit dem
 Im Abschnitt [[ui:settings.mcp.section]]:
 
 - [[ui:settings.mcp.responseLimit]] — die größte Antwort eines Tool-Aufrufs. Eine Antwort von 100 KB belegt etwa 30k Token; wählen Sie daher für einen Kontext von 64k 48 oder 24 KB: Glafira kürzt lange Listen und weist das Modell an, die Anfrage einzugrenzen.
-- [[ui:settings.mcp.colCompact]] in der Liste [[ui:settings.mcp.clients]] — ein Tool-Satz ohne Anmerkungen und Änderungsvorschläge: Ihre Beschreibungen belegen etwa 9.000 Token Kontext. Das Kontrollkästchen erscheint, sobald der Client sich verbindet und Sie ihn genehmigen; die neue Liste sieht der Client nach dem erneuten Verbinden.
+- [[ui:settings.mcp.colCompact]] in der Liste [[ui:settings.mcp.clients]] — ein Tool-Satz ohne Anmerkungen und Änderungsvorschläge: Ihre Beschreibungen belegen etwa 1.000 Token Kontext. Das Kontrollkästchen erscheint, sobald der Client sich verbindet und Sie ihn genehmigen; die neue Liste sieht der Client nach dem erneuten Verbinden.
 
 ## Prüfung {#check}
 

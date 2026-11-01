@@ -1447,7 +1447,7 @@
     "settings": {
       "mcpEnable": "Inicia un servidor MCP local para asistentes LLM. El acceso se abre por conexión y está desactivado por defecto; cada cliente nuevo se confirma en un cuadro de diálogo.",
       "mcpResponseLimit": "Respuesta más grande que una llamada a una herramienta devuelve al LLM. Para un modelo local con contexto pequeño (64k tokens o menos), elija un límite menor.",
-      "mcpCompact": "Oculta a este cliente las herramientas de notas y propuestas de cambios: sus descripciones ocupan unos 9000 tokens del contexto de un modelo local. El cliente verá la nueva lista al volver a conectarse."
+      "mcpCompact": "Oculta a este cliente las herramientas de notas y propuestas de cambios: sus descripciones ocupan unos 1000 tokens del contexto de un modelo local. El cliente verá la nueva lista al volver a conectarse."
     },
     "health": {
       "check": "Ejecuta las reglas integradas de Glafira: particiones y replicación, configuración de topics y brokers, consumer groups. La gravedad depende del entorno de la conexión. La comprobación solo lee el clúster.",

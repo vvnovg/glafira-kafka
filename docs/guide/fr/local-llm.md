@@ -56,7 +56,7 @@ Sous Linux avec NVIDIA, vLLM est le choix habituel. Il analyse les appels d’ou
 Dans la section [[ui:settings.mcp.section]] :
 
 - [[ui:settings.mcp.responseLimit]] — la plus grande réponse d’un appel d’outil. Une réponse de 100 KB occupe environ 30k jetons ; pour un contexte de 64k, choisissez donc 48 ou 24 KB : Glafira tronque les longues listes et demande au modèle de restreindre la requête.
-- [[ui:settings.mcp.colCompact]] dans la liste [[ui:settings.mcp.clients]] — un jeu d’outils sans remarques ni propositions de modification : leurs descriptions occupent environ 9 000 jetons de contexte. La case apparaît une fois que le client se connecte et que vous l’approuvez ; le client voit la nouvelle liste après s’être reconnecté.
+- [[ui:settings.mcp.colCompact]] dans la liste [[ui:settings.mcp.clients]] — un jeu d’outils sans remarques ni propositions de modification : leurs descriptions occupent environ 1 000 jetons de contexte. La case apparaît une fois que le client se connecte et que vous l’approuvez ; le client voit la nouvelle liste après s’être reconnecté.
 
 ## Vérification {#check}
 

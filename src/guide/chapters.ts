@@ -8,6 +8,7 @@ export const GUIDE_CHAPTERS = [
   "consumer-sessions",
   "health-check",
   "llm-mcp",
+  "local-llm",
   "updates",
   "troubleshooting",
 ] as const;

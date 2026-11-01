@@ -2,6 +2,9 @@
 
 Polska wersja [CHANGELOG.md](../../CHANGELOG.md), gdzie są też wcześniejsze wersje. Sekcja wersji jest wyświetlana w „O programie” jako informacje o aktualizacji.
 
+## 0.5.4
+- MCP: klient z włączonym „Zestaw kompaktowy” otrzymuje instrukcje serwera bez akapitów o propozycjach zmian i notatkach. Zamiast nich jest informacja, że ten klient nie ma takich narzędzi, a potrzebną zmianę należy opisać na czacie. Wcześniej model szukał narzędzi, których nie widział.
+
 ## 0.5.3
 - Błędy TLS: gdy broker zamyka połączenie podczas uzgadniania TLS, komunikat nie twierdzi już, że port nie ma TLS. Informuje, że port może nie mieć TLS lub że certyfikat klienta nie został przyjęty, co jest zwykłym przypadkiem przy mTLS.
 - MCP lepiej działa z modelami lokalnymi (Qwen, gpt-oss i innymi):

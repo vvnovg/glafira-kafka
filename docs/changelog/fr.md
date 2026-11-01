@@ -2,6 +2,9 @@
 
 Version française de [CHANGELOG.md](../../CHANGELOG.md), qui contient aussi les versions antérieures. La section d’une version s’affiche dans « À propos » comme notes de mise à jour.
 
+## 0.5.4
+- MCP : un client avec « Jeu compact » activé reçoit les instructions du serveur sans les paragraphes sur les propositions de modification et les remarques. À la place, elles indiquent que ce client n’a pas ces outils et qu’une modification nécessaire doit être décrite dans le chat. Auparavant, le modèle cherchait des outils qu’il ne voyait pas.
+
 ## 0.5.3
 - Erreurs TLS : lorsque le broker ferme la connexion pendant la négociation TLS, le message n’affirme plus que le port n’a pas de TLS. Il indique que le port n’a peut-être pas de TLS ou que le certificat client n’a pas été accepté, ce qui est le cas habituel avec mTLS.
 - MCP fonctionne mieux avec les modèles locaux (Qwen, gpt-oss et autres) :

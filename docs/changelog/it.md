@@ -2,6 +2,9 @@
 
 Versione italiana di [CHANGELOG.md](../../CHANGELOG.md), dove si trovano anche le versioni precedenti. La sezione di una versione viene mostrata in “Informazioni” come note dell’aggiornamento.
 
+## 0.5.4
+- MCP: un client con “Set compatto” attivo riceve le istruzioni del server senza i paragrafi sulle proposte di modifica e sulle note. Al loro posto, indicano che questo client non ha questi strumenti e che la modifica necessaria va descritta nella chat. Prima il modello cercava strumenti che non poteva vedere.
+
 ## 0.5.3
 - Errori TLS: quando il broker chiude la connessione durante l’handshake TLS, il messaggio non afferma più che la porta non ha TLS. Indica che la porta potrebbe non avere TLS o che il certificato client non è stato accettato, che è il caso abituale con mTLS.
 - MCP funziona meglio con i modelli locali (Qwen, gpt-oss e altri):

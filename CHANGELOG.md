@@ -2,6 +2,9 @@
 
 Versions in the other interface languages are in [docs/changelog](docs/changelog/). The section of a version is shown in About as the update notes, in the interface language.
 
+## 0.5.4
+- MCP: a client with “Compact tools” turned on gets server instructions without the paragraphs about change proposals and notes. Instead, they say that this client has no such tools and that a needed change should be described in the chat. Before, the model looked for tools it could not see.
+
 ## 0.5.3
 - TLS errors: when the broker closes the connection during the TLS handshake, the message no longer claims that the port has no TLS. It says that the port may have no TLS or that the client certificate was not accepted, which is the usual case with mTLS.
 - MCP works better with local models (Qwen, gpt-oss and others):

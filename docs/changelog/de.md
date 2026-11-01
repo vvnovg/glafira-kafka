@@ -2,6 +2,9 @@
 
 Deutsche Fassung von [CHANGELOG.md](../../CHANGELOG.md), dort stehen auch frühere Versionen. Der Abschnitt einer Version wird unter „Über Glafira“ als Versionshinweise zum Update angezeigt.
 
+## 0.5.4
+- MCP: Ein Client mit aktiviertem „Kompakter Satz“ erhält die Server-Anweisungen ohne die Absätze über Änderungsvorschläge und Anmerkungen. Stattdessen steht dort, dass dieser Client solche Tools nicht hat und eine nötige Änderung im Chat beschrieben werden soll. Bisher suchte das Modell nach Tools, die es nicht sehen konnte.
+
 ## 0.5.3
 - TLS-Fehler: Schließt der Broker die Verbindung während des TLS-Handshakes, behauptet die Meldung nicht mehr, dass am Port kein TLS läuft. Sie sagt, dass am Port möglicherweise kein TLS läuft oder dass das Client-Zertifikat nicht akzeptiert wurde, was bei mTLS der übliche Fall ist.
 - MCP funktioniert besser mit lokalen Modellen (Qwen, gpt-oss und anderen):

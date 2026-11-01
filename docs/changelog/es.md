@@ -2,6 +2,9 @@
 
 Versión en español de [CHANGELOG.md](../../CHANGELOG.md), donde también están las versiones anteriores. La sección de una versión se muestra en “Acerca de” como notas de la actualización.
 
+## 0.5.4
+- MCP: un cliente con “Conjunto compacto” activado recibe las instrucciones del servidor sin los párrafos sobre propuestas de cambios y notas. En su lugar, indican que este cliente no tiene esas herramientas y que el cambio necesario debe describirse en el chat. Antes, el modelo buscaba herramientas que no podía ver.
+
 ## 0.5.3
 - Errores de TLS: cuando el broker cierra la conexión durante el handshake de TLS, el mensaje ya no afirma que el puerto no tiene TLS. Indica que puede que el puerto no tenga TLS o que no se haya aceptado el certificado de cliente, que es el caso habitual con mTLS.
 - MCP funciona mejor con modelos locales (Qwen, gpt-oss y otros):

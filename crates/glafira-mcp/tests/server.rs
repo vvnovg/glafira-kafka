@@ -3082,3 +3082,65 @@ async fn response_limit_comes_from_client_options() {
     assert!(text(&r).len() <= 24 * 1024 + 200, "{}", text(&r).len());
     assert_eq!(ok(r)["truncated"], true);
 }
+
+#[tokio::test]
+async fn compact_clients_get_instructions_without_write_tools() {
+    let fake = Fake::new(SessionAccess::Approved);
+    let e = env(fake.clone()).await;
+    let full = client(&e.ep).await;
+    let text = full.peer_info().unwrap().instructions.clone().unwrap();
+    assert_eq!(text, glafira_mcp::server::INSTRUCTIONS);
+    fake.options.lock().unwrap().compact_tools = true;
+    let compact = client(&e.ep).await;
+    let text = compact.peer_info().unwrap().instructions.clone().unwrap();
+    assert_eq!(text, glafira_mcp::server::instructions(true));
+    for tool in COMPACT_HIDDEN_TOOLS.iter().chain(&["list_proposals"]) {
+        assert!(!text.contains(tool), "{tool}: {text}");
+    }
+    assert!(
+        text.contains("this client has no tools for notes or change proposals"),
+        "{text}"
+    );
+    assert!(
+        text.contains("health_check") && text.contains("read_messages"),
+        "{text}"
+    );
+}
+
+#[tokio::test]
+async fn discover_sends_compact_instructions_to_a_compact_client() {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.options.lock().unwrap().compact_tools = true;
+    let e = env(fake).await;
+    // Протокол 2026-07-28: инструкции — в ответе server/discover, клиент — в _meta.
+    let mut s = endpoint::connect(&e.ep).await.unwrap();
+    handshake::client(&mut s, TOKEN).await.unwrap();
+    let discover = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "server/discover",
+        "params": {"_meta": {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {"name": "qwen-code", "version": "0.26.5"},
+        }},
+    });
+    s.write_all(format!("{discover}\n").as_bytes())
+        .await
+        .unwrap();
+    s.flush().await.unwrap();
+    let mut line = String::new();
+    BufReader::new(&mut s).read_line(&mut line).await.unwrap();
+    let r: Value = serde_json::from_str(&line).unwrap();
+    assert_eq!(
+        r["result"]["instructions"].as_str(),
+        Some(glafira_mcp::server::instructions(true).as_str()),
+        "{line}"
+    );
+    assert_eq!(
+        e.handle.sessions()[0].client_name.as_deref(),
+        Some("qwen-code"),
+        "клиент опознан по _meta запроса discover"
+    );
+}

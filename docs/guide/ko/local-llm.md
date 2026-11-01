@@ -54,6 +54,52 @@ ollama create qwen3.6-64k:35b-a3b -f Modelfile
 
 NVIDIA를 갖춘 Linux에서는 보통 vLLM을 씁니다. vLLM은 모델 계열에 맞게 지정하는 `--tool-call-parser` 플래그(Qwen3.6은 `qwen3_coder`)로 도구 호출을 해석하고, Ollama에서는 모델 템플릿이 그 역할을 합니다.
 
+## 클라이언트 {#clients}
+
+명령줄 클라이언트 두 가지를 테스트했습니다. 둘 다 내장 셸, 파일 편집, 웹 도구를 끄세요. 그러지 않으면 모델이 Glafira를 우회해 클러스터나 인터넷에 직접 접근할 수 있습니다. Glafira는 새 클라이언트를 승인 대화 상자에 해당 이름으로 표시합니다.
+
+**Qwen Code**(오픈 소스, Apache 2.0). 설정은 `~/.qwen/settings.json`에 있습니다. 처음 실행하기 전에 이 파일을 만드세요. 만들지 않으면 Qwen Code가 스스로 업데이트되고 작업 자동 승인을 켭니다.
+
+```json
+{
+  "env": { "LOCAL_LLM_API_KEY": "ollama" },
+  "modelProviders": { "openai": [ {
+    "id": "qwen3.6-64k:35b-a3b",
+    "envKey": "LOCAL_LLM_API_KEY",
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "generationConfig": { "contextWindowSize": 65536,
+      "samplingParams": { "temperature": 0.2, "max_tokens": 8192 } } } ] },
+  "security": { "auth": { "selectedType": "openai" } },
+  "model": { "name": "qwen3.6-64k:35b-a3b" },
+  "privacy": { "usageStatisticsEnabled": false },
+  "general": { "enableAutoUpdate": false },
+  "telemetry": { "enabled": false },
+  "tools": { "approvalMode": "default",
+    "disabled": ["run_shell_command", "edit", "write_file", "web_fetch", "web_search", "agent"] },
+  "mcpServers": { "glafira-kafka": {
+    "command": "/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka",
+    "args": ["mcp"], "timeout": 120000, "trust": true, "alwaysLoadTools": true } }
+}
+```
+
+`envKey`는 키 자체가 아니라 키를 담은 변수의 이름입니다. `alwaysLoadTools`를 지정하면 도구 검색 단계 없이 Glafira의 도구가 모델에 바로 전달됩니다. Glafira에서 이 클라이언트의 이름은 `qwen-cli-mcp-client-glafira-kafka`입니다. 서버를 폴더 설정(`.qwen/settings.json`)에 정의했다면 `qwen mcp approve glafira-kafka`로 한 번 승인하세요.
+
+**Claude Code**는 Ollama와 바로 연동됩니다. Ollama는 Anthropic 형식으로도 응답하기 때문입니다. 환경 변수를 설정하고 [[ui:settings.mcp.connectTitle]] 블록의 명령으로 Glafira를 추가하세요.
+
+```bash
+export ANTHROPIC_BASE_URL=http://127.0.0.1:11434
+export ANTHROPIC_AUTH_TOKEN=ollama
+export ANTHROPIC_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_OPUS_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_SUBAGENT_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+claude --disallowedTools "Bash Edit Write WebFetch WebSearch Task"
+```
+
+`ANTHROPIC_BASE_URL`에는 `/v1`을 붙이지 않습니다. `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`는 업데이트, 텔레메트리, 오류 보고를 끕니다. Anthropic 계정으로 로그인할 필요는 없습니다. Glafira에서 이 클라이언트의 이름은 `claude-code`입니다.
+
 ## Glafira 설정 {#glafira-settings}
 
 [[ui:settings.mcp.section]] 섹션에서 설정합니다.

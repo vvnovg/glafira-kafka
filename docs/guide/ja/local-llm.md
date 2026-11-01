@@ -54,6 +54,52 @@ ollama create qwen3.6-64k:35b-a3b -f Modelfile
 
 NVIDIAを搭載したLinuxでは、通常はvLLMを使います。vLLMは、モデルファミリーに合わせて指定する`--tool-call-parser`フラグ（Qwen3.6では`qwen3_coder`）でツール呼び出しを解析します。Ollamaでは、モデルのテンプレートがその役割を担います。
 
+## クライアント {#clients}
+
+コマンドラインのクライアントを2つテストしました。どちらも、組み込みのシェル、ファイル編集、Webのツールをオフにしてください。オフにしないと、モデルがGlafiraを迂回して、自分でクラスターやインターネットにアクセスできてしまいます。Glafiraは、新しいクライアントを承認ダイアログにその名前で表示します。
+
+**Qwen Code**（オープンソース、Apache 2.0）。設定は`~/.qwen/settings.json`にあります。初回起動の前にこのファイルを作成してください。作成しないと、Qwen Codeが自動で更新され、操作の自動承認がオンになります。
+
+```json
+{
+  "env": { "LOCAL_LLM_API_KEY": "ollama" },
+  "modelProviders": { "openai": [ {
+    "id": "qwen3.6-64k:35b-a3b",
+    "envKey": "LOCAL_LLM_API_KEY",
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "generationConfig": { "contextWindowSize": 65536,
+      "samplingParams": { "temperature": 0.2, "max_tokens": 8192 } } } ] },
+  "security": { "auth": { "selectedType": "openai" } },
+  "model": { "name": "qwen3.6-64k:35b-a3b" },
+  "privacy": { "usageStatisticsEnabled": false },
+  "general": { "enableAutoUpdate": false },
+  "telemetry": { "enabled": false },
+  "tools": { "approvalMode": "default",
+    "disabled": ["run_shell_command", "edit", "write_file", "web_fetch", "web_search", "agent"] },
+  "mcpServers": { "glafira-kafka": {
+    "command": "/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka",
+    "args": ["mcp"], "timeout": 120000, "trust": true, "alwaysLoadTools": true } }
+}
+```
+
+`envKey`はキーそのものではなく、キーを保持する変数の名前です。`alwaysLoadTools`を指定すると、ツール検索の手順を挟まずに、Glafiraのツールがすぐモデルに渡されます。Glafiraでは、このクライアントは`qwen-cli-mcp-client-glafira-kafka`という名前で表示されます。サーバーをフォルダーの設定（`.qwen/settings.json`）で定義した場合は、`qwen mcp approve glafira-kafka`で一度承認してください。
+
+**Claude Code**はOllamaと直接連携できます。OllamaはAnthropic形式でも応答するためです。環境変数を設定し、「[[ui:settings.mcp.connectTitle]]」ブロックのコマンドでGlafiraを追加します。
+
+```bash
+export ANTHROPIC_BASE_URL=http://127.0.0.1:11434
+export ANTHROPIC_AUTH_TOKEN=ollama
+export ANTHROPIC_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_OPUS_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_SUBAGENT_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+claude --disallowedTools "Bash Edit Write WebFetch WebSearch Task"
+```
+
+`ANTHROPIC_BASE_URL`には`/v1`を付けません。`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`は、更新、テレメトリ、エラーレポートをオフにします。Anthropicアカウントへのサインインは不要です。Glafiraでは、このクライアントは`claude-code`という名前で表示されます。
+
 ## Glafiraの設定 {#glafira-settings}
 
 「[[ui:settings.mcp.section]]」セクションで設定します。

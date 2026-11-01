@@ -54,6 +54,52 @@ Après 5 minutes d’inactivité, Ollama décharge le modèle de la mémoire, e
 
 Sous Linux avec NVIDIA, vLLM est le choix habituel. Il analyse les appels d’outils grâce à l’option `--tool-call-parser` définie pour la famille du modèle (`qwen3_coder` pour Qwen3.6) ; dans Ollama, c’est le modèle de prompt qui s’en charge.
 
+## Clients {#clients}
+
+Deux clients en ligne de commande ont été testés. Dans les deux cas, désactivez le shell intégré ainsi que les outils d’édition de fichiers et d’accès au web : sinon le modèle peut contourner Glafira et accéder lui-même au cluster ou à Internet. Glafira affiche un nouveau client dans la boîte de dialogue d’approbation sous son nom.
+
+**Qwen Code** (open source, Apache 2.0). Ses paramètres se trouvent dans `~/.qwen/settings.json` ; créez le fichier avant le premier lancement, sinon Qwen Code se met à jour tout seul et active l’approbation automatique des actions :
+
+```json
+{
+  "env": { "LOCAL_LLM_API_KEY": "ollama" },
+  "modelProviders": { "openai": [ {
+    "id": "qwen3.6-64k:35b-a3b",
+    "envKey": "LOCAL_LLM_API_KEY",
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "generationConfig": { "contextWindowSize": 65536,
+      "samplingParams": { "temperature": 0.2, "max_tokens": 8192 } } } ] },
+  "security": { "auth": { "selectedType": "openai" } },
+  "model": { "name": "qwen3.6-64k:35b-a3b" },
+  "privacy": { "usageStatisticsEnabled": false },
+  "general": { "enableAutoUpdate": false },
+  "telemetry": { "enabled": false },
+  "tools": { "approvalMode": "default",
+    "disabled": ["run_shell_command", "edit", "write_file", "web_fetch", "web_search", "agent"] },
+  "mcpServers": { "glafira-kafka": {
+    "command": "/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka",
+    "args": ["mcp"], "timeout": 120000, "trust": true, "alwaysLoadTools": true } }
+}
+```
+
+`envKey` est le nom de la variable qui contient la clé, et non la clé elle-même. `alwaysLoadTools` donne au modèle les outils de Glafira tout de suite, sans étape supplémentaire de recherche d’outils. Dans Glafira, le client s’appelle `qwen-cli-mcp-client-glafira-kafka`. Si le serveur est défini dans les paramètres d’un dossier (`.qwen/settings.json`), approuvez-le une fois avec `qwen mcp approve glafira-kafka`.
+
+**Claude Code** fonctionne directement avec Ollama : Ollama répond aussi au format Anthropic. Définissez les variables d’environnement et ajoutez Glafira avec la commande du bloc [[ui:settings.mcp.connectTitle]] :
+
+```bash
+export ANTHROPIC_BASE_URL=http://127.0.0.1:11434
+export ANTHROPIC_AUTH_TOKEN=ollama
+export ANTHROPIC_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_OPUS_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_SUBAGENT_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+claude --disallowedTools "Bash Edit Write WebFetch WebSearch Task"
+```
+
+`ANTHROPIC_BASE_URL` ne contient pas `/v1`. `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` désactive les mises à jour, la télémétrie et les rapports d’erreurs. Aucune connexion à un compte Anthropic n’est nécessaire. Dans Glafira, le client s’appelle `claude-code`.
+
 ## Paramètres de Glafira {#glafira-settings}
 
 Dans la section [[ui:settings.mcp.section]] :

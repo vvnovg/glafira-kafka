@@ -54,6 +54,52 @@ ollama create qwen3.6-64k:35b-a3b -f Modelfile
 
 在配備 NVIDIA 的 Linux 上，通常使用 vLLM。它透過 `--tool-call-parser` 參數解析工具呼叫，該參數依模型系列設定（Qwen3.6 使用 `qwen3_coder`）；在 Ollama 中，由模型範本負責這項工作。
 
+## 用戶端 {#clients}
+
+我們測試了兩個命令列用戶端。請在兩者中關閉內建的 shell、檔案編輯和網路工具：否則模型可能繞過 Glafira，自行存取叢集或網際網路。Glafira 會在核准對話框中以新用戶端的名稱顯示它。
+
+**Qwen Code**（開源，Apache 2.0）。它的設定位於 `~/.qwen/settings.json`；請在首次啟動前建立該檔案，否則 Qwen Code 會自行更新，並開啟動作的自動核准：
+
+```json
+{
+  "env": { "LOCAL_LLM_API_KEY": "ollama" },
+  "modelProviders": { "openai": [ {
+    "id": "qwen3.6-64k:35b-a3b",
+    "envKey": "LOCAL_LLM_API_KEY",
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "generationConfig": { "contextWindowSize": 65536,
+      "samplingParams": { "temperature": 0.2, "max_tokens": 8192 } } } ] },
+  "security": { "auth": { "selectedType": "openai" } },
+  "model": { "name": "qwen3.6-64k:35b-a3b" },
+  "privacy": { "usageStatisticsEnabled": false },
+  "general": { "enableAutoUpdate": false },
+  "telemetry": { "enabled": false },
+  "tools": { "approvalMode": "default",
+    "disabled": ["run_shell_command", "edit", "write_file", "web_fetch", "web_search", "agent"] },
+  "mcpServers": { "glafira-kafka": {
+    "command": "/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka",
+    "args": ["mcp"], "timeout": 120000, "trust": true, "alwaysLoadTools": true } }
+}
+```
+
+`envKey` 是存放金鑰的變數名稱，而不是金鑰本身。`alwaysLoadTools` 會讓模型立即取得 Glafira 的工具，無需額外的工具搜尋步驟。在 Glafira 中，該用戶端名為 `qwen-cli-mcp-client-glafira-kafka`。如果伺服器定義在資料夾的設定（`.qwen/settings.json`）中，請用 `qwen mcp approve glafira-kafka` 核准一次。
+
+**Claude Code** 可直接搭配 Ollama 使用：Ollama 也支援 Anthropic 格式的回應。設定環境變數，並使用「[[ui:settings.mcp.connectTitle]]」區段中的指令新增 Glafira：
+
+```bash
+export ANTHROPIC_BASE_URL=http://127.0.0.1:11434
+export ANTHROPIC_AUTH_TOKEN=ollama
+export ANTHROPIC_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_OPUS_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_SUBAGENT_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+claude --disallowedTools "Bash Edit Write WebFetch WebSearch Task"
+```
+
+`ANTHROPIC_BASE_URL` 不含 `/v1`。`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` 會關閉更新、遙測和錯誤回報。無需登入 Anthropic 帳號。在 Glafira 中，該用戶端名為 `claude-code`。
+
 ## Glafira 設定 {#glafira-settings}
 
 在「[[ui:settings.mcp.section]]」區段：

@@ -49,6 +49,8 @@ ollama create qwen3.6-64k:35b-a3b -f Modelfile
 
 クライアントには、アドレス`http://127.0.0.1:11434/v1`、モデル`qwen3.6-64k:35b-a3b`、空でない任意のAPIキーが必要です。Ollamaは`127.0.0.1`のみで待ち受けるため、他のコンピューターからモデルに接続することはできません。
 
+5 分間アイドル状態が続くと、Ollama はモデルをメモリから解放し、次の質問はモデルの再読み込みを待つことになります。モデルをより長くメモリに残すには、環境変数 `OLLAMA_KEEP_ALIVE` を設定します（例：`1h`）。
+
 NVIDIAを搭載したLinuxでは、通常はvLLMを使います。vLLMは、モデルファミリーに合わせて指定する`--tool-call-parser`フラグ（Qwen3.6では`qwen3_coder`）でツール呼び出しを解析します。Ollamaでは、モデルのテンプレートがその役割を担います。
 
 ## Glafiraの設定 {#glafira-settings}

@@ -49,6 +49,8 @@ ollama create qwen3.6-64k:35b-a3b -f Modelfile
 
 客户端需要地址 `http://127.0.0.1:11434/v1`、模型 `qwen3.6-64k:35b-a3b` 和任意非空的 API 密钥。Ollama 只监听 `127.0.0.1`，因此其他计算机无法连接到该模型。
 
+空闲 5 分钟后，Ollama 会把模型从内存中卸载，下一个问题要等模型重新加载。要让模型在内存中保留更久，请设置环境变量 `OLLAMA_KEEP_ALIVE`，例如设为 `1h`。
+
 在配备 NVIDIA 的 Linux 上，通常使用 vLLM。它通过 `--tool-call-parser` 参数解析工具调用，该参数按模型系列设置（Qwen3.6 使用 `qwen3_coder`）；在 Ollama 中，由模型模板完成这项工作。
 
 ## Glafira 设置 {#glafira-settings}

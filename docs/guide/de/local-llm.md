@@ -49,6 +49,8 @@ ollama create qwen3.6-64k:35b-a3b -f Modelfile
 
 Der Client benötigt die Adresse `http://127.0.0.1:11434/v1`, das Modell `qwen3.6-64k:35b-a3b` und einen beliebigen nicht leeren API-Schlüssel. Ollama lauscht nur auf `127.0.0.1`, damit sich andere Computer nicht mit dem Modell verbinden können.
 
+Nach 5 Minuten Leerlauf entlädt Ollama das Modell aus dem Speicher, und die nächste Frage wartet, bis es wieder geladen ist. Damit das Modell länger im Speicher bleibt, setzen Sie die Umgebungsvariable `OLLAMA_KEEP_ALIVE`, zum Beispiel auf `1h`.
+
 Unter Linux mit NVIDIA ist vLLM die übliche Wahl. Es parst Tool-Aufrufe mit dem Flag `--tool-call-parser`, das für die Modellfamilie gesetzt wird (`qwen3_coder` für Qwen3.6); in Ollama übernimmt das die Vorlage des Modells.
 
 ## Einstellungen in Glafira {#glafira-settings}

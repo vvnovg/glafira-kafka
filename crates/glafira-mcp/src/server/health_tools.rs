@@ -20,7 +20,7 @@ pub const FINDINGS_LIMIT_DEFAULT: u32 = 100;
 pub const FINDINGS_LIMIT_MAX: u32 = 200;
 
 /// У `list_annotations` нет страниц: при обрезке остаются самые свежие, остальное — сужением по status.
-const NOTES_TRUNCATED_HINT: &str = "The response was truncated to 100 KB: only the most recently updated notes are shown; narrow with status";
+const NOTES_TRUNCATED_HINT: &str = "The response was truncated to the size limit: only the most recently updated notes are shown; narrow with status";
 
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]

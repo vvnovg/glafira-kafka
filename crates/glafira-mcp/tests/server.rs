@@ -58,6 +58,8 @@ struct Fake {
     message_ops: Mutex<Vec<MessagesOp>>,
     /// Просмотр `stuck` увидел флаг отмены (приложение закрыло бы консьюмер).
     scan_stopped: Arc<AtomicBool>,
+    /// Настройки клиента, которые задал бы пользователь.
+    options: Mutex<ClientOptions>,
 }
 
 /// Считает одновременные операции чтения на любом выходе из `read`.
@@ -103,6 +105,7 @@ impl Fake {
             proposal_ops: Mutex::new(Vec::new()),
             many_proposals: AtomicUsize::new(0),
             read_only: AtomicBool::new(false),
+            options: Mutex::new(ClientOptions::default()),
             message_ops: Mutex::new(Vec::new()),
             scan_stopped: Arc::new(AtomicBool::new(false)),
         })
@@ -376,6 +379,10 @@ impl Backend for Fake {
     fn access(&self, session: &SessionView) -> SessionAccess {
         self.seen.lock().unwrap().push(session.clone());
         *self.access.lock().unwrap()
+    }
+
+    fn client_options(&self, _: &SessionView) -> ClientOptions {
+        *self.options.lock().unwrap()
     }
 
     fn read(&self, op: ReadOp) -> BoxFuture<'_, Result<ReadOutput, BackendError>> {
@@ -1156,7 +1163,7 @@ async fn big_topic_is_truncated_to_the_size_limit() {
     assert!(text(&r).len() <= glafira_mcp::rules::MAX_RESPONSE_BYTES + 200);
     let v = ok(r);
     assert_eq!(v["truncated"], true);
-    assert!(v["hint"].as_str().unwrap().contains("100 KB"));
+    assert!(v["hint"].as_str().unwrap().contains("size limit"));
     assert!(v["partitions"].as_array().unwrap().len() < 3000);
 }
 
@@ -1957,7 +1964,7 @@ async fn long_annotation_list_is_cut_to_the_newest() {
     assert!(serde_json::to_vec(&v).unwrap().len() <= 100 * 1024);
     assert_eq!(v["truncated"], true);
     let hint = v["hint"].as_str().unwrap();
-    assert!(hint.contains("100 KB") && hint.contains("most recently updated"));
+    assert!(hint.contains("size limit") && hint.contains("most recently updated"));
     assert!(!hint.contains("offset"), "{hint}");
     let ids: Vec<&str> = v["items"]
         .as_array()
@@ -2162,7 +2169,7 @@ async fn long_proposal_list_is_cut_to_the_newest() {
     assert!(serde_json::to_vec(&v).unwrap().len() <= 100 * 1024);
     assert_eq!(v["truncated"], true);
     let hint = v["hint"].as_str().unwrap();
-    assert!(hint.contains("100 KB") && hint.contains("most recently updated"));
+    assert!(hint.contains("size limit") && hint.contains("most recently updated"));
     let ids: Vec<&str> = v["items"]
         .as_array()
         .unwrap()
@@ -2443,7 +2450,12 @@ async fn read_messages_page_fits_the_size_limit() {
     let n = v["messages"].as_array().unwrap().len();
     assert!(n > 0 && n < 200, "{n}");
     assert_eq!(v["truncated"], true);
-    assert!(v["hint"].as_str().unwrap().contains("cut to 100 KB"));
+    assert!(
+        v["hint"]
+            .as_str()
+            .unwrap()
+            .contains("cut to the size limit")
+    );
     let next = with(
         window_args("huge"),
         json!({"limit": 200, "maxValueBytes": 16384, "cursor": v["nextCursor"]}),
@@ -3028,4 +3040,45 @@ async fn argument_errors_show_the_expected_shape() {
         msg.contains("Expected arguments") && msg.contains("\"connectionId\":\"string\""),
         "{msg}"
     );
+}
+
+#[tokio::test]
+async fn compact_clients_get_no_write_tools() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.options.lock().unwrap().compact_tools = true;
+    let e = env(fake.clone()).await;
+    let c = client(&e.ep).await;
+    let names: Vec<String> = c
+        .list_all_tools()
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|t| t.name.to_string())
+        .collect();
+    for hidden in COMPACT_HIDDEN_TOOLS {
+        assert!(!names.iter().any(|n| n == hidden), "{hidden}: {names:?}");
+    }
+    assert!(names.iter().any(|n| n == "list_annotations"), "{names:?}");
+    let mut p = CallToolRequestParams::new("annotate");
+    if let Value::Object(m) = note(json!({"kind": "topic", "name": "orders"}), "t") {
+        p = p.with_arguments(m);
+    }
+    assert!(c.call_tool(p).await.is_err());
+    assert!(fake.health_ops.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn response_limit_comes_from_client_options() {
+    let fake = Fake::new(SessionAccess::Approved);
+    fake.options.lock().unwrap().response_limit_bytes = 24 * 1024;
+    let e = env(fake).await;
+    let c = client(&e.ep).await;
+    let r = call(
+        &c,
+        "describe_topic",
+        json!({"connectionId": "c1", "topic": "big"}),
+    )
+    .await;
+    assert!(text(&r).len() <= 24 * 1024 + 200, "{}", text(&r).len());
+    assert_eq!(ok(r)["truncated"], true);
 }

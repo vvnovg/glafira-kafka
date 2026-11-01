@@ -313,7 +313,7 @@ impl GatewayServer {
         if serde_json::to_vec(&GroupState::from(&first)).map_or(0, |b| b.len()) > MAX_STATE_BYTES {
             return Err(BackendError::new(
                 "response_too_large",
-                "The group is too large to observe: its members and assignments alone do not fit into 100 KB; use describe_consumer_group instead",
+                "The group is too large to observe: its members and assignments alone do not fit into the response size limit; use describe_consumer_group instead",
             ));
         }
         let lag = || async {

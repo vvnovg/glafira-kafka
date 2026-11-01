@@ -4,10 +4,31 @@ use serde::Serialize;
 
 use crate::model::ConfigEntry;
 
+/// Предел размера ответа по умолчанию. Клиенту с малым контекстом (локальная модель) пользователь
+/// задаёт меньший — [`RESPONSE_LIMITS_KB`]; инструмент узнаёт его из [`response_limit`].
 pub const MAX_RESPONSE_BYTES: usize = 100 * 1024;
-/// Страховка в обвязке инструментов: ответ больше этого (предел + запас на `truncated` и
+/// Пределы на выбор в настройках MCP, КБ.
+pub const RESPONSE_LIMITS_KB: [usize; 3] = [100, 48, 24];
+/// Страховка в обвязке инструментов: ответ больше предела и этого запаса (на `truncated` и
 /// `hint`) не отправляется — обрезка списков не справилась.
-pub const HARD_LIMIT_BYTES: usize = MAX_RESPONSE_BYTES + 1024;
+pub const HARD_LIMIT_MARGIN: usize = 1024;
+/// [`HARD_LIMIT_MARGIN`] сверх предела по умолчанию.
+pub const HARD_LIMIT_BYTES: usize = MAX_RESPONSE_BYTES + HARD_LIMIT_MARGIN;
+
+tokio::task_local! {
+    static RESPONSE_LIMIT: usize;
+}
+
+/// Предел размера ответа текущего вызова (обвязка задаёт его через [`with_response_limit`]).
+pub fn response_limit() -> usize {
+    RESPONSE_LIMIT
+        .try_with(|l| *l)
+        .unwrap_or(MAX_RESPONSE_BYTES)
+}
+
+pub async fn with_response_limit<F: std::future::Future>(limit: usize, f: F) -> F::Output {
+    RESPONSE_LIMIT.scope(limit, f).await
+}
 pub const DEFAULT_LIMIT: usize = 200;
 pub const MAX_LIMIT: usize = 500;
 pub const MAX_TOPICS_PER_CALL: usize = 100;
@@ -82,27 +103,28 @@ pub fn checked_limit(limit: Option<u32>) -> Result<usize, String> {
     }
 }
 
-/// Обрезает главный список ответа, пока JSON не уложится в [`MAX_RESPONSE_BYTES`].
+/// Обрезает главный список ответа, пока JSON не уложится в [`response_limit`].
 /// Возвращает true, если что-то обрезано.
 pub fn fit<T: Serialize, I>(value: &mut T, list: fn(&mut T) -> &mut Vec<I>) -> bool {
+    let limit = response_limit();
     let mut truncated = false;
     loop {
         let size = serde_json::to_vec(&*value).map_or(usize::MAX, |v| v.len());
-        if size <= MAX_RESPONSE_BYTES {
+        if size <= limit {
             return truncated;
         }
         let l = list(value);
         if l.is_empty() {
             return truncated;
         }
-        let keep = (l.len() * MAX_RESPONSE_BYTES / size).min(l.len() - 1);
+        let keep = (l.len() * limit / size).min(l.len() - 1);
         l.truncate(keep);
         truncated = true;
     }
 }
 
 pub const TRUNCATED_HINT: &str =
-    "The response was truncated to 100 KB: narrow the filter or page with offset";
+    "The response was truncated to the size limit: narrow the filter or page with offset";
 
 #[cfg(test)]
 mod tests {

@@ -46,6 +46,8 @@ pub struct McpStatus {
     pub sessions: Vec<McpSessionInfo>,
     pub pending: Vec<ApprovalRequest>,
     pub approved_clients: Vec<ApprovedClient>,
+    /// Предел размера ответа LLM, КБ.
+    pub response_limit_kb: u32,
     /// Подключений с доступом для LLM (для текста диалога подтверждения).
     pub allowed_connections: usize,
     /// Из них — с чтением сообщений, с учётом политики (спец. G4 §4, §8).
@@ -132,6 +134,7 @@ impl McpController {
             sessions,
             pending: self.approvals.pending(),
             approved_clients: self.state.settings.mcp().approved_clients,
+            response_limit_kb: self.state.settings.mcp().response_limit_kb(),
             allowed_connections: profiles.iter().filter(|p| !p.llm_access.is_off()).count(),
             message_connections: profiles
                 .iter()
@@ -352,6 +355,22 @@ impl McpController {
         if let Some(h) = &self.inner().handle {
             h.disconnect_client(name);
         }
+        self.emit();
+        Ok(self.status())
+    }
+
+    /// Предел размера ответа: действует со следующего вызова. Блокирующий вызов.
+    pub fn set_response_limit(&self, kb: u32) -> AppResult<McpStatus> {
+        self.state.settings.set_mcp_response_limit(kb)?;
+        self.emit();
+        Ok(self.status())
+    }
+
+    /// Компактный набор инструментов клиента: список инструментов клиент увидит при следующем
+    /// запросе списка (обычно при переподключении), скрытые вызовы отклоняются сразу.
+    /// Блокирующий вызов.
+    pub fn set_client_compact(&self, name: &str, compact: bool) -> AppResult<McpStatus> {
+        self.state.settings.set_client_compact(name, compact)?;
         self.emit();
         Ok(self.status())
     }

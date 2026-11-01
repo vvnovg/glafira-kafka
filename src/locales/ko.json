@@ -139,6 +139,7 @@
     },
     "settings": {
       "unknownLanguage": "알 수 없는 언어 '{{code}}'",
+      "unknownResponseLimit": "지원하지 않는 응답 제한: {{kb}}KB",
       "languageByPolicy": "언어는 조직에서 설정합니다"
     },
     "secrets": {
@@ -411,6 +412,8 @@
       "section": "LLM 어시스턴트(MCP)",
       "intro": "LLM 어시스턴트(Claude Desktop, Claude Code, Cursor 등)는 MCP로 Glafira에 연결해 어시스턴트에 열어 준 연결의 메타데이터를 읽고, 허용한 연결에서는 메시지도 읽을 수 있습니다. 클러스터에서는 아무것도 변경할 수 없습니다.",
       "enable": "MCP 서버 허용",
+      "responseLimit": "응답 크기 제한",
+      "responseLimitKb": "{{kb}}KB",
       "policy": "조직에서 MCP를 비활성화했습니다",
       "state": {
         "off": "서버가 꺼져 있습니다",
@@ -438,6 +441,8 @@
       "noClients": "아직 승인된 클라이언트가 없습니다.",
       "colFirstSeen": "처음 연결",
       "colLastSeen": "마지막 연결",
+      "colCompact": "간소화된 도구 세트",
+      "compactFor": "{{name}}의 간소화된 도구 세트",
       "revoke": "승인 취소",
       "audit": {
         "title": "MCP 로그",
@@ -1430,7 +1435,9 @@
       "updateExisting": "이미 있는 연결은 파일의 설정을 받으며, 비밀번호와 트리에서의 위치는 유지됩니다."
     },
     "settings": {
-      "mcpEnable": "LLM 어시스턴트용 로컬 MCP 서버를 시작합니다. 접근은 연결별로 따로 열며 기본적으로 꺼져 있습니다. 새 클라이언트는 대화 상자에서 확인합니다."
+      "mcpEnable": "LLM 어시스턴트용 로컬 MCP 서버를 시작합니다. 접근은 연결별로 따로 열며 기본적으로 꺼져 있습니다. 새 클라이언트는 대화 상자에서 확인합니다.",
+      "mcpResponseLimit": "도구 호출 한 번이 LLM에 반환하는 최대 응답 크기입니다. 컨텍스트가 작은 로컬 모델(64k 토큰 이하)에는 더 작은 제한을 선택하세요.",
+      "mcpCompact": "이 클라이언트에서 메모와 변경 제안 도구를 숨깁니다. 이 도구들의 설명은 로컬 모델 컨텍스트에서 약 9,000 토큰을 차지합니다. 새 목록은 다시 연결한 뒤에 반영됩니다."
     },
     "health": {
       "check": "Glafira 기본 제공 규칙을 실행합니다: 파티션과 복제, 토픽과 브로커 설정, 컨슈머 그룹. 심각도는 연결 환경에 따라 다릅니다. 점검은 클러스터를 읽기만 합니다.",

@@ -574,15 +574,20 @@ impl GatewayServer {
     {
         let started = tokio::time::Instant::now();
         let view = self.identify(ctx.client_info());
+        let limit = self
+            .shared
+            .backend
+            .client_options(&view)
+            .response_limit_bytes;
         let result = match self.admit(&view) {
-            Ok(_flag) => body.await,
+            Ok(_flag) => rules::with_response_limit(limit, body).await,
             Err(e) => Err(e),
         };
         let result = result.and_then(|v| {
-            if serde_json::to_vec(&v).map_or(0, |b| b.len()) > rules::HARD_LIMIT_BYTES {
+            if serde_json::to_vec(&v).map_or(0, |b| b.len()) > limit + rules::HARD_LIMIT_MARGIN {
                 Err(BackendError::new(
                     "response_too_large",
-                    "The response is larger than 100 KB even after truncation; narrow the request: a filter, fewer items or a smaller group",
+                    "The response is larger than the size limit even after truncation; narrow the request: a filter, fewer items or a smaller group",
                 ))
             } else {
                 Ok(v)
@@ -655,6 +660,12 @@ impl ServerHandler for GatewayServer {
         mut request: rmcp::model::CallToolRequestParams,
         context: RequestContext<RoleServer>,
     ) -> Result<rmcp::model::CallToolResponse, ErrorData> {
+        let view = self.identify(context.client_info());
+        if self.shared.backend.client_options(&view).compact_tools
+            && COMPACT_HIDDEN_TOOLS.contains(&request.name.as_ref())
+        {
+            return Err(ErrorData::invalid_params("tool not found", None));
+        }
         let input = self
             .tool_router
             .get(&request.name)
@@ -689,6 +700,7 @@ impl ServerHandler for GatewayServer {
     ) -> Result<rmcp::model::ListToolsResult, ErrorData> {
         let view = self.identify(context.client_info());
         let _ = self.shared.backend.access(&view);
+        let compact = self.shared.backend.client_options(&view).compact_tools;
         let supports_cache_hints = context
             .protocol_version()
             .is_some_and(|version| version >= rmcp::model::ProtocolVersion::V_2026_07_28);
@@ -698,12 +710,14 @@ impl ServerHandler for GatewayServer {
                 .tool_router
                 .list_all()
                 .into_iter()
+                .filter(|t| !compact || !COMPACT_HIDDEN_TOOLS.contains(&t.name.as_ref()))
                 .map(schema::inline_tool)
                 .collect(),
             meta: None,
             next_cursor: None,
             ttl_ms: supports_cache_hints.then_some(0),
-            cache_scope: supports_cache_hints.then_some(rmcp::model::CacheScope::Public),
+            // Набор инструментов зависит от клиента (компактный набор).
+            cache_scope: supports_cache_hints.then_some(rmcp::model::CacheScope::Private),
         })
     }
 }

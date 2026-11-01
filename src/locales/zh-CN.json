@@ -139,6 +139,7 @@
     },
     "settings": {
       "unknownLanguage": "未知语言“{{code}}”",
+      "unknownResponseLimit": "不支持的响应上限：{{kb}} KB",
       "languageByPolicy": "语言由你的组织设置"
     },
     "secrets": {
@@ -411,6 +412,8 @@
       "section": "LLM 助手（MCP）",
       "intro": "LLM 助手（Claude Desktop、Claude Code、Cursor 等）可以通过 MCP 连接到 Glafira，读取你为其开放的连接的元数据，并在你允许的连接中读取消息。它无法更改集群中的任何内容。",
       "enable": "允许 MCP 服务器",
+      "responseLimit": "响应大小上限",
+      "responseLimitKb": "{{kb}} KB",
       "policy": "MCP 已被你的组织禁用",
       "state": {
         "off": "服务器已关闭",
@@ -438,6 +441,8 @@
       "noClients": "尚无已批准的客户端。",
       "colFirstSeen": "首次连接",
       "colLastSeen": "最近连接",
+      "colCompact": "精简工具集",
+      "compactFor": "{{name}} 的精简工具集",
       "revoke": "撤销",
       "audit": {
         "title": "MCP 日志",
@@ -1430,7 +1435,9 @@
       "updateExisting": "已存在的连接将采用文件中的设置；你的密码及其在树中的位置保持不变。"
     },
     "settings": {
-      "mcpEnable": "为 LLM 助手启动本地 MCP 服务器。访问权限按连接分别开放，默认关闭；每个新客户端都需在对话框中确认。"
+      "mcpEnable": "为 LLM 助手启动本地 MCP 服务器。访问权限按连接分别开放，默认关闭；每个新客户端都需在对话框中确认。",
+      "mcpResponseLimit": "一次工具调用返回给 LLM 的最大响应。对于上下文较小（64k 令牌及以下）的本地模型，请选择较小的上限。",
+      "mcpCompact": "对此客户端隐藏备注和变更提议工具：它们的描述约占本地模型上下文的 9000 个令牌。客户端重新连接后才会看到新列表。"
     },
     "health": {
       "check": "运行 Glafira 内置规则：分区与复制、主题与 Broker 配置、消费者组。严重程度取决于连接的环境。检查只读取集群。",

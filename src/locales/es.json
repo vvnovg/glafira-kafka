@@ -139,6 +139,7 @@
     },
     "settings": {
       "unknownLanguage": "Idioma desconocido “{{code}}”",
+      "unknownResponseLimit": "Límite de respuesta no admitido: {{kb}} KB",
       "languageByPolicy": "El idioma lo establece tu organización"
     },
     "secrets": {
@@ -411,6 +412,8 @@
       "section": "Asistentes LLM (MCP)",
       "intro": "Un asistente LLM (Claude Desktop, Claude Code, Cursor y otros) puede conectarse a Glafira mediante MCP y leer los metadatos de las conexiones que abras para él, y los mensajes donde lo permitas. No puede cambiar nada en los clústeres.",
       "enable": "Permitir el servidor MCP",
+      "responseLimit": "Límite de tamaño de respuesta",
+      "responseLimitKb": "{{kb}} KB",
       "policy": "MCP está desactivado por tu organización",
       "state": {
         "off": "El servidor está desactivado",
@@ -438,6 +441,8 @@
       "noClients": "Aún no hay clientes aprobados.",
       "colFirstSeen": "Primera conexión",
       "colLastSeen": "Última conexión",
+      "colCompact": "Conjunto compacto",
+      "compactFor": "Conjunto compacto de herramientas para {{name}}",
       "revoke": "Revocar",
       "audit": {
         "title": "Registro de MCP",
@@ -1440,7 +1445,9 @@
       "updateExisting": "Las conexiones existentes reciben la configuración del archivo; se conservan tus contraseñas y su lugar en el árbol."
     },
     "settings": {
-      "mcpEnable": "Inicia un servidor MCP local para asistentes LLM. El acceso se abre por conexión y está desactivado por defecto; cada cliente nuevo se confirma en un cuadro de diálogo."
+      "mcpEnable": "Inicia un servidor MCP local para asistentes LLM. El acceso se abre por conexión y está desactivado por defecto; cada cliente nuevo se confirma en un cuadro de diálogo.",
+      "mcpResponseLimit": "Respuesta más grande que una llamada a una herramienta devuelve al LLM. Para un modelo local con contexto pequeño (64k tokens o menos), elija un límite menor.",
+      "mcpCompact": "Oculta a este cliente las herramientas de notas y propuestas de cambios: sus descripciones ocupan unos 9000 tokens del contexto de un modelo local. El cliente verá la nueva lista al volver a conectarse."
     },
     "health": {
       "check": "Ejecuta las reglas integradas de Glafira: particiones y replicación, configuración de topics y brokers, consumer groups. La gravedad depende del entorno de la conexión. La comprobación solo lee el clúster.",

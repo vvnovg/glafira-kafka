@@ -1008,6 +1008,18 @@ impl Backend for AppBackend {
         access
     }
 
+    fn client_options(&self, session: &SessionView) -> m::ClientOptions {
+        let mcp = self.state.settings.mcp();
+        let name = session.client.as_ref().map(|c| c.name.as_str());
+        m::ClientOptions {
+            response_limit_bytes: mcp.response_limit_kb() as usize * 1024,
+            compact_tools: mcp
+                .approved_clients
+                .iter()
+                .any(|c| Some(c.name.as_str()) == name && c.compact_tools),
+        }
+    }
+
     fn read(&self, op: ReadOp) -> BoxFuture<'_, Result<ReadOutput, BackendError>> {
         Box::pin(self.read_impl(op))
     }

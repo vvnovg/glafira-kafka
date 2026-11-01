@@ -20,7 +20,7 @@ use crate::commits::{CommitHistory, MAX_METADATA_TEXT};
 use crate::mask::{DataFormat, MaskedData, Masker, cut_utf8};
 use crate::messages::*;
 use crate::model::BackendError;
-use crate::rules::{self, MAX_RESPONSE_BYTES};
+use crate::rules;
 use crate::summary::{
     self, DEFAULT_TOP_KEYS, KEY_PREFIX_BYTES, MAX_BUCKET_SECONDS, MAX_BUCKETS, MAX_TOP_KEYS, Sizes,
     Summary,
@@ -30,11 +30,11 @@ const INCOMPLETE_HINT: &str = "The scan stopped at the time budget or the record
 /// `topic` здесь не поможет: партиция `__consumer_offsets` читается целиком (спец. §6.3).
 const HISTORY_INCOMPLETE_HINT: &str = "The scan of __consumer_offsets stopped at the time budget or the record limit (1,000,000): later commits of the window may be missing. Narrow the window.";
 const PAGE_CUT_HINT: &str =
-    "The page was cut to 100 KB: continue with nextCursor or lower maxValueBytes.";
+    "The page was cut to the size limit: continue with nextCursor or lower maxValueBytes.";
 const SUMMARY_CUT_HINT: &str =
-    "The response was cut to 100 KB: headerNames and keys.top were shortened.";
-const RUNS_CUT_HINT: &str = "The response was cut to 100 KB: the oldest runs were dropped; narrow the window or pass topic.";
-const HISTORY_TOO_LARGE: &str = "The commit history does not fit into 100 KB even without commit runs; narrow it: pass topic or a shorter window";
+    "The response was cut to the size limit: headerNames and keys.top were shortened.";
+const RUNS_CUT_HINT: &str = "The response was cut to the size limit: the oldest runs were dropped; narrow the window or pass topic.";
+const HISTORY_TOO_LARGE: &str = "The commit history does not fit into the response size limit even without commit runs; narrow it: pass topic or a shorter window";
 /// Слабые модели ставят время из лога на границу окна и делают вывод «сообщения нет».
 const EMPTY_WINDOW_HINT: &str = "No messages were written in this window (window is in UTC). If you expected some, check the time zone and widen the window: a time from a log is rounded and is not the moment of the write, so keep it inside the window with a few minutes on each side.";
 const NO_COMMITS_HINT: &str = "No commits of this group in the window: the group may not exist, may store offsets elsewhere (assign() with external storage), or the history was compacted.";
@@ -825,7 +825,7 @@ struct HistoryBody {
 }
 
 fn fits(body: &HistoryBody) -> bool {
-    serde_json::to_vec(body).map_or(usize::MAX, |v| v.len()) <= MAX_RESPONSE_BYTES
+    serde_json::to_vec(body).map_or(usize::MAX, |v| v.len()) <= rules::response_limit()
 }
 
 /// Оставляет у каждой партиции не больше `k` самых новых `runs`; отброшенные (самые старые)
@@ -1164,7 +1164,7 @@ mod tests {
         assert!(elapsed < Duration::from_secs(10), "{elapsed:?}");
         let size = serde_json::to_vec(&body).unwrap().len();
         assert!(
-            size <= MAX_RESPONSE_BYTES && size > MAX_RESPONSE_BYTES * 9 / 10,
+            size <= rules::MAX_RESPONSE_BYTES && size > rules::MAX_RESPONSE_BYTES * 9 / 10,
             "{size}"
         );
         let short = &body.partitions[0];

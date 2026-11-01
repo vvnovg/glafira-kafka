@@ -597,6 +597,8 @@ export interface McpApprovedClient {
   version: string;
   firstSeenMs: number;
   lastSeenMs: number;
+  /** Компактный набор инструментов: без заметок и предложений (для локальной модели). */
+  compactTools: boolean;
 }
 
 export interface McpStatus {
@@ -607,6 +609,8 @@ export interface McpStatus {
   sessions: McpSession[];
   pending: McpApprovalRequest[];
   approvedClients: McpApprovedClient[];
+  /** Предел размера ответа LLM, КБ: 100, 48 или 24. */
+  responseLimitKb: number;
   allowedConnections: number;
   /** Из них — с чтением сообщений (с учётом политики). */
   messageConnections: number;

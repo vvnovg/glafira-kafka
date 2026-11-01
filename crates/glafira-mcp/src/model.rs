@@ -22,6 +22,32 @@ pub struct SessionView {
     pub client: Option<ClientIdent>,
 }
 
+/// Настройки клиента, которые задаёт пользователь: предел размера ответа (общий) и компактный
+/// набор инструментов (у клиента) — для локальных моделей с малым контекстом.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ClientOptions {
+    pub response_limit_bytes: usize,
+    /// Без инструментов записи ([`COMPACT_HIDDEN_TOOLS`]): их схемы — около 9 тыс. токенов.
+    pub compact_tools: bool,
+}
+
+impl Default for ClientOptions {
+    fn default() -> Self {
+        Self {
+            response_limit_bytes: crate::rules::MAX_RESPONSE_BYTES,
+            compact_tools: false,
+        }
+    }
+}
+
+/// Инструменты, которых нет в компактном наборе: заметки и предложения изменений.
+pub const COMPACT_HIDDEN_TOOLS: [&str; 4] = [
+    "annotate",
+    "remove_annotation",
+    "propose_change",
+    "withdraw_proposal",
+];
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SessionAccess {
     Approved,
@@ -151,6 +177,11 @@ pub enum ReadOutput {
 pub trait Backend: Send + Sync + 'static {
     /// Право сессии на вызовы. Вызывается на каждый запрос — должно быть быстрым.
     fn access(&self, session: &SessionView) -> SessionAccess;
+    /// Настройки клиента сессии. Вызывается на каждый запрос — должно быть быстрым.
+    fn client_options(&self, session: &SessionView) -> ClientOptions {
+        let _ = session;
+        ClientOptions::default()
+    }
     fn read(&self, op: ReadOp) -> BoxFuture<'_, Result<ReadOutput, BackendError>>;
     /// Имя подключения для журнала; `None`, если подключения нет.
     fn connection_name(&self, id: &str) -> Option<String>;

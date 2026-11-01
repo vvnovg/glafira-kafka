@@ -139,6 +139,7 @@
     },
     "settings": {
       "unknownLanguage": "Unbekannte Sprache „{{code}}“",
+      "unknownResponseLimit": "Nicht unterstützte Antwortgrenze {{kb}} KB",
       "languageByPolicy": "Die Sprache ist von Ihrer Organisation festgelegt"
     },
     "secrets": {
@@ -411,6 +412,8 @@
       "section": "LLM-Assistenten (MCP)",
       "intro": "Ein LLM-Assistent (Claude Desktop, Claude Code, Cursor und andere) kann sich über MCP mit Glafira verbinden und die Metadaten der Verbindungen lesen, die Sie für ihn freigeben — und Nachrichten, wo Sie es erlauben. In den Clustern kann er nichts ändern.",
       "enable": "MCP-Server zulassen",
+      "responseLimit": "Maximale Antwortgröße",
+      "responseLimitKb": "{{kb}} KB",
       "policy": "MCP ist von Ihrer Organisation deaktiviert",
       "state": {
         "off": "Der Server ist ausgeschaltet",
@@ -438,6 +441,8 @@
       "noClients": "Noch keine genehmigten Clients.",
       "colFirstSeen": "Erstmals verbunden",
       "colLastSeen": "Zuletzt verbunden",
+      "colCompact": "Kompakter Satz",
+      "compactFor": "Kompakter Werkzeugsatz für {{name}}",
       "revoke": "Widerrufen",
       "audit": {
         "title": "MCP-Protokoll",
@@ -1435,7 +1440,9 @@
       "updateExisting": "Vorhandene Verbindungen übernehmen die Einstellungen aus der Datei; gespeicherte Passwörter und ihr Platz im Baum bleiben erhalten."
     },
     "settings": {
-      "mcpEnable": "Startet einen lokalen MCP-Server für LLM-Assistenten. Der Zugriff wird für jede Verbindung einzeln freigegeben und ist standardmäßig aus; jeder neue Client wird in einem Dialog bestätigt."
+      "mcpEnable": "Startet einen lokalen MCP-Server für LLM-Assistenten. Der Zugriff wird für jede Verbindung einzeln freigegeben und ist standardmäßig aus; jeder neue Client wird in einem Dialog bestätigt.",
+      "mcpResponseLimit": "Größte Antwort, die ein Werkzeugaufruf an das LLM liefert. Für ein lokales Modell mit kleinem Kontext (64k Tokens oder weniger) wählen Sie eine kleinere Grenze.",
+      "mcpCompact": "Blendet für diesen Client die Werkzeuge für Notizen und Änderungsvorschläge aus: Ihre Beschreibungen belegen etwa 9.000 Tokens im Kontext eines lokalen Modells. Die neue Liste sieht der Client nach dem erneuten Verbinden."
     },
     "health": {
       "check": "Führt die integrierten Regeln von Glafira aus: Partitionen und Replikation, Topic- und Broker-Konfigurationen, Consumer Groups. Der Schweregrad hängt von der Umgebung der Verbindung ab. Die Prüfung liest den Cluster nur.",

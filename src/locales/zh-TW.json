@@ -139,6 +139,7 @@
     },
     "settings": {
       "unknownLanguage": "未知的語言「{{code}}」",
+      "unknownResponseLimit": "不支援的回應上限：{{kb}} KB",
       "languageByPolicy": "語言由你的組織設定"
     },
     "secrets": {
@@ -411,6 +412,8 @@
       "section": "LLM 助理（MCP）",
       "intro": "LLM 助理（Claude Desktop、Claude Code、Cursor 等）可以透過 MCP 連線到 Glafira，讀取你為其開放的連線的中繼資料，並在你允許的連線中讀取訊息。它無法變更叢集中的任何內容。",
       "enable": "允許 MCP 伺服器",
+      "responseLimit": "回應大小上限",
+      "responseLimitKb": "{{kb}} KB",
       "policy": "MCP 已被你的組織停用",
       "state": {
         "off": "伺服器已關閉",
@@ -438,6 +441,8 @@
       "noClients": "尚無已核准的用戶端。",
       "colFirstSeen": "首次連線",
       "colLastSeen": "最近連線",
+      "colCompact": "精簡工具集",
+      "compactFor": "{{name}} 的精簡工具集",
       "revoke": "撤銷",
       "audit": {
         "title": "MCP 日誌",
@@ -1430,7 +1435,9 @@
       "updateExisting": "已存在的連線會套用檔案中的設定；你的密碼及連線在樹狀結構中的位置都會保留。"
     },
     "settings": {
-      "mcpEnable": "為 LLM 助理啟動本機 MCP 伺服器。存取權限依連線分別開放，預設為關閉；每個新用戶端都需在對話框中確認。"
+      "mcpEnable": "為 LLM 助理啟動本機 MCP 伺服器。存取權限依連線分別開放，預設為關閉；每個新用戶端都需在對話框中確認。",
+      "mcpResponseLimit": "一次工具呼叫傳回給 LLM 的最大回應。對於上下文較小（64k 權杖以下）的本機模型，請選擇較小的上限。",
+      "mcpCompact": "對此用戶端隱藏備註與變更提議工具：它們的說明約佔本機模型上下文的 9,000 個權杖。用戶端重新連線後才會看到新清單。"
     },
     "health": {
       "check": "執行 Glafira 內建規則：分區與複寫、主題與 Broker 設定、消費者群組。嚴重程度取決於連線的環境。檢查只會讀取叢集。",

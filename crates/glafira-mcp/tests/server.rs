@@ -1068,6 +1068,8 @@ async fn exposes_exactly_the_tools() {
         );
         let schema = serde_json::to_string(&t.input_schema).unwrap();
         assert!(!cyrillic(&schema), "{}: {schema}", t.name);
+        // Локальные модели (vLLM qwen3_coder) не разрешают `$ref`: вложенный объект приходит строкой.
+        assert!(!schema.contains("$ref"), "{}: {schema}", t.name);
     }
 }
 

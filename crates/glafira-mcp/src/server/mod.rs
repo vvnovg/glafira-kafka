@@ -31,6 +31,7 @@ use crate::rules;
 mod health_tools;
 mod message_tools;
 mod proposal_tools;
+mod schema;
 mod tools;
 
 pub const INSTRUCTIONS: &str = "\
@@ -649,7 +650,7 @@ impl ServerHandler for GatewayServer {
 
     /// Клиент протокола 2026-07-28 не шлёт `initialize`, а список инструментов просит сразу после
     /// подключения: клиент — из `_meta` запроса, подтверждение — здесь, как при `initialize`.
-    /// Тело — как у `#[tool_handler]`.
+    /// Тело — как у `#[tool_handler]`, схемы параметров — без `$ref` (`schema.rs`).
     async fn list_tools(
         &self,
         _request: Option<rmcp::model::PaginatedRequestParams>,
@@ -662,7 +663,12 @@ impl ServerHandler for GatewayServer {
             .is_some_and(|version| version >= rmcp::model::ProtocolVersion::V_2026_07_28);
         Ok(rmcp::model::ListToolsResult {
             result_type: Some(rmcp::model::ResultType::COMPLETE),
-            tools: self.tool_router.list_all(),
+            tools: self
+                .tool_router
+                .list_all()
+                .into_iter()
+                .map(schema::inline_tool)
+                .collect(),
             meta: None,
             next_cursor: None,
             ttl_ms: supports_cache_hints.then_some(0),

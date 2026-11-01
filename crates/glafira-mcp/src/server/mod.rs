@@ -648,6 +648,37 @@ impl ServerHandler for GatewayServer {
         self.negotiate_initialize(&request)
     }
 
+    /// Тело — как у `#[tool_handler]`, но аргументы сначала приводятся к схеме (`schema.rs`), а
+    /// при ошибке разбора ответ подсказывает их форму: слабая модель иначе повторяет тот же вызов.
+    async fn call_tool(
+        &self,
+        mut request: rmcp::model::CallToolRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<rmcp::model::CallToolResponse, ErrorData> {
+        let input = self
+            .tool_router
+            .get(&request.name)
+            .map(|t| schema::inline_refs(&t.input_schema));
+        if let (Some(input), Some(args)) = (&input, request.arguments.as_mut()) {
+            schema::normalize_args(args, input);
+        }
+        let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
+        let mut response = self.tool_router.call(tcc).await?;
+        if let (Some(input), rmcp::model::CallToolResponse::Complete(result)) =
+            (&input, &mut response)
+            && result.is_error == Some(true)
+            && let Some(ContentBlock::Text(text)) = result.content.first_mut()
+            && text.text.starts_with("failed to deserialize parameters")
+        {
+            text.text = format!(
+                "{} Expected arguments (\"?\" marks optional, pass objects as JSON objects, not strings): {}",
+                text.text,
+                schema::shape(input)
+            );
+        }
+        Ok(response)
+    }
+
     /// Клиент протокола 2026-07-28 не шлёт `initialize`, а список инструментов просит сразу после
     /// подключения: клиент — из `_meta` запроса, подтверждение — здесь, как при `initialize`.
     /// Тело — как у `#[tool_handler]`, схемы параметров — без `$ref` (`schema.rs`).

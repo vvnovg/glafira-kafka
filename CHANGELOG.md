@@ -2,6 +2,9 @@
 
 Versions in the other interface languages are in [docs/changelog](docs/changelog/). The section of a version is shown in About as the update notes, in the interface language.
 
+## 0.5.5
+- MCP: `null` in tool arguments is now dropped only where the parameter does not accept it. Where `null` is a valid value, it reaches the tool unchanged. The current tools behave as before; this prepares for parameters where `null` means “remove the value”.
+
 ## 0.5.4
 - MCP: a client with “Compact tools” turned on gets server instructions without the paragraphs about change proposals and notes. Instead, they say that this client has no such tools and that a needed change should be described in the chat. Before, the model looked for tools it could not see.
 

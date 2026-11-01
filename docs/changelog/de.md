@@ -2,6 +2,9 @@
 
 Deutsche Fassung von [CHANGELOG.md](../../CHANGELOG.md), dort stehen auch frühere Versionen. Der Abschnitt einer Version wird unter „Über Glafira“ als Versionshinweise zum Update angezeigt.
 
+## 0.5.5
+- MCP: `null` in Tool-Argumenten wird jetzt nur noch entfernt, wo der Parameter es nicht akzeptiert. Wo `null` ein gültiger Wert ist, erreicht es das Tool unverändert. Die vorhandenen Tools verhalten sich wie bisher; die Änderung bereitet Parameter vor, bei denen `null` „Wert entfernen“ bedeutet.
+
 ## 0.5.4
 - MCP: Ein Client mit aktiviertem „Kompakter Satz“ erhält die Server-Anweisungen ohne die Absätze über Änderungsvorschläge und Anmerkungen. Stattdessen steht dort, dass dieser Client solche Tools nicht hat und eine nötige Änderung im Chat beschrieben werden soll. Bisher suchte das Modell nach Tools, die es nicht sehen konnte.
 

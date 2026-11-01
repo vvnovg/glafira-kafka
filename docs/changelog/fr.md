@@ -2,6 +2,9 @@
 
 Version française de [CHANGELOG.md](../../CHANGELOG.md), qui contient aussi les versions antérieures. La section d’une version s’affiche dans « À propos » comme notes de mise à jour.
 
+## 0.5.5
+- MCP : `null` dans les arguments des outils n’est plus retiré que là où le paramètre ne l’accepte pas. Là où `null` est une valeur valide, il parvient tel quel à l’outil. Les outils actuels se comportent comme avant ; la modification prépare les paramètres où `null` signifiera « supprimer la valeur ».
+
 ## 0.5.4
 - MCP : un client avec « Jeu compact » activé reçoit les instructions du serveur sans les paragraphes sur les propositions de modification et les remarques. À la place, elles indiquent que ce client n’a pas ces outils et qu’une modification nécessaire doit être décrite dans le chat. Auparavant, le modèle cherchait des outils qu’il ne voyait pas.
 

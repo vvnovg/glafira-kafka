@@ -2,6 +2,9 @@
 
 Polska wersja [CHANGELOG.md](../../CHANGELOG.md), gdzie są też wcześniejsze wersje. Sekcja wersji jest wyświetlana w „O programie” jako informacje o aktualizacji.
 
+## 0.5.5
+- MCP: `null` w argumentach narzędzi jest teraz usuwany tylko tam, gdzie parametr go nie przyjmuje. Tam, gdzie `null` jest dozwoloną wartością, trafia do narzędzia bez zmian. Obecne narzędzia działają jak dotąd; zmiana przygotowuje parametry, w których `null` będzie oznaczać „usuń wartość”.
+
 ## 0.5.4
 - MCP: klient z włączonym „Zestaw kompaktowy” otrzymuje instrukcje serwera bez akapitów o propozycjach zmian i notatkach. Zamiast nich jest informacja, że ten klient nie ma takich narzędzi, a potrzebną zmianę należy opisać na czacie. Wcześniej model szukał narzędzi, których nie widział.
 

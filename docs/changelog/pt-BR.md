@@ -2,6 +2,9 @@
 
 Versão em português de [CHANGELOG.md](../../CHANGELOG.md), onde também estão as versões anteriores. A seção de uma versão aparece em “Sobre” como notas da atualização.
 
+## 0.5.5
+- MCP: `null` nos argumentos das ferramentas agora só é removido onde o parâmetro não o aceita. Onde `null` é um valor válido, ele chega à ferramenta sem alteração. As ferramentas atuais funcionam como antes; a mudança prepara parâmetros em que `null` significará “remover o valor”.
+
 ## 0.5.4
 - MCP: um cliente com “Conjunto compacto” ativado recebe as instruções do servidor sem os parágrafos sobre propostas de alteração e notas. Em vez deles, as instruções dizem que esse cliente não tem essas ferramentas e que a alteração necessária deve ser descrita no chat. Antes, o modelo procurava ferramentas que não conseguia ver.
 

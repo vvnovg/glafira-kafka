@@ -2,6 +2,17 @@
 
 Version française de [CHANGELOG.md](../../CHANGELOG.md), qui contient aussi les versions antérieures. La section d’une version s’affiche dans « À propos » comme notes de mise à jour.
 
+## 0.5.3
+- Erreurs TLS : lorsque le broker ferme la connexion pendant la négociation TLS, le message n’affirme plus que le port n’a pas de TLS. Il indique que le port n’a peut-être pas de TLS ou que le certificat client n’a pas été accepté, ce qui est le cas habituel avec mTLS.
+- MCP fonctionne mieux avec les modèles locaux (Qwen, gpt-oss et autres) :
+  - les schémas de paramètres des outils ne contiennent plus de références `$ref`, que certains serveurs (vLLM avec l’analyseur `qwen3_coder`) transmettaient aux outils sous forme de chaînes ;
+  - un objet imbriqué envoyé sous forme de chaîne JSON est accepté, les valeurs `null` et les clés vides sont ignorées ; si les arguments ne conviennent toujours pas, l’erreur indique les arguments attendus ;
+  - lorsqu’une fenêtre de temps ne contient aucun message, `read_messages` conseille de vérifier le fuseau horaire et d’élargir la fenêtre ; les descriptions des outils expliquent comment transmettre une heure avec un fuseau horaire et comment filtrer sur une seule clé exacte.
+- « Paramètres » → « Assistants LLM (MCP) » :
+  - « Taille maximale de réponse » : 100 KB (par défaut), 48 KB ou 24 KB — pour un modèle local au petit contexte, choisissez une valeur plus basse ;
+  - « Jeu compact » pour chaque client approuvé : sans les outils de remarques et de propositions de modification, ce qui économise environ 1 000 jetons de contexte.
+- Guide : un nouveau chapitre, « Modèles locaux » — où le modèle peut fonctionner, résultats de Qwen3.6 et Qwen3.8 sur un Mac, matériel, Ollama, configuration de Qwen Code et de Claude Code, et vérification du résultat.
+
 ## 0.5.2
 - Masquage plus complet des messages lus par un assistant LLM :
   - dans le texte, les valeurs des cookies et des en-têtes `Authorization` (y compris `Proxy-Authorization`) sont masquées jusqu’à la fin de la ligne : tous les cookies, les paramètres Digest et les signatures AWS sont cachés ;

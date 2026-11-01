@@ -2,6 +2,17 @@
 
 Versione italiana di [CHANGELOG.md](../../CHANGELOG.md), dove si trovano anche le versioni precedenti. La sezione di una versione viene mostrata in “Informazioni” come note dell’aggiornamento.
 
+## 0.5.3
+- Errori TLS: quando il broker chiude la connessione durante l’handshake TLS, il messaggio non afferma più che la porta non ha TLS. Indica che la porta potrebbe non avere TLS o che il certificato client non è stato accettato, che è il caso abituale con mTLS.
+- MCP funziona meglio con i modelli locali (Qwen, gpt-oss e altri):
+  - gli schemi dei parametri degli strumenti non contengono più riferimenti `$ref`, che alcuni server (vLLM con il parser `qwen3_coder`) passavano agli strumenti come stringhe;
+  - un oggetto annidato inviato come stringa JSON viene accettato, mentre i valori `null` e le chiavi vuote vengono ignorati; se gli argomenti continuano a non andare bene, l’errore mostra gli argomenti attesi;
+  - quando una finestra temporale non contiene messaggi, `read_messages` consiglia di controllare il fuso orario e di ampliare la finestra; le descrizioni degli strumenti spiegano come passare un’ora con il fuso orario e come filtrare per una sola chiave esatta.
+- “Impostazioni” → “Assistenti LLM (MCP)”:
+  - “Limite dimensione risposta”: 100 KB (predefinito), 48 KB o 24 KB; per un modello locale con un contesto ridotto, scegli un valore più basso;
+  - “Set compatto” per ogni client approvato: senza gli strumenti per note e proposte di modifica, il che fa risparmiare circa 1000 token di contesto.
+- Guida: un nuovo capitolo, “Modelli locali”: dove può girare il modello, risultati di Qwen3.6 e Qwen3.8 su un Mac, hardware, Ollama, configurazione di Qwen Code e Claude Code e verifica del risultato.
+
 ## 0.5.2
 - Mascheramento più accurato dei messaggi letti da un assistente LLM:
   - nel testo, i valori dei cookie e delle intestazioni `Authorization` (compresa `Proxy-Authorization`) vengono mascherati fino alla fine della riga, quindi tutti i cookie, i parametri Digest e le firme AWS restano nascosti;

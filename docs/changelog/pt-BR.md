@@ -2,6 +2,17 @@
 
 Versão em português de [CHANGELOG.md](../../CHANGELOG.md), onde também estão as versões anteriores. A seção de uma versão aparece em “Sobre” como notas da atualização.
 
+## 0.5.3
+- Erros de TLS: quando o broker fecha a conexão durante o handshake de TLS, a mensagem deixa de afirmar que a porta não tem TLS. Ela informa que a porta pode não ter TLS ou que o certificado do cliente não foi aceito, que é o caso comum com mTLS.
+- O MCP funciona melhor com modelos locais (Qwen, gpt-oss e outros):
+  - os esquemas de parâmetros das ferramentas não contêm mais referências `$ref`, que alguns servidores (vLLM com o analisador `qwen3_coder`) passavam às ferramentas como strings;
+  - um objeto aninhado enviado como string JSON é aceito, e valores `null` e chaves vazias são ignorados; se os argumentos ainda não servirem, o erro mostra os argumentos esperados;
+  - quando uma janela de tempo não tem mensagens, `read_messages` sugere verificar o fuso horário e ampliar a janela; as descrições das ferramentas explicam como passar uma hora com fuso horário e como filtrar por uma única chave exata.
+- “Configurações” → “Assistentes LLM (MCP)”:
+  - “Limite de tamanho da resposta”: 100 KB (padrão), 48 KB ou 24 KB — para um modelo local com contexto pequeno, escolha menos;
+  - “Conjunto compacto” para cada cliente aprovado: sem as ferramentas de observações e propostas de alteração, o que economiza cerca de 1000 tokens de contexto.
+- Guia: um novo capítulo, “Modelos locais” — onde o modelo pode rodar, resultados do Qwen3.6 e do Qwen3.8 em um Mac, hardware, Ollama, configuração do Qwen Code e do Claude Code e verificação do resultado.
+
 ## 0.5.2
 - Mascaramento mais completo das mensagens lidas por um assistente LLM:
   - no texto, os valores de cookies e de cabeçalhos `Authorization` (inclusive `Proxy-Authorization`) são mascarados até o fim da linha, então todos os cookies, os parâmetros Digest e as assinaturas da AWS ficam ocultos;

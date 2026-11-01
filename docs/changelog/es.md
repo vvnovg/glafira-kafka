@@ -2,6 +2,17 @@
 
 Versión en español de [CHANGELOG.md](../../CHANGELOG.md), donde también están las versiones anteriores. La sección de una versión se muestra en “Acerca de” como notas de la actualización.
 
+## 0.5.3
+- Errores de TLS: cuando el broker cierra la conexión durante el handshake de TLS, el mensaje ya no afirma que el puerto no tiene TLS. Indica que puede que el puerto no tenga TLS o que no se haya aceptado el certificado de cliente, que es el caso habitual con mTLS.
+- MCP funciona mejor con modelos locales (Qwen, gpt-oss y otros):
+  - los esquemas de parámetros de las herramientas ya no contienen referencias `$ref`, que algunos servidores (vLLM con el analizador `qwen3_coder`) pasaban a las herramientas como cadenas;
+  - se acepta un objeto anidado enviado como cadena JSON, y los valores `null` y las claves vacías se ignoran; si los argumentos siguen sin encajar, el error muestra los argumentos esperados;
+  - cuando una ventana de tiempo no tiene mensajes, `read_messages` aconseja revisar la zona horaria y ampliar la ventana; las descripciones de las herramientas explican cómo pasar una hora con zona horaria y cómo filtrar por una sola clave exacta.
+- “Ajustes” → “Asistentes LLM (MCP)”:
+  - “Límite de tamaño de respuesta”: 100 KB (predeterminado), 48 KB o 24 KB; para un modelo local con poco contexto, elige un valor menor;
+  - “Conjunto compacto” para cada cliente aprobado: sin las herramientas de notas y propuestas de cambios, lo que ahorra unos 1000 tokens de contexto.
+- Guía: un capítulo nuevo, “Modelos locales”: dónde puede ejecutarse el modelo, resultados de Qwen3.6 y Qwen3.8 en un Mac, hardware, Ollama, configuración de Qwen Code y Claude Code, y comprobación del resultado.
+
 ## 0.5.2
 - Enmascaramiento más completo de los mensajes que lee un asistente LLM:
   - en el texto, los valores de las cookies y de las cabeceras `Authorization` (incluida `Proxy-Authorization`) se enmascaran hasta el final de la línea, así que quedan ocultas todas las cookies, los parámetros Digest y las firmas de AWS;

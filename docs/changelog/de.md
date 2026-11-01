@@ -2,6 +2,17 @@
 
 Deutsche Fassung von [CHANGELOG.md](../../CHANGELOG.md), dort stehen auch frühere Versionen. Der Abschnitt einer Version wird unter „Über Glafira“ als Versionshinweise zum Update angezeigt.
 
+## 0.5.3
+- TLS-Fehler: Schließt der Broker die Verbindung während des TLS-Handshakes, behauptet die Meldung nicht mehr, dass am Port kein TLS läuft. Sie sagt, dass am Port möglicherweise kein TLS läuft oder dass das Client-Zertifikat nicht akzeptiert wurde, was bei mTLS der übliche Fall ist.
+- MCP funktioniert besser mit lokalen Modellen (Qwen, gpt-oss und anderen):
+  - die Parameterschemas der Tools enthalten keine `$ref`-Verweise mehr, die einige Server (vLLM mit dem Parser `qwen3_coder`) als Zeichenkette an die Tools übergaben;
+  - ein verschachteltes Objekt, das als JSON-String gesendet wird, wird akzeptiert, `null`-Werte und leere Schlüssel werden ignoriert; passen die Argumente trotzdem nicht, zeigt der Fehler die erwarteten Argumente;
+  - enthält ein Zeitfenster keine Nachrichten, rät `read_messages`, die Zeitzone zu prüfen und das Fenster zu erweitern; die Tool-Beschreibungen erklären, wie man eine Zeit mit Zeitzone übergibt und wie man nach genau einem Schlüssel filtert.
+- „Einstellungen“ → „LLM-Assistenten (MCP)“:
+  - „Maximale Antwortgröße“: 100 KB (Standard), 48 KB oder 24 KB — für ein lokales Modell mit kleinem Kontext wählen Sie besser weniger;
+  - „Kompakter Satz“ für jeden genehmigten Client: ohne Tools für Anmerkungen und Änderungsvorschläge, das spart etwa 1000 Token Kontext.
+- Handbuch: ein neues Kapitel „Lokale Modelle“ — wo das Modell laufen kann, Ergebnisse von Qwen3.6 und Qwen3.8 auf einem Mac, Hardware, Ollama, Einrichtung von Qwen Code und Claude Code und Prüfung des Ergebnisses.
+
 ## 0.5.2
 - Gründlichere Maskierung von Nachrichten, die ein LLM-Assistent liest:
   - im Text werden die Werte von Cookies und `Authorization`-Headern (auch `Proxy-Authorization`) bis zum Zeilenende maskiert, sodass alle Cookies, Digest-Parameter und AWS-Signaturen verborgen bleiben;

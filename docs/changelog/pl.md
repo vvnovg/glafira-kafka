@@ -2,6 +2,17 @@
 
 Polska wersja [CHANGELOG.md](../../CHANGELOG.md), gdzie są też wcześniejsze wersje. Sekcja wersji jest wyświetlana w „O programie” jako informacje o aktualizacji.
 
+## 0.5.3
+- Błędy TLS: gdy broker zamyka połączenie podczas uzgadniania TLS, komunikat nie twierdzi już, że port nie ma TLS. Informuje, że port może nie mieć TLS lub że certyfikat klienta nie został przyjęty, co jest zwykłym przypadkiem przy mTLS.
+- MCP lepiej działa z modelami lokalnymi (Qwen, gpt-oss i innymi):
+  - w schematach parametrów narzędzi nie ma już odwołań `$ref`, które część serwerów (vLLM z parserem `qwen3_coder`) przekazywała narzędziom jako ciągi znaków;
+  - zagnieżdżony obiekt przekazany jako ciąg JSON jest akceptowany, a wartości `null` i puste klucze są pomijane; jeśli argumenty nadal nie pasują, błąd pokazuje oczekiwane argumenty;
+  - gdy w oknie czasu nie ma wiadomości, `read_messages` radzi sprawdzić strefę czasową i poszerzyć okno; opisy narzędzi wyjaśniają, jak przekazać czas ze strefą czasową i jak filtrować po jednym dokładnym kluczu.
+- „Ustawienia” → „Asystenci LLM (MCP)”:
+  - „Limit rozmiaru odpowiedzi”: 100 KB (domyślnie), 48 KB lub 24 KB — dla modelu lokalnego z małym kontekstem wybierz mniej;
+  - „Zestaw kompaktowy” dla każdego zatwierdzonego klienta: bez narzędzi do notatek i propozycji zmian, co oszczędza około 1000 tokenów kontekstu.
+- Przewodnik: nowy rozdział „Modele lokalne” — gdzie może działać model, wyniki Qwen3.6 i Qwen3.8 na Macu, sprzęt, Ollama, konfiguracja Qwen Code i Claude Code oraz sprawdzenie wyniku.
+
 ## 0.5.2
 - Dokładniejsze maskowanie wiadomości odczytywanych przez asystenta LLM:
   - w tekście wartości ciasteczek i nagłówków `Authorization` (także `Proxy-Authorization`) są maskowane do końca wiersza, więc ukryte są wszystkie ciasteczka, parametry Digest i podpisy AWS;

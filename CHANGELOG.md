@@ -2,6 +2,17 @@
 
 Versions in the other interface languages are in [docs/changelog](docs/changelog/). The section of a version is shown in About as the update notes, in the interface language.
 
+## 0.5.3
+- TLS errors: when the broker closes the connection during the TLS handshake, the message no longer claims that the port has no TLS. It says that the port may have no TLS or that the client certificate was not accepted, which is the usual case with mTLS.
+- MCP works better with local models (Qwen, gpt-oss and others):
+  - tool parameter schemas no longer contain `$ref` references, which some servers (vLLM with the `qwen3_coder` parser) passed to tools as strings;
+  - a nested object sent as a JSON string is accepted, and `null` values and empty keys are ignored; if the arguments still do not fit, the error shows the expected arguments;
+  - when a time window has no messages, `read_messages` suggests checking the time zone and widening the window; tool descriptions explain how to pass a time with a time zone and how to filter by one exact key.
+- “Settings” → “LLM assistants (MCP)”:
+  - “Response size limit”: 100 KB (default), 48 KB or 24 KB — choose less for a local model with a small context;
+  - “Compact tools” for each approved client: no tools for notes and change proposals, which saves about 1,000 tokens of context.
+- Guide: a new chapter, “Local models”: where the model can run, results of Qwen3.6 and Qwen3.8 on a Mac, hardware, Ollama, setting up Qwen Code and Claude Code, and how to check the result.
+
 ## 0.5.2
 - More thorough masking of messages read by an LLM assistant:
   - in text, the values of cookies and `Authorization` headers (including `Proxy-Authorization`) are masked to the end of the line, so all cookies, Digest parameters and AWS signatures are hidden;

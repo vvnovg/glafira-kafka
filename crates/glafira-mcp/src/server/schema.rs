@@ -1,5 +1,7 @@
-//! Схемы параметров без `$ref`: часть разборщиков вызовов у локальных моделей (vLLM `qwen3_coder`)
-//! не разрешает ссылки на `$defs` и передаёт вложенный объект строкой JSON.
+//! Схемы параметров для слабых клиентов. Часть разборщиков вызовов у локальных моделей (vLLM
+//! `qwen3_coder`) не разрешает ссылки на `$defs` и передаёт вложенный объект строкой JSON, другие
+//! модели шлют `null` и пустые ключи. Здесь — схемы без `$ref`, терпимый разбор аргументов и
+//! подсказка о форме аргументов при ошибке разбора.
 
 use std::sync::Arc;
 
@@ -69,6 +71,131 @@ fn inline(v: &Value, defs: &JsonObject, stack: &mut Vec<String>, kept: &mut bool
     }
 }
 
+/// Приводит аргументы к схеме, не меняя смысла: строка с JSON-объектом или массивом там, где
+/// строка не допускается, становится значением; `null` и пустой ключ у объекта убираются (поле с
+/// `null` — то же, что отсутствующее, у обязательного поля ошибка разбора остаётся).
+pub(crate) fn normalize_args(args: &mut JsonObject, schema: &JsonObject) {
+    for (key, value) in args.iter_mut() {
+        if let Some(prop) = property(schema, key) {
+            normalize(value, prop);
+        }
+    }
+    args.retain(|k, v| !k.is_empty() && !v.is_null());
+}
+
+fn normalize(value: &mut Value, schema: &JsonObject) {
+    if let Value::String(text) = value
+        && !allows_string(schema)
+        && let Ok(parsed @ (Value::Object(_) | Value::Array(_))) = serde_json::from_str(text)
+    {
+        *value = parsed;
+    }
+    match value {
+        Value::Object(obj) => normalize_args(obj, schema),
+        Value::Array(items) => {
+            if let Some(Value::Object(item)) = schema.get("items") {
+                items.iter_mut().for_each(|i| normalize(i, item));
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Схема поля объекта: в `properties` самой схемы или одной из ветвей `anyOf`/`oneOf`/`allOf`.
+fn property<'a>(schema: &'a JsonObject, key: &str) -> Option<&'a JsonObject> {
+    if let Some(p) = schema
+        .get("properties")
+        .and_then(|p| p.get(key))
+        .and_then(Value::as_object)
+    {
+        return Some(p);
+    }
+    branches(schema).find_map(|b| property(b, key))
+}
+
+fn branches(schema: &JsonObject) -> impl Iterator<Item = &JsonObject> {
+    ["anyOf", "oneOf", "allOf"]
+        .into_iter()
+        .filter_map(|k| schema.get(k).and_then(Value::as_array))
+        .flatten()
+        .filter_map(Value::as_object)
+}
+
+/// Схема без типа (и без ветвей) допускает что угодно, в том числе строку.
+fn allows_string(schema: &JsonObject) -> bool {
+    match schema.get("type") {
+        Some(Value::String(t)) => t == "string",
+        Some(Value::Array(ts)) => ts.iter().any(|t| t == "string"),
+        _ => {
+            let mut any = branches(schema).peekable();
+            any.peek().is_none() || any.any(allows_string)
+        }
+    }
+}
+
+/// Набросок аргументов по схеме для подсказки: `{"topic": "string", "limit?": "integer"}`.
+pub(crate) fn shape(schema: &JsonObject) -> Value {
+    if let Some(Value::Object(props)) = schema.get("properties") {
+        let required: Vec<&str> = schema
+            .get("required")
+            .and_then(Value::as_array)
+            .map(|r| r.iter().filter_map(Value::as_str).collect())
+            .unwrap_or_default();
+        let fields = props.iter().filter_map(|(k, v)| {
+            let name = if required.contains(&k.as_str()) {
+                k.clone()
+            } else {
+                format!("{k}?")
+            };
+            Some((name, shape(v.as_object()?)))
+        });
+        return Value::Object(fields.collect());
+    }
+    if let Some(Value::Array(values)) = schema.get("enum") {
+        let names: Vec<String> = values
+            .iter()
+            .map(|v| v.as_str().map_or(v.to_string(), str::to_owned))
+            .collect();
+        return Value::String(names.join("|"));
+    }
+    if let Some(c) = schema.get("const") {
+        return c.clone();
+    }
+    let alternatives: Vec<Value> = branches(schema)
+        .filter(|b| b.get("type").and_then(Value::as_str) != Some("null"))
+        .map(shape)
+        .collect();
+    match alternatives.len() {
+        0 => {}
+        1 => return alternatives.into_iter().next().unwrap_or_default(),
+        _ if alternatives.iter().all(Value::is_string) => {
+            let names: Vec<&str> = alternatives.iter().filter_map(Value::as_str).collect();
+            return Value::String(names.join(" | "));
+        }
+        _ => return serde_json::json!({ "oneOf": alternatives }),
+    }
+    match schema.get("type") {
+        Some(Value::String(t)) if t == "array" => {
+            let item = schema
+                .get("items")
+                .and_then(Value::as_object)
+                .map(shape)
+                .unwrap_or_default();
+            Value::Array(vec![item])
+        }
+        Some(Value::String(t)) => Value::String(t.clone()),
+        Some(Value::Array(ts)) => {
+            let names: Vec<&str> = ts
+                .iter()
+                .filter_map(Value::as_str)
+                .filter(|t| *t != "null")
+                .collect();
+            Value::String(names.join(" | "))
+        }
+        _ => Value::String("any".into()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,5 +254,73 @@ mod tests {
     fn schema_without_defs_is_unchanged() {
         let s = obj(json!({"type": "object", "properties": {"a": {"type": "string"}}}));
         assert_eq!(inline_refs(&s), s);
+    }
+
+    #[test]
+    fn json_string_becomes_an_object_where_a_string_is_not_allowed() {
+        let schema = obj(json!({
+            "properties": {
+                "target": {"type": "object", "properties": {"kind": {"type": "string"}}},
+                "text": {"type": "string"},
+                "from": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+                "topics": {"type": "array", "items": {"type": "string"}}
+            }
+        }));
+        let mut args = obj(json!({
+            "target": "{\"kind\": \"topic\", \"extra\": null}",
+            "text": "{\"stays\": \"a string\"}",
+            "from": "[1]",
+            "topics": "[\"a\", \"b\"]",
+            "": "",
+            "limit": null
+        }));
+        normalize_args(&mut args, &schema);
+        assert_eq!(
+            Value::Object(args),
+            json!({
+                "target": {"kind": "topic"},
+                "text": "{\"stays\": \"a string\"}",
+                "from": "[1]",
+                "topics": ["a", "b"]
+            })
+        );
+    }
+
+    #[test]
+    fn nested_strings_in_one_of_branches_are_parsed() {
+        let schema = obj(json!({
+            "properties": {"change": {"oneOf": [
+                {"type": "object", "properties": {"kind": {"const": "a"}, "scope": {"type": "object"}}},
+                {"type": "object", "properties": {"kind": {"const": "b"}}}
+            ]}}
+        }));
+        let mut args = obj(json!({"change": {"kind": "a", "scope": "{\"all\": true}"}}));
+        normalize_args(&mut args, &schema);
+        assert_eq!(args["change"]["scope"], json!({"all": true}));
+    }
+
+    #[test]
+    fn shape_sketches_required_optional_and_alternatives() {
+        let schema = obj(json!({
+            "type": "object",
+            "required": ["topic"],
+            "properties": {
+                "topic": {"type": "string"},
+                "limit": {"type": ["integer", "null"]},
+                "severity": {"type": "string", "enum": ["info", "warning"]},
+                "keys": {"type": "array", "items": {"type": "string"}},
+                "from": {"anyOf": [{"type": "string"}, {"type": "integer"}, {"type": "null"}]}
+            }
+        }));
+        assert_eq!(
+            shape(&schema),
+            json!({
+                "topic": "string",
+                "limit?": "integer",
+                "severity?": "info|warning",
+                "keys?": ["string"],
+                "from?": "string | integer"
+            })
+        );
     }
 }

@@ -3004,3 +3004,28 @@ async fn bad_summarize_arguments_do_not_reach_the_backend() {
     }
     assert!(fake.message_ops.lock().unwrap().is_empty());
 }
+
+#[tokio::test]
+async fn nested_arguments_sent_as_json_strings_are_accepted() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let mut args = note(json!({"kind": "topic", "name": "orders"}), "t");
+    args["target"] = Value::String(args["target"].to_string());
+    args[""] = json!("");
+    args["relatedRuleId"] = Value::Null;
+    ok(call(&c, "annotate", args).await);
+}
+
+#[tokio::test]
+async fn argument_errors_show_the_expected_shape() {
+    let e = env(Fake::new(SessionAccess::Approved)).await;
+    let c = client(&e.ep).await;
+    let mut args = note(json!({"kind": "topic", "name": "orders"}), "t");
+    args["target"] = json!("orders");
+    let msg = err(&call(&c, "annotate", args).await);
+    assert!(msg.starts_with("failed to deserialize parameters"), "{msg}");
+    assert!(
+        msg.contains("Expected arguments") && msg.contains("\"connectionId\":\"string\""),
+        "{msg}"
+    );
+}

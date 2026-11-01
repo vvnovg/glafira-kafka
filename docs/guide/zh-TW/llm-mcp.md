@@ -2,6 +2,8 @@
 
 Glafira 可以作為 LLM 助理的閘道：Claude Desktop、Claude Code、Cursor，或其他支援 MCP（Model Context Protocol）的用戶端。助理會讀取你為其開放的叢集的中繼資料（在你允許的連線中還會讀取訊息），協助你找出問題：複本不足的分區、消費延遲、持續發生的重新平衡、不理想的設定。助理無法透過 Glafira 變更叢集中的任何內容：變更由你自己在介面中進行。
 
+模型不一定在雲端：也可以在自己的網路或電腦上執行，請參閱[本機模型](local-llm.md#where)。
+
 ## 運作方式 {#how-it-works}
 
 用戶端會執行 `glafira-kafka mcp`，也就是應用程式的同一個程式檔案，只是不顯示視窗。這個指令會透過本機通訊端（在 Windows 上為具名管道）連線到正在執行的 Glafira，Glafira 再透過自己的連線回應助理的請求。密碼和憑證一律留在 Glafira 中，助理不會取得它們。

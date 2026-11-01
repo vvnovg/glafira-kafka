@@ -72,15 +72,19 @@ fn inline(v: &Value, defs: &JsonObject, stack: &mut Vec<String>, kept: &mut bool
 }
 
 /// Приводит аргументы к схеме, не меняя смысла: строка с JSON-объектом или массивом там, где
-/// строка не допускается, становится значением; `null` и пустой ключ у объекта убираются (поле с
-/// `null` — то же, что отсутствующее, у обязательного поля ошибка разбора остаётся).
+/// строка не допускается, становится значением; пустой ключ убирается, `null` — только там, где
+/// схема его не допускает (такое поле — то же, что отсутствующее, у обязательного поля ошибка
+/// разбора остаётся). Допустимый `null` остаётся: у аргумента с тремя состояниями он значит
+/// «убрать значение», а не «не задано».
 pub(crate) fn normalize_args(args: &mut JsonObject, schema: &JsonObject) {
     for (key, value) in args.iter_mut() {
         if let Some(prop) = property(schema, key) {
             normalize(value, prop);
         }
     }
-    args.retain(|k, v| !k.is_empty() && !v.is_null());
+    args.retain(|k, v| {
+        !k.is_empty() && !(v.is_null() && !property(schema, k).is_some_and(allows_null))
+    });
 }
 
 fn normalize(value: &mut Value, schema: &JsonObject) {
@@ -123,12 +127,26 @@ fn branches(schema: &JsonObject) -> impl Iterator<Item = &JsonObject> {
 
 /// Схема без типа (и без ветвей) допускает что угодно, в том числе строку.
 fn allows_string(schema: &JsonObject) -> bool {
+    allows(schema, "string", true)
+}
+
+/// `null` допустим, только если схема называет его явно: тип `null` или ветвь с ним.
+fn allows_null(schema: &JsonObject) -> bool {
+    allows(schema, "null", false)
+}
+
+/// Допускает ли схема тип `ty`; `untyped` — ответ для схемы без типа и без ветвей.
+fn allows(schema: &JsonObject, ty: &str, untyped: bool) -> bool {
     match schema.get("type") {
-        Some(Value::String(t)) => t == "string",
-        Some(Value::Array(ts)) => ts.iter().any(|t| t == "string"),
+        Some(Value::String(t)) => t == ty,
+        Some(Value::Array(ts)) => ts.iter().any(|t| t == ty),
         _ => {
             let mut any = branches(schema).peekable();
-            any.peek().is_none() || any.any(allows_string)
+            if any.peek().is_none() {
+                untyped
+            } else {
+                any.any(|b| allows(b, ty, untyped))
+            }
         }
     }
 }
@@ -321,6 +339,33 @@ mod tests {
                 "keys?": ["string"],
                 "from?": "string | integer"
             })
+        );
+    }
+    #[test]
+    fn null_is_kept_where_the_schema_allows_it() {
+        let schema = obj(json!({
+            "properties": {
+                "limit": {"type": "integer"},
+                "cpu": {"type": ["string", "null"]},
+                "memory": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                "change": {"type": "object", "properties": {
+                    "value": {"oneOf": [{"type": "string"}, {"anyOf": [{"type": "null"}]}]},
+                    "note": {"type": "string"}
+                }}
+            }
+        }));
+        let mut args = obj(json!({
+            "limit": null,
+            "cpu": null,
+            "memory": null,
+            "change": {"value": null, "note": null},
+            "unknown": null,
+            "": ""
+        }));
+        normalize_args(&mut args, &schema);
+        assert_eq!(
+            Value::Object(args),
+            json!({"cpu": null, "memory": null, "change": {"value": null}})
         );
     }
 }

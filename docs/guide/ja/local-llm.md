@@ -100,6 +100,15 @@ claude --disallowedTools "Bash Edit Write WebFetch WebSearch Task"
 
 `ANTHROPIC_BASE_URL`には`/v1`を付けません。`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`は、更新、テレメトリ、エラーレポートをオフにします。Anthropicアカウントへのサインインは不要です。Glafiraでは、このクライアントは`claude-code`という名前で表示されます。
 
+2つのクライアントを、[上の表](local-llm.md#capabilities)と同じ3つのタスクで、Ollamaの`qwen3.6-64k:35b-a3b`モデルで3回ずつテストしました。
+
+| クライアント | 正答数 | クラスターの点検 | グループのラグ | メッセージの検索 |
+|---|---|---|---|---|
+| Qwen Code 0.26.5 | 9/9 | 30–98秒 | 33–43秒 | 66–108秒 |
+| Claude Code 2.1.316 | 9/9 | 43–59秒 | 43–91秒 | 74–98秒 |
+
+どちらのクライアントもGlafiraのツールだけを使いました。インターネットに接続できず、`localhost`への接続だけを許可した状態でも、同じ答えが返ってきました。Claude Codeは、他の言語で質問しても英語で答えることがあります。その場合は、自分の言語で答えるように頼んでください。
+
 ## Glafiraの設定 {#glafira-settings}
 
 「[[ui:settings.mcp.section]]」セクションで設定します。

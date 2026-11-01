@@ -12,14 +12,15 @@ O restante do capítulo trata da terceira opção; um cliente para a segunda é 
 
 ## O que um modelo local consegue fazer {#capabilities}
 
-O teste foi feito em um Mac com M4 Pro e 48 GB de memória, o servidor vllm-metal, contexto de 64 mil tokens e um cluster de teste com um broker e três tópicos (7 partições, cerca de 3.000 mensagens). Três tarefas típicas: uma verificação do cluster com explicação dos achados, o lag de um grupo sem membros e a busca de uma mensagem pelo horário de um log de serviço. Cada modelo foi executado três vezes.
+O teste foi feito em um Mac com M4 Pro e 48 GB de memória, contexto de 64 mil tokens e um cluster de teste com um broker e três tópicos (7 partições, cerca de 3.000 mensagens). Três tarefas típicas: uma verificação do cluster com explicação dos achados, o lag de um grupo sem membros e a busca de uma mensagem pelo horário de um log de serviço. Cada modelo foi executado três vezes.
 
-| Modelo (4 bits) | Respostas corretas | Geração | Verificação do cluster | Lag do grupo | Busca de mensagens |
-|---|---|---|---|---|---|
-| Qwen3.6-35B-A3B | 9 de 9 | 25–30 tokens/s | 30–50 s | 45–60 s | cerca de 2 min |
-| Qwen3.8-27B | 9 de 9 | 8–10 tokens/s | 8–16 min | 10–12 min | 28–46 min |
+| Modelo (4 bits) | Servidor | Respostas corretas | Geração | Verificação do cluster | Lag do grupo | Busca de mensagens |
+|---|---|---|---|---|---|---|
+| Qwen3.6-35B-A3B | Ollama | 9 de 9 | 70–80 tokens/s | 23–29 s | 8–31 s | 34–43 s |
+| Qwen3.6-35B-A3B | vllm-metal | 9 de 9 | 25–30 tokens/s | 33–52 s | 43–60 s | cerca de 2 min |
+| Qwen3.8-27B | vllm-metal | 9 de 9 | 8–10 tokens/s | 8–16 min | 10–12 min | 28–46 min |
 
-O Qwen3.8-27B dá respostas mais detalhadas, mas é um modelo denso: usa todos os 27 bilhões de parâmetros para cada token, enquanto o Qwen3.6-35B-A3B usa cerca de 3 bilhões. Para o trabalho diário em um Mac, escolha o Qwen3.6-35B-A3B.
+O Qwen3.8-27B dá respostas mais detalhadas, mas é um modelo denso: usa todos os 27 bilhões de parâmetros para cada token, enquanto o Qwen3.6-35B-A3B usa cerca de 3 bilhões. Para o trabalho diário em um Mac, escolha o Qwen3.6-35B-A3B no Ollama: lá o mesmo modelo responde de 1,5 a 3 vezes mais rápido do que no vllm-metal.
 
 Um modelo local lida pior com investigações longas e de muitas etapas do que um modelo da nuvem: erra mais nos argumentos das ferramentas e pode tirar uma conclusão errada de dados incompletos. Confira as conclusões dele com o log do MCP.
 

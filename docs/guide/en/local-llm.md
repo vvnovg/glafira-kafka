@@ -12,14 +12,15 @@ The rest of the chapter is about the third option; a client for the second one i
 
 ## What a local model can do {#capabilities}
 
-Tested on a Mac with an M4 Pro and 48 GB of memory, the vllm-metal server, a 64k-token context and a test cluster with one broker and three topics (7 partitions, about 3,000 messages). Three typical tasks: a cluster check with an explanation of the findings, the lag of a group without members, and finding a message by the time from a service log. Each model ran three times.
+Tested on a Mac with an M4 Pro and 48 GB of memory, a 64k-token context and a test cluster with one broker and three topics (7 partitions, about 3,000 messages). Three typical tasks: a cluster check with an explanation of the findings, the lag of a group without members, and finding a message by the time from a service log. Each model ran three times.
 
-| Model (4-bit) | Correct answers | Generation | Cluster check | Group lag | Message search |
-|---|---|---|---|---|---|
-| Qwen3.6-35B-A3B | 9 of 9 | 25–30 tokens/s | 30–50 s | 45–60 s | about 2 min |
-| Qwen3.8-27B | 9 of 9 | 8–10 tokens/s | 8–16 min | 10–12 min | 28–46 min |
+| Model (4-bit) | Server | Correct answers | Generation | Cluster check | Group lag | Message search |
+|---|---|---|---|---|---|---|
+| Qwen3.6-35B-A3B | Ollama | 9 of 9 | 70–80 tokens/s | 23–29 s | 8–31 s | 34–43 s |
+| Qwen3.6-35B-A3B | vllm-metal | 9 of 9 | 25–30 tokens/s | 33–52 s | 43–60 s | about 2 min |
+| Qwen3.8-27B | vllm-metal | 9 of 9 | 8–10 tokens/s | 8–16 min | 10–12 min | 28–46 min |
 
-Qwen3.8-27B gives more detailed answers, but it is a dense model: it uses all 27 billion parameters for every token, while Qwen3.6-35B-A3B uses about 3 billion. For everyday work on a Mac, choose Qwen3.6-35B-A3B.
+Qwen3.8-27B gives more detailed answers, but it is a dense model: it uses all 27 billion parameters for every token, while Qwen3.6-35B-A3B uses about 3 billion. For everyday work on a Mac, choose Qwen3.6-35B-A3B in Ollama: there the same model answers 1.5 to 3 times faster than on vllm-metal.
 
 A local model handles long investigations of many steps worse than a cloud model: it makes more mistakes in tool arguments and can draw a wrong conclusion from incomplete data. Check its conclusions against the MCP log.
 

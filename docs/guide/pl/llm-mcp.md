@@ -2,6 +2,8 @@
 
 Glafira może pełnić rolę bramki dla asystenta LLM: Claude Desktop, Claude Code, Cursor lub innego klienta obsługującego MCP (Model Context Protocol). Asystent odczytuje metadane klastrów, które zostały dla niego otwarte (a tam, gdzie jest to dozwolone, także wiadomości), i pomaga znaleźć problemy: niedoreplikowane partycje, lag, ciągłe rebalansy, niefortunne ustawienia. Przez Glafira nie może niczego zmienić w klastrze: zmiany wprowadza się samodzielnie w interfejsie.
 
+Model nie musi działać w chmurze: można go uruchomić we własnej sieci lub na swoim komputerze, zob. [Modele lokalne](local-llm.md#where).
+
 ## Jak to działa {#how-it-works}
 
 Klient uruchamia `glafira-kafka mcp` — ten sam plik aplikacji w trybie bez okna. To polecenie łączy się z działającą aplikacją Glafira przez lokalne gniazdo (w systemie Windows — potok nazwany), a Glafira odpowiada na żądania asystenta przez własne połączenia. Hasła i certyfikaty pozostają w Glafira, asystent nigdy ich nie otrzymuje.

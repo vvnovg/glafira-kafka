@@ -2,6 +2,8 @@
 
 Glafira può fare da gateway per un assistente LLM: Claude Desktop, Claude Code, Cursor o un altro client che supporta MCP (Model Context Protocol). L’assistente legge i metadati dei cluster che apri per lui (e i messaggi dove lo consenti) e ti aiuta a trovare i problemi: partizioni sotto-replicate, lag, ribilanciamenti continui, impostazioni poco adatte. Tramite Glafira non può modificare nulla in un cluster: le modifiche le fai tu stesso nell’interfaccia.
 
+Il modello non deve per forza essere nel cloud: puoi eseguirlo nella tua rete o sul tuo computer, vedi [Modelli locali](local-llm.md#where).
+
 ## Come funziona {#how-it-works}
 
 Il client avvia `glafira-kafka mcp` — lo stesso file dell’applicazione, in una modalità senza finestra. Questo comando si collega a Glafira in esecuzione tramite un socket locale (su Windows, una named pipe), e Glafira risponde alle richieste dell’assistente attraverso le proprie connessioni. Le password e i certificati restano in Glafira; l’assistente non li riceve mai.

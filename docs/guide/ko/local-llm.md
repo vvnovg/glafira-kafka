@@ -1,0 +1,132 @@
+# 로컬 모델
+
+어시스턴트가 반드시 클라우드에서 실행될 필요는 없습니다. Glafira는 모든 MCP 클라이언트에 같은 방식으로 응답하며, 클라이언트는 네트워크 안이나 내 컴퓨터에 있는 모델과 통신할 수 있습니다. 이 장에서는 모델을 어디서 실행할 수 있는지, 로컬 모델에 어떤 하드웨어가 필요한지, Glafira에 연결하는 방법과 결과를 확인하는 방법을 설명합니다. 어시스턴트가 클러스터에 접근하는 방식은 [LLM 어시스턴트(MCP)](llm-mcp.md#how-it-works)에서 설명합니다.
+
+## 모델이 실행되는 위치 {#where}
+
+1. **클라우드 모델**(Claude, GPT 등): 가장 강력한 선택지이지만, 클러스터 메타데이터가 담긴 요청은 네트워크 밖으로 나갑니다. [[ui:connections.form.llmLevel.messages]] 수준에서는 메시지 내용도 나갑니다. 많은 회사가 이를 금지합니다.
+2. **네트워크 안의 사내 모델 서버**: 데이터가 내부 경계 안에 머물고, 모델과 하드웨어는 관리자가 선택합니다. 아직 이런 서버가 없다면 다음 단계로 고려할 만합니다.
+3. **엔지니어의 컴퓨터에서 실행하는 모델**: 클라우드가 금지되어 있고 사내 서버가 아직 없거나 준비 중일 때 쓰는 방법입니다. 데이터가 컴퓨터 밖으로 나가지 않지만, 모델은 클라우드 모델보다 성능이 낮고 응답도 느립니다.
+
+이 장의 나머지는 세 번째 방법을 다룹니다. 두 번째 방법의 클라이언트도 같은 방식으로 설정하며, 서버 주소만 달라집니다.
+
+## 로컬 모델로 할 수 있는 일 {#capabilities}
+
+테스트 환경은 M4 Pro와 48 GB 메모리를 갖춘 Mac, 64k 토큰 컨텍스트, 브로커 1대와 토픽 3개(파티션 7개, 메시지 약 3,000개)로 이루어진 테스트 클러스터입니다. 대표적인 작업 세 가지를 실행했습니다. 클러스터 점검과 발견 사항 설명, 멤버가 없는 그룹의 랙 확인, 서비스 로그의 시각으로 메시지 찾기입니다. 모델마다 세 번씩 실행했습니다.
+
+| 모델(4비트) | 서버 | 정답 | 생성 속도 | 클러스터 점검 | 그룹 랙 | 메시지 검색 |
+|---|---|---|---|---|---|---|
+| Qwen3.6-35B-A3B | Ollama | 9/9 | 70–80 토큰/초 | 23–29초 | 8–31초 | 34–43초 |
+| Qwen3.6-35B-A3B | vllm-metal | 9/9 | 25–30 토큰/초 | 33–52초 | 43–60초 | 약 2분 |
+| Qwen3.8-27B | vllm-metal | 9/9 | 8–10 토큰/초 | 8–16분 | 10–12분 | 28–46분 |
+
+Qwen3.8-27B는 더 자세하게 답하지만 밀집 모델입니다. 토큰 하나를 만들 때마다 270억 개의 파라미터를 모두 사용하는 반면, Qwen3.6-35B-A3B는 약 30억 개만 사용합니다. Mac에서 일상적으로 쓰려면 Ollama의 Qwen3.6-35B-A3B를 선택하세요. 같은 모델이 vllm-metal보다 1.5~3배 빠르게 답합니다.
+
+여러 단계가 필요한 긴 조사는 로컬 모델이 클라우드 모델보다 잘 처리하지 못합니다. 도구 인수를 더 자주 틀리고, 불완전한 데이터로 잘못된 결론을 내릴 수 있습니다. 결론은 MCP 로그와 대조해 확인하세요.
+
+## 하드웨어와 모델 {#hardware}
+
+일반적인 하드웨어에서는 활성 파라미터가 적은(Qwen3.6-35B-A3B처럼 약 30억 개) MoE 모델이 가장 잘 동작합니다. 같은 크기의 밀집 모델보다 빠릅니다. 컨텍스트는 최소 32k 토큰, 가능하면 64k여야 합니다.
+
+| 플랫폼 | 모델 서버 | 실행할 수 있는 모델 |
+|---|---|---|
+| macOS, Apple Silicon, 48 GB 이상 | vllm-metal 또는 Ollama | Qwen3.6-35B-A3B(테스트함) |
+| macOS, Apple Silicon, 32 GB | Ollama | gpt-oss-20b. 35B-A3B는 한계에 가깝습니다 |
+| Linux, 비디오 메모리 24 GB의 NVIDIA | vLLM | 4비트 35B-A3B, 더 작은 컨텍스트 |
+| Windows, NVIDIA | Ollama. vLLM은 WSL2에서만 | Linux와 같음 |
+| GPU 없는 x86, 32–64 GB DDR5 | Ollama | MoE 모델만, 느림 |
+
+Intel 프로세서를 쓰는 Mac은 로컬 모델에 적합하지 않습니다.
+
+## 모델 서버 {#server}
+
+서버는 도구 호출을 지원하는 OpenAI 호환 API를 제공해야 합니다. Mac에서는 [Ollama](https://ollama.com)가 가장 간단합니다. 앱을 설치하고 모델을 내려받은 뒤, 컨텍스트가 64k 토큰인 변형 모델을 만듭니다. Ollama는 기본적으로 더 작은 컨텍스트를 쓰기 때문에 Glafira의 도구 설명이 들어가지 않습니다.
+
+```bash
+ollama pull qwen3.6:35b-a3b
+printf 'FROM qwen3.6:35b-a3b\nPARAMETER num_ctx 65536\n' > Modelfile
+ollama create qwen3.6-64k:35b-a3b -f Modelfile
+```
+
+클라이언트에는 주소 `http://127.0.0.1:11434/v1`, 모델 `qwen3.6-64k:35b-a3b`, 비어 있지 않은 임의의 API 키가 필요합니다. Ollama는 `127.0.0.1`에서만 연결을 받으므로 다른 컴퓨터는 모델에 연결할 수 없습니다.
+
+5분 동안 유휴 상태가 지속되면 Ollama는 모델을 메모리에서 내리며, 다음 질문은 모델이 다시 로드될 때까지 기다립니다. 모델을 메모리에 더 오래 두려면 환경 변수 `OLLAMA_KEEP_ALIVE`를 예를 들어 `1h`로 설정하세요.
+
+NVIDIA를 갖춘 Linux에서는 보통 vLLM을 씁니다. vLLM은 모델 계열에 맞게 지정하는 `--tool-call-parser` 플래그(Qwen3.6은 `qwen3_coder`)로 도구 호출을 해석하고, Ollama에서는 모델 템플릿이 그 역할을 합니다.
+
+## 클라이언트 {#clients}
+
+명령줄 클라이언트 두 가지를 테스트했습니다. 둘 다 내장 셸, 파일 편집, 웹 도구를 끄세요. 그러지 않으면 모델이 Glafira를 우회해 클러스터나 인터넷에 직접 접근할 수 있습니다. Glafira는 새 클라이언트를 승인 대화 상자에 해당 이름으로 표시합니다.
+
+**Qwen Code**(오픈 소스, Apache 2.0). 설정은 `~/.qwen/settings.json`에 있습니다. 처음 실행하기 전에 이 파일을 만드세요. 만들지 않으면 Qwen Code가 스스로 업데이트되고 작업 자동 승인을 켭니다.
+
+```json
+{
+  "env": { "LOCAL_LLM_API_KEY": "ollama" },
+  "modelProviders": { "openai": [ {
+    "id": "qwen3.6-64k:35b-a3b",
+    "envKey": "LOCAL_LLM_API_KEY",
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "generationConfig": { "contextWindowSize": 65536,
+      "samplingParams": { "temperature": 0.2, "max_tokens": 8192 } } } ] },
+  "security": { "auth": { "selectedType": "openai" } },
+  "model": { "name": "qwen3.6-64k:35b-a3b" },
+  "privacy": { "usageStatisticsEnabled": false },
+  "general": { "enableAutoUpdate": false },
+  "telemetry": { "enabled": false },
+  "tools": { "approvalMode": "default",
+    "disabled": ["run_shell_command", "edit", "write_file", "web_fetch", "web_search", "agent"] },
+  "mcpServers": { "glafira-kafka": {
+    "command": "/Applications/Glafira for Apache Kafka.app/Contents/MacOS/glafira-kafka",
+    "args": ["mcp"], "timeout": 120000, "trust": true, "alwaysLoadTools": true } }
+}
+```
+
+`envKey`는 키 자체가 아니라 키를 담은 변수의 이름입니다. `alwaysLoadTools`를 지정하면 도구 검색 단계 없이 Glafira의 도구가 모델에 바로 전달됩니다. Glafira에서 이 클라이언트의 이름은 `qwen-cli-mcp-client-glafira-kafka`입니다. 서버를 폴더 설정(`.qwen/settings.json`)에 정의했다면 `qwen mcp approve glafira-kafka`로 한 번 승인하세요.
+
+**Claude Code**는 Ollama와 바로 연동됩니다. Ollama는 Anthropic 형식으로도 응답하기 때문입니다. 환경 변수를 설정하고 [[ui:settings.mcp.connectTitle]] 블록의 명령으로 Glafira를 추가하세요.
+
+```bash
+export ANTHROPIC_BASE_URL=http://127.0.0.1:11434
+export ANTHROPIC_AUTH_TOKEN=ollama
+export ANTHROPIC_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_OPUS_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3.6-64k:35b-a3b
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_SUBAGENT_MODEL=qwen3.6-64k:35b-a3b
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+claude --disallowedTools "Bash Edit Write WebFetch WebSearch Task"
+```
+
+`ANTHROPIC_BASE_URL`에는 `/v1`을 붙이지 않습니다. `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`는 업데이트, 텔레메트리, 오류 보고를 끕니다. Anthropic 계정으로 로그인할 필요는 없습니다. Glafira에서 이 클라이언트의 이름은 `claude-code`입니다.
+
+두 클라이언트를 [위 표](local-llm.md#capabilities)와 같은 세 가지 작업으로, Ollama의 `qwen3.6-64k:35b-a3b` 모델을 사용해 각각 세 번씩 테스트했습니다.
+
+| 클라이언트 | 정답 | 클러스터 점검 | 그룹 랙 | 메시지 검색 |
+|---|---|---|---|---|
+| Qwen Code 0.26.5 | 9/9 | 30–98초 | 33–43초 | 66–108초 |
+| Claude Code 2.1.316 | 9/9 | 43–59초 | 43–91초 | 74–98초 |
+
+두 클라이언트 모두 Glafira의 도구만 사용했습니다. 인터넷에 접속할 수 없고 `localhost`로의 연결만 허용된 상태에서도 같은 답을 내놓았습니다. Claude Code는 다른 언어로 질문해도 가끔 영어로 답합니다. 그럴 때는 사용자의 언어로 답하라고 요청하세요.
+
+## Glafira 설정 {#glafira-settings}
+
+[[ui:settings.mcp.section]] 섹션에서 설정합니다.
+
+- [[ui:settings.mcp.responseLimit]] — 도구 호출 한 번의 최대 응답 크기입니다. 100 KB 응답은 약 30k 토큰을 차지하므로, 64k 컨텍스트에서는 48 KB 또는 24 KB를 선택하세요. Glafira는 긴 목록을 잘라 내고 모델에 요청 범위를 좁히라고 알려 줍니다.
+- [[ui:settings.mcp.clients]] 목록의 [[ui:settings.mcp.colCompact]] — 메모와 변경 제안이 빠진 도구 세트입니다. 그 설명이 컨텍스트를 약 1,000 토큰 차지합니다. 이 확인란은 클라이언트가 연결되고 사용자가 승인한 뒤에 나타나며, 클라이언트는 다시 연결한 뒤에 새 목록을 보게 됩니다.
+
+## 확인 {#check}
+
+1. 클라이언트를 연결하고 Glafira 대화 상자에서 승인합니다.
+2. 어시스턴트에게 연결 하나(가능하면 테스트용)를 [[ui:connections.form.llmLevel.metadata]] 수준으로 열어 줍니다.
+3. 대표적인 질문을 서너 개 합니다. "클러스터를 점검하고 발견 사항을 설명해 줘", "그룹 …의 랙이 큰 이유는?", "복제가 없는 토픽은 무엇인가?"
+4. [[ui:settings.mcp.audit.title]]에서 모델이 어떤 도구를 어떤 결과로 호출했는지 확인하고, 모델의 답을 Glafira의 데이터와 비교합니다.
+5. 메시지를 여는 경우 마스킹을 확인합니다. [[ui:settings.mcp.audit.openInBrowse]] 버튼은 같은 메시지를 마스킹 없이 보여 줍니다.
+6. 네트워크를 끄고 질문 하나를 다시 해 봅니다. 인터넷 없이도 답이 와야 합니다.
+
+## 제한 사항 {#limits}
+
+- 로컬 모델은 클라우드 모델보다 응답이 몇 배 느리며, Mac에서는 Qwen3.8-27B 같은 밀집 모델이 더 느립니다([표](local-llm.md#capabilities) 참조).
+- 모델이 실행되는 동안에는 컴퓨터에 남는 메모리가 줄어듭니다. 48 GB Mac에서 350억 파라미터 모델은 약 20 GB를 차지합니다.
+- 모델이 잘못된 결론을 내릴 수 있습니다. Glafira는 모델이 클러스터에서 아무것도 변경하지 못하게 하지만, 결정은 사용자의 몫입니다.

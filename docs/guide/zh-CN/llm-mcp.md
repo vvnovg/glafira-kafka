@@ -2,6 +2,8 @@
 
 Glafira 可以充当 LLM 助手的网关：Claude Desktop、Claude Code、Cursor，或其他支持 MCP（Model Context Protocol）的客户端。助手会读取你为其开放的集群的元数据（在你允许的连接中还会读取消息），帮你找出问题：副本不足的分区、消费延迟、反复出现的重平衡、不合理的设置。助手无法通过 Glafira 更改集群中的任何内容：更改由你自己在界面中完成。
 
+模型不一定在云端：也可以在自己的网络或电脑上运行，参见[本地模型](local-llm.md#where)。
+
 ## 工作原理 {#how-it-works}
 
 客户端会运行 `glafira-kafka mcp`，也就是应用的同一个程序文件，只是不显示窗口。该命令通过本地套接字（Windows 上为命名管道）连接到正在运行的 Glafira，Glafira 再通过自己的连接响应助手的请求。密码和证书始终留在 Glafira 中，助手不会获得它们。

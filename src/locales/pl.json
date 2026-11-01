@@ -139,6 +139,7 @@
     },
     "settings": {
       "unknownLanguage": "Nieznany język „{{code}}”",
+      "unknownResponseLimit": "Nieobsługiwany limit odpowiedzi: {{kb}} KB",
       "languageByPolicy": "Język jest ustawiony przez organizację"
     },
     "secrets": {
@@ -411,6 +412,8 @@
       "section": "Asystenci LLM (MCP)",
       "intro": "Asystent LLM (Claude Desktop, Claude Code, Cursor i inne) może połączyć się z aplikacją Glafira przez MCP i odczytywać metadane połączeń otwartych dla niego, a tam, gdzie jest to dozwolone, także wiadomości. Nie może niczego zmienić w klastrach.",
       "enable": "Zezwalaj na serwer MCP",
+      "responseLimit": "Limit rozmiaru odpowiedzi",
+      "responseLimitKb": "{{kb}} KB",
       "policy": "MCP jest wyłączony przez organizację",
       "state": {
         "off": "Serwer jest wyłączony",
@@ -438,6 +441,8 @@
       "noClients": "Brak zatwierdzonych klientów.",
       "colFirstSeen": "Pierwsze połączenie",
       "colLastSeen": "Ostatnie połączenie",
+      "colCompact": "Zestaw kompaktowy",
+      "compactFor": "Kompaktowy zestaw narzędzi dla {{name}}",
       "revoke": "Odwołaj",
       "audit": {
         "title": "Log MCP",
@@ -1445,7 +1450,9 @@
       "updateExisting": "Istniejące połączenia otrzymają ustawienia z pliku; zapisane hasła i ich miejsce w drzewie zostaną zachowane."
     },
     "settings": {
-      "mcpEnable": "Uruchamia lokalny serwer MCP dla asystentów LLM. Dostęp otwiera się osobno dla każdego połączenia i domyślnie jest wyłączony; każdy nowy klient jest potwierdzany w oknie dialogowym."
+      "mcpEnable": "Uruchamia lokalny serwer MCP dla asystentów LLM. Dostęp otwiera się osobno dla każdego połączenia i domyślnie jest wyłączony; każdy nowy klient jest potwierdzany w oknie dialogowym.",
+      "mcpResponseLimit": "Największa odpowiedź, jaką jedno wywołanie narzędzia zwraca do LLM. Dla lokalnego modelu z małym kontekstem (64k tokenów lub mniej) wybierz mniejszy limit.",
+      "mcpCompact": "Ukrywa przed tym klientem narzędzia notatek i propozycji zmian: ich opisy zajmują około 9000 tokenów kontekstu modelu lokalnego. Nową listę klient zobaczy po ponownym połączeniu."
     },
     "health": {
       "check": "Uruchamia wbudowane reguły Glafira: partycje i replikacja, konfiguracje topików i brokerów, grupy konsumentów. Waga zależy od środowiska połączenia. Sprawdzenie tylko odczytuje klaster.",

@@ -12,6 +12,8 @@ vi.mock("../../api/client", async (importOriginal) => {
       getMcpStatus: vi.fn(),
       setMcpEnabled: vi.fn(),
       revokeMcpClient: vi.fn(),
+      setMcpResponseLimit: vi.fn(),
+      setMcpClientCompact: vi.fn(),
       disconnectMcpSessions: vi.fn(),
       requestMcpApproval: vi.fn(),
       getMcpAudit: vi.fn(),
@@ -241,7 +243,7 @@ describe("McpSection", () => {
   it("сессии, отзыв клиента и журнал", async () => {
     const status = mcpStatus({
       sessions: [{ id: "s1", clientName: "claude-ai", clientVersion: "1.2", startedMs: 0, calls: 7, active: false, approved: true }],
-      approvedClients: [{ name: "claude-ai", version: "1.2", firstSeenMs: 0, lastSeenMs: 0 }],
+      approvedClients: [{ name: "claude-ai", version: "1.2", firstSeenMs: 0, lastSeenMs: 0, compactTools: false }],
     });
     vi.mocked(api.getMcpStatus).mockResolvedValue(status);
     vi.mocked(api.revokeMcpClient).mockResolvedValue(status);
@@ -263,6 +265,24 @@ describe("McpSection", () => {
     expect(api.revokeMcpClient).toHaveBeenCalledWith("claude-ai");
     // отзыв и отключение обновляют журнал: первая загрузка + отключение + отзыв
     await waitFor(() => expect(api.getMcpAudit).toHaveBeenCalledTimes(3));
+  });
+
+  it("предел ответа и компактный набор клиента", async () => {
+    const status = mcpStatus({
+      approvedClients: [{ name: "qwen-code", version: "0.26", firstSeenMs: 0, lastSeenMs: 0, compactTools: false }],
+    });
+    vi.mocked(api.getMcpStatus).mockResolvedValue(status);
+    vi.mocked(api.setMcpResponseLimit).mockResolvedValue({ ...status, responseLimitKb: 24 });
+    vi.mocked(api.setMcpClientCompact).mockResolvedValue(status);
+    const user = userEvent.setup();
+    renderWithClient(<McpSection />);
+    const select = await screen.findByLabelText("Предел размера ответа");
+    expect(select).toHaveValue("100");
+    await user.selectOptions(select, "24");
+    expect(api.setMcpResponseLimit).toHaveBeenCalledWith(24);
+    await waitFor(() => expect(select).toHaveValue("24"));
+    await user.click(screen.getByRole("checkbox", { name: "Компактный набор инструментов для qwen-code" }));
+    expect(api.setMcpClientCompact).toHaveBeenCalledWith("qwen-code", true);
   });
 
   it("«Подтвердить» у ожидающей сессии запрашивает диалог подтверждения", async () => {

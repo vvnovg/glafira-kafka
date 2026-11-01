@@ -139,6 +139,7 @@
     },
     "settings": {
       "unknownLanguage": "Unknown language “{{code}}”",
+      "unknownResponseLimit": "Unsupported response limit {{kb}} KB",
       "languageByPolicy": "The language is set by your organization"
     },
     "secrets": {
@@ -411,6 +412,8 @@
       "section": "LLM assistants (MCP)",
       "intro": "An LLM assistant (Claude Desktop, Claude Code, Cursor and others) can connect to Glafira over MCP and read the metadata of the connections you open for it — and messages, where you allow it. It cannot change anything in the clusters.",
       "enable": "Allow the MCP server",
+      "responseLimit": "Response size limit",
+      "responseLimitKb": "{{kb}} KB",
       "policy": "MCP is disabled by your organization",
       "state": {
         "off": "The server is off",
@@ -438,6 +441,8 @@
       "noClients": "No approved clients yet.",
       "colFirstSeen": "First connected",
       "colLastSeen": "Last connected",
+      "colCompact": "Compact tools",
+      "compactFor": "Compact tool set for {{name}}",
       "revoke": "Revoke",
       "audit": {
         "title": "MCP log",
@@ -1435,7 +1440,9 @@
       "updateExisting": "Connections that already exist get the settings from the file; your passwords and their place in the tree are kept."
     },
     "settings": {
-      "mcpEnable": "Starts a local MCP server for LLM assistants. Access is opened per connection and is off by default; each new client is confirmed in a dialog."
+      "mcpEnable": "Starts a local MCP server for LLM assistants. Access is opened per connection and is off by default; each new client is confirmed in a dialog.",
+      "mcpResponseLimit": "Largest answer one tool call returns to the LLM. Choose a smaller limit for a local model with a small context (64k tokens or less).",
+      "mcpCompact": "Hides the tools for notes and change proposals from this client: their descriptions take about 9,000 tokens of a local model's context. The client sees the new list after it reconnects."
     },
     "health": {
       "check": "Runs Glafira’s built-in rules: partitions and replication, topic and broker configs, consumer groups. Severity depends on the connection environment. The check only reads the cluster.",

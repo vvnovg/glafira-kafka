@@ -6,6 +6,8 @@ import { activateProps } from "../../lib/activate";
 import { formatCount } from "../../lib/format";
 import { ConfigTable } from "../common/ConfigTable";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Icon } from "../common/Icon";
+import { Kbd } from "../common/Kbd";
 import { CheckBar } from "../health/CheckBar";
 import { HealthBlock } from "../health/HealthBlock";
 
@@ -22,8 +24,10 @@ export function ClusterOverview({ connectionId }: { connectionId: string }) {
     <div className="page">
       <div className="toolbar">
         <h2>{t("cluster.overview.title")}</h2>
-        <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
+        <button type="button" data-action="refresh" disabled={q.isFetching} onClick={() => q.refetch()}>
+          <Icon name="refresh" size={14} />
           {t("cluster.overview.refresh")}
+          <Kbd keys="Mod+R" />
         </button>
       </div>
       <CheckBar connectionId={connectionId} allLink />

@@ -194,6 +194,7 @@
     "health.kind.cluster",
     "health.kind.topic",
     "mcp.indicator.one",
+    "menu.file",
     "producer.history.colTopic",
     "producer.partitionAuto",
     "producer.topic",

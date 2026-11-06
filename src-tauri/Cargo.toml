@@ -24,6 +24,8 @@ zip = { version = "9", default-features = false, features = ["deflate"] }
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
+# Размер и положение окна между запусками (спец. U1 §7).
+tauri-plugin-window-state = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
 rdkafka = { version = "0.37", features = ["cmake-build", "ssl-vendored", "libz-static", "zstd"] }

@@ -14,6 +14,8 @@ import type { ConfigEdit } from "../common/configDiff";
 import { ConfigTable } from "../common/ConfigTable";
 import { TOPIC_CONFIG_HINTS } from "../common/topicConfigHints";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Icon } from "../common/Icon";
+import { Kbd } from "../common/Kbd";
 import { HealthBlock } from "../health/HealthBlock";
 import { ProposalBanner } from "../health/ProposalBanner";
 import { useActivePrefill } from "../health/useActivePrefill";
@@ -88,8 +90,10 @@ export function TopicDetails({
         <span className="muted">
           {tt("topics.details.summary", { partitions: t.partitions.length, rf: t.replicationFactor, messages: formatCount(t.messageCount) })}
         </span>
-        <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
+        <button type="button" data-action="refresh" disabled={q.isFetching} onClick={() => q.refetch()}>
+          <Icon name="refresh" size={14} />
           {tt("topics.details.refresh")}
+          <Kbd keys="Mod+R" />
         </button>
         <button
           type="button"
@@ -106,6 +110,7 @@ export function TopicDetails({
             })
           }
         >
+          <Icon name="send" size={14} />
           {tt("topics.details.produce")}
         </button>
         <button
@@ -114,6 +119,7 @@ export function TopicDetails({
           title={readOnly ? tt("topics.details.consumeReadOnly") : undefined}
           onClick={() => open({ kind: "consumer", connectionId, key: newConsumerKey(), topic })}
         >
+          <Icon name="users" size={14} />
           {tt("topics.details.consume")}
         </button>
       </div>

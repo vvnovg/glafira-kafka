@@ -1094,7 +1094,20 @@
     "guide": "Glafira 使用指南",
     "troubleshooting": "疑難排解",
     "about": "關於 Glafira",
-    "diagnostics": "收集診斷資訊…"
+    "diagnostics": "收集診斷資訊…",
+    "file": "檔案",
+    "newConnection": "新增連線",
+    "closeTab": "關閉標籤頁",
+    "closeWindow": "關閉視窗",
+    "view": "顯示方式",
+    "refresh": "重新整理",
+    "find": "尋找",
+    "filterConnections": "篩選連線",
+    "window": "視窗",
+    "nextTab": "下一個標籤頁",
+    "prevTab": "上一個標籤頁",
+    "settings": "設定…",
+    "edit": "編輯"
   },
   "mcp": {
     "unknownClient": "未知的 MCP 用戶端",

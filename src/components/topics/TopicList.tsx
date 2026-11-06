@@ -12,6 +12,8 @@ import { useConnection } from "../../lib/useConnection";
 import { CreateTopicForm } from "./CreateTopicForm";
 import { DeleteTopicsPanel } from "./DeleteTopicsPanel";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Icon } from "../common/Icon";
+import { Kbd } from "../common/Kbd";
 import { HealthBadge } from "../health/HealthBlock";
 import { ProposalBanner } from "../health/ProposalBanner";
 import { useActivePrefill } from "../health/useActivePrefill";
@@ -153,6 +155,7 @@ export function TopicList({ connectionId, proposal }: { connectionId: string; pr
       <div className="toolbar">
         <h2>{tt("topics.list.title")}</h2>
         <input
+          data-action="filter"
           placeholder={tt("topics.list.search")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -180,6 +183,7 @@ export function TopicList({ connectionId, proposal }: { connectionId: string; pr
         </select>
         <button
           type="button"
+          data-action="refresh"
           disabled={q.isFetching}
           onClick={() => {
             void q.refetch();
@@ -188,7 +192,9 @@ export function TopicList({ connectionId, proposal }: { connectionId: string; pr
             });
           }}
         >
+          <Icon name="refresh" size={14} />
           {tt("topics.list.refresh")}
+          <Kbd keys="Mod+R" />
         </button>
         {canMutate && (
           <>
@@ -260,7 +266,7 @@ export function TopicList({ connectionId, proposal }: { connectionId: string; pr
           <span>cleanup.policy</span>
           <span>{tt("topics.list.colUnderRepl")}</span>
           <span title={tt("health.title")} aria-label={tt("health.title")}>
-            ●
+            <Icon name="dot" size={12} />
           </span>
         </div>
         <div
@@ -271,7 +277,7 @@ export function TopicList({ connectionId, proposal }: { connectionId: string; pr
             return (
               <div
                 key={t.name}
-                className="row clickable topic-row"
+                className={item.index % 2 ? "row clickable topic-row odd" : "row clickable topic-row"}
                 style={{ top: item.start, height: ROW_HEIGHT }}
                 {...activateProps(() =>
                   selecting ? !t.internal && toggle(t.name) : open({ kind: "topic", connectionId, topic: t.name }),

@@ -1104,7 +1104,20 @@
     "guide": "Guide de Glafira",
     "troubleshooting": "Résolution des problèmes",
     "about": "À propos de Glafira",
-    "diagnostics": "Collecter le diagnostic…"
+    "diagnostics": "Collecter le diagnostic…",
+    "file": "Fichier",
+    "newConnection": "Nouvelle connexion",
+    "closeTab": "Fermer l’onglet",
+    "closeWindow": "Fermer la fenêtre",
+    "view": "Présentation",
+    "refresh": "Actualiser",
+    "find": "Rechercher",
+    "filterConnections": "Filtrer les connexions",
+    "window": "Fenêtre",
+    "nextTab": "Onglet suivant",
+    "prevTab": "Onglet précédent",
+    "settings": "Réglages…",
+    "edit": "Édition"
   },
   "mcp": {
     "unknownClient": "Client MCP inconnu",

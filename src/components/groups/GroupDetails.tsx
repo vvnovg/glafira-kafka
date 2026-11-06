@@ -10,6 +10,8 @@ import { useConnection } from "../../lib/useConnection";
 import { newConsumerKey, type ProposalPrefill, type ResetPrefill, tabId, useWorkspace } from "../../state/workspace";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorBanner } from "../common/ErrorBanner";
+import { Icon } from "../common/Icon";
+import { Kbd } from "../common/Kbd";
 import { HealthBlock } from "../health/HealthBlock";
 import { ProposalBanner } from "../health/ProposalBanner";
 import { useActivePrefill } from "../health/useActivePrefill";
@@ -127,8 +129,10 @@ export function GroupDetails({ connectionId, groupId, resetPrefill: fromMessage,
             </option>
           ))}
         </select>
-        <button type="button" disabled={desc.isFetching || offsets.isFetching} onClick={refresh}>
+        <button type="button" data-action="refresh" disabled={desc.isFetching || offsets.isFetching} onClick={refresh}>
+          <Icon name="refresh" size={14} />
           {t("groups.details.refresh")}
+          <Kbd keys="Mod+R" />
         </button>
         <button
           type="button"

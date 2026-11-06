@@ -1109,7 +1109,20 @@
     "guide": "Podręcznik Glafira",
     "troubleshooting": "Rozwiązywanie problemów",
     "about": "O programie",
-    "diagnostics": "Zbierz diagnostykę…"
+    "diagnostics": "Zbierz diagnostykę…",
+    "file": "Plik",
+    "newConnection": "Nowe połączenie",
+    "closeTab": "Zamknij kartę",
+    "closeWindow": "Zamknij okno",
+    "view": "Widok",
+    "refresh": "Odśwież",
+    "find": "Znajdź",
+    "filterConnections": "Filtruj połączenia",
+    "window": "Okno",
+    "nextTab": "Następna karta",
+    "prevTab": "Poprzednia karta",
+    "settings": "Ustawienia…",
+    "edit": "Edycja"
   },
   "mcp": {
     "unknownClient": "Nieznany klient MCP",

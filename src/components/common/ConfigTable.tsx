@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConfigEntry } from "../../api/types";
 import { Hint } from "./Hint";
+import { Icon } from "./Icon";
 
 export function filterConfigs(entries: ConfigEntry[], query: string, onlyChanged: boolean): ConfigEntry[] {
   const q = query.trim().toLowerCase();
@@ -38,7 +39,12 @@ export function ConfigTable({ entries, hints }: { entries: ConfigEntry[]; hints?
             <tr key={e.name}>
               <td style={{ fontWeight: e.isDefault ? 400 : 600 }}>
                 {e.name}
-                {e.isReadOnly && <span className="muted" role="img" aria-label={t("common.readOnly")} title={t("common.readOnly")}> 🔒</span>}
+                {e.isReadOnly && (
+                  <span className="muted" role="img" aria-label={t("common.readOnly")} title={t("common.readOnly")}>
+                    {" "}
+                    <Icon name="lock" size={12} />
+                  </span>
+                )}
                 {hints?.[e.name] && <Hint k={hints[e.name]} label={e.name} />}
               </td>
               <td>

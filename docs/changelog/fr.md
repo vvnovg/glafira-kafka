@@ -2,6 +2,12 @@
 
 Version française de [CHANGELOG.md](../../CHANGELOG.md), qui contient aussi les versions antérieures. La section d’une version s’affiche dans « À propos » comme notes de mise à jour.
 
+## 0.6.0
+- Nouvelle apparence sous macOS : la barre de titre est fusionnée avec le panneau latéral et la barre d’onglets, l’accent système et les couleurs macOS dans les deux thèmes, aucun texte plus petit que 11 px, des anneaux de focus sur tous les contrôles, des sous-onglets segmentés, des tableaux à lignes alternées avec en-tête fixe, la ligne sélectionnée dans la couleur d’accent. La fenêtre mémorise sa taille et sa position ; le panneau latéral se redimensionne en faisant glisser son bord.
+- Arbre des connexions : un style de ligne unique avec une icône de 16 px pour chaque nœud, un retrait de 14 px par niveau avec des lignes de repère, et l’élément de l’onglet actif est mis en évidence (un onglet de topic met en évidence « Topics », un onglet de groupe « Consumer groups »).
+- Des icônes à la place des symboles textuels partout : actions de l’arbre, fermeture d’onglet, aides, marques de sévérité, cadenas de lecture seule. « Lire », « Arrêter », « Actualiser », « Envoyer un message » et « Lire en tant que groupe » ont des icônes ; « Lire » et « Actualiser » affichent leurs touches.
+- Clavier : ⌘N nouvelle connexion, ⌘W fermer l’onglet, ⇧⌘W fermer la fenêtre, ⌘R actualiser, ⌘F rechercher à l’écran, ⇧⌘F filtrer les connexions, ⌘1…⌘9 et ⌃Tab changer d’onglet, ⌘, paramètres. Sous macOS, ils se trouvent dans le menu de l’application (Fichier, Édition, Présentation, Fenêtre) ; sous Windows et Linux, les mêmes avec Ctrl. Entrée dans le formulaire des messages lance la lecture.
+
 ## 0.5.5
 - MCP : `null` dans les arguments des outils n’est plus retiré que là où le paramètre ne l’accepte pas. Là où `null` est une valeur valide, il parvient tel quel à l’outil. Les outils actuels se comportent comme avant ; la modification prépare les paramètres où `null` signifiera « supprimer la valeur ».
 

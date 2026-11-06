@@ -18,7 +18,7 @@ export function TopicGroups({ connectionId, topic }: { connectionId: string; top
   return (
     <div>
       <div className="toolbar">
-        <button type="button" disabled={q.isFetching} onClick={() => q.refetch()}>
+        <button type="button" data-action="refresh" disabled={q.isFetching} onClick={() => q.refetch()}>
           {t("topics.groups.refresh")}
         </button>
         {q.data.incomplete && (

@@ -16,7 +16,7 @@ because they are compiled from source by the Rust `-sys` crates and are invisibl
 | OpenSSL 3 | Apache-2.0 | https://www.openssl.org/ | openssl-src, feature ssl-vendored |
 | librdkafka bundled components | MIT, BSD-3-Clause, Zlib, Apache-2.0, public domain | https://github.com/confluentinc/librdkafka/blob/v2.12.1/LICENSES.txt | cJSON, snappy, tinycthread, nanopb, crc32c, queue.h, regexp, murmur2, fnv1a, HdrHistogram, pycrc, OpenTelemetry proto — see LICENSES.txt |
 
-## Rust crates (555)
+## Rust crates (556)
 
 | Crate | Version | License | Repository |
 |---|---|---|---|
@@ -418,6 +418,7 @@ because they are compiled from source by the Rust `-sys` crates and are invisibl
 | tauri-plugin-fs | 2.7.1 | Apache-2.0 OR MIT | https://github.com/tauri-apps/plugins-workspace |
 | tauri-plugin-opener | 2.7.1 | Apache-2.0 OR MIT | https://github.com/tauri-apps/plugins-workspace |
 | tauri-plugin-updater | 2.14.0 | Apache-2.0 OR MIT | https://github.com/tauri-apps/plugins-workspace |
+| tauri-plugin-window-state | 2.5.0 | Apache-2.0 OR MIT | https://github.com/tauri-apps/plugins-workspace |
 | tauri-runtime | 2.12.1 | Apache-2.0 OR MIT | https://github.com/tauri-apps/tauri |
 | tauri-runtime-wry | 2.12.1 | Apache-2.0 OR MIT | https://github.com/tauri-apps/tauri |
 | tauri-utils | 2.10.1 | Apache-2.0 OR MIT | https://github.com/tauri-apps/tauri |

@@ -3,6 +3,7 @@ import type { Annotation, AnnotationStatus, Finding, HealthTarget, Severity } fr
 import { currentLocale } from "../../i18n";
 import { useWorkspace } from "../../state/workspace";
 import { findingTexts } from "./findings";
+import { Icon } from "../common/Icon";
 
 /**
  * Точка цвета строгости; число — у значков. `noTitle` — без своей подсказки: у значка она
@@ -18,7 +19,8 @@ export function SeverityMark({ severity, count, noTitle }: { severity: Severity;
       title={noTitle ? undefined : label}
       aria-label={count === undefined ? label : `${label}: ${count}`}
     >
-      ●{count !== undefined && <span className="sev-count">{count}</span>}
+      <Icon name="dot" size={12} />
+      {count !== undefined && <span className="sev-count">{count}</span>}
     </span>
   );
 }

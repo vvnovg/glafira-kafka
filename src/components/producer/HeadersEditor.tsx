@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Icon } from "../common/Icon";
 import type { HeaderInput } from "../../api/types";
 
 export function HeadersEditor({ headers, onChange }: { headers: HeaderInput[]; onChange: (h: HeaderInput[]) => void }) {
@@ -23,7 +24,7 @@ export function HeadersEditor({ headers, onChange }: { headers: HeaderInput[]; o
             <option value="hex">hex</option>
           </select>
           <button type="button" className="icon" aria-label={t("producer.headers.removeAria", { n: i + 1 })} onClick={() => onChange(headers.filter((_, j) => j !== i))}>
-            ×
+            <Icon name="close" size={14} />
           </button>
         </div>
       ))}

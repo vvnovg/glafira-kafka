@@ -2,6 +2,12 @@
 
 Versão em português de [CHANGELOG.md](../../CHANGELOG.md), onde também estão as versões anteriores. A seção de uma versão aparece em “Sobre” como notas da atualização.
 
+## 0.6.0
+- Novo visual no macOS: a barra de título está unida à barra lateral e à barra de abas, o destaque do sistema e as cores do macOS nos dois temas, nenhum texto menor que 11 px, anéis de foco em todos os controles, subabas segmentadas, tabelas com linhas alternadas e cabeçalho fixo, a linha selecionada na cor de destaque. A janela lembra o tamanho e a posição; a barra lateral é redimensionada arrastando a borda.
+- Árvore de conexões: um único estilo de linha com um ícone de 16 px para cada nó, recuo de 14 px por nível com linhas-guia, e o item da aba ativa fica realçado (uma aba de tópico realça “Tópicos”, uma aba de grupo, “Consumer groups”).
+- Ícones no lugar de símbolos de texto em toda parte: ações da árvore, fechar aba, dicas, marcas de severidade, cadeados de somente leitura. “Ler”, “Parar”, “Atualizar”, “Enviar mensagem” e “Ler como grupo” ganharam ícones; “Ler” e “Atualizar” mostram suas teclas.
+- Teclado: ⌘N nova conexão, ⌘W fechar aba, ⇧⌘W fechar janela, ⌘R atualizar, ⌘F buscar na tela, ⇧⌘F filtrar conexões, ⌘1…⌘9 e ⌃Tab alternar abas, ⌘, configurações. No macOS, eles ficam no menu do aplicativo (Arquivo, Editar, Visualizar, Janela); no Windows e no Linux, os mesmos com Ctrl. Enter no formulário de mensagens inicia a leitura.
+
 ## 0.5.5
 - MCP: `null` nos argumentos das ferramentas agora só é removido onde o parâmetro não o aceita. Onde `null` é um valor válido, ele chega à ferramenta sem alteração. As ferramentas atuais funcionam como antes; a mudança prepara parâmetros em que `null` significará “remover o valor”.
 

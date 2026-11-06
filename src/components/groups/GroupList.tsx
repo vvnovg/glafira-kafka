@@ -12,6 +12,8 @@ import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useWorkspace } from "../../state/workspace";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
+import { Icon } from "../common/Icon";
+import { Kbd } from "../common/Kbd";
 import { HealthBadge } from "../health/HealthBlock";
 import { visibleChunks } from "../topics/topicFilter";
 import { filterGroups, GROUP_CHUNK, groupStates } from "./groupFilter";
@@ -76,7 +78,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
     <div className="page">
       <div className="toolbar">
         <h2>{t("groups.list.title")}</h2>
-        <input aria-label={t("groups.list.search")} placeholder={t("groups.list.search")} value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input data-action="filter" aria-label={t("groups.list.search")} placeholder={t("groups.list.search")} value={query} onChange={(e) => setQuery(e.target.value)} />
         <select aria-label={t("groups.list.state")} value={state} onChange={(e) => setState(e.target.value)}>
           <option value="all">{t("groups.list.allStates")}</option>
           {groupStates(all).map((s) => (
@@ -87,6 +89,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
         </select>
         <button
           type="button"
+          data-action="refresh"
           disabled={q.isFetching}
           onClick={() => {
             void q.refetch();
@@ -94,7 +97,9 @@ export function GroupList({ connectionId }: { connectionId: string }) {
             void queryClient.invalidateQueries({ queryKey: ["groupsLag", connectionId] });
           }}
         >
+          <Icon name="refresh" size={14} />
           {t("groups.list.refresh")}
+          <Kbd keys="Mod+R" />
         </button>
         <span className="muted">
           {t("groups.list.shownOf", { shown: rows.length, total: all.length })}
@@ -117,7 +122,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
           </span>
           <span>{t("groups.list.colTopics")}</span>
           <span title={t("health.title")} aria-label={t("health.title")}>
-            ●
+            <Icon name="dot" size={12} />
           </span>
         </div>
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
@@ -133,7 +138,7 @@ export function GroupList({ connectionId }: { connectionId: string }) {
             return (
               <div
                 key={g.groupId}
-                className="row clickable group-row"
+                className={item.index % 2 ? "row clickable group-row odd" : "row clickable group-row"}
                 style={{ top: item.start, height: ROW_HEIGHT }}
                 {...activateProps(() => open({ kind: "group", connectionId, groupId: g.groupId }))}
               >

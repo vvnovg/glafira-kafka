@@ -1094,7 +1094,20 @@
     "guide": "Glafira 使用指南",
     "troubleshooting": "故障排除",
     "about": "关于 Glafira",
-    "diagnostics": "收集诊断信息…"
+    "diagnostics": "收集诊断信息…",
+    "file": "文件",
+    "newConnection": "新建连接",
+    "closeTab": "关闭标签页",
+    "closeWindow": "关闭窗口",
+    "view": "显示",
+    "refresh": "刷新",
+    "find": "查找",
+    "filterConnections": "筛选连接",
+    "window": "窗口",
+    "nextTab": "下一个标签页",
+    "prevTab": "上一个标签页",
+    "settings": "设置…",
+    "edit": "编辑"
   },
   "mcp": {
     "unknownClient": "未知的 MCP 客户端",

@@ -6,6 +6,8 @@ import { tr } from "../../i18n/text";
 import { formatCount } from "../../lib/format";
 import { ErrorBanner } from "../common/ErrorBanner";
 import { Hint } from "../common/Hint";
+import { Icon } from "../common/Icon";
+import { Kbd } from "../common/Kbd";
 import { BrowseForm } from "./BrowseForm";
 import { MessageDetails } from "./MessageDetails";
 import { messageKey, MessageTable } from "./MessageTable";
@@ -45,17 +47,31 @@ export function BrowsePanel({ connectionId, topic, prefill }: { connectionId: st
     }
   };
 
+  /** Enter в поле формы — то же, что «Читать» (подсказка ⏎ на кнопке). */
+  const onFormKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter" || e.defaultPrevented || e.nativeEvent.isComposing) return;
+    const el = e.target as HTMLElement;
+    if (el instanceof HTMLInputElement ? el.type === "checkbox" || el.type === "radio" : !(el instanceof HTMLSelectElement)) return;
+    e.preventDefault();
+    onStart();
+  };
+
   return (
     <div className="browse">
-      <BrowseForm form={form} onChange={setForm} />
+      <div onKeyDown={onFormKeyDown}>
+        <BrowseForm form={form} onChange={setForm} />
+      </div>
       {inexact.includes("flags") && <p className="hint">{t("browse.panel.prefillInexact")}</p>}
       {inexact.includes("limit") && <p className="hint">{t("browse.panel.prefillInexactLimit")}</p>}
       <div className="toolbar">
         <button type="button" className="primary" onClick={onStart}>
+          <Icon name={running ? "refresh" : "play"} size={14} />
           {running ? t("browse.panel.restart") : t("browse.panel.read")}
+          <Kbd keys="Enter" />
         </button>
         <Hint k="hints.browse.readerNotGroup" label={t("browse.panel.read")} />
         <button type="button" disabled={!running} onClick={() => void stop()}>
+          <Icon name="stop" size={14} />
           {t("browse.panel.stop")}
         </button>
         <label>

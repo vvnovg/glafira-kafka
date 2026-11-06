@@ -1099,7 +1099,20 @@
     "guide": "Glafira-Handbuch",
     "troubleshooting": "Fehlerbehebung",
     "about": "Über Glafira",
-    "diagnostics": "Diagnose erstellen…"
+    "diagnostics": "Diagnose erstellen…",
+    "file": "Ablage",
+    "newConnection": "Neue Verbindung",
+    "closeTab": "Tab schließen",
+    "closeWindow": "Fenster schließen",
+    "view": "Darstellung",
+    "refresh": "Aktualisieren",
+    "find": "Suchen",
+    "filterConnections": "Verbindungen filtern",
+    "window": "Fenster",
+    "nextTab": "Nächster Tab",
+    "prevTab": "Vorheriger Tab",
+    "settings": "Einstellungen…",
+    "edit": "Bearbeiten"
   },
   "mcp": {
     "unknownClient": "Unbekannter MCP-Client",

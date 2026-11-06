@@ -1109,7 +1109,20 @@
     "guide": "Руководство Glafira",
     "troubleshooting": "Решение проблем",
     "about": "О программе",
-    "diagnostics": "Собрать диагностику…"
+    "diagnostics": "Собрать диагностику…",
+    "file": "Файл",
+    "newConnection": "Новое подключение",
+    "closeTab": "Закрыть вкладку",
+    "closeWindow": "Закрыть окно",
+    "view": "Вид",
+    "refresh": "Обновить",
+    "find": "Найти",
+    "filterConnections": "Фильтр подключений",
+    "window": "Окно",
+    "nextTab": "Следующая вкладка",
+    "prevTab": "Предыдущая вкладка",
+    "settings": "Настройки…",
+    "edit": "Правка"
   },
   "mcp": {
     "unknownClient": "Неизвестный MCP-клиент",

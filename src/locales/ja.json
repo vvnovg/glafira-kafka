@@ -1094,7 +1094,20 @@
     "guide": "Glafiraガイド",
     "troubleshooting": "トラブルシューティング",
     "about": "Glafiraについて",
-    "diagnostics": "診断情報を収集…"
+    "diagnostics": "診断情報を収集…",
+    "file": "ファイル",
+    "newConnection": "新規接続",
+    "closeTab": "タブを閉じる",
+    "closeWindow": "ウインドウを閉じる",
+    "view": "表示",
+    "refresh": "更新",
+    "find": "検索",
+    "filterConnections": "接続を絞り込む",
+    "window": "ウインドウ",
+    "nextTab": "次のタブ",
+    "prevTab": "前のタブ",
+    "settings": "設定…",
+    "edit": "編集"
   },
   "mcp": {
     "unknownClient": "不明なMCPクライアント",

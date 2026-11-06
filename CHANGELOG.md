@@ -2,6 +2,12 @@
 
 Versions in the other interface languages are in [docs/changelog](docs/changelog/). The section of a version is shown in About as the update notes, in the interface language.
 
+## 0.6.0
+- A new look on macOS: the title bar is merged with the sidebar and the tab bar, the system accent and the macOS colors in both themes, no text smaller than 11 px, focus rings on every control, segmented sub-tabs, striped tables with a sticky header, the selected row in the accent color. The window remembers its size and position; the sidebar is resized by dragging its edge.
+- Connection tree: one row style with a 16 px icon for every node, a 14 px indent per level with guide lines, and the item of the active tab is highlighted (a topic tab highlights “Topics”, a group tab “Consumer groups”).
+- Icons instead of text symbols everywhere: tree actions, closing a tab, hints, severity marks, read-only locks. “Read”, “Stop”, “Refresh”, “Send message” and “Read as group” have icons; “Read” and “Refresh” show their keys.
+- Keyboard: ⌘N new connection, ⌘W close tab, ⇧⌘W close window, ⌘R refresh, ⌘F find on the screen, ⇧⌘F filter connections, ⌘1…⌘9 and ⌃Tab switch tabs, ⌘, settings. On macOS they are in the application menu (File, Edit, View, Window); on Windows and Linux the same with Ctrl. Enter in the message form starts reading.
+
 ## 0.5.5
 - MCP: `null` in tool arguments is now dropped only where the parameter does not accept it. Where `null` is a valid value, it reaches the tool unchanged. The current tools behave as before; this prepares for parameters where `null` means “remove the value”.
 

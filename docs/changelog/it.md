@@ -2,6 +2,12 @@
 
 Versione italiana di [CHANGELOG.md](../../CHANGELOG.md), dove si trovano anche le versioni precedenti. La sezione di una versione viene mostrata in “Informazioni” come note dell’aggiornamento.
 
+## 0.6.0
+- Nuovo aspetto su macOS: la barra del titolo è fusa con la barra laterale e la barra delle schede, l’accento di sistema e i colori di macOS in entrambi i temi, nessun testo più piccolo di 11 px, anelli di focus su tutti i controlli, sotto-schede segmentate, tabelle a righe alternate con intestazione fissa, la riga selezionata nel colore di accento. La finestra ricorda dimensione e posizione; la barra laterale si ridimensiona trascinandone il bordo.
+- Albero delle connessioni: un unico stile di riga con un’icona di 16 px per ogni nodo, rientro di 14 px per livello con linee guida, e la voce della scheda attiva è evidenziata (una scheda di topic evidenzia “Topic”, una scheda di gruppo “Consumer group”).
+- Icone al posto dei simboli testuali ovunque: azioni dell’albero, chiusura della scheda, suggerimenti, indicatori di gravità, lucchetti di sola lettura. “Leggi”, “Interrompi”, “Aggiorna”, “Invia messaggio” e “Leggi come gruppo” hanno le icone; “Leggi” e “Aggiorna” mostrano i loro tasti.
+- Tastiera: ⌘N nuova connessione, ⌘W chiudi scheda, ⇧⌘W chiudi finestra, ⌘R aggiorna, ⌘F cerca nella schermata, ⇧⌘F filtra connessioni, ⌘1…⌘9 e ⌃Tab cambio scheda, ⌘, impostazioni. Su macOS sono nel menu dell’applicazione (File, Modifica, Vista, Finestra); su Windows e Linux gli stessi con Ctrl. Invio nel modulo dei messaggi avvia la lettura.
+
 ## 0.5.5
 - MCP: `null` negli argomenti degli strumenti ora viene rimosso solo dove il parametro non lo accetta. Dove `null` è un valore valido, arriva allo strumento invariato. Gli strumenti attuali funzionano come prima; la modifica prepara i parametri in cui `null` significherà “rimuovi il valore”.
 

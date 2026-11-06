@@ -2,6 +2,12 @@
 
 Polska wersja [CHANGELOG.md](../../CHANGELOG.md), gdzie są też wcześniejsze wersje. Sekcja wersji jest wyświetlana w „O programie” jako informacje o aktualizacji.
 
+## 0.6.0
+- Nowy wygląd w macOS: pasek tytułu jest scalony z panelem bocznym i paskiem kart, akcent systemowy i kolory macOS w obu motywach, brak tekstu mniejszego niż 11 px, obwódki fokusu na wszystkich kontrolkach, segmentowane podkarty, tabele z naprzemiennymi wierszami i przypiętym nagłówkiem, zaznaczony wiersz w kolorze akcentu. Okno zapamiętuje rozmiar i położenie; szerokość panelu bocznego zmienia się przeciąganiem jego krawędzi.
+- Drzewo połączeń: jeden styl wiersza z ikoną 16 px przy każdym węźle, wcięcie 14 px na poziom z liniami prowadzącymi, a pozycja aktywnej karty jest podświetlona (karta topika podświetla „Topiki”, karta grupy — „Grupy konsumentów”).
+- Ikony zamiast symboli tekstowych wszędzie: akcje drzewa, zamykanie karty, podpowiedzi, znaczniki ważności, kłódki tylko do odczytu. „Czytaj”, „Zatrzymaj”, „Odśwież”, „Wyślij wiadomość” i „Czytaj jako grupa” mają ikony; „Czytaj” i „Odśwież” pokazują swoje klawisze.
+- Klawiatura: ⌘N nowe połączenie, ⌘W zamknij kartę, ⇧⌘W zamknij okno, ⌘R odśwież, ⌘F szukaj na ekranie, ⇧⌘F filtruj połączenia, ⌘1…⌘9 i ⌃Tab przełączanie kart, ⌘, ustawienia. W macOS są w menu aplikacji (Plik, Edycja, Widok, Okno); w Windows i Linuksie te same z Ctrl. Enter w formularzu wiadomości uruchamia czytanie.
+
 ## 0.5.5
 - MCP: `null` w argumentach narzędzi jest teraz usuwany tylko tam, gdzie parametr go nie przyjmuje. Tam, gdzie `null` jest dozwoloną wartością, trafia do narzędzia bez zmian. Obecne narzędzia działają jak dotąd; zmiana przygotowuje parametry, w których `null` będzie oznaczać „usuń wartość”.
 

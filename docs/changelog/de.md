@@ -2,6 +2,12 @@
 
 Deutsche Fassung von [CHANGELOG.md](../../CHANGELOG.md), dort stehen auch frühere Versionen. Der Abschnitt einer Version wird unter „Über Glafira“ als Versionshinweise zum Update angezeigt.
 
+## 0.6.0
+- Neues Erscheinungsbild unter macOS: Die Titelleiste ist mit der Seitenleiste und der Tab-Leiste verschmolzen, Systemakzent und macOS-Farben in beiden Designs, kein Text kleiner als 11 px, Fokusringe an allen Bedienelementen, segmentierte Unter-Tabs, Tabellen mit Zebrastreifen und fixierter Kopfzeile, die ausgewählte Zeile in der Akzentfarbe. Das Fenster merkt sich Größe und Position; die Breite der Seitenleiste wird durch Ziehen ihres Rands geändert.
+- Verbindungsbaum: ein einheitlicher Zeilenstil mit einem 16-px-Symbol für jeden Knoten, 14 px Einzug pro Ebene mit Hilfslinien, der Eintrag des aktiven Tabs ist hervorgehoben (ein Topic-Tab hebt „Topics“ hervor, ein Gruppen-Tab „Consumer Groups“).
+- Überall Symbole statt Textzeichen: Aktionen im Baum, Tab schließen, Hinweise, Schweregrad-Markierungen, Schreibschutz-Schlösser. „Lesen“, „Stoppen“, „Aktualisieren“, „Nachricht senden“ und „Als Gruppe lesen“ haben Symbole; „Lesen“ und „Aktualisieren“ zeigen ihre Tasten.
+- Tastatur: ⌘N neue Verbindung, ⌘W Tab schließen, ⇧⌘W Fenster schließen, ⌘R aktualisieren, ⌘F Suche auf dem Bildschirm, ⇧⌘F Verbindungen filtern, ⌘1…⌘9 und ⌃Tab Tabs wechseln, ⌘, Einstellungen. Unter macOS stehen sie im Anwendungsmenü (Ablage, Bearbeiten, Darstellung, Fenster); unter Windows und Linux dieselben mit Strg. Die Eingabetaste im Nachrichtenformular startet das Lesen.
+
 ## 0.5.5
 - MCP: `null` in Tool-Argumenten wird jetzt nur noch entfernt, wo der Parameter es nicht akzeptiert. Wo `null` ein gültiger Wert ist, erreicht es das Tool unverändert. Die vorhandenen Tools verhalten sich wie bisher; die Änderung bereitet Parameter vor, bei denen `null` „Wert entfernen“ bedeutet.
 

@@ -577,7 +577,7 @@ because they are compiled from source by the Rust `-sys` crates and are invisibl
 | zvariant_derive | 5.15.0 | MIT | https://github.com/z-galaxy/zbus/ |
 | zvariant_utils | 4.2.0 | MIT | https://github.com/z-galaxy/zbus/ |
 
-## npm packages in the frontend (108)
+## npm packages in the frontend (111)
 
 | Package | Version | License | Homepage |
 |---|---|---|---|
@@ -630,7 +630,9 @@ because they are compiled from source by the Rust `-sys` crates and are invisibl
 | is-hexadecimal | 2.0.1 | MIT | https://github.com/wooorm/is-hexadecimal#readme |
 | is-plain-obj | 4.1.0 | MIT | https://github.com/sindresorhus/is-plain-obj#readme |
 | longest-streak | 3.1.0 | MIT | https://github.com/wooorm/longest-streak#readme |
+| markdown-table | 3.1.0 | MIT | https://github.com/wooorm/markdown-table#readme |
 | mdast-util-from-markdown | 2.1.0 | MIT | https://github.com/syntax-tree/mdast-util-from-markdown#readme |
+| mdast-util-gfm-table | 2.0.1 | MIT | https://github.com/syntax-tree/mdast-util-gfm-table#readme |
 | mdast-util-mdx-expression | 2.0.1 | MIT | https://github.com/syntax-tree/mdast-util-mdx-expression#readme |
 | mdast-util-mdx-jsx | 3.2.0 | MIT | https://github.com/syntax-tree/mdast-util-mdx-jsx#readme |
 | mdast-util-mdxjs-esm | 2.0.1 | MIT | https://github.com/syntax-tree/mdast-util-mdxjs-esm#readme |
@@ -640,6 +642,7 @@ because they are compiled from source by the Rust `-sys` crates and are invisibl
 | mdast-util-to-string | 4.0.0 | MIT | https://github.com/syntax-tree/mdast-util-to-string#readme |
 | micromark | 4.0.3 | MIT | https://github.com/micromark/micromark/tree/main#readme |
 | micromark-core-commonmark | 2.0.4 | MIT | https://github.com/micromark/micromark/tree/main#readme |
+| micromark-extension-gfm-table | 2.1.2 | MIT | https://github.com/micromark/micromark-extension-gfm-table#readme |
 | micromark-factory-destination | 2.0.1 | MIT | https://github.com/micromark/micromark/tree/main#readme |
 | micromark-factory-label | 2.0.1 | MIT | https://github.com/micromark/micromark/tree/main#readme |
 | micromark-factory-space | 2.1.0 | MIT | https://github.com/micromark/micromark/tree/main#readme |
